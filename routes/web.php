@@ -1,7 +1,47 @@
 <?php
 
+use App\Http\Controllers\GoogleLoginController;
+use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\PenimbanganController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('login');
 });
+
+Route::get('/dashboard', function () {
+    return view('dashboard');
+})->middleware(['auth', 'verified'])->name('dashboard');
+
+
+// Grup rute yang membutuhkan login (bawaan Breeze + Rute Kustom Anda)
+Route::middleware('auth')->group(function () {
+
+    // --- Rute Profil (dari Breeze) ---
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // --- Rute Aplikasi Posyandu Anda (Tambahkan di sini) ---
+
+    // Rute untuk Kader & Kabid
+    Route::middleware(['role:kader,kabid'])->group(function () {
+        Route::resource('penimbangan', PenimbanganController::class);
+    });
+
+    // Rute HANYA untuk Kabid
+    Route::middleware(['role:kabid'])->prefix('admin')->name('admin.')->group(function () {
+        Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
+        Route::resource('users', UserController::class);
+    });
+});
+
+
+// Rute Otentikasi Google Socialite
+Route::get('/auth/google/redirect', [GoogleLoginController::class, 'redirectToGoogle'])->name('google.login');
+Route::get('/auth/google/callback', [GoogleLoginController::class, 'handleGoogleCallback']);
+
+// Memuat semua rute otentikasi dari Breeze (login, register, dll.)
+require __DIR__ . '/auth.php';
