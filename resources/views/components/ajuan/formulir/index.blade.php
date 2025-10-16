@@ -8,10 +8,22 @@
             <label for="bidang_pelayanan" class="block font-medium text-sm text-gray-700">Ubah bidang pelayanan</label>
             <select id="bidang_pelayanan" onchange="window.location.href=this.value;"
                 class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                <option value="{{ route('ajuan.create', 'pekerjaanUmum') }}" @selected($bidang == 'pendidikan')>Bidang
+                <option value="{{ route('ajuan.create', 'pekerjaanUmum') }}" @selected($bidang == 'pekerjaanUmum')>Bidang
                     Pekerjaan Umum
                 </option>
                 <option value="{{ route('ajuan.create', 'sosial') }}" @selected($bidang == 'sosial')>Bidang Sosial
+                </option>
+                <option value="{{ route('ajuan.create', 'kesehatan') }}" @selected($bidang == 'kesehatan')>Bidang
+                    Kesehatan
+                </option>
+                <option value="{{ route('ajuan.create', 'perumahanrakyat') }}" @selected($bidang == 'perumahanrakyat')>Bidang
+                    Perumahan Rakyat
+                </option>
+                <option value="{{ route('ajuan.create', 'pendidikan') }}" @selected($bidang == 'pendidikan')>Bidang
+                    Pendidikan
+                </option>
+                <option value="{{ route('ajuan.create', 'trantibumlinmas') }}" @selected($bidang == 'trantibumlinmas')>Bidang
+                    TrantibumLinmas
                 </option>
             </select>
         </div>

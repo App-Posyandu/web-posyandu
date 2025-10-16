@@ -1,7 +1,9 @@
 <header class="w-full max-w-7xl mx-auto py-4 px-6 flex justify-between items-center">
     <div>
+        <a href="/">
         <h1 class="text-2xl font-bold text-gray-800">EPOSY</h1>
         <p class="text-sm text-gray-600">Pelayanan Elektronik Posyandu</p>
+        </a>
     </div>
     <div class="flex items-center space-x-4">
         <img src={{ asset('assets/image/logo/logo_kebumen.png') }} alt="Logo Kebumen" class="h-12">
