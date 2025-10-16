@@ -35,35 +35,12 @@
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                            <a href="/ajuan/create/perumahanrakyat"
-                                class="block p-6 text-center text-white font-semibold bg-blue-500 rounded-lg shadow-md transform hover:scale-105 transition-transform duration-200">
-                                Bidang Perumahan Rakyat
+                            @foreach ($allBidangs as $bidang)
+                            <a href="{{ route('ajuan.create', $bidang->slug) }}"
+                                class="block p-6 text-center text-white font-semibold rounded-lg shadow-md transform hover:scale-105 transition-transform duration-200 {{ $colors[$loop->index % count($colors)] }}">
+                                {{ $bidang->nama_bidang }}
                             </a>
-
-                            <a href="/ajuan/create/sosial"
-                                class="block p-6 text-center text-white font-semibold bg-pink-500 rounded-lg shadow-md transform hover:scale-105 transition-transform duration-200">
-                                Bidang Sosial
-                            </a>
-
-                            <a href="/ajuan/create/pendidikan"
-                                class="block p-6 text-center text-white font-semibold bg-orange-500 rounded-lg shadow-md transform hover:scale-105 transition-transform duration-200">
-                                Bidang Pendidikan
-                            </a>
-
-                            <a href="/ajuan/create/pekerjaanUmum"
-                                class="block p-6 text-center text-white font-semibold bg-green-500 rounded-lg shadow-md transform hover:scale-105 transition-transform duration-200">
-                                Bidang Pekerjaan Umum
-                            </a>
-
-                            <a href="/ajuan/create/kesehatan" class="block p-6 text-center text-white font-semibold"
-                                style="background-color: #E655A0;">
-                                Bidang Kesehatan
-                            </a>
-
-                            <a href="/ajuan/create/trantibumlinmas"
-                                class="block p-6 text-center text-white font-semibold bg-yellow-500 rounded-lg shadow-md transform hover:scale-105 transition-transform duration-200">
-                                Bidang Trantibum Linmas
-                            </a>
+                            @endforeach
 
                         </div>
                     </div>

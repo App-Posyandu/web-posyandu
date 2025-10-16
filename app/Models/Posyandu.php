@@ -9,4 +9,10 @@ class Posyandu extends Model
 {
     /** @use HasFactory<\Database\Factories\PosyanduFactory> */
     use HasFactory;
+    protected $fillable = ['nama_posyandu', 'desa', 'kecamatan'];
+
+    public function users()
+    {
+        return $this->hasMany(User::class);
+    }
 }

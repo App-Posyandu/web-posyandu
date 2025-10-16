@@ -2,60 +2,68 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BidangPengajuan;
+use App\Models\History;
+use App\Models\Pengajuan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Auth;
 
 class AjuanController extends Controller
 {
     public function index()
     {
-        // $semuaAjuan = Ajuan::latest()->paginate(5);
-        $semuaAjuan = collect([
-            (object)[
-                'id' => 1,
-                'bidang' => 'Bidang Perumahan Rakyat',
-                'deskripsi' => 'Lorem ipsum',
-                'tindak_lanjut' => 'Sudah Verifikasi',
-                'status' => 'Disetujui'
-            ],
-            (object)[
-                'id' => 2,
-                'bidang' => 'Bidang Pendidikan',
-                'deskripsi' => 'Lorem ipsum',
-                'tindak_lanjut' => 'Inactive',
-                'status' => 'Ditolak'
-            ],
-            (object)[
-                'id' => 3,
-                'bidang' => 'Bidang Kesehatan',
-                'deskripsi' => 'Lorem ipsum',
-                'tindak_lanjut' => 'Inactive',
-                'status' => 'Ditolak'
-            ],
-            (object)[
-                'id' => 4,
-                'bidang' => 'Bidang Sosial',
-                'deskripsi' => 'Lorem ipsum',
-                'tindak_lanjut' => 'Inactive',
-                'status' => 'Ditolak'
-            ],
-            (object)[
-                'id' => 5,
-                'bidang' => 'Bidang Trantibumlinmas',
-                'deskripsi' => 'Lorem ipsum',
-                'tindak_lanjut' => 'Inactive',
-                'status' => 'Ditolak'
-            ],
-        ]);
+        // $semuaAjuan = collect([
+        //     (object)[
+        //         'id' => 1,
+        //         'bidang' => 'Bidang Perumahan Rakyat',
+        //         'deskripsi' => 'Lorem ipsum',
+        //         'tindak_lanjut' => 'Sudah Verifikasi',
+        //         'status' => 'Disetujui'
+        //     ],
+        //     (object)[
+        //         'id' => 2,
+        //         'bidang' => 'Bidang Pendidikan',
+        //         'deskripsi' => 'Lorem ipsum',
+        //         'tindak_lanjut' => 'Inactive',
+        //         'status' => 'Ditolak'
+        //     ],
+        //     (object)[
+        //         'id' => 3,
+        //         'bidang' => 'Bidang Kesehatan',
+        //         'deskripsi' => 'Lorem ipsum',
+        //         'tindak_lanjut' => 'Inactive',
+        //         'status' => 'Ditolak'
+        //     ],
+        //     (object)[
+        //         'id' => 4,
+        //         'bidang' => 'Bidang Sosial',
+        //         'deskripsi' => 'Lorem ipsum',
+        //         'tindak_lanjut' => 'Inactive',
+        //         'status' => 'Ditolak'
+        //     ],
+        //     (object)[
+        //         'id' => 5,
+        //         'bidang' => 'Bidang Trantibumlinmas',
+        //         'deskripsi' => 'Lorem ipsum',
+        //         'tindak_lanjut' => 'Inactive',
+        //         'status' => 'Ditolak'
+        //     ],
+        // ]);
 
-        // Kirim data ke view
+        $semuaAjuan = Pengajuan::with(['user', 'bidang'])->latest()->paginate(5);
+
         return view('ajuan.index', [
             'semuaAjuan' => $semuaAjuan
         ]);
     }
-    public function create($bidang)
+    public function create($bidang_slug)
     {
         Session::forget('ajuan_data');
+
+        $allBidangs = BidangPengajuan::orderBy('nama_bidang')->get();
+
+        $bidang = BidangPengajuan::where('slug', $bidang_slug)->firstOrFail();
 
         $data = $this->getBidangData($bidang);
         if (!$data) {
@@ -63,13 +71,16 @@ class AjuanController extends Controller
         }
 
         session(['ajuan_data' => [
-            'bidang' => $bidang,
+            'bidang_id' => $bidang->id,
+            'bidang_slug' => $bidang->slug,
+            'bidang_nama' => $bidang->nama_bidang,
             'formulir_items' => $data['formulir_items'],
             'administrasi_items' => $data['administrasi_items']
         ]]);
 
         return view('components.ajuan.formulir.index', [
-            'bidang' => $bidang,
+            'bidang' => $bidang, // Untuk @selected
+            'allBidangs' => $allBidangs, // Untuk perulangan <option>
             'items' => $data['formulir_items']
         ]);
     }
@@ -126,14 +137,31 @@ class AjuanController extends Controller
 
     public function storeFinal(Request $request)
     {
-        $ajuanData = session('ajuan_data');
-        // Ajuan::create([
-        //     'user_id' => auth()->id(),
-        //     'bidang' => $ajuanData['bidang'],
-        //     'detail_permohonan' => json_encode($ajuanData['selected_formulir_items']),
-        //     'dokumen_administrasi' => json_encode($ajuanData['uploaded_files']),
-        // ]);
+        $user = Auth::user();
+        if (!$user) {
+            return redirect()->route('login');
+        }
 
+        $ajuanData = session('ajuan_data');
+        if (!$ajuanData) {
+            return redirect()->route('dashboard')->with('error', 'Sesi ajuan telah habis.');
+        }
+
+        $pengajuan = Pengajuan::create([
+            'user_id' => $user->uuid ?? $user->id,
+            'bidang_id' => $ajuanData['bidang_id'],
+            'detail_permohonan' => $ajuanData['selected_formulir_items'] ?? null,
+            'dokumen_administrasi' => $ajuanData['uploaded_files'] ?? null,
+            'status' => 'Diproses',
+        ]);
+
+        History::create([
+            'pengajuan_id' => $pengajuan->id,
+            'status' => 'Diajukan',
+            'catatan' => 'Pengajuan baru telah dibuat oleh pengguna.',
+            'diubah_oleh' => $user->uuid ?? $user->id,
+            'created_at' => now(),
+        ]);
         Session::forget('ajuan_data');
 
         return redirect()->route('ajuan.index')->with('success', 'Ajuan berhasil dikirim!');

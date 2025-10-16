@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AjuanController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GoogleLoginController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\PenimbanganController;
@@ -28,9 +29,7 @@ Route::middleware('auth')->group(function () {
 Route::get('/auth/google/redirect', [GoogleLoginController::class, 'redirectToGoogle'])->name('google.login');
 Route::get('/auth/google/callback', [GoogleLoginController::class, 'handleGoogleCallback']);
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 
 
 // Grup rute yang membutuhkan login (bawaan Breeze + Rute Kustom Anda)

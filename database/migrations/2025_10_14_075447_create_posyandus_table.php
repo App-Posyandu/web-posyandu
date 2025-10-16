@@ -13,6 +13,9 @@ return new class extends Migration
     {
         Schema::create('posyandus', function (Blueprint $table) {
             $table->id();
+            $table->string('nama_posyandu');
+            $table->string('desa');
+            $table->string('kecamatan');
             $table->timestamps();
         });
     }
