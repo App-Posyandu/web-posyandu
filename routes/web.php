@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AjuanController;
 use App\Http\Controllers\GoogleLoginController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\PenimbanganController;
@@ -9,6 +10,18 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return redirect()->route('login');
+});
+
+Route::middleware('auth')->group(function () {
+    Route::get('/ajuan', [AjuanController::class, 'index'])->name('ajuan.index');
+    Route::get('/ajuan/create/{bidang}', [AjuanController::class, 'create'])->name('ajuan.create');
+    Route::post('/ajuan/store-permohonan', [AjuanController::class, 'storePermohonan'])->name('ajuan.store.permohonan');
+
+    Route::get('/ajuan/administrasi', [AjuanController::class, 'createAdministrasi'])->name('ajuan.create.administrasi');
+    Route::post('/ajuan/store-administrasi', [AjuanController::class, 'storeAdministrasi'])->name('ajuan.store.administrasi');
+
+    Route::get('/ajuan/verifikasi', [AjuanController::class, 'showVerifikasi'])->name('ajuan.verifikasi');
+    Route::post('/ajuan/store-final', [AjuanController::class, 'storeFinal'])->name('ajuan.store.final');
 });
 
 // Rute Otentikasi Google Socialite

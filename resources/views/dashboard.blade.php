@@ -22,37 +22,7 @@
 
         <div class="relative z-10 flex flex-col min-h-screen">
 
-            <header class="w-full max-w-7xl mx-auto py-4 px-6 flex justify-between items-center">
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-800">EPOSY</h1>
-                    <p class="text-sm text-gray-600">Pelayanan Elektronik Posyandu</p>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <img src={{ asset('assets/image/logo/logo_kebumen.png') }} alt="Logo Kebumen" class="h-12">
-                    <img src={{ asset('assets/image/logo/logo_posyandu.png') }} alt="Logo Posyandu" class="h-12">
-                </div>
-                <div class="hidden sm:flex sm:items-center sm:ms-6">
-                    <x-dropdown align="right" width="48">
-                        <x-slot name="trigger">
-                            <button
-                                class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                                <div>{{ Auth::user()->name }}</div>
-                                <div class="ms-1"><i class="bi bi-chevron-down"></i></div>
-                            </button>
-                        </x-slot>
-                        <x-slot name="content">
-                            <x-dropdown-link :href="route('profile.edit')">{{ __('Profile') }}</x-dropdown-link>
-                            <form method="POST" action="{{ route('logout') }}">
-                                @csrf
-                                <x-dropdown-link :href="route('logout')"
-                                    onclick="event.preventDefault(); this.closest('form').submit();">
-                                    {{ __('Log Out') }}
-                                </x-dropdown-link>
-                            </form>
-                        </x-slot>
-                    </x-dropdown>
-                </div>
-            </header>
+            @include('layouts.partials.header-new')
 
 
             <main class="flex-grow flex items-center justify-center">
@@ -70,7 +40,7 @@
                                 Bidang Perumahan Rakyat
                             </a>
 
-                            <a href="#"
+                            <a href="/ajuan/create/sosial"
                                 class="block p-6 text-center text-white font-semibold bg-pink-500 rounded-lg shadow-md transform hover:scale-105 transition-transform duration-200">
                                 Bidang Sosial
                             </a>
@@ -80,7 +50,7 @@
                                 Bidang Pendidikan
                             </a>
 
-                            <a href="#"
+                            <a href="/ajuan/create/pekerjaanUmum"
                                 class="block p-6 text-center text-white font-semibold bg-green-500 rounded-lg shadow-md transform hover:scale-105 transition-transform duration-200">
                                 Bidang Pekerjaan Umum
                             </a>
