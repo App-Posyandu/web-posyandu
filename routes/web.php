@@ -11,6 +11,10 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
+// Rute Otentikasi Google Socialite
+Route::get('/auth/google/redirect', [GoogleLoginController::class, 'redirectToGoogle'])->name('google.login');
+Route::get('/auth/google/callback', [GoogleLoginController::class, 'handleGoogleCallback']);
+
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
@@ -38,10 +42,14 @@ Route::middleware('auth')->group(function () {
     });
 });
 
+Route::get('/set-session', function () {
+    session(['test' => 'Berhasil']);
+    return 'Session di-set!';
+});
 
-// Rute Otentikasi Google Socialite
-Route::get('/auth/google/redirect', [GoogleLoginController::class, 'redirectToGoogle'])->name('google.login');
-Route::get('/auth/google/callback', [GoogleLoginController::class, 'handleGoogleCallback']);
+Route::get('/get-session', function () {
+    return session('test', 'Gagal, session kosong!');
+});
 
 // Memuat semua rute otentikasi dari Breeze (login, register, dll.)
 require __DIR__ . '/auth.php';

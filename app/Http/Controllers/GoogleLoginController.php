@@ -19,7 +19,7 @@ class GoogleLoginController extends Controller
     {
         try {
             $googleUser = Socialite::driver('google')->user();
-
+            var_dump($googleUser);
             $user = User::where('email', $googleUser->getEmail())->first();
 
             if ($user) {
@@ -29,8 +29,9 @@ class GoogleLoginController extends Controller
 
             session(['google_user_name' => $googleUser->getName(), 'google_user_email' => $googleUser->getEmail()]);
 
-            return redirect()->route('register.google.form');
+            return redirect()->route('register');
         } catch (\Exception $e) {
+            dd($e->getMessage());
             return redirect('/login')->with('error', 'Gagal login menggunakan Google');
         }
     }

@@ -27,20 +27,62 @@ class RegisteredUserController extends Controller
      *
      * @throws \Illuminate\Validation\ValidationException
      */
+
     public function store(Request $request): RedirectResponse
     {
+        // 1. Validasi semua input dari form
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'nik' => ['required', 'string', 'digits:16', 'unique:' . User::class],
+            'alamat' => ['required', 'string'],
+            'tempat_lahir' => ['required', 'string', 'max:255'],
+            'tanggal_lahir' => ['required', 'date'],
+            'jenis_kelamin' => ['required', 'string'],
+            'nama_posyandu' => ['required', 'string', 'max:255'],
+            'desa' => ['required', 'string', 'max:255'],
+            'kecamatan' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:' . User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'role' => ['required', 'in:masyarakat,kader'],
+            'ktp' => ['required', 'image', 'mimes:jpeg,png,jpg', 'max:2048'], // Maksimal 2MB
+            'kk' => ['required', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],  // Maksimal 2MB
         ]);
 
+        // 2. Proses file upload KTP menjadi Base64
+        $ktpBase64 = null;
+        if ($request->hasFile('ktp')) {
+            $ktpPath = $request->file('ktp')->getRealPath();
+            $ktpData = file_get_contents($ktpPath);
+            $ktpBase64 = 'data:image/' . $request->file('ktp')->getClientOriginalExtension() . ';base64,' . base64_encode($ktpData);
+        }
+
+        // 3. Proses file upload KK menjadi Base64
+        $kkBase64 = null;
+        if ($request->hasFile('kk')) {
+            $kkPath = $request->file('kk')->getRealPath();
+            $kkData = file_get_contents($kkPath);
+            $kkBase64 = 'data:image/' . $request->file('kk')->getClientOriginalExtension() . ';base64,' . base64_encode($kkData);
+        }
+
+        // 4. Buat user baru dengan semua data
         $user = User::create([
             'name' => $request->name,
+            'nik' => $request->nik,
+            'alamat' => $request->alamat,
+            'tempat_lahir' => $request->tempat_lahir,
+            'tanggal_lahir' => $request->tanggal_lahir,
+            'jenis_kelamin' => $request->jenis_kelamin,
+            'nama_posyandu' => $request->nama_posyandu,
+            'desa' => $request->desa,
+            'kecamatan' => $request->kecamatan,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'role' => $request->role,
+            'ktp' => $ktpBase64,
+            'kk' => $kkBase64,
         ]);
 
+        // 5. Kirim event, login user, dan redirect ke dashboard (bawaan Breeze)
         event(new Registered($user));
 
         Auth::login($user);
