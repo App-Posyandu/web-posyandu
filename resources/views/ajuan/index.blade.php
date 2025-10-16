@@ -14,24 +14,10 @@
 
 <body class="font-sans antialiased">
     <div class="relative min-h-screen bg-gray-100">
-        <x-colorful-blob-background />
+        <x-colorful-background />
 
         <div class="relative z-10 flex flex-col min-h-screen">
-            <header class="w-full max-w-7xl mx-auto py-4 px-6 flex justify-between items-center">
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-800">EPOSY</h1>
-                    <p class="text-sm text-gray-600">Pelayanan Elektronik Posyandu</p>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <img src="/images/logo-kemenkes.png" alt="Logo Kemenkes" class="h-12">
-                    <img src="/images/logo-eposy.png" alt="Logo Eposy" class="h-12">
-                </div>
-                <div class="w-24 text-right">
-                    <a href="{{ route('profile.edit') }}" class="text-gray-500 hover:text-gray-800">
-                        <i class="bi bi-person-circle text-3xl"></i>
-                    </a>
-                </div>
-            </header>
+            @include('layouts.partials.header-new')
 
             <main class="flex-grow flex items-center justify-center py-12">
                 <div class="w-full max-w-7xl mx-auto sm:px-6 lg:px-8">

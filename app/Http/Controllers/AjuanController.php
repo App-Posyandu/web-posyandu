@@ -9,6 +9,7 @@ class AjuanController extends Controller
 {
     public function index()
     {
+        // $semuaAjuan = Ajuan::latest()->paginate(5);
         $semuaAjuan = collect([
             (object)[
                 'id' => 1,
@@ -76,7 +77,7 @@ class AjuanController extends Controller
     public function storePermohonan(Request $request)
     {
         session()->put('components.ajuan.selected_formulir.index', $request->input('permohonan_items', []));
-        return redirect()->route('components.ajuan.administrasi.index');
+        return redirect()->route('ajuan.create.administrasi');
     }
 
     public function createAdministrasi(Request $request)
@@ -87,7 +88,7 @@ class AjuanController extends Controller
         }
 
         return view('components.ajuan.administrasi-ajuan.index', [
-            'items' => $ajuanData['administrasi-items']
+            'items' => $ajuanData['administrasi_items']
         ]);
     }
 
@@ -95,6 +96,47 @@ class AjuanController extends Controller
     {
         $ajuanData = session('ajuan_data');
         $validationRules = [];
+        foreach ($ajuanData['administrasi_items'] as $key => $item) {
+            $validationRules[$key] = ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'];
+        }
+
+        $request->validate($validationRules);
+
+        $uploadedFiles = [];
+        foreach (array_keys($ajuanData['administrasi_items']) as $key) {
+            if ($request->hasFile($key)) {
+                $uploadedFiles[$key] = $request->file($key)->getClientOriginalName();
+            }
+        }
+
+        session()->put('ajuan_data.uploaded_files', $uploadedFiles);
+
+        return redirect()->route('ajuan.verifikasi');
+    }
+
+    public function showVerifikasi()
+    {
+        $ajuanData = session('ajuan_data');
+        if (!$ajuanData) {
+            return redirect()->route('dashboard');
+        }
+
+        return view('components.ajuan.verifikasi.index', ['data' => $ajuanData]);
+    }
+
+    public function storeFinal(Request $request)
+    {
+        $ajuanData = session('ajuan_data');
+        // Ajuan::create([
+        //     'user_id' => auth()->id(),
+        //     'bidang' => $ajuanData['bidang'],
+        //     'detail_permohonan' => json_encode($ajuanData['selected_formulir_items']),
+        //     'dokumen_administrasi' => json_encode($ajuanData['uploaded_files']),
+        // ]);
+
+        Session::forget('ajuan_data');
+
+        return redirect()->route('ajuan.index')->with('success', 'Ajuan berhasil dikirim!');
     }
 
     public function getBidangData($bidang)
