@@ -35,7 +35,7 @@
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                            <a href="#"
+                            <a href="/ajuan/create/perumahanrakyat"
                                 class="block p-6 text-center text-white font-semibold bg-blue-500 rounded-lg shadow-md transform hover:scale-105 transition-transform duration-200">
                                 Bidang Perumahan Rakyat
                             </a>
@@ -45,7 +45,7 @@
                                 Bidang Sosial
                             </a>
 
-                            <a href="#"
+                            <a href="/ajuan/create/pendidikan"
                                 class="block p-6 text-center text-white font-semibold bg-orange-500 rounded-lg shadow-md transform hover:scale-105 transition-transform duration-200">
                                 Bidang Pendidikan
                             </a>
@@ -55,12 +55,12 @@
                                 Bidang Pekerjaan Umum
                             </a>
 
-                            <a href="#" class="block p-6 text-center text-white font-semibold"
+                            <a href="/ajuan/create/kesehatan" class="block p-6 text-center text-white font-semibold"
                                 style="background-color: #E655A0;">
                                 Bidang Kesehatan
                             </a>
 
-                            <a href="#"
+                            <a href="/ajuan/create/trantibumlinmas"
                                 class="block p-6 text-center text-white font-semibold bg-yellow-500 rounded-lg shadow-md transform hover:scale-105 transition-transform duration-200">
                                 Bidang Trantibum Linmas
                             </a>

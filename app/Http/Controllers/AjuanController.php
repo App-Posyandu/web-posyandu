@@ -144,13 +144,9 @@ class AjuanController extends Controller
         $allData = [
             'pekerjaanUmum' => [
                 'formulir_items' => [
-                    'Pendidikan anak usia dini (0 s.d 6 Tahun)',
-                    'Identifikasi ketersediaan dan pengelolaan perpustakaan desa',
-                    'Penguatan pemanfaatan literasi',
-                    'Identifikasi penyediaan alat peraga edukasi (APE)',
-                    'Pembiayaan sekolah',
-                    'Perlengkapan sekolah',
-                    'Pemberian makanan tambahan bagi anak usia sekolah',
+                    'Bantuan pembangunan infrastruktur desa',
+                    'Bantuan perbaikan jalan desa',
+                    'Bantuan penyediaan air bersih',
                 ],
                 'administrasi_items' => [
                     'ktp' => 'Kartu Tanda Penduduk (KTP)',
@@ -170,6 +166,58 @@ class AjuanController extends Controller
                     'kk' => 'Kartu Keluarga (KK)',
                     'surat_tidak_mampu' => 'Surat pernyataan tidak mampu',
                     'surat_permohonan' => 'Surat permohonan Kepala Dusun/RT',
+                ],
+            ],
+            'trantibumlinmas' => [
+                'formulir_items' => [
+                    'Bantuan keamanan lingkungan',
+                    'Bantuan penanganan bencana',
+                    'Bantuan pengelolaan lalu lintas',
+                ],
+                'administrasi_items' => [
+                    'ktp' => 'Kartu Tanda Penduduk (KTP)',
+                    'kk' => 'Kartu Keluarga (KK)',
+                    'surat_permohonan' => 'Surat permohonan Kepala Dusun/RT',
+                    'surat_keterangan' => 'Surat keterangan penghasilan dari Desa',
+                ],
+            ],
+            'perumahanrakyat' => [
+                'formulir_items' => [
+                    'Bantuan stimulan perumahan swadaya (BSPS)',
+                    'Bantuan rumah tidak layak huni (RTLH)',
+                    'Bantuan renovasi rumah',
+                ],
+                'administrasi_items' => [
+                    'ktp' => 'Kartu Tanda Penduduk (KTP)',
+                    'kk' => 'Kartu Keluarga (KK)',
+                    'surat_permohonan' => 'Surat permohonan Kepala Dusun/RT',
+                    'surat_keterangan' => 'Surat keterangan penghasilan dari Desa',
+                ],
+            ],
+            'pendidikan' => [
+                'formulir_items' => [
+                    'Bantuan pendidikan untuk anak usia sekolah',
+                    'Beasiswa pendidikan',
+                    'Bantuan perlengkapan sekolah',
+                ],
+                'administrasi_items' => [
+                    'ktp' => 'Kartu Tanda Penduduk (KTP)',
+                    'kk' => 'Kartu Keluarga (KK)',
+                    'surat_permohonan' => 'Surat permohonan Kepala Dusun/RT',
+                    'surat_keterangan' => 'Surat keterangan penghasilan dari Desa',
+                ],
+            ],
+            'kesehatan' => [
+                'formulir_items' => [
+                    'Bantuan iuran BPJS Kesehatan',
+                    'Bantuan obat-obatan',
+                    'Bantuan perawatan kesehatan',
+                ],
+                'administrasi_items' => [
+                    'ktp' => 'Kartu Tanda Penduduk (KTP)',
+                    'kk' => 'Kartu Keluarga (KK)',
+                    'surat_permohonan' => 'Surat permohonan Kepala Dusun/RT',
+                    'surat_keterangan' => 'Surat keterangan penghasilan dari Desa',
                 ],
             ],
         ];
