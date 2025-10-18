@@ -157,5 +157,5 @@
                 {{ __('Daftar') }}
             </button>
         </div>
-    </form>
+    </form> 
 </x-guest-layout>

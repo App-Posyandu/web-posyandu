@@ -20,9 +20,9 @@ class AjuanController extends Controller
     }
     public function create($bidang_slug)
     {
-        if (Auth::user()->status != 'verified') {
-            return redirect()->back()->with('error', 'Akun Anda belum terverifikasi oleh kader. Mohon tunggu.');
-        }
+        // if (Auth::user()->status != 'verified') {
+        //     return redirect()->back()->with('error', 'Akun Anda belum terverifikasi oleh kader. Mohon tunggu.');
+        // }
         
         Session::forget('ajuan_data');
 
@@ -180,8 +180,7 @@ class AjuanController extends Controller
             'pendidikan' => [
                 'formulir_items' => [
                     'Pendidikan anak usia dini (0 s.d 6 Tahun)',
-                    'Identifikasi ketersediaan dan pengelolaan perpustakaan desa',
-                    'Penguatan pemanfaatan literasi',
+                    'Identifikasi ketersediaan dan pengelolaan perpustakaan desa penguatan pemanfaatan literasi',
                     'Identifikasi penyediaan alat peraga edukasi (APE)',
                     'Pembiayaan sekolah',
                     'Perlengkapan sekolah',
@@ -190,7 +189,7 @@ class AjuanController extends Controller
                 'administrasi_items' => [
                     'ktp' => 'Kartu Tanda Penduduk (KTP)',
                     'kk' => 'Kartu Keluarga (KK)',
-                    'surat_keterangan_sekolah' => 'Surat Keterangan Sekolah',
+                    'surat_pernyataan_tidak_mampu' => 'Surat pernyataan tidak mampu dari RT setempat (untuk pilihan no. 4 dan 5)',
                 ],
             ],
             'kesehatan' => [
@@ -202,11 +201,11 @@ class AjuanController extends Controller
                     'Deteksi dini risiko masalah kesehatan pada sasaran',
                     'Rujukan ke unit kesehatan desa/kelurahan atau pusat kesehatan masyarakat',
                     'Pemantauan perilaku kepatuhan keluarga untuk mendapatkan pelayanan kesehatan',
+                    'Pemantauan perilaku kepatuhan keluarga untuk melaksanakan pengobatan',
                     'Akses untuk mendapatkan imunisasi, vitamin A, tablet tambah darah',
-                    'Komunikasi, informasi dan edukasi perilaku hidup bersih dan sehat',
                     'Lainnya...',
                 ],
-                'administrasi_items' => ['ktp' => 'KTP', 'kk' => 'KK', 'kartu_bpjs' => 'Kartu BPJS (jika ada)'],
+                'administrasi_items' => ['ktp' => 'KTP', 'kk' => 'KK'],
             ],
             'pekerjaan-umum' => [
                 'formulir_items' => [
@@ -220,13 +219,13 @@ class AjuanController extends Controller
                     'Identifikasi kebutuhan pembangunan jalan desa',
                     'Lainnya...',
                 ],
-                'administrasi_items' => ['ktp' => 'KTP', 'kk' => 'KK', 'surat_permohonan_dusun' => 'Surat Permohonan RT/RW'],
+                'administrasi_items' => ['ktp' => 'KTP', 'kk' => 'KK', 'surat_permohonan_dusun' => 'Surat Permohonan RT/RW', 'lokasi_titik_pembangunan' => 'Lokasi titik pembangunan sarana prasarana'],
             ],
             'perumahan-rakyat' => [
                 'formulir_items' => [
                     'Penyediaan dan rehabilitasi rumah layak huni',
+                    'Komunikasi, informasi dan edukasi perilaku hidup bersih dan sehat',
                     'Pengelolaan pekarangan rumah untuk budidaya tanaman',
-                    'Pangan lokal',
                     'Pembuatan biopori',
                     'Pembuatan hidroponik di pekarangan rumah',
                     'Lainnya...',
@@ -234,33 +233,31 @@ class AjuanController extends Controller
                 'administrasi_items' => [
                     'ktp' => 'Kartu Tanda Penduduk (KTP)',
                     'kk' => 'Kartu Keluarga (KK)',
-                    'surat_tidak_mampu' => 'Surat Pernyataan Tidak Mampu',
-                    'lokasi_pembangunan' => 'Lokasi titik pembangunan sarana prasarana',
-                    'surat_pernyataan_calon_penerima' => 'Surat pernyataan calon penerima belum pernah menerima bantuan',
+                    'surat_pernyataan_belum_pernah_menerima_bantuan' => 'Surat pernyataan Calon Penerima belum pernah menerima bantuan rehabilitasi rumah',
                     'surat_keterangan_penghasilan' => 'Surat keterangan penghasilan dari Desa',
                     'surat_tanah' => 'Surat Tanah atau Sejenisnya',
                     'foto_kondisi_rumah' => 'Foto kondisi rumah calon penerima bantuan 3 sisi',
-                    'surat_tindak_lanjut' => 'Surat pernyataan dari Desa/Kelurahan untuk tindak lanjut',
+                    'dokumen_lainnya' => 'Lainnya...',
                 ],
             ],
             'sosial' => [
                 'formulir_items' => [
                     'Komunikasi, informasi dan edukasi dalam kesetaraan dan keadilan gender',
                     'Komunikasi, informasi dan edukasi dalam disabilitas',
+                    'Komunikasi, informasi dan edukasi dalam kesiapsiagaan bencana',
                     'Komunikasi, informasi dan edukasi dalam inklusi sosial',
-                    'Identifikasi dan pendataan fakir miskin/masyarakat',
-                    'Tidak mampu',
+                    'Identifikasi dan pendataan fakir miskin/masyarakat tidak mampu',
                     'Penyaluran bantuan sosial',
                     'Lainnya...',
                 ],
-                'administrasi_items' => ['ktp' => 'KTP', 'kk' => 'KK', 'surat_tidak_mampu' => 'Surat Keterangan Tidak Mampu'],
+                'administrasi_items' => ['ktp' => 'KTP', 'kk' => 'KK', 'surat_pernyataan_tindak_lanjut' => 'Surat pernyataan dari Desa/Kelurahan untuk tindak lanjut'],
             ],
             'trantibumlinmas' => [
                 'formulir_items' => [
                     'Penyuluhan dan rehabilitasi trauma pasca bencana',
                     'Komunikasi, informasi dan edukasi terhadap kesiapsiagaan bencana',
                     'Deteksi dini dan cegah dini gangguan trantibumlinmas',
-                    'Pembinaan dan penyuluhan pelaksanaan patrol pengmanan',
+                    'Pembinaan dan penyuluhan pelaksanaan patrol pengamanan',
                     'Pemberdayaan perlindungan masyarakat',
                     'Perbaikan poskamling',
                     'Penyediaan APAR',
