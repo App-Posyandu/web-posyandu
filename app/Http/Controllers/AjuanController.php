@@ -8,6 +8,7 @@ use App\Models\Pengajuan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Auth;
+use Dompdf\Dompdf;
 
 class AjuanController extends Controller
 {
@@ -269,5 +270,29 @@ class AjuanController extends Controller
         ];
 
         return $allData[$bidang_slug] ?? null;
+    }
+    //show detail ajuan
+    public function show($id)
+    {
+        $ajuan = Pengajuan::with(['user', 'bidang', 'histories'])->findOrFail($id);
+        return view('ajuan.detail', [
+            'ajuan' => $ajuan
+        ]);;
+    }
+    //cetak detail ajuan
+    public function cetak($id)
+    {
+        $ajuan = Pengajuan::with(['user', 'bidang', 'histories'])->findOrFail($id);
+        $dompdf = new Dompdf();
+        //preview pdf
+        $dompdf->set_option('isHtml5ParserEnabled', true);
+        $dompdf->set_option('defaultFont', 'Courier');
+        $dompdf->set_option('isRemoteEnabled', true);
+
+        $html = view('ajuan.cetak', ['ajuan' => $ajuan])->render();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+        $dompdf->stream('ajuan_' . $ajuan->id . '.pdf', ['Attachment' => false]);
     }
 }

@@ -36,6 +36,9 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['au
 Route::middleware('auth')->group(function () {
 
     Route::get('/ajuan', [AjuanController::class, 'index'])->name('ajuan.index');
+    //Rute untuk Detail Ajuan dan Cetak Ajuan
+    Route::get('/ajuan/{id}', [AjuanController::class, 'show'])->name('ajuan.show');
+    Route::get('/ajuan/cetak/{id}', [AjuanController::class, 'cetak'])->name('ajuan.cetak');
     // --- Rute Profil (dari Breeze) ---
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
