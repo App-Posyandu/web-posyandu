@@ -31,12 +31,13 @@ class User extends Authenticatable
         'role',
         'ktp',
         'kk',
-        
+
         'nik',
         'alamat',
         'tempat_lahir',
         'tanggal_lahir',
         'jenis_kelamin',
+        'status'
     ];
 
     public function pengajuans()
