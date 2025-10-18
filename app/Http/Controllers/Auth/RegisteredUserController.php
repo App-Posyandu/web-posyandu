@@ -33,7 +33,12 @@ class RegisteredUserController extends Controller
         // 1. Validasi semua input dari form
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'nik' => ['required', 'string', 'digits:16', 'unique:' . User::class],
+            'nik' => [
+            'required',
+            'digits:16',
+            'regex:/^[0-9]+$/',
+            'unique:users,nik',
+            ],
             'alamat' => ['required', 'string'],
             'tempat_lahir' => ['required', 'string', 'max:255'],
             'tanggal_lahir' => ['required', 'date'],
@@ -89,4 +94,5 @@ class RegisteredUserController extends Controller
 
         return redirect(route('dashboard', absolute: false));
     }
+    
 }
