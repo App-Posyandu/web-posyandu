@@ -16,19 +16,20 @@ class Pengajuan extends Model
     protected $fillable = [
         'user_id',
         'bidang_id',
+        'deskripsi_pengajuan',
         'status',
         'detail_permohonan',
         'dokumen_administrasi'
     ];
 
     protected $casts = [
-        'detail_permohonan' => 'array',
-        'dokumen_administrasi' => 'array',
+        'formulir_items' => 'array',
+        'administrasi_items' => 'array',
     ];
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'user_id', 'uuid');
+        return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
     public function bidang()

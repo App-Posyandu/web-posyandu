@@ -15,9 +15,10 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             $table->foreignId('bidang_id')->constrained('bidang_pengajuans')->cascadeOnDelete();
-            $table->string('status')->default('Diproses');
-            $table->json('detail_permohonan')->nullable(); // Untuk checklist
-            $table->json('dokumen_administrasi')->nullable(); // Untuk file
+            $table->text('deskripsi_pengajuan');
+            $table->enum('status', ['Diproses', 'Disetujui', 'Ditolak'])->default('Diproses');
+            $table->json('formulir_items')->nullable();
+            $table->json('administrasi_items')->nullable();
             $table->timestamps();
         });
     }

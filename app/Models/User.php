@@ -20,6 +20,7 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $primaryKey = 'id';
+    protected $foreignKey = 'posyandu_id';
     public $incrementing = false;
     protected $keyType = 'string';
 
@@ -30,7 +31,7 @@ class User extends Authenticatable
         'role',
         'ktp',
         'kk',
-        // Tambahkan semua kolom baru di sini
+        
         'nik',
         'alamat',
         'tempat_lahir',

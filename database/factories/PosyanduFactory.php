@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Models\BidangPengajuan;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

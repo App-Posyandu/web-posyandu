@@ -4,7 +4,7 @@
         <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">Verifikasi Administrasi Ajuan</h2>
 
         <div class="space-y-4">
-            @foreach ($data['administrasi_items'] as $key => $label)
+            @foreach ($data['dokumen_items'] as $key => $label)
                 <div class="flex items-center justify-between p-3 bg-gray-50 rounded-md">
                     <span class="text-gray-700">{{ $label }}</span>
                     @if (isset($data['uploaded_files'][$key]))
