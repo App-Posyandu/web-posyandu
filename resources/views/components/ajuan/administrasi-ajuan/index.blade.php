@@ -3,9 +3,9 @@
         @csrf
         <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">Administrasi Ajuan</h2>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6 ">
             @foreach ($items as $key => $label)
-                <div x-data="{ fileName: '' }">
+                <div x-data="{ fileName: '' }" class="h-full flex flex-col justify-end">
                     <label for="{{ $key }}" class="block font-medium text-sm text-gray-700">{{ $label }}</label>
                     <label for="{{ $key }}" class="mt-1 flex justify-between items-center px-3 py-2 bg-white text-gray-500 rounded-md shadow-sm border border-gray-300 cursor-pointer hover:text-gray-700">
                         <span x-text="fileName || 'Pilih File'" class="truncate"></span>
