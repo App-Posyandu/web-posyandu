@@ -19,8 +19,10 @@ class User extends Authenticatable
      *
      * @var list<string>
      */
-
-    protected $primaryKey = 'uuid';
+    protected $primaryKey = 'id';
+    protected $foreignKey = 'posyandu_id';
+    public $incrementing = false;
+    protected $keyType = 'string';
 
     protected $fillable = [
         'name',
@@ -29,16 +31,23 @@ class User extends Authenticatable
         'role',
         'ktp',
         'kk',
-        // Tambahkan semua kolom baru di sini
+        
         'nik',
         'alamat',
         'tempat_lahir',
         'tanggal_lahir',
         'jenis_kelamin',
-        'nama_posyandu',
-        'desa',
-        'kecamatan',
     ];
+
+    public function pengajuans()
+    {
+        return $this->hasMany(Pengajuan::class);
+    }
+
+    public function posyandu()
+    {
+        return $this->belongsTo(Posyandu::class);
+    }
 
     /**
      * The attributes that should be hidden for serialization.

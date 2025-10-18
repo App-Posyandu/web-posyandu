@@ -2,85 +2,83 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BidangPengajuan;
+use App\Models\History;
+use App\Models\Pengajuan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Auth;
 
 class AjuanController extends Controller
 {
     public function index()
     {
-        // $semuaAjuan = Ajuan::latest()->paginate(5);
-        $semuaAjuan = collect([
-            (object)[
-                'id' => 1,
-                'bidang' => 'Bidang Perumahan Rakyat',
-                'deskripsi' => 'Lorem ipsum',
-                'tindak_lanjut' => 'Sudah Verifikasi',
-                'status' => 'Disetujui'
-            ],
-            (object)[
-                'id' => 2,
-                'bidang' => 'Bidang Pendidikan',
-                'deskripsi' => 'Lorem ipsum',
-                'tindak_lanjut' => 'Inactive',
-                'status' => 'Ditolak'
-            ],
-            (object)[
-                'id' => 3,
-                'bidang' => 'Bidang Kesehatan',
-                'deskripsi' => 'Lorem ipsum',
-                'tindak_lanjut' => 'Inactive',
-                'status' => 'Ditolak'
-            ],
-            (object)[
-                'id' => 4,
-                'bidang' => 'Bidang Sosial',
-                'deskripsi' => 'Lorem ipsum',
-                'tindak_lanjut' => 'Inactive',
-                'status' => 'Ditolak'
-            ],
-            (object)[
-                'id' => 5,
-                'bidang' => 'Bidang Trantibumlinmas',
-                'deskripsi' => 'Lorem ipsum',
-                'tindak_lanjut' => 'Inactive',
-                'status' => 'Ditolak'
-            ],
-        ]);
-
-        // Kirim data ke view
+        $semuaAjuan = Pengajuan::with(['user', 'bidang'])->latest()->paginate(5);
         return view('ajuan.index', [
             'semuaAjuan' => $semuaAjuan
         ]);
     }
-    public function create($bidang)
+    public function create($bidang_slug)
     {
+        if (Auth::user()->status != 'verified') {
+            return redirect()->back()->with('error', 'Akun Anda belum terverifikasi oleh kader. Mohon tunggu.');
+        }
+        
         Session::forget('ajuan_data');
 
-        $data = $this->getBidangData($bidang);
-        if (!$data) {
-            abort(404, 'Bidang Layanan tidak ditemukan');
+        $allBidangs = BidangPengajuan::orderBy('nama_bidang')->get();
+        $bidang = BidangPengajuan::where('slug', $bidang_slug)->firstOrFail();
+
+        $templateData = $this->getBidangData($bidang->slug);
+        if (!$templateData) {
+            abort(404, 'Definisi formulir untuk bidang ini tidak ditemukan.');
         }
 
         session(['ajuan_data' => [
-            'bidang' => $bidang,
-            'formulir_items' => $data['formulir_items'],
-            'administrasi_items' => $data['administrasi_items']
+            'bidang_id' => $bidang->id,
+            'bidang_slug' => $bidang->slug,
+            'bidang_nama' => $bidang->nama_bidang,
+            'administrasi_items_template' => $templateData['administrasi_items'],
         ]]);
+
 
         return view('components.ajuan.formulir.index', [
             'bidang' => $bidang,
-            'items' => $data['formulir_items']
+            'allBidangs' => $allBidangs,
+            'items' => $templateData['formulir_items'],
         ]);
     }
 
     public function storePermohonan(Request $request)
     {
-        session()->put('components.ajuan.selected_formulir.index', $request->input('permohonan_items', []));
+        // dd($request->all());
+        $permohonanItems = $request->input('permohonan_items', []);
+        $request->validate([
+            'deskripsi_pengajuan' => 'required|string|min:10',
+        ]);
+        // $lainnyaText = $request->input('lainnya_text');
+
+        // if (in_array('Lainnya...', $permohonanItems) && !empty($lainnyaText)) {
+        //     $finalChecklist = array_map(function ($item) use ($lainnyaText) {
+        //         return $item === 'Lainnya...' ? 'Lainnya: ' . $lainnyaText : $item;
+        //     }, $permohonanItems);
+        // } else {
+        //     $finalChecklist = $permohonanItems;
+        // }
+
+        session()->put('ajuan_data.selected_formulir_items', $permohonanItems);
+        session()->put('ajuan_data.deskripsi_pengajuan', $request->input('deskripsi_pengajuan'));
+
+        // 3. Simpan juga teks dari input "Lainnya..." jika ada
+        if ($request->has('lainnya_text')) {
+            session()->put('ajuan_data.lainnya_text', $request->input('lainnya_text'));
+        }
+
+        // session()->put('components.ajuan.selected_formulir.index', $finalChecklist);
         return redirect()->route('ajuan.create.administrasi');
     }
 
-    public function createAdministrasi(Request $request)
+    public function createAdministrasi()
     {
         $ajuanData = session('ajuan_data');
         if (!$ajuanData) {
@@ -88,7 +86,7 @@ class AjuanController extends Controller
         }
 
         return view('components.ajuan.administrasi-ajuan.index', [
-            'items' => $ajuanData['administrasi_items']
+            'items' => $ajuanData['administrasi_items_template']
         ]);
     }
 
@@ -96,16 +94,21 @@ class AjuanController extends Controller
     {
         $ajuanData = session('ajuan_data');
         $validationRules = [];
-        foreach ($ajuanData['administrasi_items'] as $key => $item) {
-            $validationRules[$key] = ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'];
+        foreach ($ajuanData['administrasi_items_template'] as $key => $item) {
+            if ($key === 'kartu_bpjs') {
+                $validationRules[$key] = ['file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'];
+            } else {
+                $validationRules[$key] = ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'];
+            }
         }
 
         $request->validate($validationRules);
 
         $uploadedFiles = [];
-        foreach (array_keys($ajuanData['administrasi_items']) as $key) {
+        foreach (array_keys($ajuanData['administrasi_items_template']) as $key) {
             if ($request->hasFile($key)) {
-                $uploadedFiles[$key] = $request->file($key)->getClientOriginalName();
+                $path = $request->file($key)->store('ajuan_dokumen', 'public');
+                $uploadedFiles[$key] = $path;
             }
         }
 
@@ -121,107 +124,153 @@ class AjuanController extends Controller
             return redirect()->route('dashboard');
         }
 
-        return view('components.ajuan.verifikasi.index', ['data' => $ajuanData]);
+        $verifikasiData = [
+            'bidang_nama' => $ajuanData['bidang_nama'],
+            'checklist_items' => $ajuanData['selected_formulir_items'],
+            'dokumen_items' => $ajuanData['administrasi_items_template'],
+            'uploaded_files' => $ajuanData['uploaded_files'],
+        ];
+
+        return view('components.ajuan.verifikasi.index', ['data' => $verifikasiData]);
     }
 
     public function storeFinal(Request $request)
     {
-        $ajuanData = session('ajuan_data');
-        // Ajuan::create([
-        //     'user_id' => auth()->id(),
-        //     'bidang' => $ajuanData['bidang'],
-        //     'detail_permohonan' => json_encode($ajuanData['selected_formulir_items']),
-        //     'dokumen_administrasi' => json_encode($ajuanData['uploaded_files']),
-        // ]);
+        $user = Auth::user();
+        if (!$user) {
+            return redirect()->route('login');
+        }
 
+        $ajuanData = session('ajuan_data');
+        if (!$ajuanData) {
+            return redirect()->route('dashboard')->with('error', 'Sesi ajuan telah habis.');
+        }
+
+        $finalChecklistData = $ajuanData['selected_formulir_items'];
+        if (isset($ajuanData['lainnya_text']) && in_array('Lainnya...', $finalChecklistData)) {
+            $finalChecklistData = array_map(function ($item) use ($ajuanData) {
+                return $item === 'Lainnya...' ? 'Lainnya: ' . $ajuanData['lainnya_text'] : $item;
+            }, $finalChecklistData);
+        }
+
+        $pengajuan = Pengajuan::create([
+            'user_id' => $user->id,
+            'bidang_id' => $ajuanData['bidang_id'],
+            'status' => 'Diproses',
+            'formulir_items' => $finalChecklistData,
+            'administrasi_items' => $ajuanData['uploaded_files'],
+            'deskripsi_pengajuan' => $ajuanData['deskripsi_pengajuan'] ?? 'Tidak ada deskripsi.'
+        ]);
+
+        History::create([
+            'pengajuan_id' => $pengajuan->id,
+            'status' => 'Diajukan',
+            'catatan' => 'Pengajuan baru telah dibuat oleh pengguna.',
+            'diubah_oleh' => $user->id,
+            'created_at' => now(),
+        ]);
         Session::forget('ajuan_data');
 
         return redirect()->route('ajuan.index')->with('success', 'Ajuan berhasil dikirim!');
     }
 
-    public function getBidangData($bidang)
+    private function getBidangData($bidang_slug)
     {
         $allData = [
-            'pekerjaanUmum' => [
-                'formulir_items' => [
-                    'Bantuan pembangunan infrastruktur desa',
-                    'Bantuan perbaikan jalan desa',
-                    'Bantuan penyediaan air bersih',
-                ],
-                'administrasi_items' => [
-                    'ktp' => 'Kartu Tanda Penduduk (KTP)',
-                    'kk' => 'Kartu Keluarga (KK)',
-                    'surat_permohonan' => 'Surat permohonan Kepala Dusun/RT',
-                    'surat_keterangan' => 'Surat keterangan penghasilan dari Desa',
-                ],
-            ],
-            'sosial' => [
-                'formulir_items' => [
-                    'Bantuan sosial untuk lansia',
-                    'Program keluarga harapan (PKH)',
-                    'Bantuan pangan non-tunai (BPNT)',
-                ],
-                'administrasi_items' => [
-                    'ktp' => 'Kartu Tanda Penduduk (KTP)',
-                    'kk' => 'Kartu Keluarga (KK)',
-                    'surat_tidak_mampu' => 'Surat pernyataan tidak mampu',
-                    'surat_permohonan' => 'Surat permohonan Kepala Dusun/RT',
-                ],
-            ],
-            'trantibumlinmas' => [
-                'formulir_items' => [
-                    'Bantuan keamanan lingkungan',
-                    'Bantuan penanganan bencana',
-                    'Bantuan pengelolaan lalu lintas',
-                ],
-                'administrasi_items' => [
-                    'ktp' => 'Kartu Tanda Penduduk (KTP)',
-                    'kk' => 'Kartu Keluarga (KK)',
-                    'surat_permohonan' => 'Surat permohonan Kepala Dusun/RT',
-                    'surat_keterangan' => 'Surat keterangan penghasilan dari Desa',
-                ],
-            ],
-            'perumahanrakyat' => [
-                'formulir_items' => [
-                    'Bantuan stimulan perumahan swadaya (BSPS)',
-                    'Bantuan rumah tidak layak huni (RTLH)',
-                    'Bantuan renovasi rumah',
-                ],
-                'administrasi_items' => [
-                    'ktp' => 'Kartu Tanda Penduduk (KTP)',
-                    'kk' => 'Kartu Keluarga (KK)',
-                    'surat_permohonan' => 'Surat permohonan Kepala Dusun/RT',
-                    'surat_keterangan' => 'Surat keterangan penghasilan dari Desa',
-                ],
-            ],
             'pendidikan' => [
                 'formulir_items' => [
-                    'Bantuan pendidikan untuk anak usia sekolah',
-                    'Beasiswa pendidikan',
-                    'Bantuan perlengkapan sekolah',
+                    'Pendidikan anak usia dini (0 s.d 6 Tahun)',
+                    'Identifikasi ketersediaan dan pengelolaan perpustakaan desa',
+                    'Penguatan pemanfaatan literasi',
+                    'Identifikasi penyediaan alat peraga edukasi (APE)',
+                    'Pembiayaan sekolah',
+                    'Perlengkapan sekolah',
+                    'Lainnya...',
                 ],
                 'administrasi_items' => [
                     'ktp' => 'Kartu Tanda Penduduk (KTP)',
                     'kk' => 'Kartu Keluarga (KK)',
-                    'surat_permohonan' => 'Surat permohonan Kepala Dusun/RT',
-                    'surat_keterangan' => 'Surat keterangan penghasilan dari Desa',
+                    'surat_keterangan_sekolah' => 'Surat Keterangan Sekolah',
                 ],
             ],
             'kesehatan' => [
                 'formulir_items' => [
-                    'Bantuan iuran BPJS Kesehatan',
-                    'Bantuan obat-obatan',
-                    'Bantuan perawatan kesehatan',
+                    'Pemberian makanan tambahan bagi anak usia sekolah',
+                    'Pemberian alat/sarpras kesehatan',
+                    'Kunjungan Posyandu pada sasaran',
+                    'Penyuluhan kesehatan',
+                    'Deteksi dini risiko masalah kesehatan pada sasaran',
+                    'Rujukan ke unit kesehatan desa/kelurahan atau pusat kesehatan masyarakat',
+                    'Pemantauan perilaku kepatuhan keluarga untuk mendapatkan pelayanan kesehatan',
+                    'Akses untuk mendapatkan imunisasi, vitamin A, tablet tambah darah',
+                    'Komunikasi, informasi dan edukasi perilaku hidup bersih dan sehat',
+                    'Lainnya...',
+                ],
+                'administrasi_items' => ['ktp' => 'KTP', 'kk' => 'KK', 'kartu_bpjs' => 'Kartu BPJS (jika ada)'],
+            ],
+            'pekerjaan-umum' => [
+                'formulir_items' => [
+                    'Pemenuhan kebutuhan pokok air bersih',
+                    'Pengelolaan limbah domestik/rumah tangga',
+                    'Penyediaan WC',
+                    'Pengelolaan sampah',
+                    'Identifikasi/pemeliharaan embung air baku',
+                    'Pemeliharaan jaringan air bersih',
+                    'Identifikasi/Rehabilitasi sumur air tanah untuk air baku',
+                    'Identifikasi kebutuhan pembangunan jalan desa',
+                    'Lainnya...',
+                ],
+                'administrasi_items' => ['ktp' => 'KTP', 'kk' => 'KK', 'surat_permohonan_dusun' => 'Surat Permohonan RT/RW'],
+            ],
+            'perumahan-rakyat' => [
+                'formulir_items' => [
+                    'Penyediaan dan rehabilitasi rumah layak huni',
+                    'Pengelolaan pekarangan rumah untuk budidaya tanaman',
+                    'Pangan lokal',
+                    'Pembuatan biopori',
+                    'Pembuatan hidroponik di pekarangan rumah',
+                    'Lainnya...',
                 ],
                 'administrasi_items' => [
                     'ktp' => 'Kartu Tanda Penduduk (KTP)',
                     'kk' => 'Kartu Keluarga (KK)',
-                    'surat_permohonan' => 'Surat permohonan Kepala Dusun/RT',
-                    'surat_keterangan' => 'Surat keterangan penghasilan dari Desa',
+                    'surat_tidak_mampu' => 'Surat Pernyataan Tidak Mampu',
+                    'lokasi_pembangunan' => 'Lokasi titik pembangunan sarana prasarana',
+                    'surat_pernyataan_calon_penerima' => 'Surat pernyataan calon penerima belum pernah menerima bantuan',
+                    'surat_keterangan_penghasilan' => 'Surat keterangan penghasilan dari Desa',
+                    'surat_tanah' => 'Surat Tanah atau Sejenisnya',
+                    'foto_kondisi_rumah' => 'Foto kondisi rumah calon penerima bantuan 3 sisi',
+                    'surat_tindak_lanjut' => 'Surat pernyataan dari Desa/Kelurahan untuk tindak lanjut',
                 ],
+            ],
+            'sosial' => [
+                'formulir_items' => [
+                    'Komunikasi, informasi dan edukasi dalam kesetaraan dan keadilan gender',
+                    'Komunikasi, informasi dan edukasi dalam disabilitas',
+                    'Komunikasi, informasi dan edukasi dalam inklusi sosial',
+                    'Identifikasi dan pendataan fakir miskin/masyarakat',
+                    'Tidak mampu',
+                    'Penyaluran bantuan sosial',
+                    'Lainnya...',
+                ],
+                'administrasi_items' => ['ktp' => 'KTP', 'kk' => 'KK', 'surat_tidak_mampu' => 'Surat Keterangan Tidak Mampu'],
+            ],
+            'trantibumlinmas' => [
+                'formulir_items' => [
+                    'Penyuluhan dan rehabilitasi trauma pasca bencana',
+                    'Komunikasi, informasi dan edukasi terhadap kesiapsiagaan bencana',
+                    'Deteksi dini dan cegah dini gangguan trantibumlinmas',
+                    'Pembinaan dan penyuluhan pelaksanaan patrol pengmanan',
+                    'Pemberdayaan perlindungan masyarakat',
+                    'Perbaikan poskamling',
+                    'Penyediaan APAR',
+                    'Penyediaan alat deteksi bencana',
+                    'Lainnya...',
+                ],
+                'administrasi_items' => ['ktp' => 'KTP', 'kk' => 'KK'],
             ],
         ];
 
-        return $allData[$bidang] ?? null;
+        return $allData[$bidang_slug] ?? null;
     }
 }

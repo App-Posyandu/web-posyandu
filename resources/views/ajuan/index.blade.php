@@ -43,6 +43,9 @@
                                             No</th>
                                         <th
                                             class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Nama Pengaju</th>
+                                        <th
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Bidang</th>
                                         <th
                                             class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -63,36 +66,49 @@
                                         <tr>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 {{ $loop->iteration }}</td>
+                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                {{ $ajuan->user?->name ?? 'Pengguna Dihapus' }}
+                                            </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                {{ $ajuan->bidang }}</td>
+                                                {{ $ajuan->bidang->nama_bidang }}</td>
+                                            <td class="px-6 py-4 text-sm text-gray-500">
+                                                {{ Str::limit($ajuan->deskripsi_pengajuan ?? 'Tidak ada deskripsi', 50) }}
+                                            </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {{ $ajuan->deskripsi }}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                @if ($ajuan->tindak_lanjut == 'Sudah Verifikasi')
+                                                @if ($ajuan->status == 'Disetujui')
                                                     <span
                                                         class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Sudah
                                                         Verifikasi</span>
-                                                @else
+                                                @elseif($ajuan->status == 'Ditolak')
                                                     <span
                                                         class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Inactive</span>
+                                                @else
+                                                    <span
+                                                        class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-yellow-700">Diproses</span>
                                                 @endif
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm">
                                                 @if ($ajuan->status == 'Disetujui')
                                                     <span
-                                                        class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Disetujui</span>
+                                                        class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Sudah
+                                                        Verifikasi</span>
+                                                @elseif($ajuan->status == 'Ditolak')
+                                                    <span
+                                                        class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Inactive</span>
                                                 @else
                                                     <span
-                                                        class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Ditolak</span>
+                                                        class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-yellow-700">Diproses</span>
                                                 @endif
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium flex space-x-2">
                                                 <a href="#"
                                                     class="flex items-center px-3 py-1 bg-blue-500 text-white rounded-md text-xs hover:bg-blue-600"><i
                                                         class="bi bi-eye-fill mr-1"></i> Detail</a>
-                                                <a href="#"
-                                                    class="flex items-center px-3 py-1 bg-yellow-500 text-white rounded-md text-xs hover:bg-yellow-600"><i
-                                                        class="bi bi-pencil-fill mr-1"></i> Ubah</a>
+                                                @if (Auth::user()->role == 'kader' || Auth::user()->role == 'kabid')
+                                                    <a href="#"
+                                                        class="flex items-center px-3 py-1 bg-yellow-500 text-white rounded-md text-xs hover:bg-yellow-600"><i
+                                                            class="bi bi-pencil-fill mr-1"></i> Ubah</a>
+                                                @endif
                                                 <a href="#"
                                                     class="flex items-center px-3 py-1 bg-green-500 text-white rounded-md text-xs hover:bg-green-600"><i
                                                         class="bi bi-printer-fill mr-1"></i> Cetak</a>
@@ -109,23 +125,7 @@
                         </div>
 
                         <div class="mt-4 flex justify-between items-center text-sm text-gray-600">
-                            <div>Showing 5 data out of 100</div>
-                            <div class="flex items-center space-x-4">
-                                <span>Show</span>
-                                <select
-                                    class="border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                                    <option>5</option>
-                                    <option>10</option>
-                                    <option>25</option>
-                                </select>
-                                <span>data per page</span>
-                                <div class="flex space-x-1">
-                                    <button class="p-2 border rounded-md hover:bg-gray-100"><i
-                                            class="bi bi-chevron-left"></i></button>
-                                    <button class="p-2 border rounded-md hover:bg-gray-100"><i
-                                            class="bi bi-chevron-right"></i></button>
-                                </div>
-                            </div>
+                            {{ $semuaAjuan->links() }}
                         </div>
 
                     </div>

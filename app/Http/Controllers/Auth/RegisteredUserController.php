@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Posyandu;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -72,14 +73,17 @@ class RegisteredUserController extends Controller
             'tempat_lahir' => $request->tempat_lahir,
             'tanggal_lahir' => $request->tanggal_lahir,
             'jenis_kelamin' => $request->jenis_kelamin,
-            'nama_posyandu' => $request->nama_posyandu,
-            'desa' => $request->desa,
-            'kecamatan' => $request->kecamatan,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => $request->role,
             'ktp' => $ktpBase64,
             'kk' => $kkBase64,
+        ]);
+
+        Posyandu::create([
+            'nama_posyandu' => $request->nama_posyandu,
+            'desa' => $request->desa,
+            'kecamatan' => $request->kecamatan,
         ]);
 
         // 5. Kirim event, login user, dan redirect ke dashboard (bawaan Breeze)
