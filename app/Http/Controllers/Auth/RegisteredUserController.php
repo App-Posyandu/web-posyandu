@@ -34,7 +34,7 @@ class RegisteredUserController extends Controller
         // 1. Validasi semua input dari form
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'nik' => ['required', 'string', 'digits:16', 'unique:' . User::class],
+            'nik' => ['required', 'string', 'digits:16', 'unique:users'],
             'alamat' => ['required', 'string'],
             'tempat_lahir' => ['required', 'string', 'max:255'],
             'tanggal_lahir' => ['required', 'date'],
@@ -42,11 +42,12 @@ class RegisteredUserController extends Controller
             'nama_posyandu' => ['required', 'string', 'max:255'],
             'desa' => ['required', 'string', 'max:255'],
             'kecamatan' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:' . User::class],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'role' => ['required', 'in:masyarakat,kader'],
+            'role' => ['required', 'in:masyarakat,kader,ketua-kader,kabid'],
             'ktp' => ['required', 'image', 'mimes:jpeg,png,jpg', 'max:2048'], // Maksimal 2MB
             'kk' => ['required', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],  // Maksimal 2MB
+            'no_telepon' => ['required', 'string', 'max:20', 'unique:users']
         ]);
 
         // 2. Proses file upload KTP menjadi Base64
@@ -75,6 +76,7 @@ class RegisteredUserController extends Controller
             'jenis_kelamin' => $request->jenis_kelamin,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'no_telepon' => $request->no_telepon,
             'role' => $request->role,
             'ktp' => $ktpBase64,
             'kk' => $kkBase64,

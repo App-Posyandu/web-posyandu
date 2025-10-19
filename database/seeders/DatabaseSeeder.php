@@ -18,7 +18,7 @@ class DatabaseSeeder extends Seeder
             PosyanduSeeder::class,
             BidangSeeder::class,
             UserSeeder::class,
-            PengajuanSeeder::class,
+            // PengajuanSeeder::class,
         ]);
     }
 }

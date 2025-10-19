@@ -34,10 +34,12 @@ class User extends Authenticatable
 
         'nik',
         'alamat',
+        'no_telepon',
         'tempat_lahir',
         'tanggal_lahir',
         'jenis_kelamin',
-        'status'
+        'verified_at',
+        'verified_by',
     ];
 
     public function pengajuans()
@@ -47,7 +49,7 @@ class User extends Authenticatable
 
     public function posyandu()
     {
-        return $this->belongsTo(Posyandu::class);
+        return $this->belongsTo(Posyandu::class, 'posyandu_id', 'id');
     }
 
     /**

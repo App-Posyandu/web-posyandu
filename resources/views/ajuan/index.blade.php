@@ -22,7 +22,20 @@
             <main class="flex-grow flex items-center justify-center py-12">
                 <div class="w-full max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-8">
-
+                        @if (session('success'))
+                            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg mb-6"
+                                role="alert">
+                                <div class="flex">
+                                    <div class="py-1">
+                                        <i class="bi bi-check-circle-fill mr-3"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold">Berhasil</p>
+                                        <p class="text-sm">{{ session('success') }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
                         <div class="flex justify-between items-center mb-6">
                             <h2 class="text-2xl font-bold text-gray-800">List Pengajuan</h2>
                             <div class="relative">
@@ -67,7 +80,11 @@
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 {{ $loop->iteration }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                {{ $ajuan->user?->name ?? 'Pengguna Dihapus' }}
+                                                <div class="font-medium text-gray-900">
+                                                    {{ $ajuan->user?->name ?? 'Pengguna Dihapus' }}</div>
+                                                <div class="text-sm text-gray-500">
+                                                    {{ $ajuan->user?->posyandu?->nama_posyandu ?? 'Belum Terdaftar' }}
+                                                </div>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                                 {{ $ajuan->bidang->nama_bidang }}</td>
@@ -94,18 +111,20 @@
                                                         Verifikasi</span>
                                                 @elseif($ajuan->status == 'Ditolak')
                                                     <span
-                                                        class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Inactive</span>
+                                                        class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Ditolak</span>
                                                 @else
                                                     <span
                                                         class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-700">Diproses</span>
                                                 @endif
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium flex space-x-2">
-                                                <a href="/ajuan/{{ $ajuan->id }}"
+                                                <a href="{{ route('ajuan.show', $ajuan) }}"
                                                     class="flex items-center px-3 py-1 bg-blue-500 text-white rounded-md text-xs hover:bg-blue-600"><i
                                                         class="bi bi-eye-fill mr-1"></i> Detail</a>
-                                                @if (Auth::user()->role == 'kader' || Auth::user()->role == 'kabid')
-                                                    <a href="#"
+                                                {{-- @can('view', $ajuan)
+                                                @endcan --}}
+                                                @if ($ajuan->status === 'Ditolak')
+                                                    <a href="{{ route('ajuan.edit', $ajuan) }}"
                                                         class="flex items-center px-3 py-1 bg-yellow-500 text-white rounded-md text-xs hover:bg-yellow-600"><i
                                                             class="bi bi-pencil-fill mr-1"></i> Ubah</a>
                                                 @endif

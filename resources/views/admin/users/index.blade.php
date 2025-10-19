@@ -44,23 +44,45 @@
 
                         <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                             <h2 class="text-2xl font-bold text-gray-800">List Pengguna</h2>
-                            <form action="{{ route('admin.users.index') }}" method="GET" class="flex items-center gap-2">
-                                <select name="role" onchange="this.form.submit()"
-                                    class="border-gray-300 rounded-md shadow-sm">
-                                    <option value="">Semua Role</option>
-                                    <option value="masyarakat" @selected(request('role') == 'masyarakat')>Masyarakat</option>
-                                    <option value="kader" @selected(request('role') == 'kader')>Kader</option>
-                                    <option value="kabid" @selected(request('role') == 'kabid')>Kabid</option>
-                                </select>
-                                <div class="relative">
-                                    <input type="text" name="search" placeholder="Cari nama, email, NIK..."
-                                        value="{{ request('search') }}"
-                                        class="w-full md:w-64 pl-4 pr-10 py-2 border border-gray-300 rounded-md">
-                                    <button type="submit" class="absolute inset-y-0 right-0 flex items-center pr-3">
-                                        <i class="bi bi-search text-gray-400"></i>
-                                    </button>
-                                </div>
-                            </form>
+                            <div class="flex items-center gap-10">
+                                <a href="{{ route('admin.users.create') }}"
+                                    class="px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600">
+                                    <i class="bi bi-plus-circle-fill mr-2"></i>Tambah User
+                                </a>
+                                <form action="{{ route('admin.users.index') }}" method="GET"
+                                    class="flex items-center gap-2">
+                                    <select name="role" onchange="this.form.submit()"
+                                        class="border-gray-300 rounded-md shadow-sm">
+                                        @if (Auth::user()->role === 'admin')
+                                            <option value="">Semua Role</option>
+                                            <option value="masyarakat" @selected(request('role') == 'masyarakat')>Masyarakat</option>
+                                            <option value="kader" @selected(request('role') == 'kader')>Kader</option>
+                                            <option value="ketua-kader" @selected(request('role') == 'ketua-kader')>Ketua Kader</option>
+                                            <option value="kabid" @selected(request('role') == 'kabid')>Kabid</option>
+                                        @elseif (Auth::user()->role === 'kader')
+                                            <option value="">Semua Role</option>
+                                            <option value="masyarakat" @selected(request('role') == 'masyarakat')>Masyarakat</option>
+                                        @elseif (Auth::user()->role === 'ketua-kader')
+                                            <option value="">Semua Role</option>
+                                            <option value="masyarakat" @selected(request('role') == 'masyarakat')>Masyarakat</option>
+                                            <option value="kader" @selected(request('role') == 'kader')>Kader</option>
+                                        @elseif (Auth::user()->role === 'kabid')
+                                            <option value="">Semua Role</option>
+                                            <option value="masyarakat" @selected(request('role') == 'masyarakat')>Masyarakat</option>
+                                            <option value="kader" @selected(request('role') == 'kader')>Kader</option>
+                                            <option value="ketua-kader" @selected(request('rol  e') == 'ketua-kader')>Ketua Kader</option>
+                                        @endif
+                                    </select>
+                                    <div class="relative">
+                                        <input type="text" name="search" placeholder="Cari nama, email, NIK..."
+                                            value="{{ request('search') }}"
+                                            class="w-full md:w-64 pl-4 pr-10 py-2 border border-gray-300 rounded-md">
+                                        <button type="submit" class="absolute inset-y-0 right-0 flex items-center pr-3">
+                                            <i class="bi bi-search text-gray-400"></i>
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
 
                         <div class="overflow-x-auto">
@@ -95,8 +117,10 @@
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 {{ ucfirst($user->role) }}</td>
+
                                             <td class="px-6 py-4 whitespace-nowrap">
-                                                @if ($user->status == 'verified')
+                                                {{-- Cek apakah verified_at BUKAN null --}}
+                                                @if ($user->verified_at)
                                                     <span
                                                         class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Terverifikasi</span>
                                                 @else
@@ -105,18 +129,46 @@
                                                         Diverifikasi</span>
                                                 @endif
                                             </td>
+
                                             <td
                                                 class="px-6 py-4 whitespace-nowrap text-sm font-medium flex flex-col items-start space-y-2">
                                                 <a href="{{ route('admin.users.show', $user) }}"
                                                     class="flex items-center justify-center w-24 px-3 py-1 bg-blue-500 text-white rounded-md text-xs hover:bg-blue-600">Detail</a>
-                                                @if ($user->status != 'verified')
-                                                    <form action="{{ route('admin.users.verify', $user) }}" method="POST">
-                                                        @csrf
-                                                        @method('PATCH')
-                                                        <button type="submit"
-                                                            class="flex items-center justify-center w-24 px-3 py-1 bg-green-500 text-white rounded-md text-xs hover:bg-green-600">Verifikasi</button>
-                                                    </form>
+
+                                                @if (Auth::user()->role === 'admin')
+                                                    <a href="{{ route('admin.users.edit', $user) }}"
+                                                        class="flex items-center justify-center w-24 px-3 py-1 bg-yellow-500 text-white rounded-md text-xs hover:bg-yellow-600">Ubah</a>
                                                 @endif
+
+                                                {{-- Cek apakah verified_at ADALAH null --}}
+                                                @if (is_null($user->verified_at))
+                                                    @php
+                                                        $currentUser = Auth::user();
+                                                        $canVerify = false;
+                                                        if (
+                                                            ($currentUser->role === 'kader' &&
+                                                                $user->role === 'masyarakat') ||
+                                                            ($currentUser->role === 'ketua-kader' &&
+                                                                $user->role === 'kader') ||
+                                                            ($currentUser->role === 'kabid' &&
+                                                                $user->role === 'ketua-kader') ||
+                                                            $currentUser->role === 'admin'
+                                                        ) {
+                                                            $canVerify = true;
+                                                        }
+                                                    @endphp
+
+                                                    @if ($canVerify)
+                                                        <form action="{{ route('admin.users.verify', $user) }}"
+                                                            method="POST">
+                                                            @csrf
+                                                            @method('PATCH')
+                                                            <button type="submit"
+                                                                class="flex items-center justify-center w-24 px-3 py-1 bg-green-500 text-white rounded-md text-xs hover:bg-green-600">Verifikasi</button>
+                                                        </form>
+                                                    @endif
+                                                @endif
+
                                             </td>
                                         </tr>
                                     @empty

@@ -2,12 +2,16 @@
 
 namespace App\Providers;
 
+use App\Models\Pengajuan;
+use App\Policies\AjuanPolicy;
 use Illuminate\Pagination\Paginator;
-use Illuminate\Routing\Route;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
+    protected $policies = [
+        Pengajuan::class => AjuanPolicy::class,
+    ];
     /**
      * Register any application services.
      */

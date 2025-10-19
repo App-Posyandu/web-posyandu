@@ -5,15 +5,26 @@ namespace App\Http\Controllers;
 use App\Models\BidangPengajuan;
 use App\Models\History;
 use App\Models\Pengajuan;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Auth;
 use Dompdf\Dompdf;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Facades\Storage;
 
 class AjuanController extends Controller
 {
-    public function index()
+    use AuthorizesRequests;
+    public function index(User $user, Pengajuan $ajuan)
     {
+        $user = Auth::user();
+        $query = Pengajuan::with(['user', 'bidang']);
+
+        if ($user->role === 'masyarakat') {
+            $query->where('user_id', $user->id);
+        }
+        // dd($query->toSql(), $query->getBindings());
         $semuaAjuan = Pengajuan::with(['user', 'bidang'])->latest()->paginate(5);
         return view('ajuan.index', [
             'semuaAjuan' => $semuaAjuan
@@ -21,10 +32,11 @@ class AjuanController extends Controller
     }
     public function create($bidang_slug)
     {
-        // if (Auth::user()->status != 'verified') {
-        //     return redirect()->back()->with('error', 'Akun Anda belum terverifikasi oleh kader. Mohon tunggu.');
-        // }
-        
+        $user = Auth::user();
+        if ($user->role === 'masyarakat' && is_null($user->verified_at)) {
+            return redirect()->back()->with('error', 'Akun Anda belum terverifikasi oleh kader. Mohon tunggu.');
+        }
+
         Session::forget('ajuan_data');
 
         $allBidangs = BidangPengajuan::orderBy('nama_bidang')->get();
@@ -94,6 +106,12 @@ class AjuanController extends Controller
     public function storeAdministrasi(Request $request)
     {
         $ajuanData = session('ajuan_data');
+        $user = Auth::user();
+
+        if (!$ajuanData || !$user) {
+            return redirect()->route('dashboard')->with('error', 'Sesi tidak valid.');
+        }
+
         $validationRules = [];
         foreach ($ajuanData['administrasi_items_template'] as $key => $item) {
             if ($key === 'kartu_bpjs') {
@@ -102,6 +120,7 @@ class AjuanController extends Controller
                 $validationRules[$key] = ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'];
             }
         }
+        $validationRules['agreement'] = ['required'];
 
         $request->validate($validationRules);
 
@@ -111,40 +130,6 @@ class AjuanController extends Controller
                 $path = $request->file($key)->store('ajuan_dokumen', 'public');
                 $uploadedFiles[$key] = $path;
             }
-        }
-
-        session()->put('ajuan_data.uploaded_files', $uploadedFiles);
-
-        return redirect()->route('ajuan.verifikasi');
-    }
-
-    public function showVerifikasi()
-    {
-        $ajuanData = session('ajuan_data');
-        if (!$ajuanData) {
-            return redirect()->route('dashboard');
-        }
-
-        $verifikasiData = [
-            'bidang_nama' => $ajuanData['bidang_nama'],
-            'checklist_items' => $ajuanData['selected_formulir_items'],
-            'dokumen_items' => $ajuanData['administrasi_items_template'],
-            'uploaded_files' => $ajuanData['uploaded_files'],
-        ];
-
-        return view('components.ajuan.verifikasi.index', ['data' => $verifikasiData]);
-    }
-
-    public function storeFinal(Request $request)
-    {
-        $user = Auth::user();
-        if (!$user) {
-            return redirect()->route('login');
-        }
-
-        $ajuanData = session('ajuan_data');
-        if (!$ajuanData) {
-            return redirect()->route('dashboard')->with('error', 'Sesi ajuan telah habis.');
         }
 
         $finalChecklistData = $ajuanData['selected_formulir_items'];
@@ -159,8 +144,8 @@ class AjuanController extends Controller
             'bidang_id' => $ajuanData['bidang_id'],
             'status' => 'Diproses',
             'formulir_items' => $finalChecklistData,
-            'administrasi_items' => $ajuanData['uploaded_files'],
-            'deskripsi_pengajuan' => $ajuanData['deskripsi_pengajuan'] ?? 'Tidak ada deskripsi.'
+            'administrasi_items' => $uploadedFiles,
+            'deskripsi_pengajuan' => $ajuanData['deskripsi_pengajuan'] ?? 'Tidak ada deskripsi.',
         ]);
 
         History::create([
@@ -170,6 +155,7 @@ class AjuanController extends Controller
             'diubah_oleh' => $user->id,
             'created_at' => now(),
         ]);
+
         Session::forget('ajuan_data');
 
         return redirect()->route('ajuan.index')->with('success', 'Ajuan berhasil dikirim!');
@@ -268,17 +254,136 @@ class AjuanController extends Controller
                 'administrasi_items' => ['ktp' => 'KTP', 'kk' => 'KK'],
             ],
         ];
-
         return $allData[$bidang_slug] ?? null;
     }
     //show detail ajuan
-    public function show($id)
+    public function show(Pengajuan $ajuan)
     {
-        $ajuan = Pengajuan::with(['user', 'bidang', 'histories'])->findOrFail($id);
+        // $this->authorize('view', $ajuan);
+        $ajuan->load(['user', 'bidang', 'histories']);
+        $templateData = $this->getBidangData($ajuan->bidang->slug);
+        if (!$templateData) {
+            // Tambahkan fallback jika template tidak ditemukan
+            $templateData = ['formulir_items' => [], 'administrasi_items' => []];
+        }
         return view('ajuan.detail', [
-            'ajuan' => $ajuan
-        ]);;
+            'ajuan' => $ajuan,
+            'templateData' => $templateData,
+        ]);
     }
+
+    public function edit(Pengajuan $ajuan)
+    {
+        $templateData = $this->getBidangData($ajuan->bidang->slug);
+        if (!$templateData) {
+            abort(404, 'Definisi formulir untuk bidang ini tidak ditemukan.');
+        }
+
+        // Ambil semua bidang untuk dropdown (kode Anda yang sudah ada)
+        $allBidangs = BidangPengajuan::orderBy('nama_bidang')->get();
+
+        return view('ajuan.edit', [
+            'ajuan' => $ajuan, // Data isian lama
+            'allBidangs' => $allBidangs, // Untuk dropdown
+            'templateData' => $templateData, // TEMPLATE formulir
+        ]);
+    }
+
+    public function update(Request $request, Pengajuan $ajuan)
+    {
+        // Terapkan aturan 'update' dari policy.
+        // $this->authorize('update', $ajuan);
+        $user = Auth::user();
+
+        // Validasi input
+        $request->validate([
+            'deskripsi_pengajuan' => 'required|string|min:10',
+            // Tambahkan validasi lain jika diperlukan
+        ]);
+
+        $ajuan->load('bidang');
+
+        // Ambil data checklist yang baru
+        $finalChecklistData = $request->input('permohonan_items', []);
+        if (in_array('Lainnya...', $finalChecklistData) && $request->filled('lainnya_text')) {
+            $finalChecklistData = array_map(fn($item) => $item === 'Lainnya...' ? 'Lainnya: ' . $request->lainnya_text : $item, $finalChecklistData);
+        }
+
+        // Ambil data file yang sudah ada
+        $dokumenData = $ajuan->administrasi_items;
+        // Perbarui file jika ada file baru yang diunggah
+        $administrasiItemsTemplate = $ajuan->bidang->administrasi_items ?? [];
+        foreach (array_keys($administrasiItemsTemplate) as $key) {
+            if ($request->hasFile($key)) {
+                if (isset($dokumenData[$key])) {
+                    Storage::disk('public')->delete($dokumenData[$key]);
+                }
+                $path = $request->file($key)->store('ajuan_dokumen', 'public');
+                $dokumenData[$key] = $path;
+            }
+        }
+
+        // Update data di database
+        $ajuan->update([
+            'deskripsi_pengajuan' => $request->deskripsi_pengajuan,
+            'formulir_items' => $finalChecklistData,
+            'administrasi_items' => $dokumenData,
+            'status' => 'Diproses',
+        ]);
+
+        // Buat catatan history baru
+        History::create([
+            'pengajuan_id' => $ajuan->id,
+            'status' => 'Direvisi & Diajukan Kembali',
+            'catatan' => 'Pengguna telah memperbarui pengajuan.',
+            'diubah_oleh' => $user->id,
+            'created_at' => now(),
+        ]);
+
+        return redirect()->route('ajuan.show', $ajuan)->with('success', 'Pengajuan berhasil diperbarui dan diajukan kembali.');
+    }
+
+    public function downloadDokumen(Request $request)
+    {
+        $path = $request->query('path');
+
+        if (!$path || !Storage::disk('public')->exists($path)) {
+            abort(404, 'File tidak ditemukan.');
+        }
+
+        $fullPath = storage_path('app/public/' . $path);
+        if (!file_exists($fullPath)) {
+            abort(404, 'File tidak ditemukan.');
+        }
+
+        return response()->download($fullPath);
+    }
+
+    public function verifyAjuan(Request $request, Pengajuan $ajuan)
+    {
+        $user = Auth::user();
+        // $this->authorize('verify', $ajuan);
+
+        $request->validate([
+            'status' => ['required', 'in:Disetujui,Ditolak'],
+            'catatan' => ['nullable', 'string'],
+        ]);
+
+        $ajuan->update([
+            'status' => $request->status,
+        ]);
+
+        History::create([
+            'pengajuan_id' => $ajuan->id,
+            'status' => $request->status,
+            'catatan' => $request->catatan,
+            'diubah_oleh' => $user->id,
+            'created_at' => now(),
+        ]);
+
+        return redirect()->route('ajuan.index')->with('success', 'Status pengajuan berhasil diperbarui.');
+    }
+
     //cetak detail ajuan
     public function cetak($id)
     {

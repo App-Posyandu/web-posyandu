@@ -1,6 +1,17 @@
 @section('content')
     <div class="flex flex-col gap-6">
-
+        @if (!$isVerified)
+            <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-lg mb-6" role="alert">
+                <div class="flex">
+                    <div class="py-1"><i class="bi bi-shield-lock-fill mr-3"></i></div>
+                    <div>
+                        <p class="font-bold">Akun Belum Terverifikasi</p>
+                        <p class="text-sm">Akun Anda sedang menunggu verifikasi dari atasan. Anda belum dapat mengelola data
+                            apa pun.</p>
+                    </div>
+                </div>
+            </div>
+        @endif
         <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-8 space-y-12 w-full">
             <h2 class="text-2xl font-bold text-gray-800 mb-6">Dashboard Ajuan Pelayanan</h2>
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -136,7 +147,6 @@
         </div>
     </div>
     <script>
-        console.log("PIEEEE")
         const ctx = document.getElementById('ajuanPieChart');
 
         new Chart(ctx, {
