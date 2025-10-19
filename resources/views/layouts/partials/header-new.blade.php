@@ -20,6 +20,12 @@
             </x-slot>
             <x-slot name="content">
                 <x-dropdown-link :href="route('dashboard')">{{ __('Beranda') }}</x-dropdown-link>
+                @if (Auth::user()->role === 'admin' ||
+                        Auth::user()->role === 'kader' ||
+                        Auth::user()->role === 'kabid' ||
+                        Auth::user()->role === 'ketua-kader')
+                    <x-dropdown-link :href="route('admin.users.index')">{{ __('Masyarakat') }}</x-dropdown-link>
+                @endif
                 <x-dropdown-link :href="route('ajuan.index')">{{ __('Lihat Pengajuan') }}</x-dropdown-link>
                 <x-dropdown-link :href="route('profile.edit')">{{ __('Profile') }}</x-dropdown-link>
                 <form method="POST" action="{{ route('logout') }}">

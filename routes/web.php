@@ -52,9 +52,10 @@ Route::middleware('auth')->group(function () {
     });
 
     // Rute HANYA untuk Kabid
-    Route::middleware(['role:kabid'])->prefix('admin')->name('admin.')->group(function () {
+    Route::middleware(['role:kabid,kader,admin,ketua-kader'])->prefix('admin')->name('admin.')->group(function () {
         Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
         Route::resource('users', UserController::class);
+        Route::patch('/users/{user}/verify', [UserController::class, 'verify'])->name('users.verify');
     });
 });
 

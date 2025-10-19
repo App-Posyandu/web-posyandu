@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class UserController extends Controller
@@ -9,9 +10,28 @@ class UserController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        $query = User::with('posyandu')->latest();
+
+        // Logika untuk Search Bar
+        if ($request->filled('search')) {
+            $searchTerm = $request->input('search');
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('name', 'like', '%' . $searchTerm . '%')
+                    ->orWhere('email', 'like', '%' . $searchTerm . '%')
+                    ->orWhere('nik', 'like', '%' . $searchTerm . '%');
+            });
+        }
+
+        // Logika untuk Filter Role
+        if ($request->filled('role')) {
+            $query->where('role', $request->input('role'));
+        }
+
+        $users = $query->paginate(10)->withQueryString();
+
+        return view('admin.users.index', compact('users'));
     }
 
     /**
@@ -25,17 +45,16 @@ class UserController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
-    {
-        //
-    }
+    public function store(Request $request) {}
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(User $user)
     {
-        //
+        return view('admin.users.show', [
+            'user' => $user
+        ]);
     }
 
     /**
@@ -60,5 +79,15 @@ class UserController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+
+    public function verify(User $user)
+    {
+        try {
+            $user->update(['status' => 'verified']);
+            return redirect()->back()->with('success', 'User berhasil diverifikasi.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'User gagal diverifikasi.');
+        }
     }
 }
