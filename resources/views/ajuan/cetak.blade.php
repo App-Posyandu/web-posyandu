@@ -69,7 +69,8 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 48px 16px;
+            padding: 36px 56px;
+            height: 72%;
         }
 
         .header-title {
@@ -90,19 +91,13 @@
             font-size: 16px;
         }
 
-        .card {
+        .container {
             background-color: #ffffff;
             max-width: 800px;
             width: 100%;
-            padding: 32px;
+            padding: 0px 24px;
             border-radius: 16px;
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
-        }
-
-        .card h2 {
-            font-size: 1.5rem;
-            color: #111827;
-            margin-bottom: 24px;
         }
 
         .info-section {
@@ -112,14 +107,23 @@
         }
 
         .info-section h3 {
-            font-size: 1rem;
+            font-size: 14px;
             color: #374151;
         }
 
         .info-section p {
-            font-size: 0.95rem;
+            font-size: 14px;
             color: #4b5563;
             margin-top: 4px;
+        }
+
+        .content {
+            margin-bottom: 12px;
+        }
+
+        .content span {
+            font-weight: normal;
+            color: #111827;
         }
 
         /* ========== FOOTER (STAYS AT BOTTOM USING FLEX) ========== */
@@ -166,7 +170,7 @@
         $posyanduPath = public_path('assets/image/logo/logo_posyandu.png');
 
         $kebumenBase64 = '';
-        $posyanduBase64 = '';   
+        $posyanduBase64 = '';
 
         if (file_exists($kebumenPath)) {
             $kebumenData = file_get_contents($kebumenPath);
@@ -194,25 +198,62 @@
     </header>
 
     <main>
-        <div class="card">
+        <div class="container">
             <div class="info-section">
-                <div>
-                    <h3>Nama Pengaju:</h3>
-                    <p>{{ $ajuan->user->name }}</p>
+                <div class="content">
+                    <h3>Nama Pengaju: <span>{{ $ajuan->user->name }}</span></h3>
                 </div>
-                <div>
-                    <h3>Bidang:</h3>
-                    <p>{{ $ajuan->bidang->nama_bidang }}</p>
+                <div class="content">
+                    <h3>Bidang: <span>{{ $ajuan->bidang->nama_bidang }}</span></h3>
+
                 </div>
-                <div>
+
+                <div class="content">
+                    <h3>Alamat: <span>{{ $ajuan->user->alamat }} </span> </h3>
+
+                </div>
+                <div class="content">
+                    <h3>No Hp: <span>{{ $ajuan->user->phone ?? '082134532110' }}</span> </h3>
+
+                </div>
+
+                <div class="content">
+                    <h3>Tempat, Tanggal Lahir: <span>{{ $ajuan->user->tempat_lahir }},
+                            {{ $ajuan->user->tanggal_lahir ? \Carbon\Carbon::parse($ajuan->user->tanggal_lahir)->locale('id')->isoFormat('D MMMM Y') : '-' }}
+                        </span></h3>
+                </div>
+                <div class="content">
+                    <h3>Jenis Kelamin: <span>
+                            {{ $ajuan->user->jenis_kelamin }}
+                        </span></h3>
+                </div>
+
+                <div class="content">
+                    <h3>Nama Posyandu: <span>{{ $ajuan->user?->posyandu?->nama_posyandu ?? 'Nama Posyandu' }}</span>
+                    </h3>
+                </div>
+                <div class="content">
+                    <h3>Desa/Kelurahan: <span>
+                            {{ $ajuan->user?->posyandu?->desa ?? 'Desa' }}
+                        </span></h3>
+
+                </div>
+
+                <div class="content">
+                    <h3>Kecamatan: <span>
+                            {{ $ajuan->user?->posyandu?->kecamatan ?? 'Kecamatan' }}
+                        </span></h3>
+                </div>
+
+                <div class="">
                     <h3>Deskripsi Permohonan:</h3>
                     <p>{{ $ajuan->deskripsi_pengajuan }}</p>
                 </div>
-                <div>
+                <div class="">
                     <h3>Tindak Lanjut Pengajuan:</h3>
                     <p>{{ $ajuan->tindak_lanjut ?? 'Belum ada tindak lanjut' }}</p>
                 </div>
-                <div>
+                <div class="">
                     <h3>Status Pengajuan:</h3>
                     <p>{{ ucfirst($ajuan->status) }}</p>
                 </div>
@@ -222,9 +263,7 @@
 
     <footer>
         <p>
-            &copy; {{ date('Y') }} <span>EPOSY</span>. Pelayanan Elektronik Posyandu - Dinas Kesehatan Kabupaten
-            Kebumen.<br>
-            Dikembangkan oleh tim untuk mendukung layanan kesehatan masyarakat.
+            &copy; {{ date('Y') }} <span>EPOSY</span>. Pelayanan Elektronik Posyandu Kabupaten Kebumen.
         </p>
     </footer>
 </body>
