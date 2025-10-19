@@ -5,33 +5,36 @@ namespace App\Http\Controllers;
 use App\Models\BidangPengajuan;
 use App\Models\History;
 use App\Models\Pengajuan;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Facades\Auth;
 use Dompdf\Dompdf;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Session;
+use PDF;
 
 class AjuanController extends Controller
 {
     public function index()
     {
         $semuaAjuan = Pengajuan::with(['user', 'bidang'])->latest()->paginate(5);
+
         return view('ajuan.index', [
-            'semuaAjuan' => $semuaAjuan
+            'semuaAjuan' => $semuaAjuan,
         ]);
     }
+
     public function create($bidang_slug)
     {
         // if (Auth::user()->status != 'verified') {
         //     return redirect()->back()->with('error', 'Akun Anda belum terverifikasi oleh kader. Mohon tunggu.');
         // }
-        
+
         Session::forget('ajuan_data');
 
         $allBidangs = BidangPengajuan::orderBy('nama_bidang')->get();
         $bidang = BidangPengajuan::where('slug', $bidang_slug)->firstOrFail();
 
         $templateData = $this->getBidangData($bidang->slug);
-        if (!$templateData) {
+        if (! $templateData) {
             abort(404, 'Definisi formulir untuk bidang ini tidak ditemukan.');
         }
 
@@ -41,7 +44,6 @@ class AjuanController extends Controller
             'bidang_nama' => $bidang->nama_bidang,
             'administrasi_items_template' => $templateData['administrasi_items'],
         ]]);
-
 
         return view('components.ajuan.formulir.index', [
             'bidang' => $bidang,
@@ -82,12 +84,12 @@ class AjuanController extends Controller
     public function createAdministrasi()
     {
         $ajuanData = session('ajuan_data');
-        if (!$ajuanData) {
+        if (! $ajuanData) {
             return redirect()->route('dashboard');
         }
 
         return view('components.ajuan.administrasi-ajuan.index', [
-            'items' => $ajuanData['administrasi_items_template']
+            'items' => $ajuanData['administrasi_items_template'],
         ]);
     }
 
@@ -121,7 +123,7 @@ class AjuanController extends Controller
     public function showVerifikasi()
     {
         $ajuanData = session('ajuan_data');
-        if (!$ajuanData) {
+        if (! $ajuanData) {
             return redirect()->route('dashboard');
         }
 
@@ -138,19 +140,19 @@ class AjuanController extends Controller
     public function storeFinal(Request $request)
     {
         $user = Auth::user();
-        if (!$user) {
+        if (! $user) {
             return redirect()->route('login');
         }
 
         $ajuanData = session('ajuan_data');
-        if (!$ajuanData) {
+        if (! $ajuanData) {
             return redirect()->route('dashboard')->with('error', 'Sesi ajuan telah habis.');
         }
 
         $finalChecklistData = $ajuanData['selected_formulir_items'];
         if (isset($ajuanData['lainnya_text']) && in_array('Lainnya...', $finalChecklistData)) {
             $finalChecklistData = array_map(function ($item) use ($ajuanData) {
-                return $item === 'Lainnya...' ? 'Lainnya: ' . $ajuanData['lainnya_text'] : $item;
+                return $item === 'Lainnya...' ? 'Lainnya: '.$ajuanData['lainnya_text'] : $item;
             }, $finalChecklistData);
         }
 
@@ -160,7 +162,7 @@ class AjuanController extends Controller
             'status' => 'Diproses',
             'formulir_items' => $finalChecklistData,
             'administrasi_items' => $ajuanData['uploaded_files'],
-            'deskripsi_pengajuan' => $ajuanData['deskripsi_pengajuan'] ?? 'Tidak ada deskripsi.'
+            'deskripsi_pengajuan' => $ajuanData['deskripsi_pengajuan'] ?? 'Tidak ada deskripsi.',
         ]);
 
         History::create([
@@ -271,28 +273,31 @@ class AjuanController extends Controller
 
         return $allData[$bidang_slug] ?? null;
     }
-    //show detail ajuan
+
+    // show detail ajuan
     public function show($id)
     {
         $ajuan = Pengajuan::with(['user', 'bidang', 'histories'])->findOrFail($id);
+
         return view('ajuan.detail', [
-            'ajuan' => $ajuan
-        ]);;
+            'ajuan' => $ajuan,
+        ]);
     }
-    //cetak detail ajuan
+
+    // cetak detail ajuan
     public function cetak($id)
     {
         $ajuan = Pengajuan::with(['user', 'bidang', 'histories'])->findOrFail($id);
-        $dompdf = new Dompdf();
-        //preview pdf
-        $dompdf->set_option('isHtml5ParserEnabled', true);
-        $dompdf->set_option('defaultFont', 'Courier');
-        $dompdf->set_option('isRemoteEnabled', true);
 
-        $html = view('ajuan.cetak', ['ajuan' => $ajuan])->render();
-        $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'portrait');
-        $dompdf->render();
-        $dompdf->stream('ajuan_' . $ajuan->id . '.pdf', ['Attachment' => false]);
+        $pdf = Pdf::loadView('ajuan.cetak', ['ajuan' => $ajuan]);
+
+        $pdf->setPaper('A4', 'portrait');
+
+        $pdf->setOptions([
+            'isHtml5ParserEnabled' => true,
+            'isRemoteEnabled' => true,
+            'defaultFont' => 'sans-serif',
+        ]);
+        return $pdf->stream('ajuan_'.$ajuan->id.'.pdf');
     }
 }
