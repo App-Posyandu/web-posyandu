@@ -84,7 +84,7 @@
                                                         class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Inactive</span>
                                                 @else
                                                     <span
-                                                        class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-yellow-700">Diproses</span>
+                                                        class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-700">Diproses</span>
                                                 @endif
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm">
@@ -97,11 +97,11 @@
                                                         class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Inactive</span>
                                                 @else
                                                     <span
-                                                        class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-yellow-700">Diproses</span>
+                                                        class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-700">Diproses</span>
                                                 @endif
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium flex space-x-2">
-                                                <a href="#"
+                                                <a href="/ajuan/{{ $ajuan->id }}"
                                                     class="flex items-center px-3 py-1 bg-blue-500 text-white rounded-md text-xs hover:bg-blue-600"><i
                                                         class="bi bi-eye-fill mr-1"></i> Detail</a>
                                                 @if (Auth::user()->role == 'kader' || Auth::user()->role == 'kabid')
@@ -109,7 +109,7 @@
                                                         class="flex items-center px-3 py-1 bg-yellow-500 text-white rounded-md text-xs hover:bg-yellow-600"><i
                                                             class="bi bi-pencil-fill mr-1"></i> Ubah</a>
                                                 @endif
-                                                <a href="#"
+                                                <a href="/ajuan/cetak/{{ $ajuan->id }}" target="_blank"
                                                     class="flex items-center px-3 py-1 bg-green-500 text-white rounded-md text-xs hover:bg-green-600"><i
                                                         class="bi bi-printer-fill mr-1"></i> Cetak</a>
                                             </td>
