@@ -166,7 +166,7 @@
         $posyanduPath = public_path('assets/image/logo/logo_posyandu.png');
 
         $kebumenBase64 = '';
-        $posyanduBase64 = '';
+        $posyanduBase64 = '';   
 
         if (file_exists($kebumenPath)) {
             $kebumenData = file_get_contents($kebumenPath);
@@ -195,7 +195,6 @@
 
     <main>
         <div class="card">
-            <h2>Cetak Pengajuan</h2>
             <div class="info-section">
                 <div>
                     <h3>Nama Pengaju:</h3>

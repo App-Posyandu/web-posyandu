@@ -42,12 +42,12 @@ class User extends Authenticatable
 
     public function pengajuans()
     {
-        return $this->hasMany(Pengajuan::class);
+        return $this->hasMany(Pengajuan::class, 'user_id');
     }
 
     public function posyandu()
     {
-        return $this->belongsTo(Posyandu::class);
+        return $this->belongsTo(Posyandu::class, 'id');
     }
 
     /**
