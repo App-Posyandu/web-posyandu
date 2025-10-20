@@ -40,6 +40,10 @@
                                     <dt class="text-sm font-medium text-gray-500">Alamat</dt>
                                     <dd class="mt-1 text-gray-900">{{ $user->alamat }}</dd>
                                 </div>
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-500">Nomor Telepon</dt>
+                                    <dd class="mt-1 text-gray-900">{{ $user->no_telepon ?? 'N/A' }}</dd>
+                                </div>
                             </div>
                             <div class="space-y-4">
                                 <div>
@@ -47,7 +51,7 @@
                                     <dd class="mt-1 flex items-center gap-2">
                                         <span
                                             class="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">{{ ucfirst($user->role) }}</span>
-                                        @if ($user->status == 'verified')
+                                        @if ($user->verified_at)
                                             <span
                                                 class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Terverifikasi</span>
                                         @else

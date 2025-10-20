@@ -21,9 +21,10 @@ return new class extends Migration
                 ->nullOnDelete();
             $table->string('name');
             $table->string('email')->unique();
+            $table->string('no_telepon', 20)->unique()->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->enum('role', ['masyarakat', 'kader', 'kabid', 'ketua-kader'])->default('masyarakat');
+            $table->enum('role', ['masyarakat', 'kader', 'kabid', 'ketua-kader', 'admin'])->default('masyarakat');
 
             // Kolom Tambahan dari Form Registrasi
             $table->string('nik', 16)->unique();
@@ -31,8 +32,8 @@ return new class extends Migration
             $table->string('tempat_lahir');
             $table->date('tanggal_lahir');
             $table->string('jenis_kelamin');
-            $table->enum('status', ['verified', 'not-verified'])->default('not-verified');
-
+            $table->timestamp('verified_at')->nullable();
+            $table->foreignUuid('verified_by')->nullable()->constrained('users', 'id')->nullOnDelete();
 
             // Kolom untuk file Base64
             $table->longText('ktp')->nullable();

@@ -20,16 +20,24 @@ class CheckRole
             return redirect('login');
         }
 
-        // 2. Ambil role user yang sedang login
-        $userRole = Auth::user()->role;
+        $user = Auth::user();
 
-        // 3. Cek apakah role user ada di dalam daftar role yang diizinkan
-        if (in_array($userRole, $roles)) {
-            // Jika diizinkan, lanjutkan ke halaman berikutnya
+        if ($user->role === 'admin') {
             return $next($request);
         }
 
-        // 4. Jika tidak diizinkan, lempar ke halaman error 403 (Akses Ditolak)
-        abort(403, 'ANDA TIDAK MEMILIKI AKSES KE HALAMAN INI.');
+        // Pengecekan 1: Role
+        if (!in_array($user->role, $roles)) {
+            abort(403, 'AKSES DITOLAK: ANDA TIDAK MEMILIKI ROLE YANG SESUAI.');
+        }
+
+        // Pengecekan 2: Status Verifikasi untuk role tertentu
+        if (($user->role === 'kader' || $user->role === 'ketua-kader') && is_null($user->verified_at)) {
+            // Jika belum diverifikasi, "pental" ke dashboard dengan pesan error
+            return redirect()->route('dashboard')->with('error', 'Akun Anda belum diverifikasi oleh atasan untuk mengakses halaman ini.');
+        }
+
+        // Jika semua lolos, izinkan akses
+        return $next($request);
     }
 }

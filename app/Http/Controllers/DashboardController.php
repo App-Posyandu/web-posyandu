@@ -12,9 +12,9 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        $userRole = Auth::user()->role;
+        $user = Auth::user();
+        $isVerified = !is_null($user->verified_at) || $user->role === 'admin';
 
-        // JIKA user adalah 'masyarakat', siapkan data untuk halaman "Pilih Layanan"
         $allBidangs = BidangPengajuan::orderBy('nama_bidang')->get();
         $colors = [
             '#4D73FD',
@@ -24,9 +24,10 @@ class DashboardController extends Controller
             '#E655A0',
             '#EAB308',
         ];
-        if ($userRole === 'masyarakat') {
+        if ($user->role === 'masyarakat') {
+            $allBidangs = BidangPengajuan::orderBy('nama_bidang')->get();
+            $colors = ['#4D73FD', '#EC4899', '#F2993F', '#7CD75A', '#E655A0', '#EAB308'];
 
-            // Kirim data ke view yang sama, yaitu 'dashboard'
             return view('dashboard', [
                 'allBidangs' => $allBidangs,
                 'colors' => $colors,
@@ -34,11 +35,9 @@ class DashboardController extends Controller
         } else {
             $query = Pengajuan::with(['user', 'bidang']);
 
-            // Jika ada input 'search' dari URL (misal: ?search=pendidikan)
             if ($request->has('search') && $request->input('search') != '') {
                 $searchTerm = $request->input('search');
 
-                // Lakukan pencarian di beberapa kolom
                 $query->where(function ($q) use ($searchTerm) {
                     $q->where('deskripsi_pengajuan', 'like', '%' . $searchTerm . '%')
                         ->orWhere('status', 'like', '%' . $searchTerm . '%')
@@ -50,22 +49,36 @@ class DashboardController extends Controller
                         });
                 });
             }
-            // Ambil data untuk kartu statistik dan pie chart
-            $ajuanCounts = Pengajuan::query()
-                ->join('bidang_pengajuans', 'pengajuans.bidang_id', '=', 'bidang_pengajuans.id')
-                ->select('bidang_pengajuans.nama_bidang', DB::raw('count(pengajuans.id) as total'))
-                ->groupBy('bidang_pengajuans.nama_bidang')
-                ->pluck('total', 'nama_bidang');
 
-            // Ambil data untuk tabel list pengajuan
-            $semuaAjuan = Pengajuan::with(['user', 'bidang'])->latest()->paginate(5);
-            $allBidangs = BidangPengajuan::orderBy('nama_bidang')->get();
-            // Kirim data ke view yang sama, yaitu 'dashboard'
-            return view('dashboard', [
-                'ajuanCounts' => $ajuanCounts,
-                'semuaAjuan' => $semuaAjuan,
-                'colors' => $colors
-            ]);
+            $allBidangNames = BidangPengajuan::pluck('nama_bidang');
+
+            $baseCounts = $allBidangNames->mapWithKeys(function ($nama) {
+                return [$nama => 0];
+            });
+
+            if ($isVerified) {
+                $actualCounts = Pengajuan::query()
+                    ->join('bidang_pengajuans', 'pengajuans.bidang_id', '=', 'bidang_pengajuans.id')
+                    ->select('bidang_pengajuans.nama_bidang', DB::raw('count(pengajuans.id) as total'))
+                    ->groupBy('bidang_pengajuans.nama_bidang')
+                    ->pluck('total', 'nama_bidang');
+
+                $ajuanCounts = $baseCounts->merge($actualCounts);
+
+                if ($ajuanCounts->isEmpty()) {
+                    $ajuanCounts = $allBidangNames->mapWithKeys(function ($nama) {
+                        return [$nama => 0];
+                    });
+                }
+                $semuaAjuan = Pengajuan::with(['user', 'bidang'])->latest()->paginate(5);
+            } else {
+                $ajuanCounts = $baseCounts;
+
+                $semuaAjuan = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 5);
+            }
+
+            $colors = ['#4D73FD', '#EC4899', '#F2993F', '#7CD75A', '#E655A0', '#EAB308'];
+            return view('dashboard', compact('ajuanCounts', 'semuaAjuan', 'colors', 'isVerified'));
         }
     }
 }

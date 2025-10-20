@@ -34,12 +34,14 @@ class UserFactory extends Factory
             'role' => 'masyarakat',
             'nik' => fake()->unique()->numerify('################'), // Membuat 16 digit NIK unik
             'alamat' => fake()->address(),
+            'no_telepon' => fake()->unique()->phoneNumber(),
             'tempat_lahir' => fake()->city(),
             'tanggal_lahir' => fake()->date(),
             'jenis_kelamin' => fake()->randomElement(['Laki-laki', 'Perempuan']),
-            'status' => 'not-verified',
             'ktp' => 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', // Placeholder Base64
             'kk' => 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', // Placeholder Base64
+            'verified_at' => null,
+            'verified_by' => null,
         ];
     }
 

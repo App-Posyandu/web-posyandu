@@ -14,15 +14,38 @@ Route::get('/', function () {
 });
 
 Route::middleware('auth')->group(function () {
-    Route::get('/ajuan', [AjuanController::class, 'index'])->name('ajuan.index');
+    //Rute untuk Detail Ajuan dan Cetak Ajuan
     Route::get('/ajuan/create/{bidang}', [AjuanController::class, 'create'])->name('ajuan.create');
     Route::post('/ajuan/store-permohonan', [AjuanController::class, 'storePermohonan'])->name('ajuan.store.permohonan');
+    Route::get('/ajuan/{ajuan}/edit', [AjuanController::class, 'edit'])->name('ajuan.edit');
+    Route::patch('/ajuan/{ajuan}', [AjuanController::class, 'update'])->name('ajuan.update');
 
     Route::get('/ajuan/administrasi', [AjuanController::class, 'createAdministrasi'])->name('ajuan.create.administrasi');
     Route::post('/ajuan/store-administrasi', [AjuanController::class, 'storeAdministrasi'])->name('ajuan.store.administrasi');
+    Route::get('/ajuan/{ajuan}', [AjuanController::class, 'show'])->name('ajuan.show');
+    Route::get('/ajuan/dokumen/download', [AjuanController::class, 'downloadDokumen'])->name('ajuan.dokumen.download');
+    Route::patch('/ajuan/{ajuan}/verify', [AjuanController::class, 'verifyAjuan'])->name('ajuan.verify');
 
-    Route::get('/ajuan/verifikasi', [AjuanController::class, 'showVerifikasi'])->name('ajuan.verifikasi');
-    Route::post('/ajuan/store-final', [AjuanController::class, 'storeFinal'])->name('ajuan.store.final');
+    Route::middleware(['verified', 'role:kader,kabid,masyarakat,ketua-kader,admin'])->group(function () {
+        Route::get('/ajuan', [AjuanController::class, 'index'])->name('ajuan.index');
+    });
+    Route::get('/ajuan/cetak/{id}', [AjuanController::class, 'cetak'])->name('ajuan.cetak');
+    // --- Rute Profil (dari Breeze) ---
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+
+    // Rute untuk Kader & Kabid
+    Route::middleware(['role:kader,kabid'])->group(function () {
+        Route::resource('penimbangan', PenimbanganController::class);
+    });
+
+    Route::middleware(['role:kabid,kader,admin,ketua-kader'])->prefix('admin')->name('admin.')->group(function () {
+        Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
+        Route::resource('users', UserController::class);
+        Route::patch('/users/{user}/verify', [UserController::class, 'verify'])->name('users.verify');
+    });
 });
 
 // Rute Otentikasi Google Socialite
@@ -30,34 +53,6 @@ Route::get('/auth/google/redirect', [GoogleLoginController::class, 'redirectToGo
 Route::get('/auth/google/callback', [GoogleLoginController::class, 'handleGoogleCallback']);
 
 Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
-
-
-// Grup rute yang membutuhkan login (bawaan Breeze + Rute Kustom Anda)
-Route::middleware('auth')->group(function () {
-
-    Route::get('/ajuan', [AjuanController::class, 'index'])->name('ajuan.index');
-    //Rute untuk Detail Ajuan dan Cetak Ajuan
-    Route::get('/ajuan/{id}', [AjuanController::class, 'show'])->name('ajuan.show');
-    Route::get('/ajuan/cetak/{id}', [AjuanController::class, 'cetak'])->name('ajuan.cetak');
-    // --- Rute Profil (dari Breeze) ---
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-
-    // --- Rute Aplikasi Posyandu Anda (Tambahkan di sini) ---
-
-    // Rute untuk Kader & Kabid
-    Route::middleware(['role:kader,kabid'])->group(function () {
-        Route::resource('penimbangan', PenimbanganController::class);
-    });
-
-    // Rute HANYA untuk Kabid
-    Route::middleware(['role:kabid,kader,admin,ketua-kader'])->prefix('admin')->name('admin.')->group(function () {
-        Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
-        Route::resource('users', UserController::class);
-        Route::patch('/users/{user}/verify', [UserController::class, 'verify'])->name('users.verify');
-    });
-});
 
 Route::get('/set-session', function () {
     session(['test' => 'Berhasil']);
