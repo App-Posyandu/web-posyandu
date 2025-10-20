@@ -32,17 +32,29 @@
         <div class="w-full max-w-7xl mx-auto ">
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-8">
 
+                {{-- tampilkan kolom search dan tombol export semua data pengajuan ke excel --}}
                 <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800">List Pengajuan</h2>
-                    <form action="{{ route('dashboard') }}" method="GET">
-                        <div class="relative">
-                            <span class="absolute inset-y-0 left-0 flex items-center pl-3"><i
-                                    class="bi bi-search text-gray-400"></i></span>
-                            <input type="text" name="search" placeholder="Search" value="{{ request('search') }}"
-                                class="w-full md:w-64 pl-10 pr-4 py-2 ...">
-                        </div>
-                    </form>
-                </div>
+    <h2 class="text-2xl font-bold text-gray-800">List Pengajuan</h2>
+
+    <div class="flex items-center gap-3"> <!-- tambahkan flex & gap -->
+        <form action="{{ route('dashboard') }}" method="GET">
+            <div class="relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                    <i class="bi bi-search text-gray-400"></i>
+                </span>
+                <input type="text" name="search" placeholder="Search" value="{{ request('search') }}"
+                    class="w-full md:w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring focus:ring-green-200 focus:outline-none">
+            </div>
+        </form>
+
+        <a href="#"
+            class="flex items-center px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">
+            <i class="bi bi-file-earmark-excel-fill mr-2"></i> Export to Excel
+        </a>
+    </div>
+</div>
+
+
 
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
