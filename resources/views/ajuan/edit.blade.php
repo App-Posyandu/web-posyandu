@@ -5,14 +5,37 @@
 
         <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">Ubah Pengajuan</h2>
 
-        {{-- Checklist (sudah terisi data lama) --}}
         <div class="space-y-4">
             @foreach ($templateData['formulir_items'] as $item)
-                <label class="flex items-center">
-                    <input type="checkbox" name="permohonan_items[]" value="{{ $item }}"
-                        @checked(in_array($item, old('permohonan_items', $ajuan->formulir_items ?? []))) class="rounded border-gray-300 text-pink-600 ...">
-                    <span class="ms-3 text-gray-700">{{ $item }}</span>
-                </label>
+                @if ($item === 'Lainnya...')
+                    @php
+                        $lainnyaItem = collect($ajuan->formulir_items ?? [])->first(
+                            fn($i) => str_starts_with($i, 'Lainnya: '),
+                        );
+                        $isLainnyaChecked = !is_null($lainnyaItem);
+                        $lainnyaTextValue = $isLainnyaChecked ? str_replace('Lainnya: ', '', $lainnyaItem) : '';
+                    @endphp
+
+                    <div x-data="{ checked: {{ $isLainnyaChecked ? 'true' : 'false' }} }" class="p-4 border rounded-md">
+                        <label class="flex items-center">
+                            <input type="checkbox" x-model="checked" name="permohonan_items[]" value="Lainnya..."
+                                class="rounded border-gray-300 text-pink-600 shadow-sm focus:ring-pink-500">
+                            <span class="ms-3 text-gray-700 font-semibold">{{ $item }}</span>
+                        </label>
+                        <div x-show="checked" x-transition class="mt-2">
+                            <x-text-input type="text" name="lainnya_text" class="block w-full"
+                                placeholder="Silakan ketik permohonan Anda..."
+                                value="{{ old('lainnya_text', $lainnyaTextValue) }}" x-bind:disabled="!checked" />
+                        </div>
+                    </div>
+
+                @else
+                    <label class="flex items-center">
+                        <input type="checkbox" name="permohonan_items[]" value="{{ $item }}"
+                            @checked(in_array($item, old('permohonan_items', $ajuan->formulir_items ?? []))) class="rounded border-gray-300 text-pink-600 ...">
+                        <span class="ms-3 text-gray-700">{{ $item }}</span>
+                    </label>
+                @endif
             @endforeach
         </div>
 

@@ -57,11 +57,13 @@ class DashboardController extends Controller
             });
 
             if ($isVerified) {
-                $ajuanCounts = Pengajuan::query()
+                $actualCounts = Pengajuan::query()
                     ->join('bidang_pengajuans', 'pengajuans.bidang_id', '=', 'bidang_pengajuans.id')
                     ->select('bidang_pengajuans.nama_bidang', DB::raw('count(pengajuans.id) as total'))
                     ->groupBy('bidang_pengajuans.nama_bidang')
                     ->pluck('total', 'nama_bidang');
+
+                $ajuanCounts = $baseCounts->merge($actualCounts);
 
                 if ($ajuanCounts->isEmpty()) {
                     $ajuanCounts = $allBidangNames->mapWithKeys(function ($nama) {
@@ -70,9 +72,7 @@ class DashboardController extends Controller
                 }
                 $semuaAjuan = Pengajuan::with(['user', 'bidang'])->latest()->paginate(5);
             } else {
-                $ajuanCounts = $allBidangNames->mapWithKeys(function ($nama) {
-                    return [$nama => 0];
-                });
+                $ajuanCounts = $baseCounts;
 
                 $semuaAjuan = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 5);
             }

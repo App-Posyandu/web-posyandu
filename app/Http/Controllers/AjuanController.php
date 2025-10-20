@@ -224,7 +224,6 @@ class AjuanController extends Controller
                     'surat_keterangan_penghasilan' => 'Surat keterangan penghasilan dari Desa',
                     'surat_tanah' => 'Surat Tanah atau Sejenisnya',
                     'foto_kondisi_rumah' => 'Foto kondisi rumah calon penerima bantuan 3 sisi',
-                    'dokumen_lainnya' => 'Lainnya...',
                 ],
             ],
             'sosial' => [
@@ -256,7 +255,6 @@ class AjuanController extends Controller
         ];
         return $allData[$bidang_slug] ?? null;
     }
-    //show detail ajuan
     public function show(Pengajuan $ajuan)
     {
         // $this->authorize('view', $ajuan);
@@ -312,7 +310,8 @@ class AjuanController extends Controller
         // Ambil data file yang sudah ada
         $dokumenData = $ajuan->administrasi_items;
         // Perbarui file jika ada file baru yang diunggah
-        $administrasiItemsTemplate = $ajuan->bidang->administrasi_items ?? [];
+        $administrasiItemsTemplate = $ajuan->administrasi_items ?? [];
+        // dd($ajuan->bidang);
         foreach (array_keys($administrasiItemsTemplate) as $key) {
             if ($request->hasFile($key)) {
                 if (isset($dokumenData[$key])) {

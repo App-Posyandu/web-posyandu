@@ -31,9 +31,9 @@
                             </div>
                             <div>
 
-                                <a href="{{ url()->previous() }}"
+                                <a href="{{ route('ajuan.index') }}"
                                     class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md text-sm font-semibold hover:bg-gray-300">Kembali</a>
-                                @if ($ajuan->status === 'Ditolak')
+                                @if ($ajuan->status === 'Ditolak' && Auth::user()->role === 'masyarakat')
                                     <a href="{{ route('ajuan.edit', $ajuan) }}"
                                         class="px-4 py-2 bg-yellow-500 text-white rounded-md text-sm font-semibold hover:bg-yellow-600">Ubah</a>
                                 @endif
@@ -105,7 +105,7 @@
                             </div>
                         </div>
 
-                        {{-- <div class="mt-8">
+                        <div class="mt-8">
                             <h3 class="font-semibold mb-4">Riwayat Pengajuan</h3>
                             <div class="border-l-2 border-gray-200 pl-6">
                                 @forelse ($ajuan->histories->sortByDesc('created_at') as $history)
@@ -127,7 +127,7 @@
                                     <p class="text-gray-500">Belum ada riwayat untuk pengajuan ini.</p>
                                 @endforelse
                             </div>
-                        </div> --}}
+                        </div>
 
                     </div>
                 </div>
@@ -146,13 +146,44 @@
                                         <div class="space-y-3">
                                             {{-- Loop melalui SEMUA item yang MUNGKIN ada di bidang ini (dari template) --}}
                                             @foreach ($templateData['formulir_items'] as $item)
-                                                <label
-                                                    class="flex items-center p-2 rounded-md {{ in_array($item, $ajuan->formulir_items ?? []) ? 'bg-green-50' : 'bg-gray-50' }}">
-                                                    <input type="checkbox"
-                                                        class="h-5 w-5 rounded border-gray-300 text-pink-600 shadow-sm focus:ring-pink-500"
-                                                        {{-- Centang otomatis jika item ini ada di dalam data pengajuan yang sudah diisi --}} @checked(in_array($item, $ajuan->formulir_items ?? []))>
-                                                    <span class="ms-3 text-sm text-gray-700">{{ $item }}</span>
-                                                </label>
+                                                @if ($item === 'Lainnya...')
+                                                    @php
+                                                        $lainnyaItem = collect($ajuan->formulir_items ?? [])->first(
+                                                            fn($i) => str_starts_with($i, 'Lainnya: '),
+                                                        );
+                                                        $isLainnyaChecked = !is_null($lainnyaItem);
+                                                        $lainnyaTextValue = $isLainnyaChecked
+                                                            ? str_replace('Lainnya: ', '', $lainnyaItem)
+                                                            : '';
+                                                    @endphp
+                                                    <div
+                                                        class="p-2 rounded-md {{ $isLainnyaChecked ? 'bg-green-50' : 'bg-gray-50' }}">
+                                                        <label class="flex items-center">
+                                                            <input type="checkbox" class="h-5 w-5 rounded border-gray-300 text-pink-600 shadow-sm focus:ring-pink-500"
+                                                                @checked($isLainnyaChecked)>
+                                                            <span
+                                                                class="ms-3 text-sm font-semibold text-gray-700">{{ $item }}</span>
+                                                        </label>
+                                                        {{-- Tampilkan input teks HANYA jika memang diisi oleh pengguna --}}
+                                                        @if ($isLainnyaChecked)
+                                                            <div class="mt-2 pl-8">
+                                                                <p class="text-xs text-gray-500">Isian Pengguna:</p>
+                                                                <p
+                                                                    class="p-2 bg-white border rounded-md text-sm text-gray-800">
+                                                                    {{ $lainnyaTextValue }}</p>
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                @else
+                                                    <label
+                                                        class="flex items-center p-2 rounded-md {{ in_array($item, $ajuan->formulir_items ?? []) ? 'bg-green-50' : 'bg-gray-50' }}">
+                                                        <input type="checkbox"
+                                                            class="h-5 w-5 rounded border-gray-300 text-pink-600 shadow-sm focus:ring-pink-500"
+                                                            {{-- Centang otomatis jika item ini ada di dalam data pengajuan yang sudah diisi --}} @checked(in_array($item, $ajuan->formulir_items ?? []))>
+                                                        <span
+                                                            class="ms-3 text-sm text-gray-700">{{ $item }}</span>
+                                                    </label>
+                                                @endif
                                             @endforeach
                                         </div>
                                     </div>

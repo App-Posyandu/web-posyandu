@@ -123,7 +123,7 @@
                                                         class="bi bi-eye-fill mr-1"></i> Detail</a>
                                                 {{-- @can('view', $ajuan)
                                                 @endcan --}}
-                                                @if ($ajuan->status === 'Ditolak')
+                                                @if ($ajuan->status === 'Ditolak' && Auth::user()->role === 'masyarakat')
                                                     <a href="{{ route('ajuan.edit', $ajuan) }}"
                                                         class="flex items-center px-3 py-1 bg-yellow-500 text-white rounded-md text-xs hover:bg-yellow-600"><i
                                                             class="bi bi-pencil-fill mr-1"></i> Ubah</a>
