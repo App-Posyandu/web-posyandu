@@ -4,7 +4,11 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Cetak Pengajuan - EPOSY</title>  
+    <title>Cetak Pengajuan - EPOSY</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
+        integrity="sha512-KP4tN0s8M1j4XXW0d7xFt9U3QkH8sy0sYwr3HPt1iQrXrRjPOON8p6HQSGCt8yX6Vft0LO0iJ2OKgKBl4d8KQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/js/all.min.js"></script>
     <style>
         /* ========== RESET & BASE STYLING ========== */
         * {
@@ -14,7 +18,8 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        html, body {
+        html,
+        body {
             height: 100%;
         }
 
@@ -22,8 +27,8 @@
             display: flex;
             flex-direction: column;
             min-height: 100vh;
-            background-color: #f3f4f6;
-            color: #1f2937;
+            background-color: #ffffff;
+            color: #171717;
         }
 
         a {
@@ -31,7 +36,9 @@
             color: inherit;
         }
 
-        h1, h2, h3 {
+        h1,
+        h2,
+        h3 {
             font-weight: bold;
         }
 
@@ -46,16 +53,6 @@
             align-items: center;
         }
 
-        header h1 {
-            font-size: 1.5rem;
-            color: #111827;
-        }
-
-        header p {
-            font-size: 0.875rem;
-            color: #4b5563;
-        }
-
         .logo-group {
             display: flex;
             align-items: center;
@@ -66,80 +63,41 @@
             height: 48px;
         }
 
-        /* ========== DROPDOWN ========== */
-        .dropdown {
-            position: relative;
-        }
-
-        .dropdown button {
-            display: inline-flex;
-            align-items: center;
-            padding: 8px 12px;
-            font-size: 0.875rem;
-            color: #6b7280;
-            background-color: white;
-            border: 1px solid transparent;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s ease-in-out;
-        }
-
-        .dropdown button:hover {
-            color: #374151;
-            background-color: #f9fafb;
-        }
-
-        .dropdown-content {
-            display: none;
-            position: absolute;
-            right: 0;
-            top: 110%;
-            background-color: #ffffff;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            min-width: 180px;
-            z-index: 20;
-        }
-
-        .dropdown-content a {
-            display: block;
-            padding: 10px 14px;
-            font-size: 0.875rem;
-            color: #374151;
-            transition: background 0.2s;
-        }
-
-        .dropdown-content a:hover {
-            background-color: #f3f4f6;
-        }
-
-        .dropdown:hover .dropdown-content {
-            display: block;
-        }
-
         /* ========== MAIN (FLEX FILLER) ========== */
         main {
             flex: 1;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 48px 16px;
+            padding: 36px 56px;
+            height: 72%;
         }
 
-        .card {
+        .header-title {
+            text-align: center;
+            flex-grow: 1;
+
+        }
+
+        .header-title>h1 {
+            text-transform: uppercase;
+            color: #171717;
+            font-size: 16px;
+        }
+
+        .header-title>h2 {
+            text-transform: uppercase;
+            color: #171717;
+            font-size: 16px;
+        }
+
+        .container {
             background-color: #ffffff;
             max-width: 800px;
             width: 100%;
-            padding: 32px;
+            padding: 0px 24px;
             border-radius: 16px;
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
-        }
-
-        .card h2 {
-            font-size: 1.5rem;
-            color: #111827;
-            margin-bottom: 24px;
         }
 
         .info-section {
@@ -149,14 +107,23 @@
         }
 
         .info-section h3 {
-            font-size: 1rem;
+            font-size: 14px;
             color: #374151;
         }
 
         .info-section p {
-            font-size: 0.95rem;
+            font-size: 14px;
             color: #4b5563;
             margin-top: 4px;
+        }
+
+        .content {
+            margin-bottom: 12px;
+        }
+
+        .content span {
+            font-weight: normal;
+            color: #111827;
         }
 
         /* ========== FOOTER (STAYS AT BOTTOM USING FLEX) ========== */
@@ -198,56 +165,95 @@
 </head>
 
 <body>
+    @php
+        $kebumenPath = public_path('assets/image/logo/logo_kebumen.png');
+        $posyanduPath = public_path('assets/image/logo/logo_posyandu.png');
+
+        $kebumenBase64 = '';
+        $posyanduBase64 = '';
+
+        if (file_exists($kebumenPath)) {
+            $kebumenData = file_get_contents($kebumenPath);
+            $kebumenBase64 = 'data:image/png;base64,' . base64_encode($kebumenData);
+        }
+
+        if (file_exists($posyanduPath)) {
+            $posyanduData = file_get_contents($posyanduPath);
+            $posyanduBase64 = 'data:image/png;base64,' . base64_encode($posyanduData);
+        }
+    @endphp
     <header>
-        <div>
-            <a href="/">
-                <h1>EPOSY</h1>
-                <p>Pelayanan Elektronik Posyandu</p>
-            </a>
-        </div>
-
         <div class="logo-group">
-            <img src="{{ asset('assets/image/logo/logo_kebumen.png') }}" alt="Logo Kebumen">
-            <img src="{{ asset('assets/image/logo/logo_posyandu.png') }}" alt="Logo Posyandu">
+            @if ($kebumenBase64)
+                <img src="{{ $kebumenBase64 }}" alt="Logo Kebumen">
+            @endif
+            @if ($posyanduBase64)
+                <img src="{{ $posyanduBase64 }}" alt="Logo Posyandu">
+            @endif
         </div>
-
-        <div class="dropdown">
-            <button>
-                <span>{{ Auth::user()->name }}</span>
-                <span style="margin-left: 4px;">▼</span>
-            </button>
-            <div class="dropdown-content">
-                <a href="{{ route('ajuan.index') }}">Lihat Pengajuan</a>
-                <a href="{{ route('profile.edit') }}">Profile</a>
-                <form method="POST" action="{{ route('logout') }}" style="margin: 0;">
-                    @csrf
-                    <a href="{{ route('logout') }}" onclick="event.preventDefault(); this.closest('form').submit();">Log Out</a>
-                </form>
-            </div>
+        <div class="header-title">
+            <h1>Formulir Permohonan</h1>
+            <h2>Layanan Standar Minimal Pelayanan Posyandu di Kabupaten Kebumen</h2>
         </div>
     </header>
 
     <main>
-        <div class="card">
-            <h2>Cetak Pengajuan</h2>
+        <div class="container">
             <div class="info-section">
-                <div>
-                    <h3>Nama Pengaju:</h3>
-                    <p>{{ $ajuan->user->name }}</p>
+                <div class="content">
+                    <h3>Nama Pengaju: <span>{{ $ajuan->user->name }}</span></h3>
                 </div>
-                <div>
-                    <h3>Bidang:</h3>
-                    <p>{{ $ajuan->bidang->nama_bidang }}</p>
+                <div class="content">
+                    <h3>Bidang: <span>{{ $ajuan->bidang->nama_bidang }}</span></h3>
+
                 </div>
-                <div>
+
+                <div class="content">
+                    <h3>Alamat: <span>{{ $ajuan->user->alamat }} </span> </h3>
+
+                </div>
+                <div class="content">
+                    <h3>No Hp: <span>{{ $ajuan->user->phone ?? '082134532110' }}</span> </h3>
+
+                </div>
+
+                <div class="content">
+                    <h3>Tempat, Tanggal Lahir: <span>{{ $ajuan->user->tempat_lahir }},
+                            {{ $ajuan->user->tanggal_lahir ? \Carbon\Carbon::parse($ajuan->user->tanggal_lahir)->locale('id')->isoFormat('D MMMM Y') : '-' }}
+                        </span></h3>
+                </div>
+                <div class="content">
+                    <h3>Jenis Kelamin: <span>
+                            {{ $ajuan->user->jenis_kelamin }}
+                        </span></h3>
+                </div>
+
+                <div class="content">
+                    <h3>Nama Posyandu: <span>{{ $ajuan->user?->posyandu?->nama_posyandu ?? 'Nama Posyandu' }}</span>
+                    </h3>
+                </div>
+                <div class="content">
+                    <h3>Desa/Kelurahan: <span>
+                            {{ $ajuan->user?->posyandu?->desa ?? 'Desa' }}
+                        </span></h3>
+
+                </div>
+
+                <div class="content">
+                    <h3>Kecamatan: <span>
+                            {{ $ajuan->user?->posyandu?->kecamatan ?? 'Kecamatan' }}
+                        </span></h3>
+                </div>
+
+                <div class="">
                     <h3>Deskripsi Permohonan:</h3>
                     <p>{{ $ajuan->deskripsi_pengajuan }}</p>
                 </div>
-                <div>
+                <div class="">
                     <h3>Tindak Lanjut Pengajuan:</h3>
                     <p>{{ $ajuan->tindak_lanjut ?? 'Belum ada tindak lanjut' }}</p>
                 </div>
-                <div>
+                <div class="">
                     <h3>Status Pengajuan:</h3>
                     <p>{{ ucfirst($ajuan->status) }}</p>
                 </div>
@@ -257,8 +263,7 @@
 
     <footer>
         <p>
-            &copy; {{ date('Y') }} <span>EPOSY</span>. Pelayanan Elektronik Posyandu - Dinas Kesehatan Kabupaten Kebumen.<br>
-            Dikembangkan oleh tim untuk mendukung layanan kesehatan masyarakat.
+            &copy; {{ date('Y') }} <span>EPOSY</span>. Pelayanan Elektronik Posyandu Kabupaten Kebumen.
         </p>
     </footer>
 </body>
