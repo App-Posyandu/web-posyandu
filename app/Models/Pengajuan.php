@@ -12,14 +12,15 @@ class Pengajuan extends Model
     protected $primaryKey = 'id';
     public $incrementing = false;
     protected $keyType = 'string';
+    protected $foreignKey = 'bidang_id';
 
     protected $fillable = [
         'user_id',
         'bidang_id',
         'deskripsi_pengajuan',
         'status',
-        'detail_permohonan',
-        'dokumen_administrasi'
+        'formulir_items',
+        'administrasi_items'
     ];
 
     protected $casts = [
@@ -34,11 +35,11 @@ class Pengajuan extends Model
 
     public function bidang()
     {
-        return $this->belongsTo(BidangPengajuan::class, 'bidang_id', 'id');
+        return $this->belongsTo(BidangPengajuan::class, 'bidang_id','id');
     }
 
     public function histories()
     {
-        return $this->hasMany(History::class);
+        return $this->hasMany(History::class, 'pengajuan_id', 'id');
     }
 }

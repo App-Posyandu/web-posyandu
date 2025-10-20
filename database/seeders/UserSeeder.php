@@ -26,6 +26,7 @@ class UserSeeder extends Seeder
             'password' => Hash::make('password'), // Passwordnya adalah 'password'
             'role' => 'kader',
             'nik' => '3301234567890001',
+            'no_telepon' => '081200000001',
             'alamat' => 'Jl. Merdeka No. 1, Purwokerto',
             'tempat_lahir' => 'Purwokerto',
             'tanggal_lahir' => '1990-01-01',
@@ -33,6 +34,7 @@ class UserSeeder extends Seeder
             // Kolom ktp dan kk bisa dikosongkan (nullable) atau diisi placeholder
             'ktp' => null,
             'kk' => null,
+            'verified_at' => now(),
             'email_verified_at' => now(),
         ]);
         User::factory(15)->create();

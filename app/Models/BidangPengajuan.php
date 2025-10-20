@@ -10,9 +10,9 @@ class BidangPengajuan extends Model
     use HasFactory;
     protected $table = 'bidang_pengajuans';
     protected $fillable = ['nama_bidang', 'slug'];
-    
+
     public function pengajuans()
     {
-        return $this->hasMany(Pengajuan::class);
+        return $this->hasMany(Pengajuan::class, 'bidang_id', 'id');
     }
 }
