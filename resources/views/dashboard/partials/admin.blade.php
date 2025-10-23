@@ -58,7 +58,7 @@
             </div>
         </form>
 
-        <a href="#"
+        <a href="{{ route('laporan.exportExcel') }}"
             class="flex items-center px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">
             <i class="bi bi-file-earmark-excel-fill mr-2"></i> Export to Excel
         </a>

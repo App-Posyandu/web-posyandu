@@ -39,6 +39,8 @@ Route::middleware('auth')->group(function () {
     // Rute untuk Kader & Kabid
     Route::middleware(['role:kader,kabid'])->group(function () {
         Route::resource('penimbangan', PenimbanganController::class);
+        //export to excel
+        Route::get('/export-excel', [LaporanController::class, 'exportExcel'])->name('laporan.exportExcel');
     });
 
     Route::middleware(['role:kabid,kader,admin,ketua-kader'])->prefix('admin')->name('admin.')->group(function () {
