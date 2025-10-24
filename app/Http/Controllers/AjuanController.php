@@ -287,7 +287,6 @@ class AjuanController extends Controller
             abort(404, 'Definisi formulir untuk bidang ini tidak ditemukan.');
         }
 
-        // Ambil semua bidang untuk dropdown (kode Anda yang sudah ada)
         $allBidangs = BidangPengajuan::orderBy('nama_bidang')->get();
 
         return view('ajuan.edit', [
