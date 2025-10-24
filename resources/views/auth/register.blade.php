@@ -126,7 +126,6 @@
                     <option value="" disabled selected>Pilih role</option>
                     <option value="masyarakat" @selected(old('role') == 'masyarakat')>Masyarakat</option>
                     <option value="kader" @selected(old('role') == 'kader')>Kader</option>
-                    <option value="ketua-kader" @selected(old('role') == 'ketua-kader')>Ketua Kader</option>
                 </select>
                 <x-input-error :messages="$errors->get('role')" class="mt-2" />
             </div>

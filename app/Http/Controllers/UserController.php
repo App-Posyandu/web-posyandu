@@ -101,6 +101,8 @@ class UserController extends Controller
             $kkBase64 = 'data:image/' . $request->file('kk')->getClientOriginalExtension() . ';base64,' . base64_encode(file_get_contents($request->file('kk')->getRealPath()));
         }
 
+        $isInstantVerified = in_array($request->role, ['admin', 'kabid', 'ketua-kader']);
+
         $userAuth = Auth::user();
 
         // Buat user baru
@@ -118,8 +120,8 @@ class UserController extends Controller
             'jenis_kelamin' => $request->jenis_kelamin,
             'ktp' => $ktpBase64,
             'kk' => $kkBase64,
-            'verified_at' => now(),
-            'verified_by' => $userAuth->id,
+            'verified_at' => $isInstantVerified ? now() : null,
+            'verified_by' => $isInstantVerified ? $userAuth->id : null,
         ]);
 
         event(new Registered($user));

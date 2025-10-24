@@ -44,7 +44,7 @@ class RegisteredUserController extends Controller
             'kecamatan' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'role' => ['required', 'in:masyarakat,kader,ketua-kader,kabid'],
+            'role' => ['required', 'in:masyarakat,kader'],
             'ktp' => ['required', 'image', 'mimes:jpeg,png,jpg', 'max:2048'], // Maksimal 2MB
             'kk' => ['required', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],  // Maksimal 2MB
             'no_telepon' => ['required', 'string', 'max:20', 'unique:users']
@@ -80,6 +80,7 @@ class RegisteredUserController extends Controller
             'role' => $request->role,
             'ktp' => $ktpBase64,
             'kk' => $kkBase64,
+            'verified_at' => $request->role === 'masyarakat' ? now() : null,
         ]);
 
         Posyandu::create([

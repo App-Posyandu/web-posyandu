@@ -15,10 +15,6 @@ return new class extends Migration
             $table->uuid('id')->primary();
 
             $table->unsignedBigInteger('posyandu_id')->nullable();
-            $table->foreign('posyandu_id')
-                ->references('id')
-                ->on('posyandus')
-                ->nullOnDelete();
             $table->string('name');
             $table->string('email')->unique();
             $table->string('no_telepon', 20)->unique()->nullable();
@@ -33,7 +29,7 @@ return new class extends Migration
             $table->date('tanggal_lahir');
             $table->string('jenis_kelamin');
             $table->timestamp('verified_at')->nullable();
-            $table->foreignUuid('verified_by')->nullable()->constrained('users', 'id')->nullOnDelete();
+            $table->uuid('verified_by')->nullable();
 
             // Kolom untuk file Base64
             $table->longText('ktp')->nullable();
@@ -41,6 +37,18 @@ return new class extends Migration
 
             $table->rememberToken();
             $table->timestamps();
+        });
+
+        Schema::table('users', function (Blueprint $table) {
+            $table->foreign('posyandu_id')
+                ->references('id')
+                ->on('posyandus')
+                ->nullOnDelete();
+
+            $table->foreign('verified_by')
+                ->references('id')
+                ->on('users')
+                ->nullOnDelete();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
@@ -51,7 +59,9 @@ return new class extends Migration
 
         Schema::create('sessions', function (Blueprint $table) {
             $table->string('id')->primary();
-            $table->foreignId('user_id')->nullable()->index();
+
+            $table->foreignUuid('user_id')->nullable()->constrained('users', 'id')->nullOnDelete();
+
             $table->string('ip_address', 45)->nullable();
             $table->text('user_agent')->nullable();
             $table->longText('payload');

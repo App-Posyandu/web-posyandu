@@ -1,8 +1,8 @@
 <header class="w-full max-w-7xl mx-auto py-4 px-6 flex justify-between items-center">
     <div>
         <a href="/">
-            <h1 class="text-2xl font-bold text-pink-600">EPOSY</h1>
-            <p class="text-sm text-gray-600">Pelayanan Elektronik Posyandu</p>
+            <h1 class="text-2xl font-bold text-pink-600">Sapa Posyandu</h1>
+            <p class="text-sm text-gray-600">Sistem Aplikasi Pengelolaan Pos Pelayanan Terpadu</p>
         </a>
     </div>
     <div class="flex items-center space-x-4">
