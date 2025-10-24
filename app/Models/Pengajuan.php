@@ -18,14 +18,18 @@ class Pengajuan extends Model
         'user_id',
         'bidang_id',
         'deskripsi_pengajuan',
-        'status',
+        'status_pengajuan',
         'formulir_items',
-        'administrasi_items'
+        'administrasi_items',
+        'sudah_verifikasi',
+        'kunjungan_lapangan'
     ];
 
     protected $casts = [
         'formulir_items' => 'array',
         'administrasi_items' => 'array',
+        'sudah_verifikasi' => 'boolean',
+        'kunjungan_lapangan' => 'boolean',
     ];
 
     public function user()

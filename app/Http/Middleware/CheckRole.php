@@ -22,8 +22,8 @@ class CheckRole
 
         $user = Auth::user();
 
-        if ($user->role === 'admin') {
-            return $next($request);
+        if (!in_array($user->role, $roles)) {
+            abort(403, 'AKSES DITOLAK: ROLE TIDAK SESUAI.');
         }
 
         // Pengecekan 1: Role
@@ -32,9 +32,8 @@ class CheckRole
         }
 
         // Pengecekan 2: Status Verifikasi untuk role tertentu
-        if (($user->role === 'kader' || $user->role === 'ketua-kader') && is_null($user->verified_at)) {
-            // Jika belum diverifikasi, "pental" ke dashboard dengan pesan error
-            return redirect()->route('dashboard')->with('error', 'Akun Anda belum diverifikasi oleh atasan untuk mengakses halaman ini.');
+        if ($user->role === 'kader' && is_null($user->verified_at)) {
+            return redirect()->route('dashboard')->with('error', 'Akun Anda belum diverifikasi oleh Ketua Kader.');
         }
 
         // Jika semua lolos, izinkan akses

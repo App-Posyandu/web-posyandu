@@ -1,7 +1,7 @@
 @extends('admin.layouts.index')
 @section('title', 'Add Users')
 @section('content')
-    <x-app-layout>
+    <div>
         <x-slot name="header">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 {{ __('Tambah Pengguna Baru') }}
@@ -158,5 +158,5 @@
                 </div>
             </div>
         </div>
-    </x-app-layout>
+    </div>
 @endsection

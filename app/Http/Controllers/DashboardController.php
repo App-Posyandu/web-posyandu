@@ -13,12 +13,13 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $isVerified = !is_null($user->verified_at) || $user->role === 'admin';
+        $alwaysVerifiedRoles = ['admin', 'kabid', 'ketua-kader', 'masyarakat'];
+        $isVerified = !is_null($user->verified_at) || in_array($user->role, $alwaysVerifiedRoles);
 
         $allBidangs = BidangPengajuan::orderBy('nama_bidang')->get();
         $colors = [
             '#4D73FD',
-            '#EC4899',
+            '#f43f5e',
             '#F2993F',
             '#7CD75A',
             '#E655A0',
@@ -26,7 +27,7 @@ class DashboardController extends Controller
         ];
         if ($user->role === 'masyarakat') {
             $allBidangs = BidangPengajuan::orderBy('nama_bidang')->get();
-            $colors = ['#4D73FD', '#EC4899', '#F2993F', '#7CD75A', '#E655A0', '#EAB308'];
+            $colors = ['#4D73FD', '#f43f5e', '#F2993F', '#7CD75A', '#E655A0', '#EAB308'];
 
             return view('dashboard', [
                 'allBidangs' => $allBidangs,
@@ -77,7 +78,7 @@ class DashboardController extends Controller
                 $semuaAjuan = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 5);
             }
 
-            $colors = ['#4D73FD', '#EC4899', '#F2993F', '#7CD75A', '#E655A0', '#EAB308'];
+            $colors = ['#4D73FD', '#f43f5e', '#F2993F', '#7CD75A', '#E655A0', '#EAB308'];
             return view('dashboard', compact('ajuanCounts', 'semuaAjuan', 'colors', 'isVerified'));
         }
     }

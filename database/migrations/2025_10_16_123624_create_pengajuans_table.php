@@ -16,7 +16,9 @@ return new class extends Migration
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             $table->foreignId('bidang_id')->constrained('bidang_pengajuans')->cascadeOnDelete();
             $table->text('deskripsi_pengajuan');
-            $table->enum('status', ['Diproses', 'Disetujui', 'Ditolak'])->default('Diproses');
+            $table->enum('status_pengajuan', ['Diproses', 'Disetujui', 'Ditolak'])->default('Diproses');
+            $table->boolean('sudah_verifikasi')->default(false);
+            $table->boolean('kunjungan_lapangan')->default(false);
             $table->json('formulir_items')->nullable();
             $table->json('administrasi_items')->nullable();
             $table->timestamps();

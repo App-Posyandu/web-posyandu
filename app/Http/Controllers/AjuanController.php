@@ -24,7 +24,6 @@ class AjuanController extends Controller
         if ($user->role === 'masyarakat') {
             $query->where('user_id', $user->id);
         }
-        // dd($query->toSql(), $query->getBindings());
         $semuaAjuan = Pengajuan::with(['user', 'bidang'])->latest()->paginate(5);
 
         return view('ajuan.index', [
@@ -34,14 +33,6 @@ class AjuanController extends Controller
 
     public function create($bidang_slug)
     {
-        // if (Auth::user()->status != 'verified') {
-        //     return redirect()->back()->with('error', 'Akun Anda belum terverifikasi oleh kader. Mohon tunggu.');
-        // }
-
-        $user = Auth::user();
-        if ($user->role === 'masyarakat' && is_null($user->verified_at)) {
-            return redirect()->back()->with('error', 'Akun Anda belum terverifikasi oleh kader. Mohon tunggu.');
-        }
 
         Session::forget('ajuan_data');
 
@@ -98,13 +89,17 @@ class AjuanController extends Controller
 
     public function createAdministrasi()
     {
+
         $ajuanData = session('ajuan_data');
+        $user = Auth::user();
         if (! $ajuanData) {
             return redirect()->route('dashboard');
         }
 
         return view('components.ajuan.administrasi-ajuan.index', [
             'items' => $ajuanData['administrasi_items_template'],
+            'userKtp' => $user->ktp,
+            'userKk' => $user->kk
         ]);
     }
 
@@ -119,8 +114,12 @@ class AjuanController extends Controller
 
         $validationRules = [];
         foreach ($ajuanData['administrasi_items_template'] as $key => $item) {
-            if ($key === 'kartu_bpjs') {
-                $validationRules[$key] = ['file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'];
+            if ($key === 'ktp') {
+                $validationRules[$key] = ['required_if:ktp_mode,upload', 'nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'];
+            } elseif ($key === 'kk') {
+                $validationRules[$key] = ['required_if:kk_mode,upload', 'nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'];
+            } elseif ($key === 'kartu_bpjs') {
+                $validationRules[$key] = ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'];
             } else {
                 $validationRules[$key] = ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'];
             }
@@ -131,23 +130,28 @@ class AjuanController extends Controller
 
         $uploadedFiles = [];
         foreach (array_keys($ajuanData['administrasi_items_template']) as $key) {
+
             if ($request->hasFile($key)) {
                 $path = $request->file($key)->store('ajuan_dokumen', 'public');
                 $uploadedFiles[$key] = $path;
+            } elseif ($key === 'ktp' && $request->input('ktp_mode') === 'claimed' && $user->ktp) {
+                $uploadedFiles[$key] = $user->ktp;
+            } elseif ($key === 'kk' && $request->input('kk_mode') === 'claimed' && $user->kk) {
+                $uploadedFiles[$key] = $user->kk;
             }
         }
 
         $finalChecklistData = $ajuanData['selected_formulir_items'];
         if (isset($ajuanData['lainnya_text']) && in_array('Lainnya...', $finalChecklistData)) {
             $finalChecklistData = array_map(function ($item) use ($ajuanData) {
-                return $item === 'Lainnya...' ? 'Lainnya: '.$ajuanData['lainnya_text'] : $item;
+                return $item === 'Lainnya...' ? 'Lainnya: ' . $ajuanData['lainnya_text'] : $item;
             }, $finalChecklistData);
         }
 
         $pengajuan = Pengajuan::create([
             'user_id' => $user->id,
             'bidang_id' => $ajuanData['bidang_id'],
-            'status' => 'Diproses',
+            'status_pengajuan' => 'Diproses',
             'formulir_items' => $finalChecklistData,
             'administrasi_items' => $uploadedFiles,
             'deskripsi_pengajuan' => $ajuanData['deskripsi_pengajuan'] ?? 'Tidak ada deskripsi.',
@@ -162,6 +166,7 @@ class AjuanController extends Controller
         ]);
 
         Session::forget('ajuan_data');
+        session()->put('ajuan_data.uploaded_files', $uploadedFiles);
 
         return redirect()->route('ajuan.index')->with('success', 'Ajuan berhasil dikirim!');
     }
@@ -332,7 +337,7 @@ class AjuanController extends Controller
             'deskripsi_pengajuan' => $request->deskripsi_pengajuan,
             'formulir_items' => $finalChecklistData,
             'administrasi_items' => $dokumenData,
-            'status' => 'Diproses',
+            'status_pengajuan' => 'Diproses',
         ]);
 
         // Buat catatan history baru
@@ -370,11 +375,21 @@ class AjuanController extends Controller
 
         $request->validate([
             'status' => ['required', 'in:Disetujui,Ditolak'],
-            'catatan' => ['nullable', 'string'],
+            'catatan' => ['required', 'string'],
+            // 'sudah_verifikasi' => ['sometimes', 'boolean'],
+            // 'kunjungan_lapangan' => ['sometimes', 'boolean'],
+            'sudah_verifikasi' => ['required', 'boolean'],
+            'kunjungan_lapangan' => ['required', 'boolean'],
+            'verified_formulir_items' => ['nullable', 'array'],
+            'verified_administrasi_items' => ['nullable', 'array'],
         ]);
 
         $ajuan->update([
-            'status' => $request->status,
+            'status_pengajuan' => $request->status,
+            // 'sudah_verifikasi' => $request->has('sudah_verifikasi'),
+            // 'kunjungan_lapangan' => $request->has('kunjungan_lapangan'),
+            'sudah_verifikasi' => $request->sudah_verifikasi,
+            'kunjungan_lapangan' => $request->kunjungan_lapangan,
         ]);
 
         History::create([
@@ -399,9 +414,9 @@ class AjuanController extends Controller
 
         $pdf->setOptions([
             'isHtml5ParserEnabled' => true,
-            'isRemoteEnabled' => true   ,
+            'isRemoteEnabled' => true,
             'defaultFont' => 'sans-serif',
         ]);
-        return $pdf->stream('ajuan_'.$ajuan->id.'.pdf');
+        return $pdf->stream('ajuan_' . $ajuan->id . '.pdf');
     }
 }

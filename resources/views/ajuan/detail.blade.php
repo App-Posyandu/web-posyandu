@@ -41,7 +41,7 @@
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 border-t border-b py-6">
+                        <div class="grid grid-cols-1 sm:grid-cols-4 gap-6 border-t border-b py-6">
                             <div>
                                 <dt class="text-sm font-medium text-gray-500">Nama Pengaju</dt>
                                 <dd class="mt-1 text-gray-900 font-semibold">
@@ -53,12 +53,42 @@
                                     {{ $ajuan->bidang->nama_bidang ?? 'Bidang' }}</dd>
                             </div>
                             <div>
+                                <dt class="text-sm font-medium text-gray-500">Status Pengajuan</dt>
+                                <dd class="mt-1">
+                                    <div class="flex flex-col space-y-1">
+                                        @if ($ajuan->sudah_verifikasi)
+                                            <span
+                                                class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                Sudah Verifikasi
+                                            </span>
+                                        @else
+                                            <span
+                                                class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                                Belum Verifikasi
+                                            </span>
+                                        @endif
+
+                                        @if ($ajuan->kunjungan_lapangan)
+                                            <span
+                                                class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                Kunjungan Lapangan
+                                            </span>
+                                        @else
+                                            <span
+                                                class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                                Belum Kunjungan
+                                            </span>
+                                        @endif
+                                    </div>
+                                </dd>
+                            </div>
+                            <div>
                                 <dt class="text-sm font-medium text-gray-500">Status Saat Ini</dt>
                                 <dd class="mt-1">
-                                    @if ($ajuan->status == 'Disetujui')
+                                    @if ($ajuan->status_pengajuan == 'Disetujui')
                                         <span
                                             class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Disetujui</span>
-                                    @elseif ($ajuan->status == 'Ditolak')
+                                    @elseif ($ajuan->status_pengajuan == 'Ditolak')
                                         <span
                                             class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Ditolak</span>
                                     @else
@@ -133,102 +163,232 @@
                     </div>
                 </div>
                 @if (Auth::user()->role == 'kader')
-                    @if ($ajuan->status === 'Diproses')
-                        <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-8">
-                            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Verifikasi Pengajuan</h2>
+                    @if ($ajuan->status_pengajuan === 'Diproses')
+                        <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-8 w-full max-w-4xl"
+                            x-data="{
+                                step: 'verifikasi_dokumen',
+                                sudah_verifikasi: false,
+                                kunjungan_lapangan: false
+                            }">
 
                             <form method="POST" action="{{ route('ajuan.verify', $ajuan) }}">
                                 @csrf
                                 @method('PATCH')
+                                <div x-show="step === 'verifikasi_dokumen'" x-transition>
+                                    <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Verifikasi Pengajuan
+                                    </h2>
 
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    <div>
-                                        <h3 class="font-semibold mb-4 border-b pb-2">Verifikasi Detail Permohonan</h3>
-                                        <div class="space-y-3">
-                                            {{-- Loop melalui SEMUA item yang MUNGKIN ada di bidang ini (dari template) --}}
-                                            @foreach ($templateData['formulir_items'] as $item)
-                                                @if ($item === 'Lainnya...')
-                                                    @php
-                                                        $lainnyaItem = collect($ajuan->formulir_items ?? [])->first(
-                                                            fn($i) => str_starts_with($i, 'Lainnya: '),
-                                                        );
-                                                        $isLainnyaChecked = !is_null($lainnyaItem);
-                                                        $lainnyaTextValue = $isLainnyaChecked
-                                                            ? str_replace('Lainnya: ', '', $lainnyaItem)
-                                                            : '';
-                                                    @endphp
-                                                    <div
-                                                        class="p-2 rounded-md {{ $isLainnyaChecked ? 'bg-green-50' : 'bg-gray-50' }}">
-                                                        <label class="flex items-center">
-                                                            <input type="checkbox" class="h-5 w-5 rounded border-gray-300 text-pink-600 shadow-sm focus:ring-pink-500"
-                                                                @checked($isLainnyaChecked)>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        <div>
+                                            <h3 class="font-semibold mb-4 border-b pb-2">Verifikasi Detail Permohonan
+                                            </h3>
+                                            <div class="space-y-3">
+                                                {{-- Loop melalui SEMUA item yang MUNGKIN ada di bidang ini (dari template) --}}
+                                                @forelse ($ajuan->formulir_items ?? [] as $item)
+                                                    <label
+                                                        class="flex items-center justify-between p-3 rounded-md bg-gray-50 border">
+                                                        <span
+                                                            class="text-sm text-gray-700 pr-4">{{ $item }}</span>
+                                                        {{-- TIDAK dicentang otomatis --}}
+                                                        <input type="checkbox" name="verified_formulir_items[]"
+                                                            value="{{ $item }}"
+                                                            class="h-5 w-5 rounded border-gray-400 text-pink-600 shadow-sm focus:ring-pink-500">
+                                                    </label>
+                                                @empty
+                                                    <p class="text-gray-500 text-sm">Tidak ada item permohonan yang
+                                                        dipilih.
+                                                    </p>
+                                                @endforelse
+                                                {{-- @foreach ($templateData['formulir_items'] as $item)
+                                                    @if ($item === 'Lainnya...')
+                                                        @php
+                                                            $lainnyaItem = collect($ajuan->formulir_items ?? [])->first(
+                                                                fn($i) => str_starts_with($i, 'Lainnya: '),
+                                                            );
+                                                            $isLainnyaChecked = !is_null($lainnyaItem);
+                                                            $lainnyaTextValue = $isLainnyaChecked
+                                                                ? str_replace('Lainnya: ', '', $lainnyaItem)
+                                                                : '';
+                                                        @endphp
+                                                        <div
+                                                            class="p-2 rounded-md {{ $isLainnyaChecked ? 'bg-green-50' : 'bg-gray-50' }}">
+                                                            <label class="flex items-center">
+                                                                <input type="checkbox"
+                                                                    class="h-5 w-5 rounded border-gray-300 text-pink-600 shadow-sm focus:ring-pink-500"
+                                                                    @checked($isLainnyaChecked)>
+                                                                <span
+                                                                    class="ms-3 text-sm font-semibold text-gray-700">{{ $item }}</span>
+                                                            </label>
+                                                            @if ($isLainnyaChecked)
+                                                                <div class="mt-2 pl-8">
+                                                                    <p class="text-xs text-gray-500">Isian Pengguna:</p>
+                                                                    <p
+                                                                        class="p-2 bg-white border rounded-md text-sm text-gray-800">
+                                                                        {{ $lainnyaTextValue }}</p>
+                                                                </div>
+                                                            @endif
+                                                        </div>
+                                                    @else
+                                                        <label
+                                                            class="flex items-center p-2 rounded-md {{ in_array($item, $ajuan->formulir_items ?? []) ? 'bg-green-50' : 'bg-gray-50' }}">
+                                                            <input type="checkbox"
+                                                                class="h-5 w-5 rounded border-gray-300 text-pink-600 shadow-sm focus:ring-pink-500"
+                                                                @checked(in_array($item, $ajuan->formulir_items ?? []))>
                                                             <span
-                                                                class="ms-3 text-sm font-semibold text-gray-700">{{ $item }}</span>
+                                                                class="ms-3 text-sm text-gray-700">{{ $item }}</span>
                                                         </label>
-                                                        {{-- Tampilkan input teks HANYA jika memang diisi oleh pengguna --}}
-                                                        @if ($isLainnyaChecked)
-                                                            <div class="mt-2 pl-8">
-                                                                <p class="text-xs text-gray-500">Isian Pengguna:</p>
-                                                                <p
-                                                                    class="p-2 bg-white border rounded-md text-sm text-gray-800">
-                                                                    {{ $lainnyaTextValue }}</p>
-                                                            </div>
+                                                    @endif
+                                                @endforeach --}}
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <h3 class="font-semibold mb-4 border-b pb-2">Verifikasi Dokumen Administrasi
+                                            </h3>
+                                            <div class="space-y-3">
+                                                @forelse ($ajuan->administrasi_items ?? [] as $key => $path)
+                                                    @php
+                                                        $label =
+                                                            $templateData['administrasi_items'][$key] ??
+                                                            ucfirst(str_replace('_', ' ', $key));
+                                                    @endphp
+                                                    <div class="p-3 rounded-md bg-gray-50 border">
+                                                        <label class="flex items-center justify-between">
+                                                            <span
+                                                                class="text-sm text-gray-700">{{ $label }}</span>
+                                                            <input type="checkbox"
+                                                                name="verified_administrasi_items[{{ $key }}]"
+                                                                value="1"
+                                                                class="h-5 w-5 rounded border-gray-400 text-pink-600 shadow-sm focus:ring-pink-500">
+                                                        </label>
+                                                        <a href="{{ route('ajuan.dokumen.download', ['path' => $path]) }}"
+                                                            target="_blank"
+                                                            class="text-xs text-blue-600 hover:underline ml-1">
+                                                            Lihat/Unduh Dokumen
+                                                        </a>
+                                                    </div>
+                                                @empty
+                                                    <p class="text-gray-500 text-sm">Tidak ada dokumen yang diunggah.
+                                                    </p>
+                                                @endforelse
+                                                {{-- @foreach ($templateData['administrasi_items'] as $key => $label)
+                                                    <div
+                                                        class="p-2 rounded-md {{ isset($ajuan->administrasi_items[$key]) ? 'bg-green-50' : 'bg-red-50 border-l-4 border-red-400' }}">
+                                                        <label class="flex items-center">
+                                                            <input type="checkbox"
+                                                                class="h-5 w-5 rounded border-gray-300 text-pink-600 shadow-sm focus:ring-pink-500"
+                                                                @checked(isset($ajuan->administrasi_items[$key]))>
+                                                            <span
+                                                                class="ms-3 text-sm text-gray-700">{{ $label }}</span>
+                                                        </label>
+                                                        @if (isset($ajuan->administrasi_items[$key]))
+                                                            <a href="{{ route('ajuan.dokumen.download', ['path' => $ajuan->administrasi_items[$key]]) }}"
+                                                                class="text-xs text-blue-600 hover:underline ml-8">Lihat/Unduh
+                                                                Dokumen</a>
+                                                        @else
+                                                            <span class="text-xs text-red-500 ml-8">Dokumen tidak
+                                                                diunggah</span>
                                                         @endif
                                                     </div>
-                                                @else
-                                                    <label
-                                                        class="flex items-center p-2 rounded-md {{ in_array($item, $ajuan->formulir_items ?? []) ? 'bg-green-50' : 'bg-gray-50' }}">
-                                                        <input type="checkbox"
-                                                            class="h-5 w-5 rounded border-gray-300 text-pink-600 shadow-sm focus:ring-pink-500"
-                                                            {{-- Centang otomatis jika item ini ada di dalam data pengajuan yang sudah diisi --}} @checked(in_array($item, $ajuan->formulir_items ?? []))>
-                                                        <span
-                                                            class="ms-3 text-sm text-gray-700">{{ $item }}</span>
-                                                    </label>
-                                                @endif
-                                            @endforeach
+                                                @endforeach --}}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center justify-end my-8 space-x-4">
+                                        <button type="submit" name="status" value="Ditolak"
+                                            class="py-2 px-6 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                                            Tolak
+                                        </button>
+                                        <button type="button"
+                                            @click="step = 'tindak_lanjut'; sudah_verifikasi = true"
+                                            class="inline-flex items-center px-6 py-2 bg-green-600 text-white font-semibold text-sm rounded-md hover:bg-green-700">
+                                            Setujui Verifikasi
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div x-show="step === 'tindak_lanjut'" x-transition:enter.duration.500ms>
+                                    <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Tindak Lanjut &
+                                        Keputusan</h2>
+
+                                    <input type="hidden" name="sudah_verifikasi"
+                                        x-bind:value="sudah_verifikasi ? '1' : '0'">
+
+                                    <div class="mt-6 border-t pt-6">
+                                        <h3 class="font-semibold mb-4 text-gray-700">Perlu Kunjungan Lapangan?</h3>
+                                        <div class="space-y-3">
+                                            <label class="flex items-center p-3 border rounded-md">
+                                                <input type="radio" name="kunjungan_lapangan" value="1"
+                                                    class="h-5 w-5 ...">
+                                                <span class="ms-3 text-sm text-gray-700">Ya, perlu kunjungan
+                                                    lapangan</span>
+                                            </label>
+                                            <label class="flex items-center p-3 border rounded-md">
+                                                <input type="radio" name="kunjungan_lapangan" value="0"
+                                                    class="h-5 w-5 ..." checked>
+                                                <span class="ms-3 text-sm text-gray-700">Tidak, tidak perlu kunjungan
+                                                    lapangan</span>
+                                            </label>
                                         </div>
                                     </div>
 
-                                    <div>
-                                        <h3 class="font-semibold mb-4 border-b pb-2">Verifikasi Dokumen Administrasi
-                                        </h3>
-                                        <div class="space-y-3">
-                                            {{-- Loop melalui SEMUA syarat dokumen yang MUNGKIN ada (dari template) --}}
-                                            @foreach ($templateData['administrasi_items'] as $key => $label)
-                                                <div
-                                                    class="p-2 rounded-md {{ isset($ajuan->administrasi_items[$key]) ? 'bg-green-50' : 'bg-red-50 border-l-4 border-red-400' }}">
-                                                    <label class="flex items-center">
-                                                        <input type="checkbox"
-                                                            class="h-5 w-5 rounded border-gray-300 text-pink-600 shadow-sm focus:ring-pink-500"
-                                                            @checked(isset($ajuan->administrasi_items[$key]))>
-                                                        <span
-                                                            class="ms-3 text-sm text-gray-700">{{ $label }}</span>
-                                                    </label>
-                                                    @if (isset($ajuan->administrasi_items[$key]))
-                                                        <a href="{{ route('ajuan.dokumen.download', ['path' => $ajuan->administrasi_items[$key]]) }}"
-                                                            class="text-xs text-blue-600 hover:underline ml-8">Lihat/Unduh
-                                                            Dokumen</a>
-                                                    @else
-                                                        <span class="text-xs text-red-500 ml-8">Dokumen tidak
-                                                            diunggah</span>
-                                                    @endif
-                                                </div>
-                                            @endforeach
-                                        </div>
+                                    <div class="mt-6">
+                                        <label for="catatan" class="block font-medium text-sm text-gray-700">Catatan
+                                            Akhir</label>
+                                        <textarea id="catatan" name="catatan" rows="3"
+                                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                                            placeholder="Tambahkan catatan jika pengajuan ditolak..."></textarea>
+                                    </div>
+
+                                    <div class="flex items-center justify-end mt-8 space-x-4">
+                                        <button type="button"
+                                            @click="step = 'verifikasi_dokumen'; sudah_verifikasi = false"
+                                            class="py-2 px-4 bg-gray-200 text-gray-800 rounded-md text-sm font-semibold hover:bg-gray-300">
+                                            Kembali
+                                        </button>
+
+                                        <button type="submit" name="status" value="Ditolak"
+                                            class="inline-flex items-center px-6 py-2 bg-red-600 text-white font-semibold text-sm rounded-md hover:bg-red-700">
+                                            Tolak Pengajuan
+                                        </button>
+
+                                        <button type="submit" name="status" value="Disetujui"
+                                            class="inline-flex items-center px-6 py-2 bg-green-600 text-white font-semibold text-sm rounded-md hover:bg-green-700">
+                                            Setujui Pengajuan
+                                        </button>
+                                    </div>
+                                </div>
+                                {{-- <div class="mt-8 border-t pt-6">
+                                    <h3 class="font-semibold mb-4 text-gray-700">Tindak Lanjut</h3>
+                                    <div class="flex flex-col space-y-3">
+                                        <label class="flex items-center">
+                                            <input type="checkbox" name="sudah_verifikasi" value="1"
+                                                @checked(old('sudah_verifikasi', $ajuan->sudah_verifikasi))
+                                                class="rounded border-gray-300 text-pink-600 shadow-sm focus:ring-pink-500 h-5 w-5">
+                                            <span class="ms-3 text-sm text-gray-700">Sudah Verifikasi</span>
+                                        </label>
+                                        <label class="flex items-center">
+                                            <input type="checkbox" name="kunjungan_lapangan" value="1"
+                                                @checked(old('kunjungan_lapangan', $ajuan->kunjungan_lapangan))
+                                                class="rounded border-gray-300 text-pink-600 shadow-sm focus:ring-pink-500 h-5 w-5">
+                                            <span class="ms-3 text-sm text-gray-700">Perlu Kunjungan Lapangan</span>
+                                        </label>
                                     </div>
                                 </div>
 
                                 <div class="mt-8 border-t pt-6 space-y-4">
                                     <div>
-                                        <label for="catatan" class="block font-medium text-sm text-gray-700">Catatan
-                                            (Opsional)</label>
-                                        <textarea id="catatan" name="catatan" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                                        <label for="catatan"
+                                            class="block font-medium text-sm text-gray-700">Catatan</label>
+                                        <textarea id="catatan" name="catatan" rows="3" required
+                                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
                                             placeholder="Tambahkan catatan jika pengajuan ditolak..."></textarea>
                                     </div>
                                     <div>
-                                        <label for="status" class="block font-medium text-sm text-gray-700">Ubah
+                                        <label for="status_pengajuan"
+                                            class="block font-medium text-sm text-gray-700">Ubah
                                             Status Pengajuan</label>
-                                        <select id="status" name="status"
+                                        <select id="status_pengajuan" name="status_pengajuan"
                                             class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
                                             <option value="Disetujui">Setujui Pengajuan</option>
                                             <option value="Ditolak">Tolak Pengajuan</option>
@@ -238,10 +398,10 @@
 
                                 <div class="flex items-center justify-end mt-6">
                                     <button type="submit"
-                                        class="inline-flex items-center px-6 py-2 bg-green-600 text-white font-semibold text-sm rounded-md hover:bg-green-700">
-                                        Simpan Verifikasi
+                                        class="inline-flex items-center px-6 py-2 bg-pink-600 text-white font-semibold text-sm rounded-md hover:bg-pink-700">
+                                        Verifikasi
                                     </button>
-                                </div>
+                                </div> --}}
                             </form>
                         </div>
                     @endif

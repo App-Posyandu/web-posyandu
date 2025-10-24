@@ -1,50 +1,50 @@
 @extends('admin.layouts.index')
 @section('title', 'Manajemen Pengguna')
 @section('content')
-    <x-app-layout>
+    <div>
         <x-slot name="header">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 {{ __('Manajemen Pengguna') }}
             </h2>
         </x-slot>
-        @if (session('success'))
-            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg mb-6" role="alert">
-                <div class="flex">
-                    <div class="py-1">
-                        {{-- Ganti ikon menjadi centang --}}
-                        <i class="bi bi-check-circle-fill mr-3"></i>
-                    </div>
-                    <div>
-                        <p class="font-bold">Berhasil</p>
-                        <p class="text-sm">{{ session('success') }}</p>
-                    </div>
-                </div>
-            </div>
-        @endif
-
-        {{-- Notifikasi untuk error (jika Anda butuh) --}}
-        @if (session('error'))
-            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg mb-6" role="alert">
-                <div class="flex">
-                    <div class="py-1">
-                        <i class="bi bi-exclamation-triangle-fill mr-3"></i>
-                    </div>
-                    <div>
-                        <p class="font-bold">Gagal</p>
-                        <p class="text-sm">{{ session('error') }}</p>
-                    </div>
-                </div>
-            </div>
-        @endif
 
         <div class="py-12">
+            @if (session('success'))
+                <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg mb-6" role="alert">
+                    <div class="flex">
+                        <div class="py-1">
+                            {{-- Ganti ikon menjadi centang --}}
+                            <i class="bi bi-check-circle-fill mr-3"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold">Berhasil</p>
+                            <p class="text-sm">{{ session('success') }}</p>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            {{-- Notifikasi untuk error (jika Anda butuh) --}}
+            @if (session('error'))
+                <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg mb-6" role="alert">
+                    <div class="flex">
+                        <div class="py-1">
+                            <i class="bi bi-exclamation-triangle-fill mr-3"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold">Gagal</p>
+                            <p class="text-sm">{{ session('error') }}</p>
+                        </div>
+                    </div>
+                </div>
+            @endif
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6 text-gray-900">
 
                         <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                             <h2 class="text-2xl font-bold text-gray-800">List Pengguna</h2>
-                            <div class="flex items-center gap-10">
+                            <div class="flex items-center gap-2">
                                 <a href="{{ route('admin.users.create') }}"
                                     class="px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600">
                                     <i class="bi bi-plus-circle-fill mr-2"></i>Tambah User
@@ -141,7 +141,7 @@
                                                 @endif
 
                                                 {{-- Cek apakah verified_at ADALAH null --}}
-                                                @if (is_null($user->verified_at))
+                                                @if (is_null($user->verified_at) && in_array($user->role, ['masyarakat, kader']))
                                                     @php
                                                         $currentUser = Auth::user();
                                                         $canVerify = false;
@@ -188,5 +188,6 @@
                 </div>
             </div>
         </div>
-    </x-app-layout>
+
+    </div>
 @endsection
