@@ -45,8 +45,8 @@ class RegisteredUserController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'role' => ['required', 'in:masyarakat,kader'],
-            'ktp' => ['required', 'image', 'mimes:jpeg,png,jpg', 'max:2048'], // Maksimal 2MB
-            'kk' => ['required', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],  // Maksimal 2MB
+            'ktp' => ['required', 'image', 'mimes:jpeg,png,jpg,pdf', 'max:2048'], // Maksimal 2MB
+            'kk' => ['required', 'image', 'mimes:jpeg,png,jpg,pdf', 'max:2048'],  // Maksimal 2MB
             'no_telepon' => ['required', 'string', 'max:20', 'unique:users']
         ]);
 

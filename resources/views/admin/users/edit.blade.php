@@ -79,7 +79,7 @@
                                     <x-input-error :messages="$errors->get('posyandu_id')" class="mt-2" />
                                 </div>
 
-                                <div x-data="{ previewUrl: '{{ $user->ktp ?? '' }}' }">
+                                {{-- <div x-data="{ previewUrl: '{{ $user->ktp ?? '' }}' }">
                                     <x-input-label for="ktp" :value="__('Ubah KTP (Opsional)')" />
                                     <div
                                         class="mt-1 w-full h-32 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-md">
@@ -111,7 +111,7 @@
                                     <input id="kk" class="hidden" type="file" name="kk" accept="image/*"
                                         @change="previewUrl = URL.createObjectURL($event.target.files[0])" />
                                     <x-input-error :messages="$errors->get('kk')" class="mt-2" />
-                                </div>
+                                </div> --}}
 
                                 <div>
                                     <x-input-label for="email" :value="__('Email')" />

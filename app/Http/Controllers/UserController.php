@@ -118,8 +118,8 @@ class UserController extends Controller
             'tempat_lahir' => $request->tempat_lahir,
             'tanggal_lahir' => $request->tanggal_lahir,
             'jenis_kelamin' => $request->jenis_kelamin,
-            'ktp' => $ktpBase64,
-            'kk' => $kkBase64,
+            // 'ktp' => $ktpBase64,
+            // 'kk' => $kkBase64,
             'verified_at' => $isInstantVerified ? now() : null,
             'verified_by' => $isInstantVerified ? $userAuth->id : null,
         ]);
