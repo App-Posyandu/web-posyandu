@@ -23,7 +23,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/ajuan/administrasi', [AjuanController::class, 'createAdministrasi'])->name('ajuan.create.administrasi');
     Route::post('/ajuan/store-administrasi', [AjuanController::class, 'storeAdministrasi'])->name('ajuan.store.administrasi');
     Route::get('/ajuan/{ajuan}', [AjuanController::class, 'show'])->name('ajuan.show');
-    Route::get('/ajuan/dokumen/download', [AjuanController::class, 'downloadDokumen'])->name('ajuan.dokumen.download');
+    // Route::get('/ajuan/dokumen/download', [AjuanController::class, 'downloadDokumen'])->name('ajuan.dokumen.download');
+    Route::get('/ajuan/{ajuan}/dokumen/{key}', [AjuanController::class, 'downloadDokumen'])->name('ajuan.dokumen.download');
     Route::patch('/ajuan/{ajuan}/verify', [AjuanController::class, 'verifyAjuan'])->name('ajuan.verify');
 
     Route::middleware(['verified', 'role:kader,kabid,masyarakat,ketua-kader,admin'])->group(function () {
@@ -37,7 +38,7 @@ Route::middleware('auth')->group(function () {
 
 
     // Rute untuk Kader & Kabid
-    Route::middleware(['role:kader,kabid'])->group(function () {
+    Route::middleware(['role:ketua-kader,kader,kabid'])->group(function () {
         Route::resource('penimbangan', PenimbanganController::class);
         //export to excel
         Route::get('/export-excel', [LaporanController::class, 'exportExcel'])->name('laporan.exportExcel');

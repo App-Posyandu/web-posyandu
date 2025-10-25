@@ -123,7 +123,7 @@
                                 <ul class="space-y-2">
                                     @forelse ($ajuan->administrasi_items as $key => $path)
                                         <li class="flex items-center">
-                                            <a href="{{ route('ajuan.dokumen.download', ['path' => $path]) }}"
+                                            <a href="{{ route('ajuan.dokumen.download', ['ajuan' => $ajuan, 'key' => $key]) }}"
                                                 target="_blank" class="text-blue-600 hover:underline flex items-center">
                                                 <i class="bi bi-file-earmark-arrow-down-fill text-blue-500 mr-2"></i>
                                                 <span>{{ ucfirst(str_replace('_', ' ', $key)) }}</span>
@@ -183,13 +183,11 @@
                                             <h3 class="font-semibold mb-4 border-b pb-2">Verifikasi Detail Permohonan
                                             </h3>
                                             <div class="space-y-3">
-                                                {{-- Loop melalui SEMUA item yang MUNGKIN ada di bidang ini (dari template) --}}
                                                 @forelse ($ajuan->formulir_items ?? [] as $item)
                                                     <label
                                                         class="flex items-center justify-between p-3 rounded-md bg-gray-50 border">
                                                         <span
                                                             class="text-sm text-gray-700 pr-4">{{ $item }}</span>
-                                                        {{-- TIDAK dicentang otomatis --}}
                                                         <input type="checkbox" name="verified_formulir_items[]"
                                                             value="{{ $item }}"
                                                             class="h-5 w-5 rounded border-gray-400 text-pink-600 shadow-sm focus:ring-pink-500">
@@ -261,7 +259,7 @@
                                                                 value="1"
                                                                 class="h-5 w-5 rounded border-gray-400 text-pink-600 shadow-sm focus:ring-pink-500">
                                                         </label>
-                                                        <a href="{{ route('ajuan.dokumen.download', ['path' => $path]) }}"
+                                                        <a href="{{ route('ajuan.dokumen.download', ['ajuan' => $ajuan, 'key' => $key]) }}"
                                                             target="_blank"
                                                             class="text-xs text-blue-600 hover:underline ml-1">
                                                             Lihat/Unduh Dokumen

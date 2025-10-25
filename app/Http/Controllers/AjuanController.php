@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Session;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class AjuanController extends Controller
 {
@@ -351,20 +352,54 @@ class AjuanController extends Controller
         return redirect()->route('ajuan.show', $ajuan)->with('success', 'Pengajuan berhasil diperbarui dan diajukan kembali.');
     }
 
-    public function downloadDokumen(Request $request)
+    public function downloadDokumen(Pengajuan $ajuan, $key)
     {
-        $path = $request->query('path');
+        $ajuan->load(['user', 'bidang']);
 
-        if (!$path || !Storage::disk('public')->exists($path)) {
-            abort(404, 'File tidak ditemukan.');
+        $dokumenData = $ajuan->administrasi_items;
+        if (!isset($dokumenData) || !isset($dokumenData[$key])) {
+            abort(404, 'Dokumen tidak ditemukan di dalam pengajuan ini.');
         }
 
-        $fullPath = storage_path('app/public/' . $path);
-        if (!file_exists($fullPath)) {
-            abort(404, 'File tidak ditemukan.');
-        }
+        $fileData = $dokumenData[$key];
 
-        return response()->download($fullPath);
+        $userName = Str::slug($ajuan->user->name, '_');
+        $templateData = $this->getBidangData($ajuan->bidang->slug);
+        $label = $templateData['administrasi_items'][$key] ?? $key;
+        $cleanLabel = Str::slug($label, '_');
+
+        if (Str::startsWith($fileData, 'data:')) {
+            try {
+                list($type, $data) = explode(';', $fileData);
+                list(, $data)      = explode(',', $data);
+                $fileContents = base64_decode($data);
+
+                $mime = str_replace('data:', '', $type);
+                $extension = explode('/', $mime)[1] ?? 'png';
+
+                $filename = "{$cleanLabel}-{$userName}.{$extension}";
+
+                // Buat response download manual
+                return response()->make($fileContents, 200, [
+                    'Content-Type' => $mime,
+                    'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                ]);
+            } catch (\Exception $e) {
+                abort(404, 'Gagal memproses data file KTP/KK.');
+            }
+        } else {
+            $path = $fileData;
+            if (!Storage::disk('public')->exists($path)) {
+                abort(404, 'File tidak ditemukan di storage.');
+            }
+
+            $extension = pathinfo($path, PATHINFO_EXTENSION);
+            $filename = "{$cleanLabel}-{$userName}.{$extension}";
+
+            $fullPath = Storage::disk('public')->path($path);
+
+            return response()->download($fullPath, $filename);
+        }
     }
 
     public function verifyAjuan(Request $request, Pengajuan $ajuan)
@@ -374,21 +409,29 @@ class AjuanController extends Controller
 
         $request->validate([
             'status' => ['required', 'in:Disetujui,Ditolak'],
-            'catatan' => ['required', 'string'],
+            'catatan' => ['required_if:status,Ditolak', 'nullable', 'string'],
             // 'sudah_verifikasi' => ['sometimes', 'boolean'],
             // 'kunjungan_lapangan' => ['sometimes', 'boolean'],
-            'sudah_verifikasi' => ['required', 'boolean'],
-            'kunjungan_lapangan' => ['required', 'boolean'],
+            'sudah_verifikasi' => ['required_if:status,Disetujui', 'boolean'],
+            'kunjungan_lapangan' => ['required_if:status,Disetujui', 'boolean'],
             'verified_formulir_items' => ['nullable', 'array'],
             'verified_administrasi_items' => ['nullable', 'array'],
         ]);
+
+        $sudahVerifikasi = $request->boolean('sudah_verifikasi');
+        $kunjunganLapangan = $request->boolean('kunjungan_lapangan');
+
+        if ($request->status === 'Ditolak') {
+            $sudahVerifikasi = false;
+            $kunjunganLapangan = false;
+        }
 
         $ajuan->update([
             'status_pengajuan' => $request->status,
             // 'sudah_verifikasi' => $request->has('sudah_verifikasi'),
             // 'kunjungan_lapangan' => $request->has('kunjungan_lapangan'),
-            'sudah_verifikasi' => $request->sudah_verifikasi,
-            'kunjungan_lapangan' => $request->kunjungan_lapangan,
+            'sudah_verifikasi' => $sudahVerifikasi,
+            'kunjungan_lapangan' => $kunjunganLapangan,
         ]);
 
         History::create([
