@@ -17,7 +17,7 @@ use Illuminate\Support\Str;
 class AjuanController extends Controller
 {
     use AuthorizesRequests;
-    public function index(User $user, Pengajuan $ajuan)
+    public function index(User $user, Request $request)
     {
         $user = Auth::user();
         $query = Pengajuan::with(['user', 'bidang']);
@@ -25,7 +25,19 @@ class AjuanController extends Controller
         if ($user->role === 'masyarakat') {
             $query->where('user_id', $user->id);
         }
-        $semuaAjuan = Pengajuan::with(['user', 'bidang'])->latest()->paginate(5);
+
+        if ($request->filled('search')) {
+            $searchTerm = $request->input('search');
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('deskripsi_pengajuan', 'like', '%' . $searchTerm . '%')
+                    ->orWhere('status', 'like', '%' . $searchTerm . '%')
+                    ->orWhereHas('bidang', function ($bidangQuery) use ($searchTerm) {
+                        $bidangQuery->where('nama_bidang', 'like', '%' . $searchTerm . '%');
+                    });
+            });
+        }
+
+        $semuaAjuan = $query->latest()->paginate(5)->withQueryString();
 
         return view('ajuan.index', [
             'semuaAjuan' => $semuaAjuan,
@@ -116,13 +128,13 @@ class AjuanController extends Controller
         $validationRules = [];
         foreach ($ajuanData['administrasi_items_template'] as $key => $item) {
             if ($key === 'ktp') {
-                $validationRules[$key] = ['required_if:ktp_mode,upload', 'nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'];
+                $validationRules[$key] = ['required_if:ktp_mode,upload', 'nullable', 'file', 'mimes:pdf,jpg,jpeg,png,pdf', 'max:2048'];
             } elseif ($key === 'kk') {
-                $validationRules[$key] = ['required_if:kk_mode,upload', 'nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'];
+                $validationRules[$key] = ['required_if:kk_mode,upload', 'nullable', 'file', 'mimes:pdf,jpg,jpeg,png,pdf', 'max:2048'];
             } elseif ($key === 'kartu_bpjs') {
-                $validationRules[$key] = ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'];
+                $validationRules[$key] = ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,pdf', 'max:2048'];
             } else {
-                $validationRules[$key] = ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'];
+                $validationRules[$key] = ['required', 'file', 'mimes:pdf,jpg,jpeg,pngp,df', 'max:2048'];
             }
         }
         $validationRules['agreement'] = ['required'];

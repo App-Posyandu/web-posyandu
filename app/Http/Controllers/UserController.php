@@ -85,8 +85,8 @@ class UserController extends Controller
             'tempat_lahir' => ['required', 'string', 'max:255'],
             'tanggal_lahir' => ['required', 'date'],
             'jenis_kelamin' => ['required', 'string'],
-            'ktp' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
-            'kk' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
+            'ktp' => ['nullable', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:2048'],
+            'kk' => ['nullable', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:2048'],
         ]);
 
         // Proses file KTP jika diunggah
@@ -168,8 +168,8 @@ class UserController extends Controller
             'tempat_lahir' => ['required', 'string', 'max:255'],
             'tanggal_lahir' => ['required', 'date'],
             'jenis_kelamin' => ['required', 'string'],
-            'ktp' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
-            'kk' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
+            'ktp' => ['nullable', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:2048'],
+            'kk' => ['nullable', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:2048'],
         ]);
 
         // Ambil semua data yang sudah tervalidasi

@@ -115,7 +115,7 @@
                                         <span x-text="fileName || 'Unggah KTP'" class="truncate"></span>
                                         <i class="bi bi-cloud-upload text-pink-500 text-lg"></i>
                                     </label>
-                                    <input id="ktp" class="hidden" type="file" name="ktp"
+                                    <input id="ktp" class="hidden" type="file" name="ktp" accept="image/*,application/pdf"
                                         @change="fileName = $event.target.files[0] ? $event.target.files[0].name : ''" />
                                     <x-input-error :messages="$errors->get('ktp')" class="mt-2" />
                                 </div>
@@ -127,7 +127,7 @@
                                         <span x-text="fileName || 'Unggah KK'" class="truncate"></span>
                                         <i class="bi bi-cloud-upload text-pink-500 text-lg"></i>
                                     </label>
-                                    <input id="kk" class="hidden" type="file" name="kk"
+                                    <input id="kk" class="hidden" type="file" name="kk" accept="image/*,application/pdf"
                                         @change="fileName = $event.target.files[0] ? $event.target.files[0].name : ''" />
                                     <x-input-error :messages="$errors->get('kk')" class="mt-2" />
                                 </div>

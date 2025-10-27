@@ -11,8 +11,8 @@
             kk_preview: '{{ $userKk ?? '' }}',
             kk_filename: '{{ $userKk ? 'KK Terdaftar' : 'Pilih file' }}'
         }">
-            <input type="hidden" name="ktp_mode" x-bind:value="ktp_mode">
-            <input type="hidden" name="kk_mode" x-bind:value="kk_mode">
+            <input type="hidden" name="ktp_mode" accept="image/*,application/pdf" x-bind:value="ktp_mode">
+            <input type="hidden" name="kk_mode" accept="image/*,application/pdf" x-bind:value="kk_mode">
             @foreach ($items as $key => $label)
                 @if ($key === 'ktp')
                     <div>
