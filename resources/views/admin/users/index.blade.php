@@ -141,7 +141,7 @@
                                                 @endif
 
                                                 {{-- Cek apakah verified_at ADALAH null --}}
-                                                @if (is_null($user->verified_at) && in_array($user->role, ['masyarakat, kader']))
+                                                @if (is_null($user->verified_at) && in_array($user->role, ['masyarakat','kader']))
                                                     @php
                                                         $currentUser = Auth::user();
                                                         $canVerify = false;

@@ -413,6 +413,45 @@
                                 </div> --}}
                             </form>
                         </div>
+                    @elseif ($ajuan->status_pengajuan === 'Diproses' && $ajuan->sudah_verifikasi && $ajuan->kunjungan_lapangan)
+
+                        <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-8 w-full max-w-4xl">
+                            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Tahap 3: Keputusan Pasca Kunjungan Lapangan</h2>
+                            <p class="text-center text-sm text-gray-600 mb-6">Pengajuan ini sudah diverifikasi dan kunjungan lapangan telah ditandai. Silakan masukkan keputusan akhir setelah kunjungan dilakukan.</p>
+                            
+                            <form method="POST" action="{{ route('ajuan.verify', $ajuan) }}">
+                                @csrf
+                                @method('PATCH')
+            
+                                <div class="space-y-4">
+                                    <div>
+                                        <label for="finalize_status" class="block font-medium text-sm text-gray-700">Status Pengajuan Akhir</label>
+                                        {{-- Kita gunakan nama 'finalize_status' agar tidak bentrok dengan input 'status' di Formulir A --}}
+                                        <select id="finalize_status" name="finalize_status"
+                                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
+                                            <option value="" disabled selected>Pilih Keputusan...</option>
+                                            <option value="Disetujui">Setujui Pengajuan</option>
+                                            <option value="Ditolak">Tolak Pengajuan</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="catatan_final_visit"
+                                               class="block font-medium text-sm text-gray-700">Catatan Akhir (Wajib jika ditolak)</label>
+                                        <textarea id="catatan_final_visit" name="catatan" rows="3"
+                                                  class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                                                  placeholder="Tambahkan catatan akhir pasca kunjungan..."></textarea>
+                                    </div>
+                                </div>
+            
+                                <div class="flex items-center justify-end mt-8">
+                                    <button type="submit"
+                                            class="inline-flex items-center px-6 py-2 bg-pink-500 text-white font-semibold text-sm rounded-md hover:bg-pink-600">
+                                        Simpan Keputusan Akhir
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     @endif
                 @endif
             </main>

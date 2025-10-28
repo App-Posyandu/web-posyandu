@@ -26,17 +26,28 @@ class AjuanController extends Controller
             $query->where('user_id', $user->id);
         }
 
-        if ($request->filled('search')) {
-            $searchTerm = $request->input('search');
-            $query->where(function ($q) use ($searchTerm) {
-                $q->where('deskripsi_pengajuan', 'like', '%' . $searchTerm . '%')
-                    ->orWhere('status', 'like', '%' . $searchTerm . '%')
-                    ->orWhereHas('bidang', function ($bidangQuery) use ($searchTerm) {
-                        $bidangQuery->where('nama_bidang', 'like', '%' . $searchTerm . '%');
-                    });
-            });
+        if ($request->filled('status')) {
+            $query->where('status_pengajuan', $request->status);
         }
 
+        if ($request->filled('search')) {
+            $searchTerm = '%' . strtolower($request->input('search')) . '%';
+
+            $query->where(function ($q) use ($searchTerm) {
+                
+                $q->whereHas('user', function ($userQuery) use ($searchTerm) {
+                    $userQuery->whereRaw('LOWER(name) LIKE ?', [$searchTerm]);
+                })
+                
+                ->orWhereRaw('LOWER(deskripsi_pengajuan) LIKE ?', [$searchTerm])
+                
+                ->orWhereRaw('LOWER(status_pengajuan) LIKE ?', [$searchTerm])
+                
+                ->orWhereHas('bidang', function ($bidangQuery) use ($searchTerm) {
+                    $bidangQuery->whereRaw('LOWER(nama_bidang) LIKE ?', [$searchTerm]);
+                });
+            });
+        }
         $semuaAjuan = $query->latest()->paginate(5)->withQueryString();
 
         return view('ajuan.index', [
@@ -128,13 +139,13 @@ class AjuanController extends Controller
         $validationRules = [];
         foreach ($ajuanData['administrasi_items_template'] as $key => $item) {
             if ($key === 'ktp') {
-                $validationRules[$key] = ['required_if:ktp_mode,upload', 'nullable', 'file', 'mimes:pdf,jpg,jpeg,png,pdf', 'max:2048'];
+                $validationRules[$key] = ['required_if:ktp_mode,upload', 'nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'];
             } elseif ($key === 'kk') {
-                $validationRules[$key] = ['required_if:kk_mode,upload', 'nullable', 'file', 'mimes:pdf,jpg,jpeg,png,pdf', 'max:2048'];
+                $validationRules[$key] = ['required_if:kk_mode,upload', 'nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'];
             } elseif ($key === 'kartu_bpjs') {
-                $validationRules[$key] = ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,pdf', 'max:2048'];
+                $validationRules[$key] = ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'];
             } else {
-                $validationRules[$key] = ['required', 'file', 'mimes:pdf,jpg,jpeg,pngp,df', 'max:2048'];
+                $validationRules[$key] = ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'];
             }
         }
         $validationRules['agreement'] = ['required'];
@@ -384,6 +395,7 @@ class AjuanController extends Controller
             try {
                 list($type, $data) = explode(';', $fileData);
                 list(, $data)      = explode(',', $data);
+
                 $fileContents = base64_decode($data);
 
                 $mime = str_replace('data:', '', $type);
@@ -421,10 +433,16 @@ class AjuanController extends Controller
 
         $request->validate([
             'status' => ['nullable', 'in:Disetujui,Ditolak'],
-            'catatan' => ['required_if:status,Ditolak', 'nullable', 'string'],
+             'catatan' => [
+                'nullable', 
+                'string',
+                'required_if:status,Ditolak',
+                'required_if:tolak_langsung,Ditolak',
+                'required_if:finalize_status,Ditolak',
+            ],
             // 'sudah_verifikasi' => ['sometimes', 'boolean'],
             // 'kunjungan_lapangan' => ['sometimes', 'boolean'],
-            'sudah_verifikasi' => ['required_if:status,Disetujui', 'boolean'],
+             'sudah_verifikasi' => ['nullable', 'in:0,1'],
             'kunjungan_lapangan' => ['nullable', 'in:0,1'],
             'tolak_langsung' => ['nullable', 'in:Ditolak'],
             'verified_formulir_items' => ['nullable', 'array'],
@@ -445,12 +463,45 @@ class AjuanController extends Controller
         $statusHistory = '';
         $catatanHistory = $request->catatan ?? 'Status diperbarui oleh kader.';
 
+        $verifiedFormulir = $request->verified_formulir_items ?? $ajuan->verified_formulir_items;
+        $verifiedAdministrasi = $request->verified_administrasi_items ?? $ajuan->verified_administrasi_items;
+
         if ($request->input('tolak_langsung') === 'Ditolak') {
             $statusAkhir = 'Ditolak';
             $sudahVerifikasi = false; // Verifikasi tidak disetujui
-            $kunjunganLapangan = false;
+            $kunjunganLapangan = false;  
             $statusHistory = 'Ditolak';
             $catatanHistory = $request->catatan ?? 'Ditolak pada tahap verifikasi dokumen.';
+        }
+        elseif ($request->has('finalize_status')) {
+            
+            $statusAkhir = $request->finalize_status; // 'Disetujui' or 'Ditolak'
+            $sudahVerifikasi = true; // Tetap true
+            $kunjunganLapangan = true; // Tetap true
+            $statusHistory = $statusAkhir;
+            $catatanHistory = $request->catatan ?? "Pengajuan $statusAkhir setelah kunjungan lapangan.";
+        
+        }
+        elseif ($request->input('sudah_verifikasi') == '1') {
+            
+            $sudahVerifikasi = true; // Pasti sudah terverifikasi jika lolos Langkah 1
+            $kunjunganLapangan = $request->boolean('kunjungan_lapangan'); // '0' or '1'
+
+            // Simpan item yang diverifikasi dari Step 1
+            $verifiedFormulir = $request->verified_formulir_items;
+            $verifiedAdministrasi = $request->verified_administrasi_items;
+
+            if ($kunjunganLapangan) {
+                // SKENARIO 3a: Perlu Kunjungan
+                $statusAkhir = 'Diproses'; // Status pengajuan tetap Diproses
+                $statusHistory = 'Menunggu Kunjungan';
+                $catatanHistory = $request->catatan ?? 'Dokumen terverifikasi. Menunggu jadwal kunjungan.';
+            } else {
+                // SKENARIO 3b: Tidak Perlu Kunjungan, keputusan akhir diambil
+                $statusAkhir = $request->status; // 'Disetujui' atau 'Ditolak'
+                $statusHistory = $statusAkhir;
+                $catatanHistory = $request->catatan ?? "Pengajuan $statusAkhir tanpa kunjungan lapangan.";
+            }
         }
         // PATH 2, 3, 4: User mengklik submit di Langkah 2
         else {
