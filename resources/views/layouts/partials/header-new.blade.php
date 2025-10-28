@@ -5,9 +5,10 @@
             <p class="text-sm text-gray-600">Sistem Aplikasi Pengelolaan Pos Pelayanan Terpadu</p>
         </a>
     </div>
-    <div class="flex items-center space-x-4">
+    <div class="w-1/3 flex items-center space-x-4">
         <img src={{ asset('assets/image/logo/logo_kebumen.png') }} alt="Logo Kebumen" class="h-12">
         <img src={{ asset('assets/image/logo/logo_posyandu.png') }} alt="Logo Posyandu" class="h-12">
+        <img src={{ asset('assets/image/logo/logo_telkom_university.png') }} alt="Logo Telkom University" class="h-12">
     </div>
     <div class="hidden sm:flex sm:items-center sm:ms-6">
         <x-dropdown align="right" width="48">
