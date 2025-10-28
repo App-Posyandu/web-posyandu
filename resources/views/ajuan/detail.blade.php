@@ -163,24 +163,21 @@
                     </div>
                 </div>
                 @if (Auth::user()->role == 'kader')
-                    @if ($ajuan->status_pengajuan === 'Diproses')
+                    @if ($ajuan->status_pengajuan === 'Diproses' && !$ajuan->sudah_verifikasi)
                         <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-8 w-full max-w-4xl"
-                            x-data="{
-                                step: 'verifikasi_dokumen',
-                                sudah_verifikasi: false,
-                                kunjungan_lapangan: false
-                            }">
+                            x-data="{ step: 1, kunjungan_lapangan: '0' }">
 
                             <form method="POST" action="{{ route('ajuan.verify', $ajuan) }}">
                                 @csrf
                                 @method('PATCH')
-                                <div x-show="step === 'verifikasi_dokumen'" x-transition>
-                                    <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Verifikasi Pengajuan
+                                <div x-show="step === 1" x-transition>
+                                    <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Tahap 1: Verifikasi
+                                        Dokumen
                                     </h2>
 
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         <div>
-                                            <h3 class="font-semibold mb-4 border-b pb-2">Verifikasi Detail Permohonan
+                                            <h3 class="font-semibold mb-4 border-b pb-2">Detail Permohonan Diajukan
                                             </h3>
                                             <div class="space-y-3">
                                                 @forelse ($ajuan->formulir_items ?? [] as $item)
@@ -241,7 +238,7 @@
                                         </div>
 
                                         <div>
-                                            <h3 class="font-semibold mb-4 border-b pb-2">Verifikasi Dokumen Administrasi
+                                            <h3 class="font-semibold mb-4 border-b pb-2">Dokumen Administrasi Terlampir
                                             </h3>
                                             <div class="space-y-3">
                                                 @forelse ($ajuan->administrasi_items ?? [] as $key => $path)
@@ -292,67 +289,81 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="flex items-center justify-end my-8 space-x-4">
-                                        <button type="submit" name="status" value="Ditolak"
+                                    <div class="mt-6">
+                                        <label for="catatan_tolak"
+                                            class="block font-medium text-sm text-gray-700">Catatan (Wajib jika
+                                            ditolak)</label>
+                                        <textarea id="catatan_tolak" name="catatan" rows="3"
+                                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                                            placeholder="Tambahkan catatan jika pengajuan ditolak..."></textarea>
+                                    </div>
+                                    <div class="flex items-center justify-end mt-8 space-x-4">
+                                        <button type="submit" name="tolak_langsung" value="Ditolak"
                                             class="py-2 px-6 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                                            Tolak
+                                            Tolak Langsung
                                         </button>
-                                        <button type="button"
-                                            @click="step = 'tindak_lanjut'; sudah_verifikasi = true"
+
+                                        <button type="button" @click="step = 2"
                                             class="inline-flex items-center px-6 py-2 bg-green-600 text-white font-semibold text-sm rounded-md hover:bg-green-700">
                                             Setujui Verifikasi
                                         </button>
                                     </div>
                                 </div>
 
-                                <div x-show="step === 'tindak_lanjut'" x-transition:enter.duration.500ms>
-                                    <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Tindak Lanjut &
+                                <div x-show="step === 2" x-transition:enter.duration.500ms>
+                                    <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Tahap 2: Tindak
+                                        Lanjut &
                                         Keputusan</h2>
 
-                                    <input type="hidden" name="sudah_verifikasi"
-                                        x-bind:value="sudah_verifikasi ? '1' : '0'">
+                                    <input type="hidden" name="sudah_verifikasi" value="1">
 
                                     <div class="mt-6 border-t pt-6">
                                         <h3 class="font-semibold mb-4 text-gray-700">Perlu Kunjungan Lapangan?</h3>
                                         <div class="space-y-3">
                                             <label class="flex items-center p-3 border rounded-md">
                                                 <input type="radio" name="kunjungan_lapangan" value="1"
-                                                    class="h-5 w-5 ...">
+                                                    x-model="kunjungan_lapangan" class="h-5 w-5 ...">
                                                 <span class="ms-3 text-sm text-gray-700">Ya, perlu kunjungan
                                                     lapangan</span>
                                             </label>
                                             <label class="flex items-center p-3 border rounded-md">
                                                 <input type="radio" name="kunjungan_lapangan" value="0"
-                                                    class="h-5 w-5 ..." checked>
+                                                    x-model="kunjungan_lapangan" class="h-5 w-5 ...">
                                                 <span class="ms-3 text-sm text-gray-700">Tidak, tidak perlu kunjungan
                                                     lapangan</span>
                                             </label>
                                         </div>
                                     </div>
 
+                                    <div x-show="kunjungan_lapangan === '0'" class="mt-6">
+                                        <label for="status" class="block font-medium text-sm text-gray-700">Status
+                                            Pengajuan Akhir</label>
+                                        <select id="status" name="status"
+                                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                                            <option value="Disetujui">Setujui Pengajuan</option>
+                                            <option value="Ditolak">Tolak Pengajuan</option>
+                                        </select>
+                                    </div>
+
                                     <div class="mt-6">
-                                        <label for="catatan" class="block font-medium text-sm text-gray-700">Catatan
-                                            Akhir</label>
-                                        <textarea id="catatan" name="catatan" rows="3"
-                                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
-                                            placeholder="Tambahkan catatan jika pengajuan ditolak..."></textarea>
+                                        <label for="catatan_final"
+                                            class="block font-medium text-sm text-gray-700">Catatan Akhir
+                                            (Opsional)</label>
+                                        <textarea id="catatan_final" name="catatan" rows="3"
+                                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" placeholder="Tambahkan catatan..."></textarea>
                                     </div>
 
                                     <div class="flex items-center justify-end mt-8 space-x-4">
-                                        <button type="button"
-                                            @click="step = 'verifikasi_dokumen'; sudah_verifikasi = false"
+                                        <button type="button" @click="step = 1"
                                             class="py-2 px-4 bg-gray-200 text-gray-800 rounded-md text-sm font-semibold hover:bg-gray-300">
                                             Kembali
                                         </button>
 
-                                        <button type="submit" name="status" value="Ditolak"
-                                            class="inline-flex items-center px-6 py-2 bg-red-600 text-white font-semibold text-sm rounded-md hover:bg-red-700">
-                                            Tolak Pengajuan
-                                        </button>
-
-                                        <button type="submit" name="status" value="Disetujui"
-                                            class="inline-flex items-center px-6 py-2 bg-green-600 text-white font-semibold text-sm rounded-md hover:bg-green-700">
-                                            Setujui Pengajuan
+                                        <button type="submit"
+                                            class="inline-flex items-center px-6 py-2 bg-pink-500 text-white font-semibold text-sm rounded-md hover:bg-pink-600">
+                                            {{-- Teks tombol berubah secara dinamis --}}
+                                            <span x-show="kunjungan_lapangan === '0'">Simpan Keputusan Akhir</span>
+                                            <span x-show="kunjungan_lapangan === '1'">Simpan (Lanjut Kunjungan)</span>
                                         </button>
                                     </div>
                                 </div>

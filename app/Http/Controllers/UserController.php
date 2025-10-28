@@ -73,11 +73,25 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
+        $currentUser = Auth::user();
+        $allowedRoles = [];
+        switch ($currentUser->role) {
+            case 'admin':
+                $allowedRoles = ['masyarakat', 'kader', 'ketua-kader', 'kabid', 'admin'];
+                break;
+            case 'kabid':
+                $allowedRoles = ['ketua-kader'];
+                break;
+            case 'ketua-kader':
+                $allowedRoles = ['kader'];
+                break;
+        }
+
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', Password::defaults()],
-            'role' => ['required', 'in:masyarakat,kader,ketua-kader,kabid,admin'],
+            'role' => ['required', Rule::in($allowedRoles)],
             'posyandu_id' => ['required', 'exists:posyandus,id'],
             'nik' => ['required', 'string', 'digits:16', 'unique:users'],
             'alamat' => ['required', 'string'],
@@ -85,25 +99,24 @@ class UserController extends Controller
             'tempat_lahir' => ['required', 'string', 'max:255'],
             'tanggal_lahir' => ['required', 'date'],
             'jenis_kelamin' => ['required', 'string'],
-            'ktp' => ['nullable', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:2048'],
-            'kk' => ['nullable', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:2048'],
+            // 'ktp' => ['nullable', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:2048'],
+            // 'kk' => ['nullable', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:2048'],
         ]);
 
-        // Proses file KTP jika diunggah
-        $ktpBase64 = null;
-        if ($request->hasFile('ktp')) {
-            $ktpBase64 = 'data:image/' . $request->file('ktp')->getClientOriginalExtension() . ';base64,' . base64_encode(file_get_contents($request->file('ktp')->getRealPath()));
-        }
+        // // Proses file KTP jika diunggah
+        // $ktpBase64 = null;
+        // if ($request->hasFile('ktp')) {
+        //     $ktpBase64 = 'data:image/' . $request->file('ktp')->getClientOriginalExtension() . ';base64,' . base64_encode(file_get_contents($request->file('ktp')->getRealPath()));
+        // }
 
-        // Proses file KK jika diunggah
-        $kkBase64 = null;
-        if ($request->hasFile('kk')) {
-            $kkBase64 = 'data:image/' . $request->file('kk')->getClientOriginalExtension() . ';base64,' . base64_encode(file_get_contents($request->file('kk')->getRealPath()));
-        }
+        // // Proses file KK jika diunggah
+        // $kkBase64 = null;
+        // if ($request->hasFile('kk')) {
+        //     $kkBase64 = 'data:image/' . $request->file('kk')->getClientOriginalExtension() . ';base64,' . base64_encode(file_get_contents($request->file('kk')->getRealPath()));
+        // }
 
         $isInstantVerified = in_array($request->role, ['admin', 'kabid', 'ketua-kader']);
 
-        $userAuth = Auth::user();
 
         // Buat user baru
         $user = User::create([
@@ -121,7 +134,7 @@ class UserController extends Controller
             // 'ktp' => $ktpBase64,
             // 'kk' => $kkBase64,
             'verified_at' => $isInstantVerified ? now() : null,
-            'verified_by' => $isInstantVerified ? $userAuth->id : null,
+            'verified_by' => $isInstantVerified ? $currentUser->id : null,
         ]);
 
         event(new Registered($user));

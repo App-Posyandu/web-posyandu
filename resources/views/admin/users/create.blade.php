@@ -86,17 +86,25 @@
                                     <x-input-error :messages="$errors->get('posyandu_id')" class="mt-2" />
                                 </div>
 
-                                <div class="md:col-span-2">
+                                <div>
                                     <x-input-label for="role" :value="__('Role')" />
                                     <select id="role" name="role"
                                         class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
                                         required>
                                         <option value="" disabled selected>Pilih Role</option>
-                                        <option value="masyarakat" @selected(old('role') == 'masyarakat')>Masyarakat</option>
-                                        <option value="kader" @selected(old('role') == 'kader')>Kader</option>
-                                        <option value="ketua-kader" @selected(old('role') == 'ketua-kader')>Ketua Kader</option>
-                                        <option value="kabid" @selected(old('role') == 'kabid')>Kabid</option>
-                                        <option value="admin" @selected(old('role') == 'admin')>Admin</option>
+                                        @php $currentUserRole = Auth::user()->role; @endphp
+
+                                        @if ($currentUserRole === 'admin')
+                                            <option value="masyarakat" @selected(old('role') == 'masyarakat')>Masyarakat</option>
+                                            <option value="kader" @selected(old('role') == 'kader')>Kader</option>
+                                            <option value="ketua-kader" @selected(old('role') == 'ketua-kader')>Ketua Kader</option>
+                                            <option value="kabid" @selected(old('role') == 'kabid')>Kabid</option>
+                                            <option value="admin" @selected(old('role') == 'admin')>Admin</option>
+                                        @elseif ($currentUserRole === 'kabid')
+                                            <option value="ketua-kader" @selected(old('role') == 'ketua-kader')>Ketua Kader</option>
+                                        @elseif ($currentUserRole === 'ketua-kader')
+                                            <option value="kader" @selected(old('role') == 'kader')>Kader</option>
+                                        @endif
                                     </select>
                                     <x-input-error :messages="$errors->get('role')" class="mt-2" />
                                 </div>
@@ -107,7 +115,7 @@
                                         :value="old('no_telepon')" required />
                                     <x-input-error :messages="$errors->get('no_telepon')" class="mt-2" />
                                 </div>
-
+{{--
                                 <div x-data="{ fileName: '' }">
                                     <x-input-label for="ktp" :value="__('KTP (Opsional)')" />
                                     <label for="ktp"
@@ -115,7 +123,8 @@
                                         <span x-text="fileName || 'Unggah KTP'" class="truncate"></span>
                                         <i class="bi bi-cloud-upload text-pink-500 text-lg"></i>
                                     </label>
-                                    <input id="ktp" class="hidden" type="file" name="ktp" accept="image/*,application/pdf"
+                                    <input id="ktp" class="hidden" type="file" name="ktp"
+                                        accept="image/*,application/pdf"
                                         @change="fileName = $event.target.files[0] ? $event.target.files[0].name : ''" />
                                     <x-input-error :messages="$errors->get('ktp')" class="mt-2" />
                                 </div>
@@ -127,10 +136,11 @@
                                         <span x-text="fileName || 'Unggah KK'" class="truncate"></span>
                                         <i class="bi bi-cloud-upload text-pink-500 text-lg"></i>
                                     </label>
-                                    <input id="kk" class="hidden" type="file" name="kk" accept="image/*,application/pdf"
+                                    <input id="kk" class="hidden" type="file" name="kk"
+                                        accept="image/*,application/pdf"
                                         @change="fileName = $event.target.files[0] ? $event.target.files[0].name : ''" />
                                     <x-input-error :messages="$errors->get('kk')" class="mt-2" />
-                                </div>
+                                </div> --}}
 
                                 <div>
                                     <x-input-label for="password" :value="__('Password')" />

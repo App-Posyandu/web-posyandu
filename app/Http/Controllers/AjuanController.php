@@ -280,7 +280,7 @@ class AjuanController extends Controller
     }
     public function show(Pengajuan $ajuan)
     {
-        // $this->authorize('view', $ajuan);
+        // $this->authorize(    'view', $ajuan);
         $ajuan->load(['user', 'bidang', 'histories']);
         $templateData = $this->getBidangData($ajuan->bidang->slug);
         if (!$templateData) {
@@ -420,26 +420,58 @@ class AjuanController extends Controller
         // $this->authorize('verify', $ajuan);
 
         $request->validate([
-            'status' => ['required', 'in:Disetujui,Ditolak'],
+            'status' => ['nullable', 'in:Disetujui,Ditolak'],
             'catatan' => ['required_if:status,Ditolak', 'nullable', 'string'],
             // 'sudah_verifikasi' => ['sometimes', 'boolean'],
             // 'kunjungan_lapangan' => ['sometimes', 'boolean'],
             'sudah_verifikasi' => ['required_if:status,Disetujui', 'boolean'],
-            'kunjungan_lapangan' => ['required_if:status,Disetujui', 'boolean'],
+            'kunjungan_lapangan' => ['nullable', 'in:0,1'],
+            'tolak_langsung' => ['nullable', 'in:Ditolak'],
             'verified_formulir_items' => ['nullable', 'array'],
             'verified_administrasi_items' => ['nullable', 'array'],
         ]);
 
-        $sudahVerifikasi = $request->boolean('sudah_verifikasi');
-        $kunjunganLapangan = $request->boolean('kunjungan_lapangan');
+        // $sudahVerifikasi = $request->boolean('sudah_verifikasi');
+        // $kunjunganLapangan = $request->boolean('kunjungan_lapangan');
 
-        if ($request->status === 'Ditolak') {
-            $sudahVerifikasi = false;
+        // if ($request->status === 'Ditolak') {
+        //     $sudahVerifikasi = false;
+        //     $kunjunganLapangan = false;
+        // }
+
+        $statusAkhir = $ajuan->status; // Default ke status saat ini'
+        $sudahVerifikasi = $ajuan->sudah_verifikasi;
+        $kunjunganLapangan = $ajuan->kunjungan_lapangan;
+        $statusHistory = '';
+        $catatanHistory = $request->catatan ?? 'Status diperbarui oleh kader.';
+
+        if ($request->input('tolak_langsung') === 'Ditolak') {
+            $statusAkhir = 'Ditolak';
+            $sudahVerifikasi = false; // Verifikasi tidak disetujui
             $kunjunganLapangan = false;
+            $statusHistory = 'Ditolak';
+            $catatanHistory = $request->catatan ?? 'Ditolak pada tahap verifikasi dokumen.';
+        }
+        // PATH 2, 3, 4: User mengklik submit di Langkah 2
+        else {
+            $sudahVerifikasi = true; // Pasti sudah terverifikasi jika lolos Langkah 1
+            $kunjunganLapangan = $request->boolean('kunjungan_lapangan');
+
+            if ($kunjunganLapangan) {
+                // PATH 2: Perlu Kunjungan
+                $statusAkhir = 'Diproses'; // Status pengajuan tetap Diproses
+                $statusHistory = 'Menunggu Kunjungan';
+                $catatanHistory = $request->catatan ?? 'Dokumen terverifikasi. Menunggu jadwal kunjungan.';
+            } else {
+                // PATH 3 & 4: Tidak Perlu Kunjungan, keputusan akhir diambil
+                $statusAkhir = $request->status; // 'Disetujui' atau 'Ditolak'
+                $statusHistory = $statusAkhir;
+                $catatanHistory = $request->catatan ?? "Pengajuan $statusAkhir tanpa kunjungan lapangan.";
+            }
         }
 
         $ajuan->update([
-            'status_pengajuan' => $request->status,
+            'status_pengajuan' => $statusAkhir,
             // 'sudah_verifikasi' => $request->has('sudah_verifikasi'),
             // 'kunjungan_lapangan' => $request->has('kunjungan_lapangan'),
             'sudah_verifikasi' => $sudahVerifikasi,
@@ -448,8 +480,8 @@ class AjuanController extends Controller
 
         History::create([
             'pengajuan_id' => $ajuan->id,
-            'status' => $request->status,
-            'catatan' => $request->catatan,
+            'status' => $statusHistory, // Gunakan variabel yang sudah pasti terdefinisi
+            'catatan' => $catatanHistory,
             'diubah_oleh' => $user->id,
             'created_at' => now(),
         ]);

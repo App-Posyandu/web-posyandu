@@ -9,36 +9,36 @@
         </x-slot>
 
         <div class="py-12">
-            @if (session('success'))
-                <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg mb-6" role="alert">
-                    <div class="flex">
-                        <div class="py-1">
-                            {{-- Ganti ikon menjadi centang --}}
-                            <i class="bi bi-check-circle-fill mr-3"></i>
-                        </div>
-                        <div>
-                            <p class="font-bold">Berhasil</p>
-                            <p class="text-sm">{{ session('success') }}</p>
-                        </div>
-                    </div>
-                </div>
-            @endif
-
-            {{-- Notifikasi untuk error (jika Anda butuh) --}}
-            @if (session('error'))
-                <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg mb-6" role="alert">
-                    <div class="flex">
-                        <div class="py-1">
-                            <i class="bi bi-exclamation-triangle-fill mr-3"></i>
-                        </div>
-                        <div>
-                            <p class="font-bold">Gagal</p>
-                            <p class="text-sm">{{ session('error') }}</p>
-                        </div>
-                    </div>
-                </div>
-            @endif
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                @if (session('success'))
+                    <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg mb-6" role="alert">
+                        <div class="flex">
+                            <div class="py-1">
+                                {{-- Ganti ikon menjadi centang --}}
+                                <i class="bi bi-check-circle-fill mr-3"></i>
+                            </div>
+                            <div>
+                                <p class="font-bold">Berhasil</p>
+                                <p class="text-sm">{{ session('success') }}</p>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
+                {{-- Notifikasi untuk error (jika Anda butuh) --}}
+                @if (session('error'))
+                    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg mb-6" role="alert">
+                        <div class="flex">
+                            <div class="py-1">
+                                <i class="bi bi-exclamation-triangle-fill mr-3"></i>
+                            </div>
+                            <div>
+                                <p class="font-bold">Gagal</p>
+                                <p class="text-sm">{{ session('error') }}</p>
+                            </div>
+                        </div>
+                    </div>
+                @endif
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6 text-gray-900">
 
