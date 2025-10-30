@@ -48,19 +48,63 @@
             border-bottom: 1px solid #e5e7eb;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
             padding: 16px 24px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            width: 100%;
         }
+
+        header table {
+            width: 90%;
+        }
+
+        header table tr {
+            width: 100%;
+            margin: 0 0 8px 0
+        }
+
+        .left-cell {
+            width: 70%;
+        }
+
 
         .logo-group {
             display: flex;
+            justify-content: flex-start;
             align-items: center;
             gap: 1rem;
         }
 
         .logo-group img {
             height: 48px;
+        }
+
+        .bidang-box {
+            border: 1px solid #9ca3af;
+            width: fit-content;
+            padding: 4px 6px;
+            text-align: center;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+
+        .header-title {
+            text-align: center;
+            flex-grow: 1;
+            margin-top: 4px;
+        }
+
+        .header-title h1 {
+            text-transform: uppercase;
+            color: #171717;
+            font-size: 1rem;
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .header-title h2 {
+            text-transform: uppercase;
+            color: #171717;
+            font-size: 1rem;
+            margin: 4px 0 0;
+            font-weight: 500;
         }
 
         /* ========== MAIN (FLEX FILLER) ========== */
@@ -73,23 +117,6 @@
             height: 72%;
         }
 
-        .header-title {
-            text-align: center;
-            flex-grow: 1;
-
-        }
-
-        .header-title>h1 {
-            text-transform: uppercase;
-            color: #171717;
-            font-size: 16px;
-        }
-
-        .header-title>h2 {
-            text-transform: uppercase;
-            color: #171717;
-            font-size: 16px;
-        }
 
         .container {
             background-color: #ffffff;
@@ -104,6 +131,19 @@
             display: flex;
             flex-direction: column;
             gap: 16px;
+            width: 100%;
+        }
+
+        .info-section table {
+            width: 100%;
+        }
+
+        .info-section table tr {
+            width: 100%;
+        }
+
+        .info-section table tr td {
+            width: 50%;
         }
 
         .info-section h3 {
@@ -183,14 +223,24 @@
         }
     @endphp
     <header>
-        <div class="logo-group">
-            @if ($kebumenBase64)
-                <img src="{{ $kebumenBase64 }}" alt="Logo Kebumen">
-            @endif
-            @if ($posyanduBase64)
-                <img src="{{ $posyanduBase64 }}" alt="Logo Posyandu">
-            @endif
-        </div>
+        <table>
+            <tr>
+                <td class="left-cell">
+                    <div class="logo-group">
+                        @if ($kebumenBase64)
+                            <img src="{{ $kebumenBase64 }}" alt="Logo Kebumen">
+                        @endif
+                        @if ($posyanduBase64)
+                            <img src="{{ $posyanduBase64 }}" alt="Logo Posyandu">
+                        @endif
+                    </div>
+                </td>
+                <td>
+                    <h4 class="bidang-box">{{ $ajuan->bidang->nama_bidang }}</h4>
+                </td>
+            </tr>
+        </table>
+
         <div class="header-title">
             <h1>Formulir Permohonan</h1>
             <h2>Layanan Standar Minimal Pelayanan Posyandu di Kabupaten Kebumen</h2>
@@ -200,63 +250,64 @@
     <main>
         <div class="container">
             <div class="info-section">
-                <div class="content">
-                    <h3>Nama Pengaju: <span>{{ $ajuan->user->name }}</span></h3>
-                </div>
-                <div class="content">
-                    <h3>Bidang: <span>{{ $ajuan->bidang->nama_bidang }}</span></h3>
+                <table>
+                    <tr>
+                        <td>
+                            <h3>Nama Pengaju: </h3>
+                        </td>
+                        <td>{{ $ajuan->user->name }}</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <h3>Alamat: </h3>
+                        </td>
+                        <td>{{ $ajuan->user->alamat }}</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <h3>No Hp: </h3>
+                        </td>
+                        <td>{{ $ajuan->user->phone ?? '082134532110' }}</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <h3>Nama Posyandu: </h3>
+                        </td>
+                        <td>{{ $ajuan->user?->posyandu?->nama_posyandu }}</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <h3>Desa/Kelurahan: </h3>
+                        </td>
+                        <td>{{ $ajuan->user?->posyandu?->desa ?? 'Desa' }}</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <h3>Kecamatan: </h3>
+                        </td>
+                        <td> {{ $ajuan->user?->posyandu?->kecamatan ?? 'Kecamatan' }}</td>
+                    </tr>
+                </table>
+                {{-- table content yang diajukan --}}
+                <table>
+                    <tr>
+                        <td></td>
+                    </tr>
+                </table>
 
-                </div>
+                {{-- Persyatan Administrasi --}}
+                <table>
+                    <tr>
+                        <td></td>
+                    </tr>
+                </table>
 
-                <div class="content">
-                    <h3>Alamat: <span>{{ $ajuan->user->alamat }} </span> </h3>
-
-                </div>
-                <div class="content">
-                    <h3>No Hp: <span>{{ $ajuan->user->phone ?? '082134532110' }}</span> </h3>
-
-                </div>
-
-                <div class="content">
-                    <h3>Tempat, Tanggal Lahir: <span>{{ $ajuan->user->tempat_lahir }},
-                            {{ $ajuan->user->tanggal_lahir ? \Carbon\Carbon::parse($ajuan->user->tanggal_lahir)->locale('id')->isoFormat('D MMMM Y') : '-' }}
-                        </span></h3>
-                </div>
-                <div class="content">
-                    <h3>Jenis Kelamin: <span>
-                            {{ $ajuan->user->jenis_kelamin }}
-                        </span></h3>
-                </div>
-
-                <div class="content">
-                    <h3>Nama Posyandu: <span>{{ $ajuan->user?->posyandu?->nama_posyandu ?? 'Nama Posyandu' }}</span>
-                    </h3>
-                </div>
-                <div class="content">
-                    <h3>Desa/Kelurahan: <span>
-                            {{ $ajuan->user?->posyandu?->desa ?? 'Desa' }}
-                        </span></h3>
-
-                </div>
-
-                <div class="content">
-                    <h3>Kecamatan: <span>
-                            {{ $ajuan->user?->posyandu?->kecamatan ?? 'Kecamatan' }}
-                        </span></h3>
-                </div>
-
-                <div class="">
-                    <h3>Deskripsi Permohonan:</h3>
-                    <p>{{ $ajuan->deskripsi_pengajuan }}</p>
-                </div>
-                <div class="">
-                    <h3>Tindak Lanjut Pengajuan:</h3>
-                    <p>{{ $ajuan->tindak_lanjut ?? 'Belum ada tindak lanjut' }}</p>
-                </div>
-                <div class="">
-                    <h3>Status Pengajuan:</h3>
-                    <p>{{ ucfirst($ajuan->status) }}</p>
-                </div>
+                {{-- Tanda Tangan --}}
+                <table>
+                    <tr>
+                        <td></td>
+                    </tr>
+                </table>
             </div>
         </div>
     </main>
