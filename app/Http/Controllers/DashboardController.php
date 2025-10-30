@@ -25,6 +25,14 @@ class DashboardController extends Controller
             '#E655A0',
             '#EAB308',
         ];
+        $icons = [
+            'kesehatan' => asset('assets/image/icon/bidang/kesehatan.svg'),
+            'pekerjaan-umum' => asset('assets/image/icon/bidang/pekerjaan-umum.svg'),
+            'pendidikan' => asset('assets/image/icon/bidang/pendidikan.svg'),
+            'perumahan-rakyat' => asset('assets/image/icon/bidang/perumahan-rakyat.svg'),
+            'sosial' => asset('assets/image/icon/bidang/sosial.svg'),
+            'trantibumlinmas' => asset('assets/image/icon/bidang/trantibumlinmas.svg'),
+        ];
         if ($user->role === 'masyarakat') {
             $allBidangs = BidangPengajuan::orderBy('nama_bidang')->get();
             $colors = ['#4D73FD', '#f43f5e', '#F2993F', '#7CD75A', '#E655A0', '#EAB308'];
@@ -32,6 +40,7 @@ class DashboardController extends Controller
             return view('dashboard', [
                 'allBidangs' => $allBidangs,
                 'colors' => $colors,
+                'icons' => $icons,
             ]);
         } else {
             $query = Pengajuan::with(['user', 'bidang']);
@@ -79,7 +88,7 @@ class DashboardController extends Controller
             }
 
             $colors = ['#4D73FD', '#f43f5e', '#F2993F', '#7CD75A', '#E655A0', '#EAB308'];
-            return view('dashboard', compact('ajuanCounts', 'semuaAjuan', 'colors', 'isVerified'));
+            return view('dashboard', compact('ajuanCounts', 'semuaAjuan', 'colors', 'isVerified', 'icons'));
         }
     }
 }

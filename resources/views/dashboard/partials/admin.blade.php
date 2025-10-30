@@ -28,9 +28,14 @@
                     @endphp
                     @foreach ($ajuanCounts as $bidang => $total)
                         <div
-                            class="{{ $bidangColors[$bidang] ?? 'bg-gray-500' }} text-white p-4 rounded-lg shadow-md flex items-center">
-                            <span class="text-5xl font-bold">{{ $total }}</span>
-                            <span class="ml-3 font-semibold">{{ $bidang }}</span>
+                            class="{{ $bidangColors[$bidang] ?? 'bg-gray-500' }} text-white p-4 md:py-4 md:px-8 rounded-lg shadow-md flex items-center gap-4">
+                            <span class="text-6xl font-bold">{{ $total }}</span>
+                            <div class="flex flex-col gap-2">
+                                <img src="{{ $icons[\Illuminate\Support\Str::slug(str_replace('Bidang ', '', $bidang))] ??
+                                    asset('assets/image/icon/bidang/default.svg') }}"
+                                    alt="{{ $bidang }} icon" class="w-8 h-8 mx-3">
+                                <span class="ml-3 font-semibold">{{ $bidang }}</span>
+                            </div>
                         </div>
                     @endforeach
                 </div>
