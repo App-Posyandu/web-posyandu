@@ -253,39 +253,39 @@
                 <table>
                     <tr>
                         <td>
-                            <h3>Nama Pengaju: </h3>
+                            <h3>Nama </h3>
                         </td>
-                        <td>{{ $ajuan->user->name }}</td>
+                        <td>: {{ $ajuan->user->name }}</td>
                     </tr>
                     <tr>
                         <td>
-                            <h3>Alamat: </h3>
+                            <h3>Alamat </h3>
                         </td>
-                        <td>{{ $ajuan->user->alamat }}</td>
+                        <td>: {{ $ajuan->user->alamat }}</td>
                     </tr>
                     <tr>
                         <td>
-                            <h3>No Hp: </h3>
+                            <h3>No Hp </h3>
                         </td>
-                        <td>{{ $ajuan->user->phone ?? '082134532110' }}</td>
+                        <td>: {{ $ajuan->user->phone ?? '082134532110' }}</td>
                     </tr>
                     <tr>
                         <td>
-                            <h3>Nama Posyandu: </h3>
+                            <h3>Nama Posyandu </h3>
                         </td>
-                        <td>{{ $ajuan->user?->posyandu?->nama_posyandu }}</td>
+                        <td>: {{ $ajuan->user?->posyandu?->nama_posyandu }}</td>
                     </tr>
                     <tr>
                         <td>
-                            <h3>Desa/Kelurahan: </h3>
+                            <h3>Desa/Kelurahan </h3>
                         </td>
-                        <td>{{ $ajuan->user?->posyandu?->desa ?? 'Desa' }}</td>
+                        <td>: {{ $ajuan->user?->posyandu?->desa ?? 'Desa' }}</td>
                     </tr>
                     <tr>
                         <td>
-                            <h3>Kecamatan: </h3>
+                            <h3>Kecamatan </h3>
                         </td>
-                        <td> {{ $ajuan->user?->posyandu?->kecamatan ?? 'Kecamatan' }}</td>
+                        <td>: {{ $ajuan->user?->posyandu?->kecamatan ?? 'Kecamatan' }}</td>
                     </tr>
                 </table>
                 {{-- table content yang diajukan --}}
