@@ -20,7 +20,7 @@ class AjuanController extends Controller
     public function index(User $user, Request $request)
     {
         $user = Auth::user();
-        $query = Pengajuan::with(['user', 'bidang']);
+        $query = Pengajuan::with(['user', 'bidang', 'latestHistory.diubahOleh']);
 
         if ($user->role === 'masyarakat') {
             $query->where('user_id', $user->id);

@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Cetak Pengajuan - EPOSY</title>
+    <title>Cetak Pengajuan - SAPA POSYANDU</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
         integrity="sha512-KP4tN0s8M1j4XXW0d7xFt9U3QkH8sy0sYwr3HPt1iQrXrRjPOON8p6HQSGCt8yX6Vft0LO0iJ2OKgKBl4d8KQ=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -113,7 +113,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 36px 56px;
+            padding: 12px 56px;
             height: 72%;
         }
 
@@ -130,12 +130,12 @@
         .info-section {
             display: flex;
             flex-direction: column;
-            gap: 16px;
             width: 100%;
         }
 
         .info-section table {
             width: 100%;
+            margin: 24px 0;
         }
 
         .info-section table tr {
@@ -165,6 +165,66 @@
             font-weight: normal;
             color: #111827;
         }
+
+        .sub-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: -24px;
+        }
+
+        //Table Content
+        .table-content {
+            width: 100%;
+            margin: 40px 0;
+            border-collapse: collapse;
+        }
+
+        .table-content td {
+            vertical-align: middle;
+            padding: 2px 0;
+        }
+
+        .table-content td.cell-left {
+            width: 90%;
+        }
+
+        .table-content td:last-child {
+            width: 10%;
+            text-align: right;
+        }
+
+        .content-label {
+            text-transform: uppercase;
+        }
+
+        .img-check {
+            height: 24px;
+            width: 24px;
+        }
+
+        .signature-table {
+            width: 100%;
+            margin-top: 40px;
+            border-collapse: collapse;
+            text-align: center;
+        }
+
+        .signature-table td {
+            width: 50%;
+            text-align: center;
+            vertical-align: middle;
+            padding: 4px 0;
+        }
+
+        .signature-content td img.check {
+            display: inline-block;
+            height: 96px;
+            width: 96px;
+        }
+
+
+
 
         /* ========== FOOTER (STAYS AT BOTTOM USING FLEX) ========== */
         footer {
@@ -208,9 +268,11 @@
     @php
         $kebumenPath = public_path('assets/image/logo/logo_kebumen.png');
         $posyanduPath = public_path('assets/image/logo/logo_posyandu.png');
+        $checkPath = public_path('assets/image/icon/check.png');
 
         $kebumenBase64 = '';
         $posyanduBase64 = '';
+        $checkBase64 = '';
 
         if (file_exists($kebumenPath)) {
             $kebumenData = file_get_contents($kebumenPath);
@@ -220,6 +282,11 @@
         if (file_exists($posyanduPath)) {
             $posyanduData = file_get_contents($posyanduPath);
             $posyanduBase64 = 'data:image/png;base64,' . base64_encode($posyanduData);
+        }
+
+        if (file_exists($checkPath)) {
+            $checkData = file_get_contents($checkPath);
+            $checkBase64 = 'data:image/png;base64,' . base64_encode($checkData);
         }
     @endphp
     <header>
@@ -289,23 +356,70 @@
                     </tr>
                 </table>
                 {{-- table content yang diajukan --}}
-                <table>
-                    <tr>
-                        <td></td>
-                    </tr>
+                <h4 class="sub-title">Detail permohonan dipilih</h4>
+                <table class="table-content">
+                    @forelse ($ajuan->formulir_items as $item)
+                        <tr>
+                            <td class="cell-left">{{ $item }}</td>
+                            <td>
+                                @if ($checkBase64)
+                                    <img src="{{ $checkBase64 }}" alt="Logo Check" class="img-check">
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td>Tidak ada permohonan yang dipilih</td>
+                        </tr>
+                    @endforelse
                 </table>
 
                 {{-- Persyatan Administrasi --}}
-                <table>
-                    <tr>
-                        <td></td>
-                    </tr>
+                <h4 class="sub-title">Detail Permohonan yang Diajukan</h4>
+                <table class="persyatan-administrasi">
+                    @forelse ($ajuan->formulir_items ?? [] as $item)
+                        <tr>
+                            <td>{{ $item }}</td>
+                        @empty
+                            <td>Tidak ada item permohonan</td>
+                        </tr>
+                    @endforelse
+                </table>
+
+                {{-- Persyatan Administrasi --}}
+                <h4 class="sub-title">Dokumen Administrasi</h4>
+                <table class="persyatan-administrasi">
+                    @forelse ($ajuan->administrasi_items ?? [] as $key => $path)
+                        @php
+                            $label = $templateData['administrasi_items'][$key] ?? ucfirst(str_replace('_', ' ', $key));
+                        @endphp
+                        <tr>
+                            <td class="content-label">{{ $label }}</td>
+                        @empty
+                            <td>Tidak ada dokumen yang diunggah</td>
+                        </tr>
+                    @endforelse
                 </table>
 
                 {{-- Tanda Tangan --}}
-                <table>
-                    <tr>
+                <table class="signature-table">
+                    <tr class="signature-content">
+                        <td>Pengurus/Kader Posyandu</td>
+                        <td>Nama Pemohon Layanan</td>
+                    </tr>
+                    <tr class="signature-content">
                         <td></td>
+                        <td>
+                            @if ($checkBase64)
+                                <img src="{{ $checkBase64 }}" alt="Logo Check" class="check">
+                            @endif
+                        </td>
+                    </tr>
+                    <tr class="signature-content">
+                        <td>
+                            {{-- {{ $ajuan->latestHistory->diubahOleh->name ?? '...........................' }} --}}
+                        </td>
+                        <td>{{ $ajuan->user->name }}</td>
                     </tr>
                 </table>
             </div>
@@ -314,7 +428,7 @@
 
     <footer>
         <p>
-            &copy; {{ date('Y') }} <span>EPOSY</span>. Pelayanan Elektronik Posyandu Kabupaten Kebumen.
+            &copy; {{ date('Y') }} <span>SAPA POSYANDU</span>. Sistem Aplikasi Pos Pelayanan Terpadu.
         </p>
     </footer>
 </body>
