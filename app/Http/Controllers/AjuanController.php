@@ -34,18 +34,18 @@ class AjuanController extends Controller
             $searchTerm = '%' . strtolower($request->input('search')) . '%';
 
             $query->where(function ($q) use ($searchTerm) {
-                
+
                 $q->whereHas('user', function ($userQuery) use ($searchTerm) {
                     $userQuery->whereRaw('LOWER(name) LIKE ?', [$searchTerm]);
                 })
-                
-                ->orWhereRaw('LOWER(deskripsi_pengajuan) LIKE ?', [$searchTerm])
-                
-                ->orWhereRaw('LOWER(status_pengajuan) LIKE ?', [$searchTerm])
-                
-                ->orWhereHas('bidang', function ($bidangQuery) use ($searchTerm) {
-                    $bidangQuery->whereRaw('LOWER(nama_bidang) LIKE ?', [$searchTerm]);
-                });
+
+                    ->orWhereRaw('LOWER(deskripsi_pengajuan) LIKE ?', [$searchTerm])
+
+                    ->orWhereRaw('LOWER(status_pengajuan) LIKE ?', [$searchTerm])
+
+                    ->orWhereHas('bidang', function ($bidangQuery) use ($searchTerm) {
+                        $bidangQuery->whereRaw('LOWER(nama_bidang) LIKE ?', [$searchTerm]);
+                    });
             });
         }
         $semuaAjuan = $query->latest()->paginate(5)->withQueryString();
@@ -53,6 +53,60 @@ class AjuanController extends Controller
         return view('ajuan.index', [
             'semuaAjuan' => $semuaAjuan,
         ]);
+    }
+
+
+    private function getTargetUserId()
+    {
+        // Jika ada ID di sesi (kader membantu) DAN yang login bukan masyarakat
+        if (session()->has('ajuan_on_behalf_of_id') && Auth::user()->role !== 'masyarakat') {
+            return session('ajuan_on_behalf_of_id');
+        }
+        // Jika tidak, gunakan ID user yang sedang login (masyarakat untuk dirinya sendiri)
+        return Auth::id();
+    }
+
+    // =====================================================================
+    // == METHOD BARU: Menampilkan halaman "Pilih Layanan" ==
+    // =====================================================================
+    public function pilihLayanan()
+    {
+        // Hapus sesi 'on_behalf_of' jika masyarakat mengakses ini
+        if (Auth::user()->role === 'masyarakat') {
+            session()->forget('ajuan_on_behalf_of_id');
+        }
+        $colors = [
+            '#4D73FD',
+            '#f43f5e',
+            '#F2993F',
+            '#7CD75A',
+            '#E655A0',
+            '#EAB308',
+        ];
+        $icons = [
+            'kesehatan' => asset('assets/image/icon/bidang/kesehatan.svg'),
+            'pekerjaan-umum' => asset('assets/image/icon/bidang/pekerjaan-umum.svg'),
+            'pendidikan' => asset('assets/image/icon/bidang/pendidikan.svg'),
+            'perumahan-rakyat' => asset('assets/image/icon/bidang/perumahan-rakyat.svg'),
+            'sosial' => asset('assets/image/icon/bidang/sosial.svg'),
+            'trantibumlinmas' => asset('assets/image/icon/bidang/trantibumlinmas.svg'),
+        ];
+
+        $allBidangs = BidangPengajuan::orderBy('nama_bidang')->get();
+
+        // Buat view baru atau gunakan view lama yang sudah dipisah
+        return view('dashboard.partials.pilih-layanan', compact('allBidangs', 'colors', 'icons'));
+    }
+
+    public function pilihUser()
+    {
+        // Ambil semua masyarakat yang sudah terverifikasi
+        $masyarakatUsers = User::where('role', 'masyarakat')
+            ->whereNotNull('verified_at')
+            ->orderBy('name')
+            ->get();
+
+        return view('dashboard.partials.pilih-user', compact('masyarakatUsers'));
     }
 
     public function create($bidang_slug)
@@ -132,6 +186,11 @@ class AjuanController extends Controller
         $ajuanData = session('ajuan_data');
         $user = Auth::user();
 
+        $targetUserId = $this->getTargetUserId();
+        if (!$targetUserId) {
+            return redirect()->route('dashboard')->with('error', 'User target tidak ditemukan.');
+        }
+
         if (!$ajuanData || !$user) {
             return redirect()->route('dashboard')->with('error', 'Sesi tidak valid.');
         }
@@ -173,7 +232,7 @@ class AjuanController extends Controller
         }
 
         $pengajuan = Pengajuan::create([
-            'user_id' => $user->id,
+            'user_id' => $targetUserId,
             'bidang_id' => $ajuanData['bidang_id'],
             'status_pengajuan' => 'Diproses',
             'formulir_items' => $finalChecklistData,
@@ -184,13 +243,15 @@ class AjuanController extends Controller
         History::create([
             'pengajuan_id' => $pengajuan->id,
             'status' => 'Diajukan',
-            'catatan' => 'Pengajuan baru telah dibuat oleh pengguna.',
+            'catatan' => 'Pengajuan baru telah dibuat oleh ' . $user->name . '.',
             'diubah_oleh' => $user->id,
             'created_at' => now(),
         ]);
 
+        // Session::forget('ajuan_data');
+        // session()->put('ajuan_data.uploaded_files', $uploadedFiles);
         Session::forget('ajuan_data');
-        session()->put('ajuan_data.uploaded_files', $uploadedFiles);
+        Session::forget('ajuan_on_behalf_of_id');
 
         return redirect()->route('ajuan.index')->with('success', 'Ajuan berhasil dikirim!');
     }
@@ -433,8 +494,8 @@ class AjuanController extends Controller
 
         $request->validate([
             'status' => ['nullable', 'in:Disetujui,Ditolak'],
-             'catatan' => [
-                'nullable', 
+            'catatan' => [
+                'nullable',
                 'string',
                 'required_if:status,Ditolak',
                 'required_if:tolak_langsung,Ditolak',
@@ -442,7 +503,7 @@ class AjuanController extends Controller
             ],
             // 'sudah_verifikasi' => ['sometimes', 'boolean'],
             // 'kunjungan_lapangan' => ['sometimes', 'boolean'],
-             'sudah_verifikasi' => ['nullable', 'in:0,1'],
+            'sudah_verifikasi' => ['nullable', 'in:0,1'],
             'kunjungan_lapangan' => ['nullable', 'in:0,1'],
             'tolak_langsung' => ['nullable', 'in:Ditolak'],
             'verified_formulir_items' => ['nullable', 'array'],
@@ -469,21 +530,18 @@ class AjuanController extends Controller
         if ($request->input('tolak_langsung') === 'Ditolak') {
             $statusAkhir = 'Ditolak';
             $sudahVerifikasi = false; // Verifikasi tidak disetujui
-            $kunjunganLapangan = false;  
+            $kunjunganLapangan = false;
             $statusHistory = 'Ditolak';
             $catatanHistory = $request->catatan ?? 'Ditolak pada tahap verifikasi dokumen.';
-        }
-        elseif ($request->has('finalize_status')) {
-            
+        } elseif ($request->has('finalize_status')) {
+
             $statusAkhir = $request->finalize_status; // 'Disetujui' or 'Ditolak'
             $sudahVerifikasi = true; // Tetap true
             $kunjunganLapangan = true; // Tetap true
             $statusHistory = $statusAkhir;
             $catatanHistory = $request->catatan ?? "Pengajuan $statusAkhir setelah kunjungan lapangan.";
-        
-        }
-        elseif ($request->input('sudah_verifikasi') == '1') {
-            
+        } elseif ($request->input('sudah_verifikasi') == '1') {
+
             $sudahVerifikasi = true; // Pasti sudah terverifikasi jika lolos Langkah 1
             $kunjunganLapangan = $request->boolean('kunjungan_lapangan'); // '0' or '1'
 

@@ -46,4 +46,9 @@ class Pengajuan extends Model
     {
         return $this->hasMany(History::class, 'pengajuan_id', 'id');
     }
+
+    public function latestHistory()
+    {
+        return $this->hasOne(History::class, 'pengajuan_id', 'id')->latestOfMany('created_at');
+    }
 }

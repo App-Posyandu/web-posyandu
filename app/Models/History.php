@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class History extends Model
 {
-    use HasFactory,HasUuids;
+    use HasFactory, HasUuids;
     protected $primaryKey = 'id';
     public $incrementing = false;
     protected $keyType = 'string';
@@ -24,6 +24,6 @@ class History extends Model
 
     public function diubahOleh()
     {
-        return $this->belongsTo(User::class, 'diubah_oleh', 'uuid');
+        return $this->belongsTo(User::class, 'diubah_oleh', 'id');
     }
 }
