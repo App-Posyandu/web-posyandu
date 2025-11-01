@@ -51,6 +51,10 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Posyandu::class, 'posyandu_id', 'id');
     }
+    public function bukuSakus()
+    {
+        return $this->hasMany(BukuSaku::class, 'user_id');
+    }
 
     /**
      * The attributes that should be hidden for serialization.

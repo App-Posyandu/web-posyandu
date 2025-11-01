@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AjuanController;
+use App\Http\Controllers\BukuSakuController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GoogleLoginController;
 use App\Http\Controllers\LaporanController;
@@ -14,6 +15,19 @@ Route::get('/', function () {
 });
 
 Route::middleware('auth')->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+        ->middleware(['verified'])
+        ->name('dashboard');
+
+    // 2. RUTE BARU: Halaman "Pilih Layanan" untuk masyarakat
+    Route::get('/pilih-layanan', [AjuanController::class, 'pilihLayanan'])
+        ->name('dashboard.partials.pilih-layanan');
+
+    // 3. RUTE BARU: Halaman untuk Kader memilih user
+    Route::get('/admin/ajuan/pilih-user', [AjuanController::class, 'pilihUser'])
+        ->middleware('role:admin,kabid,ketua-kader,kader') // Hanya role admin
+        ->name('dashboard.partials.pilih-user');
+
     //Rute untuk Detail Ajuan dan Cetak Ajuan
     Route::get('/ajuan/create/{bidang}', [AjuanController::class, 'create'])->name('ajuan.create');
     Route::post('/ajuan/store-permohonan', [AjuanController::class, 'storePermohonan'])->name('ajuan.store.permohonan');
@@ -31,6 +45,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/ajuan', [AjuanController::class, 'index'])->name('ajuan.index');
     });
     Route::get('/ajuan/cetak/{id}', [AjuanController::class, 'cetak'])->name('ajuan.cetak');
+    // Route::resource('buku-saku', BukuSakuController::class);
+    Route::get('buku-saku', [BukuSakuController::class, 'index'])->name('buku-saku.index');
+    Route::post('buku-saku', [BukuSakuController::class, 'store'])
+        ->name('buku-saku.store')
+        ->middleware('role:kabid,admin');
     // --- Rute Profil (dari Breeze) ---
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -55,7 +74,7 @@ Route::middleware('auth')->group(function () {
 Route::get('/auth/google/redirect', [GoogleLoginController::class, 'redirectToGoogle'])->name('google.login');
 Route::get('/auth/google/callback', [GoogleLoginController::class, 'handleGoogleCallback']);
 
-Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
+// Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::get('/set-session', function () {
     session(['test' => 'Berhasil']);

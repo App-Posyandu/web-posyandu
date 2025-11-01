@@ -39,7 +39,7 @@ class Pengajuan extends Model
 
     public function bidang()
     {
-        return $this->belongsTo(BidangPengajuan::class, 'bidang_id','id');
+        return $this->belongsTo(BidangPengajuan::class, 'bidang_id', 'id');
     }
 
     public function histories()
@@ -49,6 +49,6 @@ class Pengajuan extends Model
 
     public function latestHistory()
     {
-        return $this->hasOne(History::class, 'pengajuan_id', 'id')->latestOfMany();
+        return $this->hasOne(History::class, 'pengajuan_id', 'id')->latestOfMany('created_at');
     }
 }

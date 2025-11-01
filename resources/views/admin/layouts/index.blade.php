@@ -22,11 +22,11 @@
 
         <div class="relative z-10 flex flex-col min-h-screen">
             @include('layouts.partials.header-new')
-            
+
             @yield('content')
             {{-- <main class="flex-grow flex items-center justify-center py-12">
             </main> --}}
-
+            @include('layouts.partials.footer')
         </div>
     </div>
     @stack('scripts')

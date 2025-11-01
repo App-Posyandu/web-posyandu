@@ -2,12 +2,16 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class History extends Model
 {
-    use HasFactory;
+    use HasFactory, HasUuids;
+    protected $primaryKey = 'id';
+    public $incrementing = false;
+    protected $keyType = 'string';
     protected $table = 'histories';
     public $timestamps = false;
 
@@ -20,6 +24,6 @@ class History extends Model
 
     public function diubahOleh()
     {
-        return $this->belongsTo(User::class, 'diubah_oleh', 'uuid');
+        return $this->belongsTo(User::class, 'diubah_oleh', 'id');
     }
 }
