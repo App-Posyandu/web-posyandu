@@ -37,11 +37,13 @@ class DashboardController extends Controller
             $allBidangs = BidangPengajuan::orderBy('nama_bidang')->get();
             $colors = ['#4D73FD', '#f43f5e', '#F2993F', '#7CD75A', '#E655A0', '#EAB308'];
 
-            return view('dashboard', [
-                'allBidangs' => $allBidangs,
-                'colors' => $colors,
-                'icons' => $icons,
-            ]);
+            session()->forget('ajuan_on_behalf_of_id');
+            return redirect()->route('dashboard.partials.pilih-layanan', compact('allBidangs', 'colors', 'icons'));
+            // return view('dashboard', [
+            //     'allBidangs' => $allBidangs,
+            //     'colors' => $colors,
+            //     'icons' => $icons,
+            // ]);
         } else {
             $query = Pengajuan::with(['user', 'bidang']);
 

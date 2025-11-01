@@ -39,10 +39,12 @@
                         <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                             <h2 class="text-2xl font-bold text-gray-800">List Pengajuan</h2>
                             <div class="flex items-center gap-2">
-                                <a href="{{ route('ajuan.index') }}"
-                                    class="px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600">
-                                    <i class="bi bi-plus-circle-fill mr-2"></i>Tambah Ajuan
-                                </a>
+                                @if (Auth::user()->role === 'kader')
+                                    <a href="{{ route('dashboard.partials.pilih-user') }}"
+                                        class="px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600">
+                                        <i class="bi bi-plus-circle-fill mr-2"></i>Tambah Ajuan
+                                    </a>
+                                @endif
                                 {{-- Form untuk filter dan search --}}
                                 <form action="{{ route('ajuan.index') }}" method="GET"
                                     class="flex flex-col md:flex-row items-center gap-2 w-full md:w-auto">
@@ -61,7 +63,8 @@
                                         <input type="text" name="search" placeholder="Cari berdasarkan nama..."
                                             value="{{ request('search') }}"
                                             class="w-full md:w-64 pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm focus:ring-pink-500 focus:border-pink-500">
-                                        <button type="submit" class="absolute inset-y-0 right-0 flex items-center pr-3">
+                                        <button type="submit"
+                                            class="absolute inset-y-0 right-0 flex items-center pr-3">
                                             <i class="bi bi-search text-gray-400"></i>
                                         </button>
                                     </div>
