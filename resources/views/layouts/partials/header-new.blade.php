@@ -1,14 +1,14 @@
 <header class="w-full max-w-7xl mx-auto py-4 px-6 flex justify-between items-center">
     <div>
         <a href="/">
-            <h1 class="text-2xl font-bold text-pink-600">Sapa Posyandu</h1>
-            <p class="text-sm text-gray-600">Sistem Aplikasi Pengelolaan Pos Pelayanan Terpadu</p>
+            <div class="flex flex-row items-center gap-4">
+                <img src={{ asset('assets/image/logo/logo_sapaposyandu.png') }} alt="Logo Sapaposyandu" class="h-12">
+                <div class="flex flex-col">
+                    <h1 class="text-2xl font-bold text-pink-500 uppercase">Sapa Posyandu</h1>
+                    <p class="text-sm text-gray-600">Sistem Aplikasi Pengelolaan Pos Pelayanan Terpadu</p>
+                </div>
+            </div>
         </a>
-    </div>
-    <div class="w-1/3 flex items-center space-x-4">
-        <img src={{ asset('assets/image/logo/logo_kebumen.png') }} alt="Logo Kebumen" class="h-12">
-        <img src={{ asset('assets/image/logo/logo_posyandu.png') }} alt="Logo Posyandu" class="h-12">
-        <img src={{ asset('assets/image/logo/logo_telkom_university.png') }} alt="Logo Telkom University" class="h-12">
     </div>
     <div class="hidden sm:flex sm:items-center sm:ms-6">
         <x-dropdown align="right" width="48">

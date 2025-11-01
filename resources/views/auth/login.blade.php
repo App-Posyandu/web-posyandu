@@ -4,10 +4,12 @@
     <div class="flex items-center justify-center space-x-4 mb-6">
         <img src={{ asset('assets/image/logo/logo_kebumen.png') }} alt="Logo Kebumen" class="h-16">
         <img src={{ asset('assets/image/logo/logo_posyandu.png') }} alt="Logo Posyandu" class="h-16">
+        <img src={{ asset('assets/image/logo/logo_sapaposyandu.png') }} alt="Logo Posyandu" class="h-16">
+        <img src={{ asset('assets/image/logo/logo_telkom_university.png') }} alt="Logo Posyandu" class="h-16">
     </div>
 
     <div class="text-center mb-6">
-        <h1 class="text-2xl font-bold text-gray-800">Selamat Datang di EPOSY</h1>
+        <h1 class="text-2xl font-bold text-gray-800">Selamat Datang di SAPA POSYANDU</h1>
         <p class="text-pink-500 font-semibold">Pelayanan Elektronik Posyandu</p>
     </div>
 
