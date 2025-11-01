@@ -19,7 +19,6 @@ class PengajuanSeeder extends Seeder
         Pengajuan::truncate();
         Schema::enableForeignKeyConstraints();
 
-        // Ambil semua user dan bidang yang ada di database untuk efisiensi
         $users = User::all();
         $bidangs = BidangPengajuan::all();
 
@@ -108,23 +107,19 @@ class PengajuanSeeder extends Seeder
             ],
         ];
 
-        // 2. Lakukan perulangan untuk membuat 20 data pengajuan palsu
         foreach (range(1, 20) as $index) {
             $user = $users->random();
             $bidang = $bidangs->random();
 
             $template = $formTemplates[$bidang->slug] ?? null;
-            if (!$template) continue; // Lewati jika slug tidak ada di template
+            if (!$template) continue;
 
-            // Pilih beberapa item checklist secara acak
             $checklistData = collect($template['formulir_items'])->random(rand(1, count($template['formulir_items'])))->values()->all();
 
-            // Cek jika pengguna memilih 'Lainnya...'
             if (in_array('Lainnya...', $checklistData)) {
-                $checklistData[] = 'Lainnya: ' . fake()->sentence(3); // Tambah data teks manual
+                $checklistData[] = 'Lainnya: ' . fake()->sentence(3);
             }
 
-            // Buat data dokumen palsu
             $dokumenData = [];
             foreach (array_keys($template['administrasi_items']) as $key) {
                 $dokumenData[$key] = 'dokumen/' . fake()->word() . '.pdf';

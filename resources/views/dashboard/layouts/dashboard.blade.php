@@ -24,11 +24,11 @@
         <div class="relative z-10 flex flex-col min-h-screen">
 
             @include('layouts.partials.header-new')
-            
-            <main class="flex-grow flex items-center justify-center min-h-screen">
+
+            <main class="flex-grow flex items-center justify-center min-h-[70vh]">
                 @yield('content')
             </main>
-            
+
             @include('layouts.partials.footer')
         </div>
     </div>

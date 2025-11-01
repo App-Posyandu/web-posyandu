@@ -39,7 +39,7 @@ class Pengajuan extends Model
 
     public function bidang()
     {
-        return $this->belongsTo(BidangPengajuan::class, 'bidang_id','id');
+        return $this->belongsTo(BidangPengajuan::class, 'bidang_id', 'id');
     }
 
     public function histories()

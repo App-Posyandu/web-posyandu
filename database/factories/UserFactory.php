@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Posyandu;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -30,7 +31,7 @@ class UserFactory extends Factory
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
 
-            'posyandu_id' => 1, // Asumsi Anda punya setidaknya 1 posyandu di database
+            'posyandu_id' => Posyandu::inRandomOrder()->first()->id, // Asumsi Anda punya setidaknya 1 posyandu di database
             'role' => 'masyarakat',
             'nik' => fake()->unique()->numerify('################'), // Membuat 16 digit NIK unik
             'alamat' => fake()->address(),

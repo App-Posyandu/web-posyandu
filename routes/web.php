@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AjuanController;
+use App\Http\Controllers\BukuSakuController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GoogleLoginController;
 use App\Http\Controllers\LaporanController;
@@ -31,6 +32,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/ajuan', [AjuanController::class, 'index'])->name('ajuan.index');
     });
     Route::get('/ajuan/cetak/{id}', [AjuanController::class, 'cetak'])->name('ajuan.cetak');
+    // Route::resource('buku-saku', BukuSakuController::class);
+    Route::get('buku-saku', [BukuSakuController::class, 'index'])->name('buku-saku.index');
+    Route::post('buku-saku', [BukuSakuController::class, 'store'])
+        ->name('buku-saku.store')
+        ->middleware('role:kabid,admin');
     // --- Rute Profil (dari Breeze) ---
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

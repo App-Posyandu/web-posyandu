@@ -6,18 +6,21 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class BidangPengajuan extends Model
+class BukuSaku extends Model
 {
     use HasFactory,HasUuids;
-
     protected $primaryKey = 'id';
     public $incrementing = false;
     protected $keyType = 'string';
-    protected $table = 'bidang_pengajuans';
-    protected $fillable = ['nama_bidang', 'slug'];
+    protected $fillable = [
+        'user_id',
+        'title',
+        'description',
+        'file_path',
+    ];
 
-    public function pengajuans()
+    public function user()
     {
-        return $this->hasMany(Pengajuan::class, 'bidang_id', 'id');
+        return $this->belongsTo(User::class, 'user_id', 'id');
     }
 }

@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('posyandus', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->string('nama_posyandu');
             $table->string('desa');
             $table->string('kecamatan');
@@ -26,5 +26,5 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('posyandus');
-    }   
+    }
 };
