@@ -62,7 +62,8 @@ Route::middleware('auth')->group(function () {
     Route::middleware(['role:ketua-kader,kader,kabid'])->group(function () {
         Route::resource('penimbangan', PenimbanganController::class);
         //export to excel
-        Route::get('/export-excel', [LaporanController::class, 'exportExcel'])->name('laporan.exportExcel');
+        Route::get('/export/{bidang}', [LaporanController::class, 'exportExcelBidang'])->name('laporan.exportExcelBidang');
+        Route::get('/export-excel', [LaporanController::class, 'exportExcelAll'])->name('laporan.exportExcelAll');
     });
 
     Route::middleware(['role:kabid,kader,admin,ketua-kader'])->prefix('admin')->name('admin.')->group(function () {

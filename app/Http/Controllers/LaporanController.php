@@ -13,9 +13,13 @@ class LaporanController extends Controller
         return view('dashboard.partials.laporan');
     }
     //export data pengajuan ke excel
-    public function exportExcel()
+    public function exportExcelAll()
     {
         //code to export data to excel
-        return Excel::download(new UsersExport, 'laporan_pengajuan.xlsx');
+        return Excel::download(new UsersExport, 'Laporan Data Pengajuan_Recap_All.xlsx');
     }
+    public function exportExcelBidang($bidang)
+{
+    return Excel::download(new UsersExport($bidang), 'Laporan Data Pengajuan_Recap_' . $bidang . '.xlsx');
+}
 }
