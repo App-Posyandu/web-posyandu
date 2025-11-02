@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class BukuSakuController extends Controller
 {
@@ -111,5 +113,25 @@ class BukuSakuController extends Controller
         $bukuSaku->delete();
 
         return redirect()->back()->with('success', 'Buku Saku berhasil dihapus.');
+    }
+
+    public function stream(): StreamedResponse|RedirectResponse
+    {
+        $bukuSaku = BukuSaku::latest()->first();
+
+        if (!$bukuSaku || !Storage::disk('public')->exists($bukuSaku->file_path)) {
+            return redirect()->route('buku-saku.index')->with('error', 'File Buku Saku tidak ditemukan.');
+        }
+
+        $path = $bukuSaku->file_path;
+
+        $stream = Storage::disk('public')->readStream($path);
+
+        return response()->stream(function () use ($stream) {
+            fpassthru($stream);
+        }, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . basename($path) . '"'
+        ]);
     }
 }

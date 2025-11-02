@@ -26,7 +26,6 @@
                                 <div class="space-y-4">
                                     <div>
                                         <x-input-label for="title" :value="__('Judul Buku Saku')" />
-                                        {{-- Isi value dengan judul lama jika ada --}}
                                         <x-text-input id="title" class="block mt-1 w-full" type="text" name="title"
                                             :value="old('title', $bukuSaku->title ?? '')" required />
                                         <x-input-error :messages="$errors->get('title')" class="mt-2" />
@@ -57,7 +56,6 @@
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6 text-gray-900">
 
-                        {{-- Cek apakah ada buku saku di database --}}
                         @if ($bukuSaku)
                             <h2 class="text-2xl font-bold text-gray-800 mb-2">{{ $bukuSaku->title }}</h2>
                             <p class="text-sm text-gray-500 mb-4">{{ $bukuSaku->description }}</p>
@@ -74,13 +72,12 @@
                             </div>
 
                             <div class="w-full h-[70vh] border rounded-lg overflow-hidden">
-                                <iframe src="{{ Storage::url($bukuSaku->file_path) }}" width="100%" height="100%"
+                                <iframe src="{{ route('buku-saku.stream') }}" width="100%" height="100%"
                                     frameborder="0">
                                     Browser Anda tidak mendukung preview PDF. Silakan klik "Download PDF".
                                 </iframe>
                             </div>
                         @else
-                            {{-- Tampilan jika belum ada buku saku sama sekali --}}
                             <p class="text-center text-gray-500 py-10">
                                 Buku Saku belum diunggah oleh Kabid.
                             </p>
