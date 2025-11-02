@@ -17,7 +17,7 @@
                 @if ($key === 'ktp')
                     <div>
                         <label for="ktp"
-                            class="block font-medium text-sm text-gray-700 mb-1">{{ $label }}</label>
+                            class="block font-medium text-base md:text-lg text-gray-700 mb-1">{{ $label }}</label>
                         <div class="relative">
                             <div
                                 class="w-full flex items-center px-3 py-2 bg-gray-100 text-gray-500 rounded-md shadow-sm border border-gray-300">
@@ -40,7 +40,7 @@
                         @if ($userKtp)
                             <button type="button"
                                 @click="ktp_mode = 'claimed'; ktp_filename = 'KTP Terdaftar (Klik \'Ubah\' untuk ganti)'; ktp_preview = '{{ $userKtp }}'"
-                                class="mt-2 text-sm text-green-600 hover:underline"
+                                class="mt-2 text-base text-green-600 underline hover:text-green-700 transition transform duration-300"
                                 :class="{ 'font-bold text-lg': ktp_mode == 'claimed' }">
                                 Gunakan KTP Terdaftar
                             </button>
@@ -50,7 +50,7 @@
                 @elseif ($key === 'kk')
                     <div>
                         <label for="kk"
-                            class="block font-medium text-sm text-gray-700 mb-1">{{ $label }}</label>
+                            class="block font-medium text-base md:text-lg text-gray-700 mb-1">{{ $label }}</label>
                         <div class="relative">
                             <div
                                 class="w-full flex items-center px-3 py-2 bg-gray-100 text-gray-500 rounded-md shadow-sm border border-gray-300">
@@ -73,7 +73,7 @@
                         @if ($userKk)
                             <button type="button"
                                 @click="kk_mode = 'claimed'; kk_filename = 'KK Terdaftar (Klik \'Ubah\' untuk ganti)'; kk_preview = '{{ $userKk }}'"
-                                class="mt-2 text-sm text-green-600 hover:underline"
+                                class="mt-2 text-base text-green-600 underline hover:text-green-700 transition transform duration-300"
                                 :class="{ 'font-bold text-lg': kk_mode == 'claimed' }">
                                 Gunakan KK Terdaftar
                             </button>
@@ -100,18 +100,6 @@
                         <x-input-error :messages="$errors->get($key)" class="mt-2" />
                     </div>
                 @endif
-                {{-- <div x-data="{ fileName: '' }" class="h-full flex flex-col justify-end">
-                    <label for="{{ $key }}"
-                        class="block font-medium text-sm text-gray-700">{{ $label }}</label>
-                    <label for="{{ $key }}"
-                        class="mt-1 flex justify-between items-center px-3 py-2 bg-white text-gray-500 rounded-md shadow-sm border border-gray-300 cursor-pointer hover:text-gray-700">
-                        <span x-text="fileName || 'Pilih File'" class="truncate"></span>
-                        <i class="bi bi-cloud-upload text-pink-500 text-lg"></i>
-                    </label>
-                    <input id="{{ $key }}" class="hidden" type="file" name="{{ $key }}"
-                        @change="fileName = $event.target.files[0] ? $event.target.files[0].name : ''" />
-                    <x-input-error :messages="$errors->get($key)" class="mt-2" />
-                </div> --}}
             @endforeach
         </div>
 
@@ -119,16 +107,16 @@
             <label class="flex items-center">
                 <input type="checkbox" name="agreement" required
                     class="rounded border-gray-300 text-pink-600 shadow-sm focus:ring-pink-500">
-                <span class="ms-2 text-sm text-gray-600">Dengan ini saya ajukan formulir permohonan ini dengan data
+                <span class="ms-2 text-base md:text-lg text-gray-600">Dengan ini saya ajukan formulir permohonan ini dengan data
                     sebenar-benarnya.</span>
             </label>
         </div>
 
         <div class="flex items-center justify-end mt-8 space-x-4">
             <a href="{{ url()->previous() }}"
-                class="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">Kembali</a>
+                class="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm md:text-base font-medium text-gray-700 bg-white hover:bg-gray-50">Kembali</a>
             <button type="submit"
-                class="inline-flex items-center px-8 py-2 bg-pink-500 border border-transparent rounded-md font-semibold text-sm text-white hover:bg-pink-600">Kirim</button>
+                class="inline-flex items-center px-8 py-2 bg-pink-500 border border-transparent rounded-md font-semibold text-sm md:text-base text-white hover:bg-pink-600">Kirim</button>
         </div>
     </form>
 </x-guest-layout>
