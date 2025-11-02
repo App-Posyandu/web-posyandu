@@ -19,7 +19,6 @@ class GoogleLoginController extends Controller
     {
         try {
             $googleUser = Socialite::driver('google')->user();
-            var_dump($googleUser);
             $user = User::where('email', $googleUser->getEmail())->first();
 
             if ($user) {

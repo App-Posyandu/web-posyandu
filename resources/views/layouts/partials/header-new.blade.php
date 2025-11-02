@@ -1,13 +1,14 @@
 <header class="w-full max-w-7xl mx-auto py-4 px-6 flex justify-between items-center">
     <div>
         <a href="/">
-        <h1 class="text-2xl font-bold text-gray-800">EPOSY</h1>
-        <p class="text-sm text-gray-600">Pelayanan Elektronik Posyandu</p>
+            <div class="flex flex-row items-center gap-4">
+                <img src={{ asset('assets/image/logo/logo_sapaposyandu.png') }} alt="Logo Sapaposyandu" class="h-12">
+                <div class="flex flex-col">
+                    <h1 class="text-2xl font-bold text-pink-500 uppercase">Sapa Posyandu</h1>
+                    <p class="text-sm text-gray-600">Sistem Aplikasi Pengelolaan Pos Pelayanan Terpadu</p>
+                </div>
+            </div>
         </a>
-    </div>
-    <div class="flex items-center space-x-4">
-        <img src={{ asset('assets/image/logo/logo_kebumen.png') }} alt="Logo Kebumen" class="h-12">
-        <img src={{ asset('assets/image/logo/logo_posyandu.png') }} alt="Logo Posyandu" class="h-12">
     </div>
     <div class="hidden sm:flex sm:items-center sm:ms-6">
         <x-dropdown align="right" width="48">
@@ -19,6 +20,15 @@
                 </button>
             </x-slot>
             <x-slot name="content">
+                <x-dropdown-link :href="route('dashboard')">{{ __('Beranda') }}</x-dropdown-link>
+                @if (Auth::user()->role === 'admin' ||
+                        Auth::user()->role === 'kader' ||
+                        Auth::user()->role === 'kabid' ||
+                        Auth::user()->role === 'ketua-kader')
+                    <x-dropdown-link :href="route('admin.users.index')">{{ __('Users') }}</x-dropdown-link>
+                @endif
+                <x-dropdown-link :href="route('buku-saku.index')">{{ __('Buku Saku') }}</x-dropdown-link>
+                <x-dropdown-link :href="route('ajuan.index')">{{ __('Lihat Pengajuan') }}</x-dropdown-link>
                 <x-dropdown-link :href="route('profile.edit')">{{ __('Profile') }}</x-dropdown-link>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf

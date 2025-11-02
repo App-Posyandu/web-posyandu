@@ -90,7 +90,7 @@
                     <span x-text="fileName || 'Unggah KTP'"></span>
                     <i class="bi bi-cloud-upload text-pink-500 text-lg"></i>
                 </label>
-                <input id="ktp" class="hidden" type="file" name="ktp" required
+                <input id="ktp" class="hidden" type="file" name="ktp" accept="image/*,application/pdf" required
                     @change="fileName = $event.target.files[0].name" />
                 <x-input-error :messages="$errors->get('ktp')" class="mt-2" />
             </div>
@@ -102,7 +102,7 @@
                     <span x-text="fileName || 'Unggah KK'"></span>
                     <i class="bi bi-cloud-upload text-pink-500 text-lg"></i>
                 </label>
-                <input id="kk" class="hidden" type="file" name="kk" required
+                <input id="kk" class="hidden" type="file" name="kk" accept="image/*,application/pdf" required
                     @change="fileName = $event.target.files[0].name" />
                 <x-input-error :messages="$errors->get('kk')" class="mt-2" />
             </div>
@@ -128,6 +128,12 @@
                     <option value="kader" @selected(old('role') == 'kader')>Kader</option>
                 </select>
                 <x-input-error :messages="$errors->get('role')" class="mt-2" />
+            </div>
+            <div class="md:col-span-2">
+                <x-input-label for="no_telepon" :value="__('Nomor Telepon')" />
+                <x-text-input id="no_telepon" class="block mt-1 w-full" type="text" name="no_telepon"
+                    :value="old('no_telepon')" required placeholder="Contoh: 081234567890" />
+                <x-input-error :messages="$errors->get('no_telepon')" class="mt-2" />
             </div>
 
             <div class="md:col-span-2">

@@ -8,34 +8,44 @@
             <label for="bidang_pelayanan" class="block font-medium text-sm text-gray-700">Ubah bidang pelayanan</label>
             <select id="bidang_pelayanan" onchange="window.location.href=this.value;"
                 class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                <option value="{{ route('ajuan.create', 'pekerjaanUmum') }}" @selected($bidang == 'pekerjaanUmum')>Bidang
-                    Pekerjaan Umum
-                </option>
-                <option value="{{ route('ajuan.create', 'sosial') }}" @selected($bidang == 'sosial')>Bidang Sosial
-                </option>
-                <option value="{{ route('ajuan.create', 'kesehatan') }}" @selected($bidang == 'kesehatan')>Bidang
-                    Kesehatan
-                </option>
-                <option value="{{ route('ajuan.create', 'perumahanrakyat') }}" @selected($bidang == 'perumahanrakyat')>Bidang
-                    Perumahan Rakyat
-                </option>
-                <option value="{{ route('ajuan.create', 'pendidikan') }}" @selected($bidang == 'pendidikan')>Bidang
-                    Pendidikan
-                </option>
-                <option value="{{ route('ajuan.create', 'trantibumlinmas') }}" @selected($bidang == 'trantibumlinmas')>Bidang
-                    TrantibumLinmas
-                </option>
+                @foreach ($allBidangs as $itemBidang)
+                    <option value="{{ route('ajuan.create', $itemBidang->slug) }}" @selected($bidang->slug == $itemBidang->slug)>
+                        {{ $itemBidang->nama_bidang }}
+                    </option>
+                @endforeach
             </select>
         </div>
 
         <div class="space-y-4">
             @foreach ($items as $item)
-                <label class="flex items-center">
-                    <input type="checkbox" name="permohonan_items[]" value="{{ $item }}"
-                        class="rounded border-gray-300 text-pink-600 shadow-sm focus:ring-pink-500">
-                    <span class="ms-3 text-gray-700">{{ $item }}</span>
-                </label>
+                @if ($item === 'Lainnya...')
+                    <div x-data="{ checked: false }" class="p-4 border rounded-md">
+                        <label class="flex items-center">
+                            <input type="checkbox" x-model="checked" name="permohonan_items[]" value="Lainnya..."
+                                class="rounded border-gray-300 text-pink-600 shadow-sm focus:ring-pink-500">
+                            <span class="ms-3 text-gray-700 font-semibold">{{ $item }}</span>
+                        </label>
+                        <div x-show="checked" x-transition class="mt-2">
+                            <x-text-input type="text" name="lainnya_text" class="block w-full"
+                                placeholder="Silakan ketik permohonan Anda..." x-bind:disabled="!checked" />
+                        </div>
+                    </div>
+                @else
+                    <label class="flex items-center">
+                        <input type="checkbox" name="permohonan_items[]" value="{{ $item }}"
+                            class="rounded border-gray-300 text-pink-600 shadow-sm focus:ring-pink-500">
+                        <span class="ms-3 text-gray-700">{{ $item }}</span>
+                    </label>
+                @endif
             @endforeach
+            <div class="mt-6">
+                <label for="deskripsi_pengajuan" class="block font-medium text-sm text-gray-700">Deskripsi
+                    Pengajuan</label>
+                <textarea id="deskripsi_pengajuan" name="deskripsi_pengajuan"
+                    class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                    rows="4" placeholder="Jelaskan secara singkat tujuan atau detail pengajuan Anda di sini...">{{ old('deskripsi_pengajuan') }}</textarea>
+                <x-input-error :messages="$errors->get('deskripsi_pengajuan')" class="mt-2" />
+            </div>
         </div>
 
         <div class="flex items-center justify-end mt-8 space-x-4">

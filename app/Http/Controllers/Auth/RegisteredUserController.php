@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Posyandu;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -46,11 +47,12 @@ class RegisteredUserController extends Controller
             'nama_posyandu' => ['required', 'string', 'max:255'],
             'desa' => ['required', 'string', 'max:255'],
             'kecamatan' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:' . User::class],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'role' => ['required', 'in:masyarakat,kader'],
-            'ktp' => ['required', 'image', 'mimes:jpeg,png,jpg', 'max:2048'], // Maksimal 2MB
-            'kk' => ['required', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],  // Maksimal 2MB
+            'ktp' => ['required', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:2048'], // Maksimal 2MB
+            'kk' => ['required', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:2048'],  // Maksimal 2MB
+            'no_telepon' => ['required', 'string', 'max:20', 'unique:users']
         ]);
 
         // 2. Proses file upload KTP menjadi Base64
@@ -77,14 +79,19 @@ class RegisteredUserController extends Controller
             'tempat_lahir' => $request->tempat_lahir,
             'tanggal_lahir' => $request->tanggal_lahir,
             'jenis_kelamin' => $request->jenis_kelamin,
-            'nama_posyandu' => $request->nama_posyandu,
-            'desa' => $request->desa,
-            'kecamatan' => $request->kecamatan,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'no_telepon' => $request->no_telepon,
             'role' => $request->role,
             'ktp' => $ktpBase64,
             'kk' => $kkBase64,
+            'verified_at' => $request->role === 'masyarakat' ? now() : null,
+        ]);
+
+        Posyandu::create([
+            'nama_posyandu' => $request->nama_posyandu,
+            'desa' => $request->desa,
+            'kecamatan' => $request->kecamatan,
         ]);
 
         // 5. Kirim event, login user, dan redirect ke dashboard (bawaan Breeze)
