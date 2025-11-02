@@ -114,7 +114,7 @@
             justify-content: center;
             align-items: center;
             padding: 12px 56px;
-            height: 72%;
+            /* height: 72%; */
         }
 
 
@@ -223,6 +223,17 @@
             width: 96px;
         }
 
+        .persyaratan-administrasi {
+            width: 100%;
+            margin: 40px 0;
+            border-collapse: collapse;
+        }
+
+        .persyaratan-administrasi td {
+            vertical-align: middle;
+            padding: 2px 0;
+            width: 50%;
+        }
 
 
 
@@ -376,26 +387,44 @@
 
                 {{-- Persyatan Administrasi --}}
                 <h4 class="sub-title">Detail Permohonan yang Diajukan</h4>
-                <table class="persyatan-administrasi">
+                <table class="persyaratan-administrasi table-content">
                     @forelse ($ajuan->formulir_items ?? [] as $item)
                         <tr>
-                            <td>{{ $item }}</td>
-                        @empty
-                            <td>Tidak ada item permohonan</td>
+                            <td class="cell-left">{{ $item }}</td>
+                            <td>
+                                @if ($ajuan->sudah_verifikasi)
+                                    @if ($checkBase64)
+                                        <img src="{{ $checkBase64 }}" alt="Logo Check" class="img-check">
+                                    @endif
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td>Tidak ada permohonan yang dipilih</td>
                         </tr>
                     @endforelse
                 </table>
 
                 {{-- Persyatan Administrasi --}}
                 <h4 class="sub-title">Dokumen Administrasi</h4>
-                <table class="persyatan-administrasi">
+                <table class="table-content">
                     @forelse ($ajuan->administrasi_items ?? [] as $key => $path)
                         @php
                             $label = $templateData['administrasi_items'][$key] ?? ucfirst(str_replace('_', ' ', $key));
                         @endphp
                         <tr>
-                            <td class="content-label">{{ $label }}</td>
-                        @empty
+                            <td class="cell-left">{{ $label }}</td>
+                            <td>
+                                @if ($ajuan->sudah_verifikasi)
+                                    @if ($checkBase64)
+                                        <img src="{{ $checkBase64 }}" alt="Logo Check" class="img-check">
+                                    @endif
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
                             <td>Tidak ada dokumen yang diunggah</td>
                         </tr>
                     @endforelse
@@ -409,8 +438,10 @@
                     </tr>
                     <tr class="signature-content">
                         <td>
-                            @if ($checkBase64)
-                                <img src="{{ $checkBase64 }}" alt="Logo Check" class="check">
+                            @if ($ajuan->sudah_verifikasi)
+                                @if ($checkBase64)
+                                    <img src="{{ $checkBase64 }}" alt="Logo Check" class="check">
+                                @endif
                             @endif
                         </td>
                         <td>
@@ -421,7 +452,11 @@
                     </tr>
                     <tr class="signature-content">
                         <td>
-                            {{ $ajuan->latestHistory?->diubahOleh?->name ?? '...........................' }}
+                            @if ($ajuan->sudah_verifikasi)
+                                {{ $ajuan->latestHistory?->diubahOleh?->name ?? 'Kader Terverifikasi' }}
+                            @else
+                                (...........................)
+                            @endif
                         </td>
                         <td>{{ $ajuan->user->name }}</td>
                     </tr>

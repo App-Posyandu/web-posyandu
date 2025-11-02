@@ -58,20 +58,14 @@ class AjuanController extends Controller
 
     private function getTargetUserId()
     {
-        // Jika ada ID di sesi (kader membantu) DAN yang login bukan masyarakat
         if (session()->has('ajuan_on_behalf_of_id') && Auth::user()->role !== 'masyarakat') {
             return session('ajuan_on_behalf_of_id');
         }
-        // Jika tidak, gunakan ID user yang sedang login (masyarakat untuk dirinya sendiri)
         return Auth::id();
     }
 
-    // =====================================================================
-    // == METHOD BARU: Menampilkan halaman "Pilih Layanan" ==
-    // =====================================================================
     public function pilihLayanan()
     {
-        // Hapus sesi 'on_behalf_of' jika masyarakat mengakses ini
         if (Auth::user()->role === 'masyarakat') {
             session()->forget('ajuan_on_behalf_of_id');
         }
@@ -94,13 +88,11 @@ class AjuanController extends Controller
 
         $allBidangs = BidangPengajuan::orderBy('nama_bidang')->get();
 
-        // Buat view baru atau gunakan view lama yang sudah dipisah
         return view('dashboard.partials.pilih-layanan', compact('allBidangs', 'colors', 'icons'));
     }
 
     public function pilihUser()
     {
-        // Ambil semua masyarakat yang sudah terverifikasi
         $masyarakatUsers = User::where('role', 'masyarakat')
             ->whereNotNull('verified_at')
             ->orderBy('name')
@@ -278,6 +270,7 @@ class AjuanController extends Controller
                 'formulir_items' => [
                     'Pemberian makanan tambahan bagi anak usia sekolah',
                     'Pemberian alat/sarpras kesehatan',
+                    'Pemantauan PHBS (Pola Hidup Bersih & Sehat)',
                     'Kunjungan Posyandu pada sasaran',
                     'Penyuluhan kesehatan',
                     'Deteksi dini risiko masalah kesehatan pada sasaran',
@@ -608,7 +601,7 @@ class AjuanController extends Controller
             $templateData = ['administrasi_items' => []];
         }
 
-        $pdf = Pdf::loadView('ajuan.cetak', ['ajuan' => $ajuan]);
+        $pdf = Pdf::loadView('ajuan.cetak', ['ajuan' => $ajuan, 'templateData' => $templateData]);
 
         $pdf->setPaper('A4', 'portrait');
 
