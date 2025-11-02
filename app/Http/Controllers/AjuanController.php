@@ -20,7 +20,7 @@ class AjuanController extends Controller
     public function index(User $user, Request $request)
     {
         $user = Auth::user();
-        $query = Pengajuan::with(['user', 'bidang', 'latestHistory.diubahOleh']);
+        $query = Pengajuan::with(['user', 'bidang']);
 
         if ($user->role === 'masyarakat') {
             $query->where('user_id', $user->id);
@@ -601,7 +601,12 @@ class AjuanController extends Controller
     //cetak detail ajuan
     public function cetak($id)
     {
-        $ajuan = Pengajuan::with(['user', 'bidang', 'histories'])->findOrFail($id);
+        $ajuan = Pengajuan::with(['user', 'bidang', 'histories.diubahOleh', 'latestHistory.diubahOleh'])->findOrFail($id);
+
+        $templateData = $this->getBidangData($ajuan->bidang->slug);
+        if (!$templateData) {
+            $templateData = ['administrasi_items' => []];
+        }
 
         $pdf = Pdf::loadView('ajuan.cetak', ['ajuan' => $ajuan]);
 

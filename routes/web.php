@@ -50,6 +50,8 @@ Route::middleware('auth')->group(function () {
     Route::post('buku-saku', [BukuSakuController::class, 'store'])
         ->name('buku-saku.store')
         ->middleware('role:kabid,admin');
+    Route::get('buku-saku/stream', [BukuSakuController::class, 'stream'])
+        ->name('buku-saku.stream');
     // --- Rute Profil (dari Breeze) ---
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

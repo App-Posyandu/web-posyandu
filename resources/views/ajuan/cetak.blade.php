@@ -334,13 +334,13 @@
                         <td>
                             <h3>No Hp </h3>
                         </td>
-                        <td>: {{ $ajuan->user->phone ?? '082134532110' }}</td>
+                        <td>: {{ $ajuan->user->no_telepon ?? '082134532110' }}</td>
                     </tr>
                     <tr>
                         <td>
                             <h3>Nama Posyandu </h3>
                         </td>
-                        <td>: {{ $ajuan->user?->posyandu?->nama_posyandu }}</td>
+                        <td>: {{ $ajuan->user?->posyandu?->nama_posyandu ?? 'Nama Posyandu' }}</td>
                     </tr>
                     <tr>
                         <td>
@@ -405,10 +405,14 @@
                 <table class="signature-table">
                     <tr class="signature-content">
                         <td>Pengurus/Kader Posyandu</td>
-                        <td>Nama Pemohon Layanan</td>
+                        <td>Pemohon Layanan</td>
                     </tr>
                     <tr class="signature-content">
-                        <td></td>
+                        <td>
+                            @if ($checkBase64)
+                                <img src="{{ $checkBase64 }}" alt="Logo Check" class="check">
+                            @endif
+                        </td>
                         <td>
                             @if ($checkBase64)
                                 <img src="{{ $checkBase64 }}" alt="Logo Check" class="check">
@@ -417,7 +421,7 @@
                     </tr>
                     <tr class="signature-content">
                         <td>
-                            {{-- {{ $ajuan->latestHistory->diubahOleh->name ?? '...........................' }} --}}
+                            {{ $ajuan->latestHistory?->diubahOleh?->name ?? '...........................' }}
                         </td>
                         <td>{{ $ajuan->user->name }}</td>
                     </tr>
