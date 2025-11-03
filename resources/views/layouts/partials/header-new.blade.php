@@ -5,12 +5,12 @@
                 <img src={{ asset('assets/image/logo/logo_sapaposyandu.png') }} alt="Logo Sapaposyandu" class="h-12">
                 <div class="flex flex-col">
                     <h1 class="text-2xl font-bold text-pink-500 uppercase">Sapa Posyandu</h1>
-                    <p class="text-sm text-gray-600">Sistem Aplikasi Pengelolaan Pos Pelayanan Terpadu</p>
+                    <p class="text-sm text-gray-600">Sistem Aplikasi Pengelolaan Pos <br> Pelayanan Terpadu</p>
                 </div>
             </div>
         </a>
     </div>
-    <div class="hidden sm:flex sm:items-center sm:ms-6">
+    <div class="sm:flex sm:items-center sm:ms-6">
         <x-dropdown align="right" width="48">
             <x-slot name="trigger">
                 <button

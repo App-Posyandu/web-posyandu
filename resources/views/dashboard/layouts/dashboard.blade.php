@@ -9,9 +9,35 @@
     <title>@yield('title', 'Dashboard') - {{ config('app.name', 'Laravel') }}</title>
 
     <!-- PWA  -->
-    <meta name="theme-color" content="#6777ef" />
-    <link rel="apple-touch-icon" href="{{ asset('assets/image/logo/logo_sapaposyandu.png') }}">
-    <link rel="manifest" href="{{ asset('/manifest.json') }}">
+    <meta name="theme-color" content="#171717">
+
+    <link rel="manifest" href="{{ asset('./manifest.json') }}">
+
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <link rel="apple-touch-icon" href="{{ asset('./assets/image/logo/app/logo_192x192.png') }}">
+
+    <link rel="apple-touch-startup-image" href="./assets/image/splash/splash_screen_640x1136.png"
+        media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)">
+
+    <link rel="apple-touch-startup-image" href="./assets/image/splash/splash_screen_750x1334.png"
+        media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)">
+
+    <link rel="apple-touch-startup-image" href="./assets/image/splash/splash_screen_1170x2532.png"
+        media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)">
+
+    <link rel="apple-touch-startup-image" href="./assets/image/splash/splash_screen_1125x2436.png"
+        media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)">
+
+    <link rel="apple-touch-startup-image" href="./assets/image/splash/splash_screen_1668x2224.png"
+        media="(device-width: 834px) and (device-height: 1112px) and (-webkit-device-pixel-ratio: 2)">
+
+    <link rel="apple-touch-startup-image" href="./assets/image/splash/splash_screen_2048x2732.png"
+        media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)">
 
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
@@ -19,7 +45,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    {{-- @laravelPwa --}}
 </head>
 
 <body class="font-sans antialiased">

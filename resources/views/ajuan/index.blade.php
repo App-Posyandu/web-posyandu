@@ -16,7 +16,7 @@
                     </div>
                 </div>
             @endif
-            <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+            <div class="flex md:flex-row justify-between items-center mb-6 gap-4">
                 <h2 class="text-2xl font-bold text-gray-800">List Pengajuan</h2>
                 <div class="flex items-center gap-2">
                     @if (auth()->user()->role === 'kader')
