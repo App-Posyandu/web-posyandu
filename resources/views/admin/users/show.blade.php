@@ -1,4 +1,4 @@
-@extends('admin.layouts.index')
+@extends('dashboard.layouts.dashboard')
 
 @section('content')
     <x-app-layout>
@@ -16,7 +16,7 @@
                         <div class="flex justify-end gap-2 mb-6">
                             <a href="{{ route('admin.users.index') }}"
                                 class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md text-sm font-semibold hover:bg-gray-300">Kembali</a>
-                            @if (Auth::user()->role === 'admin')
+                            @if (auth()->user()->role === 'admin')
                                 <a href="#"
                                     class="px-4 py-2 bg-yellow-500 text-white rounded-md text-sm font-semibold hover:bg-yellow-600">Ubah</a>
                             @endif

@@ -1,4 +1,4 @@
-@extends('admin.layouts.index')
+@extends('dashboard.layouts.dashboard')
 @section('title', 'Ubah Pengguna')
 @section('content')
     <div>

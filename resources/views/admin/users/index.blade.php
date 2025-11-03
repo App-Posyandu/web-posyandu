@@ -1,4 +1,4 @@
-@extends('admin.layouts.index')
+@extends('dashboard.layouts.dashboard')
 @section('title', 'Manajemen Pengguna')
 @section('content')
     <div>
@@ -25,7 +25,6 @@
                     </div>
                 @endif
 
-                {{-- Notifikasi untuk error (jika Anda butuh) --}}
                 @if (session('error'))
                     <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg mb-6" role="alert">
                         <div class="flex">
@@ -53,20 +52,20 @@
                                     class="flex items-center gap-2">
                                     <select name="role" onchange="this.form.submit()"
                                         class="border-gray-300 rounded-md shadow-sm">
-                                        @if (Auth::user()->role === 'admin')
+                                        @if (auth()->user()->role === 'admin')
                                             <option value="">Semua Role</option>
                                             <option value="masyarakat" @selected(request('role') == 'masyarakat')>Masyarakat</option>
                                             <option value="kader" @selected(request('role') == 'kader')>Kader</option>
                                             <option value="ketua-kader" @selected(request('role') == 'ketua-kader')>Ketua Kader</option>
                                             <option value="kabid" @selected(request('role') == 'kabid')>Kabid</option>
-                                        @elseif (Auth::user()->role === 'kader')
+                                        @elseif (auth()->user()->role === 'kader')
                                             <option value="">Semua Role</option>
                                             <option value="masyarakat" @selected(request('role') == 'masyarakat')>Masyarakat</option>
-                                        @elseif (Auth::user()->role === 'ketua-kader')
+                                        @elseif (auth()->user()->role === 'ketua-kader')
                                             <option value="">Semua Role</option>
                                             <option value="masyarakat" @selected(request('role') == 'masyarakat')>Masyarakat</option>
                                             <option value="kader" @selected(request('role') == 'kader')>Kader</option>
-                                        @elseif (Auth::user()->role === 'kabid')
+                                        @elseif (auth()->user()->role === 'kabid')
                                             <option value="">Semua Role</option>
                                             <option value="masyarakat" @selected(request('role') == 'masyarakat')>Masyarakat</option>
                                             <option value="kader" @selected(request('role') == 'kader')>Kader</option>
@@ -135,7 +134,7 @@
                                                 <a href="{{ route('admin.users.show', $user) }}"
                                                     class="flex items-center justify-center w-24 px-3 py-1 bg-blue-500 text-white rounded-md text-xs hover:bg-blue-600">Detail</a>
 
-                                                @if (Auth::user()->role === 'admin')
+                                                @if (auth()->user()->role === 'admin')
                                                     <a href="{{ route('admin.users.edit', $user) }}"
                                                         class="flex items-center justify-center w-24 px-3 py-1 bg-yellow-500 text-white rounded-md text-xs hover:bg-yellow-600">Ubah</a>
                                                 @endif
@@ -143,7 +142,7 @@
                                                 {{-- Cek apakah verified_at ADALAH null --}}
                                                 @if (is_null($user->verified_at) && in_array($user->role, ['masyarakat','kader']))
                                                     @php
-                                                        $currentUser = Auth::user();
+                                                        $currentUser = auth()->user();
                                                         $canVerify = false;
                                                         if (
                                                             ($currentUser->role === 'kader' &&
