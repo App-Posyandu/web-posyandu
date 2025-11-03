@@ -39,8 +39,8 @@
 
 
         <div class="text-right mt-2">
-            @if (Route::has('password.request'))
-                <a class="underline text-gray-600 hover:text-gray-900 rounded-md text-base"
+            @if (Illuminate\Support\Facades\Route::has('password.request'))
+                <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md"
                     href="{{ route('password.request') }}">
                     {{ __('Lupa password') }}
                 </a>

@@ -1,7 +1,7 @@
-@extends('admin.layouts.index')
+@extends('dashboard.layouts.dashboard')
 @section('title', 'Buku Saku')
 @section('content')
-    <div class="min-h-[70vh]">
+    <div class="w-full max-w-7xl mx-auto min-h-[70vh]">
         <x-slot name="header">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 {{ __('Buku Saku') }}
@@ -17,7 +17,7 @@
                     </div>
                 @endif
 
-                @if (Auth::user()->role === 'kabid' || Auth::user()->role === 'admin')
+                @if (auth()->user()->role === 'kabid' || auth()->user()->role === 'admin')
                     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div class="p-6 text-gray-900">
                             <h2 class="text-2xl font-bold text-gray-800 mb-6">Unggah / Ganti Buku Saku</h2>
@@ -65,7 +65,7 @@
                             </p>
 
                             <div class="flex gap-4 mb-4">
-                                <a href="{{ Storage::url($bukuSaku->file_path) }}" download="{{ $bukuSaku->title }}.pdf"
+                                <a href="{{ \Illuminate\Support\Facades\Storage::url($bukuSaku->file_path) }}" download="{{ $bukuSaku->title }}.pdf"
                                     class="px-4 py-2 bg-green-500 text-white rounded-md text-sm font-semibold hover:bg-green-600">
                                     Download PDF
                                 </a>

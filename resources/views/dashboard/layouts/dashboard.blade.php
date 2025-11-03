@@ -6,7 +6,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>Dashboard - {{ config('app.name', 'Laravel') }}</title>
+    <title>@yield('title', 'Dashboard') - {{ config('app.name', 'Laravel') }}</title>
+
+    <!-- PWA  -->
+    <meta name="theme-color" content="#171717">
+
+    <link rel="manifest" href="{{ asset('./manifest.json') }}">
+
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <link rel="apple-touch-icon" href="{{ asset('./assets/image/logo/app/logo_192x192.png') }}">
+
+    <link rel="apple-touch-startup-image" href="./assets/image/splash/splash_screen_640x1136.png"
+        media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)">
+
+    <link rel="apple-touch-startup-image" href="./assets/image/splash/splash_screen_750x1334.png"
+        media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)">
+
+    <link rel="apple-touch-startup-image" href="./assets/image/splash/splash_screen_1170x2532.png"
+        media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)">
+
+    <link rel="apple-touch-startup-image" href="./assets/image/splash/splash_screen_1125x2436.png"
+        media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)">
+
+    <link rel="apple-touch-startup-image" href="./assets/image/splash/splash_screen_1668x2224.png"
+        media="(device-width: 834px) and (device-height: 1112px) and (-webkit-device-pixel-ratio: 2)">
+
+    <link rel="apple-touch-startup-image" href="./assets/image/splash/splash_screen_2048x2732.png"
+        media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)">
 
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
@@ -28,10 +59,31 @@
             <main class="flex-grow flex items-center justify-center min-h-[70vh]">
                 @yield('content')
             </main>
+            <button id="pwa-install-btn"
+                style="display:none; position: fixed; bottom: 20px; right: 20px; padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 8px; z-index: 1000;">
+                Install App
+            </button>
 
             @include('layouts.partials.footer')
         </div>
     </div>
+
+    <script src="{{ asset('/sw.js') }}"></script>
+    <script src="{{ asset('pwa-install.js') }}"></script>
+    <script>
+        if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.register("/sw.js").then(
+                (registration) => {
+                    console.log("Service worker registration succeeded:", registration);
+                },
+                (error) => {
+                    console.error(`Service worker registration failed: ${error}`);
+                },
+            );
+        } else {
+            console.error("Service workers are not supported.");
+        }
+    </script>
 </body>
 
 </html>

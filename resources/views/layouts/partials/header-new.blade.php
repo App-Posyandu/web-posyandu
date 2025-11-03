@@ -5,26 +5,26 @@
                 <img src={{ asset('assets/image/logo/logo_sapaposyandu.png') }} alt="Logo Sapaposyandu" class="h-12">
                 <div class="flex flex-col">
                     <h1 class="text-2xl font-bold text-pink-500 uppercase">Sapa Posyandu</h1>
-                    <p class="text-sm text-gray-600">Sistem Aplikasi Pengelolaan Pos Pelayanan Terpadu</p>
+                    <p class="text-sm text-gray-600">Sistem Aplikasi Pengelolaan Pos <br> Pelayanan Terpadu</p>
                 </div>
             </div>
         </a>
     </div>
-    <div class="hidden sm:flex sm:items-center sm:ms-6">
+    <div class="sm:flex sm:items-center sm:ms-6">
         <x-dropdown align="right" width="48">
             <x-slot name="trigger">
                 <button
                     class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                    <div>{{ Auth::user()->name }}</div>
+                    <div>{{ auth()->user()->name }}</div>
                     <div class="ms-1"><i class="bi bi-chevron-down"></i></div>
                 </button>
             </x-slot>
             <x-slot name="content">
                 <x-dropdown-link :href="route('dashboard')">{{ __('Beranda') }}</x-dropdown-link>
-                @if (Auth::user()->role === 'admin' ||
-                        Auth::user()->role === 'kader' ||
-                        Auth::user()->role === 'kabid' ||
-                        Auth::user()->role === 'ketua-kader')
+                @if (auth()->user()->role === 'admin' ||
+                        auth()->user()->role === 'kader' ||
+                        auth()->user()->role === 'kabid' ||
+                        auth()->user()->role === 'ketua-kader')
                     <x-dropdown-link :href="route('admin.users.index')">{{ __('Users') }}</x-dropdown-link>
                 @endif
                 <x-dropdown-link :href="route('buku-saku.index')">{{ __('Buku Saku') }}</x-dropdown-link>

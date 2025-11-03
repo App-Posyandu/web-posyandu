@@ -122,4 +122,12 @@ return [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
+
+    'provider' => [
+        Ladumor\LaravelPwa\PWAServiceProvider::class,
+    ],
+
+    'aliases' => [
+        'LaravelPwa' => \Ladumor\LaravelPwa\LaravelPwa::class,
+    ],
 ];
