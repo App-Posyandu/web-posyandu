@@ -20,4 +20,5 @@ class BidangPengajuan extends Model
     {
         return $this->hasMany(Pengajuan::class, 'bidang_id', 'id');
     }
+    
 }

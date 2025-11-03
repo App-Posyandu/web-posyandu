@@ -5,9 +5,9 @@
         <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">Formulir Permohonan</h2>
 
         <div class="mb-6">
-            <label for="bidang_pelayanan" class="block font-medium text-sm text-gray-700">Ubah bidang pelayanan</label>
+            <label for="bidang_pelayanan" class="block font-medium text-base md:text-xl text-gray-700">Ubah bidang pelayanan</label>
             <select id="bidang_pelayanan" onchange="window.location.href=this.value;"
-                class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm ">
                 @foreach ($allBidangs as $itemBidang)
                     <option value="{{ route('ajuan.create', $itemBidang->slug) }}" @selected($bidang->slug == $itemBidang->slug)>
                         {{ $itemBidang->nama_bidang }}
@@ -23,7 +23,7 @@
                         <label class="flex items-center">
                             <input type="checkbox" x-model="checked" name="permohonan_items[]" value="Lainnya..."
                                 class="rounded border-gray-300 text-pink-600 shadow-sm focus:ring-pink-500">
-                            <span class="ms-3 text-gray-700 font-semibold">{{ $item }}</span>
+                            <span class="ms-3 text-gray-700 text-base md:text-lg font-semibold">{{ $item }}</span>
                         </label>
                         <div x-show="checked" x-transition class="mt-2">
                             <x-text-input type="text" name="lainnya_text" class="block w-full"
@@ -39,7 +39,7 @@
                 @endif
             @endforeach
             <div class="mt-6">
-                <label for="deskripsi_pengajuan" class="block font-medium text-sm text-gray-700">Deskripsi
+                <label for="deskripsi_pengajuan" class="block font-medium text-lg md:text-xl text-gray-700">Deskripsi
                     Pengajuan</label>
                 <textarea id="deskripsi_pengajuan" name="deskripsi_pengajuan"
                     class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
@@ -50,9 +50,9 @@
 
         <div class="flex items-center justify-end mt-8 space-x-4">
             <a href="{{ route('dashboard') }}"
-                class="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">Kembali</a>
+                class="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm md:text-base font-medium text-gray-700 bg-white hover:bg-gray-50">Kembali</a>
             <button type="submit"
-                class="inline-flex items-center px-8 py-2 bg-pink-500 border border-transparent rounded-md font-semibold text-sm text-white hover:bg-pink-600">Selanjutnya</button>
+                class="inline-flex items-center px-8 py-2 bg-pink-500 border border-transparent rounded-md font-semibold text-sm md:text-base text-white hover:bg-pink-600">Selanjutnya</button>
         </div>
     </form>
 </x-guest-layout>

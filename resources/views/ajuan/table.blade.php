@@ -2,61 +2,61 @@
     <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
             <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     No</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Nama Pengaju</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Bidang</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Deskripsi Permohonan</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Tindak Lanjut Pengajuan</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Status Pengajuan</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Action</th>
             </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
             @forelse ($semuaAjuan as $ajuan)
                 <tr>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td class="px-2 md:px-4 py-1 md:py-2 whitespace-nowrap text-sm text-gray-500">
                         {{ ($semuaAjuan->currentPage() - 1) * $semuaAjuan->perPage() + $loop->iteration }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <td class="px-2 md:px-4 py-1 md:py-2 whitespace-nowrap text-sm font-medium text-gray-900">
                         <div class="font-medium text-gray-900">
                             {{ $ajuan->user?->name ?? 'Pengguna Dihapus' }}</div>
-                        <div class="text-sm text-gray-500">
+                        <div class="text-base text-gray-500">
                             {{ $ajuan->user?->posyandu?->nama_posyandu ?? 'Belum Terdaftar' }}
                         </div>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <td class="px-2 md:px-4 py-1 md:py-2 whitespace-nowrap text-base font-medium text-gray-900">
                         {{ $ajuan->bidang->nama_bidang ?? 'N/A' }}</td>
                     <td class="px-6 py-4 text-sm text-gray-500">
                         {{ \Illuminate\Support\Str::limit($ajuan->deskripsi_pengajuan ?? 'Tidak ada deskripsi', 50) }}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td class="px-2 md:px-4 py-1 md:py-2 whitespace-nowrap text-base text-gray-500">
                         <div class="flex flex-col space-y-1">
                             @if ($ajuan->sudah_verifikasi)
                                 <span
-                                    class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                    class="px-1 md:px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                                     Sudah Verifikasi
                                 </span>
                             @else
                                 <span
-                                    class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                    class="px-1 md:px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-red-100 text-red-800">
                                     Belum Verifikasi
                                 </span>
                             @endif
 
                             @if ($ajuan->kunjungan_lapangan)
                                 <span
-                                    class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                    class="px-1 md:px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                                     Kunjungan Lapangan
                                 </span>
                             @else
                                 <span
-                                    class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                    class="px-1 md:px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-red-100 text-red-800">
                                     Belum Kunjungan
                                 </span>
                             @endif
@@ -65,13 +65,13 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm">
                         @if ($ajuan->status_pengajuan == 'Disetujui')
                             <span
-                                class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Disetujui</span>
+                                class="px-1 md:px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Disetujui</span>
                         @elseif ($ajuan->status_pengajuan == 'Ditolak')
                             <span
-                                class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Ditolak</span>
+                                class="px-1 md:px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Ditolak</span>
                         @else
                             <span
-                                class="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Diproses</span>
+                                class="px-1 md:px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Diproses</span>
                         @endif
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium flex space-x-2">

@@ -82,10 +82,12 @@
                             @endif
                         </form>
 
-                        <a href="{{ route('laporan.exportExcel') }}"
+                        {{-- Tombol untuk memunculkan pop-up pilihan bidang yang akan di-export ke excel menggunakan sweetalert2 --}}
+                        <button id="exportExcelBtn"
                             class="flex items-center px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">
                             <i class="bi bi-file-earmark-excel-fill mr-2"></i> Export to Excel
-                        </a>
+                        </button>
+
                     </div>
                 </div>
 
@@ -148,5 +150,65 @@
                 }
             }
         });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    document.getElementById('exportExcelBtn').addEventListener('click', function() {
+        Swal.fire({
+            title: '<h2 class="text-xl font-bold text-gray-800 mb-2">Pilih Bidang untuk Di-Export</h2>',
+            html: `
+                <div class="grid grid-cols-2 gap-3 text-sm font-semibold">
+                    <button onclick="exportBidang('Bidang Perumahan Rakyat')" 
+                        class="swal2-confirm swal2-styled !bg-blue-500 hover:!bg-blue-600 flex items-center text-lg md:text-xl justify-center gap-2 py-4 rounded-md shadow">
+                        Perumahan Rakyat
+                    </button>
+                    <button onclick="exportBidang('Bidang Pendidikan')" 
+                        class="swal2-confirm swal2-styled !bg-orange-500 hover:!bg-orange-600 flex items-center text-lg md:text-xl justify-center gap-2 py-4 rounded-md shadow">
+                        Pendidikan
+                    </button>
+                    <button onclick="exportBidang('Bidang Kesehatan')" 
+                        class="swal2-confirm swal2-styled !bg-pink-500 hover:!bg-pink-600 flex items-center text-lg md:text-xl justify-center gap-2 py-4 rounded-md shadow">
+                        Kesehatan
+                    </button>
+                    <button onclick="exportBidang('Bidang Sosial')" 
+                        class="swal2-confirm swal2-styled !bg-rose-500 hover:!bg-rose-600 flex items-center text-lg md:text-xl justify-center gap-2 py-4 rounded-md shadow">
+                        Sosial
+                    </button>
+                    <button onclick="exportBidang('Bidang Pekerjaan Umum')" 
+                        class="swal2-confirm swal2-styled !bg-green-500 hover:!bg-green-600 flex items-center text-lg md:text-xl justify-center gap-2 py-4 rounded-md shadow">
+                        Pekerjaan Umum
+                    </button>
+                    <button onclick="exportBidang('Bidang Trantibumlinmas')" 
+                        class="swal2-confirm swal2-styled !bg-yellow-500 hover:!bg-yellow-600 flex items-center text-lg md:text-xl justify-center gap-2 py-4 rounded-md shadow">
+                        Trantibumlinmas
+                    </button>
+                </div>
+                <div class="mt-5">
+                    <button onclick="exportBidang('all')" 
+                        class="swal2-confirm swal2-styled !bg-emerald-600 hover:!bg-emerald-700 w-full py-4 rounded-md text-white font-bold shadow-lg">
+                         Export Semua Pengajuan
+                    </button>
+                </div>
+            `,
+            showConfirmButton: false,
+            showCancelButton: true,
+            cancelButtonText: 'Batal',
+            width: 600,
+            background: '#f9fafb',
+            customClass: {
+                popup: ' rounded-md md:rounded-2xl shadow-lg p-2 md:p-6',
+                cancelButton: 'bg-white outline outline-red-500 mt-4 text-red-500 hover:text-red-600 font-medium hover:bg-red-500 hover:text-white text-base md:text-lg py-2 px-6 '
+            }
+        });
+    });
+
+    function exportBidang(bidang) {
+    window.location.href = `/export/${encodeURIComponent(bidang)}`;
+}
+    function exportAll() {
+        window.location.href = `/export-excel`;
+    }
     </script>
 @endsection

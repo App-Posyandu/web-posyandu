@@ -19,12 +19,11 @@
             </h2>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
                 @foreach ($allBidangs as $bidang)
                     <a href="{{ route('ajuan.create', $bidang->slug) }}"
-                        class="block p-6 text-center text-white font-semibold rounded-lg shadow-md transform hover:scale-105 transition-transform duration-200"
+                        class="block p-6 text-center text-8xl text-white font-semibold rounded-lg shadow-md transform hover:scale-105 transition-transform duration-200"
                         style="background-color: {{ $colors[$loop->index % count($colors)] }}">
-                        <div class="flex flex-row items-center gap-4">
+                        <div class="flex flex-row items-center gap-4 ">
                             <img src="{{ $icons[$bidang->slug] ?? asset('assets/image/icon/bidang/default.svg') }}"
                                 alt="{{ $bidang->nama_bidang }} icon" class="w-8 h-8 ">
                             <span>{{ $bidang->nama_bidang }}</span>

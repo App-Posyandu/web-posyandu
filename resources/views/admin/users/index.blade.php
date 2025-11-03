@@ -88,16 +88,16 @@
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">No</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama
+                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">No</th>
+                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Nama
                                         </th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email &
+                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Email &
                                             NIK</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role
+                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Role
                                         </th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status
+                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Status
                                         </th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action
+                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Action
                                         </th>
                                     </tr>
                                 </thead>
@@ -107,14 +107,14 @@
                                             <td class="px-6 py-4">{{ $loop->iteration + $users->firstItem() - 1 }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <div class="font-medium text-gray-900">{{ $user->name }}</div>
-                                                <div class="text-sm text-gray-500">
+                                                <div class="text-sm text-gray-500 md:text-base">
                                                     {{ $user->posyandu?->nama_posyandu ?? 'Belum Terdaftar' }}</div>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="text-sm text-gray-900">{{ $user->email }}</div>
-                                                <div class="text-sm text-gray-500">NIK: {{ $user->nik }}</div>
+                                                <div class="text-gray-900">{{ $user->email }}</div>
+                                                <div class="text-sm text-gray-500 md:text-base">NIK: {{ $user->nik }}</div>
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <td class="px-6 py-4 whitespace-nowrap text-base text-gray-500">
                                                 {{ ucfirst($user->role) }}</td>
 
                                             <td class="px-6 py-4 whitespace-nowrap">
