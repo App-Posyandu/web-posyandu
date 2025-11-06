@@ -15,7 +15,7 @@ class Posyandu extends Model
     public $incrementing = false;
     protected $keyType = 'string';
 
-    protected $fillable = ['nama_posyandu', 'desa', 'kecamatan'];
+    protected $fillable = ['nama_posyandu', 'kabupaten', 'desa', 'kecamatan'];
 
     public function bidang()
     {

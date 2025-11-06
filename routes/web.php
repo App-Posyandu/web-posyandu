@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GoogleLoginController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\PenimbanganController;
+use App\Http\Controllers\PosyanduController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -57,6 +58,10 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    Route::middleware(['auth', 'role:admin,kabid,ketua-kader,kader'])->prefix('api')->group(function () {
+        Route::get('kecamatan', [PosyanduController::class, 'getKecamatan'])->name('api.kecamatan');
+        Route::get('desa', [PosyanduController::class, 'getDesa'])->name('api.desa');
+    });
 
     // Rute untuk Kader & Kabid
     Route::middleware(['role:ketua-kader,kader,kabid'])->group(function () {
@@ -67,6 +72,7 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::middleware(['role:kabid,kader,admin,ketua-kader'])->prefix('admin')->name('admin.')->group(function () {
+        Route::resource('posyandu', PosyanduController::class);
         Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
         Route::resource('users', UserController::class);
         Route::patch('/users/{user}/verify', [UserController::class, 'verify'])->name('users.verify');

@@ -27,6 +27,7 @@
                         auth()->user()->role === 'ketua-kader')
                     <x-dropdown-link :href="route('admin.users.index')">{{ __('Users') }}</x-dropdown-link>
                 @endif
+                <x-dropdown-link :href="route('admin.posyandu.index')">{{ __('Posyandu') }}</x-dropdown-link>
                 <x-dropdown-link :href="route('buku-saku.index')">{{ __('Buku Saku') }}</x-dropdown-link>
                 <x-dropdown-link :href="route('ajuan.index')">{{ __('Lihat Pengajuan') }}</x-dropdown-link>
                 <x-dropdown-link :href="route('profile.edit')">{{ __('Profile') }}</x-dropdown-link>

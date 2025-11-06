@@ -70,6 +70,7 @@
 
     <script src="{{ asset('/sw.js') }}"></script>
     <script src="{{ asset('pwa-install.js') }}"></script>
+    @stack('scripts')
     <script>
         if ("serviceWorker" in navigator) {
             navigator.serviceWorker.register("/sw.js").then(

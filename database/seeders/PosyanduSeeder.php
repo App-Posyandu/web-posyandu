@@ -24,16 +24,19 @@ class PosyanduSeeder extends Seeder
                 'nama_posyandu' => 'Posyandu Melati',
                 'desa' => 'Desa Sukamaju',
                 'kecamatan' => 'Cimahi Utara',
+                'kabupaten' => 'Kota Cimahi',
             ],
             [
                 'nama_posyandu' => 'Posyandu Mawar',
                 'desa' => 'Desa Mekarsari',
                 'kecamatan' => 'Cimahi Selatan',
+                'kabupaten' => 'Kota Cimahi',
             ],
             [
                 'nama_posyandu' => 'Posyandu Anggrek',
                 'desa' => 'Desa Cibereum',
                 'kecamatan' => 'Cimahi Tengah',
+                'kabupaten' => 'Kota Cimahi',
             ],
         ];
 
