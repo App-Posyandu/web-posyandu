@@ -17,7 +17,16 @@
                 </div>
             @endif
             <div class="flex md:flex-row justify-between items-center mb-6 gap-4">
-                <h2 class="text-2xl font-bold text-gray-800">List Pengajuan</h2>
+                {{-- ✅ TAMPILKAN BIDANG JIKA USER ADALAH KADER --}}
+                @if (auth()->user()->role === 'kader' && auth()->user()->bidang)
+                    <h2 class="text-2xl font-bold text-gray-800">
+                        List Pengajuan
+                        <span class="text-pink-600">{{ auth()->user()->bidang->nama_bidang }}</span>
+                    </h2>
+                @else
+                    <h2 class="text-2xl font-bold text-gray-800">List Pengajuan</h2>
+                @endif
+
                 <div class="flex items-center gap-2">
                     @if (auth()->user()->role === 'kader')
                         <a href="{{ route('dashboard.partials.pilih-user') }}"
@@ -50,11 +59,24 @@
 
                         {{-- Link untuk Reset/Clear Filter --}}
                         @if (request('search') || request('status'))
-                            <a href="{{ route('dashboard') }}" class="text-sm text-gray-600 hover:text-gray-900">Reset</a>
+                            <a href="{{ route('ajuan.index') }}" class="text-sm text-gray-600 hover:text-gray-900">Reset</a>
                         @endif
                     </form>
                 </div>
             </div>
+
+            {{-- ✅ TAMPILKAN INFO BADGE JIKA KADER --}}
+            @if (auth()->user()->role === 'kader' && auth()->user()->bidang)
+                <div class="mb-4 p-3 bg-pink-50 border-l-4 border-pink-500 rounded-lg">
+                    <div class="flex items-center">
+                        <i class="bi bi-info-circle-fill text-pink-500 mr-2"></i>
+                        <p class="text-sm text-gray-700">
+                            Anda mengelola pengajuan di <strong>{{ auth()->user()->bidang->nama_bidang }}</strong>
+                            untuk <strong>{{ auth()->user()->posyandu->nama_posyandu ?? 'Posyandu Anda' }}</strong>
+                        </p>
+                    </div>
+                </div>
+            @endif
 
             @include('ajuan.table', ['semuaAjuan' => $semuaAjuan])
 

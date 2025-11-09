@@ -50,7 +50,7 @@
         {{-- Administrasi (sudah ada preview) --}}
         <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-8">
             @foreach ($templateData['administrasi_items'] as $key => $label)
-                <div x-data="{ previewUrl: '{{ isset($ajuan->administrasi_items[$key]) ? Storage::url($ajuan->administrasi_items[$key]) : '' }}' }">
+                <div x-data="{ previewUrl: '{{ isset($ajuan->administrasi_items[$key]) ? Illuminate\Support\Facades\Storage::url($ajuan->administrasi_items[$key]) : '' }}' }">
                     <h3 class="font-semibold mb-2">{{ $label }}</h3>
                     <div class="mt-2 w-full h-32 flex items-center justify-center border-2 ...">
                         <img x-show="previewUrl" :src="previewUrl" class="max-h-full ...">

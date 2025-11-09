@@ -50,6 +50,10 @@ class RegisteredUserController extends Controller
             'no_telepon' => ['required', 'string', 'max:20', 'unique:users']
         ]);
 
+        if ($request->role === 'kader') {
+            $validationRules['bidang_id'] = ['required', 'uuid', 'exists:bidang_pengajuans,id'];
+        }
+
         // 2. Proses file upload KTP menjadi Base64
         $ktpBase64 = null;
         if ($request->hasFile('ktp')) {
@@ -66,8 +70,19 @@ class RegisteredUserController extends Controller
             $kkBase64 = 'data:image/' . $request->file('kk')->getClientOriginalExtension() . ';base64,' . base64_encode($kkData);
         }
 
+        $posyandu = Posyandu::firstOrCreate(
+            [
+                'nama_posyandu' => $request->nama_posyandu,
+                'desa' => $request->desa,
+            ],
+            [
+                'kecamatan' => $request->kecamatan,
+                'kabupaten' => $request->kabupaten,
+            ]
+        );
+
         // 4. Buat user baru dengan semua data
-        $user = User::create([
+        $user = [
             'name' => $request->name,
             'nik' => $request->nik,
             'alamat' => $request->alamat,
@@ -81,13 +96,19 @@ class RegisteredUserController extends Controller
             'ktp' => $ktpBase64,
             'kk' => $kkBase64,
             'verified_at' => $request->role === 'masyarakat' ? now() : null,
-        ]);
+        ];
 
-        Posyandu::create([
-            'nama_posyandu' => $request->nama_posyandu,
-            'desa' => $request->desa,
-            'kecamatan' => $request->kecamatan,
-        ]);
+        if ($request->role === 'kader' && $request->filled('bidang_id')) {
+            $userData['bidang_id'] = $request->bidang_id;
+        }
+
+        $user = User::create($userData);
+
+        // Posyandu::create([
+        //     'nama_posyandu' => $request->nama_posyandu,
+        //     'desa' => $request->desa,
+        //     'kecamatan' => $request->kecamatan,
+        // ]);
 
         // 5. Kirim event, login user, dan redirect ke dashboard (bawaan Breeze)
         event(new Registered($user));

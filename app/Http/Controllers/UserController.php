@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BidangPengajuan;
 use App\Models\Posyandu;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -16,27 +18,32 @@ class UserController extends Controller
     /**
      * Display a listing of the resource.
      */
+    use AuthorizesRequests;
+
     public function index(Request $request)
     {
         $currentUser = Auth::user();
 
-        $query = User::with('posyandu')->latest();
+        $query = User::with(['posyandu', 'bidang'])->latest();
 
         switch ($currentUser->role) {
             case 'kader':
-                $query->where('role', 'masyarakat');
+                $query->where('role', 'masyarakat')
+                    ->where('posyandu_id', $currentUser->posyandu_id);
                 break;
 
             case 'ketua-kader':
-                $query->whereIn('role', ['kader', 'masyarakat']);
+                $query->whereIn('role', ['kader', 'masyarakat'])
+                    ->where('posyandu_id', $currentUser->posyandu_id);
                 break;
 
             case 'kabid':
                 $query->whereIn('role', ['ketua-kader', 'kader', 'masyarakat']);
                 break;
+        }
 
-            case 'admin':
-                break;
+        if (in_array($currentUser->role, ['kader', 'ketua-kader'])) {
+            $query->where('posyandu_id', $currentUser->posyandu_id);
         }
 
         if ($request->filled('search')) {
@@ -47,7 +54,6 @@ class UserController extends Controller
                     ->orWhere('nik', 'like', '%' . $searchTerm . '%');
             });
         }
-
 
         if ($request->filled('role')) {
             $query->where('role', $request->input('role'));
@@ -64,8 +70,8 @@ class UserController extends Controller
     public function create()
     {
         $posyandus = Posyandu::orderBy('nama_posyandu')->get();
-
-        return view('admin.users.create', compact('posyandus'));
+        $bidangs = BidangPengajuan::orderBy('nama_bidang')->get();
+        return view('admin.users.create', compact('posyandus', 'bidangs'));
     }
 
     /**
@@ -92,7 +98,7 @@ class UserController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', Password::defaults()],
             'role' => ['required', Rule::in($allowedRoles)],
-            'posyandu_id' => ['required', 'exists:posyandus,id'],
+            'posyandu_id' => ['nullable', 'uuid', 'exists:posyandus,id'],
             'nik' => ['required', 'string', 'digits:16', 'unique:users'],
             'alamat' => ['required', 'string'],
             'no_telepon' => ['required', 'string', 'max:20', 'unique:users'],
@@ -102,6 +108,10 @@ class UserController extends Controller
             // 'ktp' => ['nullable', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:2048'],
             // 'kk' => ['nullable', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:2048'],
         ]);
+
+        if ($request->role === 'kader') {
+            $validationRules['bidang_id'] = ['required', 'uuid', 'exists:bidang_pengajuans,id'];
+        }
 
         // // Proses file KTP jika diunggah
         // $ktpBase64 = null;
@@ -137,7 +147,15 @@ class UserController extends Controller
             'verified_by' => $isInstantVerified ? $currentUser->id : null,
         ]);
 
+        if ($request->role === 'kader' && $request->filled('bidang_id')) {
+            $userData['bidang_id'] = $request->bidang_id;
+        }
+
         event(new Registered($user));
+        if ($request->input('source') === 'posyandu_create') {
+            return redirect()->route('admin.posyandu.create')
+                ->with('success', 'User Ketua Kader berhasil dibuat! Silakan refresh halaman dan pilih dari dropdown.');
+        }
 
         return redirect()->route('admin.users.index')->with('success', 'User baru berhasil ditambahkan.');
     }
@@ -147,6 +165,7 @@ class UserController extends Controller
      */
     public function show(User $user)
     {
+        $user->load(['posyandu', 'bidang']);
         return view('admin.users.show', [
             'user' => $user
         ]);
@@ -158,8 +177,9 @@ class UserController extends Controller
     public function edit(User $user)
     {
         $posyandus = Posyandu::orderBy('nama_posyandu')->get();
+        $bidangs = BidangPengajuan::orderBy('nama_bidang')->get();
 
-        return view('admin.users.edit', compact('user', 'posyandus'));
+        return view('admin.users.edit', compact('user', 'posyandus', 'bidangs'));
     }
 
     /**
@@ -185,9 +205,19 @@ class UserController extends Controller
             'kk' => ['nullable', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:2048'],
         ]);
 
+        if ($request->role === 'kader') {
+            $validationRules['bidang_id'] = ['required', 'uuid', 'exists:bidang_pengajuans,id'];
+        }
+
         // Ambil semua data yang sudah tervalidasi
         $data = $request->except('password', 'password_confirmation', 'ktp', 'kk');
         $data['no_telepon'] = $request->no_telepon;
+
+        if ($request->role !== 'kader') {
+            $data['bidang_id'] = null;
+        } elseif ($request->filled('bidang_id')) {
+            $data['bidang_id'] = $request->bidang_id;
+        }
 
         // Jika ada password baru, hash dan tambahkan ke data
         if ($request->filled('password')) {

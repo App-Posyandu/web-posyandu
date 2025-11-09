@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Posyandu;
 use App\Http\Requests\StorePosyanduRequest;
 use App\Http\Requests\UpdatePosyanduRequest;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
@@ -16,14 +17,20 @@ class PosyanduController extends Controller
     const PROVINCE_ID = 33;
     public function index(Request $request)
     {
-        $query = Posyandu::latest();
+        $query = Posyandu::with('users')->latest();
+
         if ($request->filled('search')) {
             $query->where('nama_posyandu', 'like', '%' . $request->search . '%')
                 ->orWhere('desa', 'like', '%' . $request->search . '%')
                 ->orWhere('kecamatan', 'like', '%' . $request->search . '%')
-                ->orWhere('kabupaten', 'like', '%' . $request->search . '%');
+                ->orWhere('kabupaten', 'like', '%' . $request->search . '%')
+                ->orWhereHas('users', function ($q) use ($request) {
+                    $q->where('name', 'like', '%' . $request->search . '%')
+                        ->where('role', 'ketua-kader');
+                });
         }
         $posyandus = $query->paginate(10)->withQueryString();
+
         return view('admin.posyandu.index', compact('posyandus'));
     }
 
@@ -33,7 +40,11 @@ class PosyanduController extends Controller
     public function create()
     {
         $kabupatens = Http::get(env('API_WILAYAH_URL') . 'regencies/' . self::PROVINCE_ID . '.json')->json();
-        return view('admin.posyandu.create', compact('kabupatens'));
+        $availableKetuas = User::where('role', 'ketua-kader')
+            ->whereNull('posyandu_id')
+            ->orderBy('name')
+            ->get();
+        return view('admin.posyandu.create', compact('kabupatens', 'availableKetuas'));
     }
 
     /**
@@ -46,9 +57,22 @@ class PosyanduController extends Controller
             'kabupaten' => 'required|string',
             'kecamatan' => 'required|string',
             'desa' => 'required|string',
+            'ketua_kader_id' => ['nullable', 'uuid', 'exists:users,id'],
         ]);
 
-        Posyandu::create($request->all());
+        $posyandu = Posyandu::create([
+            'nama_posyandu' => $request->nama_posyandu,
+            'kabupaten' => $request->kabupaten,
+            'kecamatan' => $request->kecamatan,
+            'desa' => $request->desa,
+        ]);
+
+        if ($request->filled('ketua_kader_id')) {
+            $ketuaKader = User::find($request->ketua_kader_id);
+            if ($ketuaKader) {
+                $ketuaKader->update(['posyandu_id' => $posyandu->id]);
+            }
+        }
 
         return redirect()->route('admin.posyandu.index')->with('success', 'Posyandu baru berhasil ditambahkan.');
     }
@@ -69,10 +93,19 @@ class PosyanduController extends Controller
         // Ambil daftar kabupaten di Jawa Tengah
         $kabupatens = Http::get(env('API_WILAYAH_URL') . 'regencies/' . self::PROVINCE_ID . '.json')->json();
 
-        return view('admin.posyandu.edit', [
-            'posyandu' => $posyandu,
-            'kabupatens' => $kabupatens,
-        ]);
+        $currentKetua = $posyandu->users()->where('role', 'ketua-kader')->first();
+
+        $unassignedKetuas = User::where('role', 'ketua-kader')
+            ->whereNull('posyandu_id')
+            ->orderBy('name')
+            ->get();
+
+        $availableKetuas = $unassignedKetuas;
+        if ($currentKetua && !$unassignedKetuas->contains($currentKetua)) {
+            $availableKetuas->prepend($currentKetua);
+        }
+
+        return view('admin.posyandu.edit', compact('posyandu', 'kabupatens', 'availableKetuas', 'currentKetua'));
     }
 
     /**
@@ -85,9 +118,23 @@ class PosyanduController extends Controller
             'kabupaten' => 'required|string',
             'kecamatan' => 'required|string',
             'desa' => 'required|string',
+            'ketua_kader_id' => ['nullable', 'uuid', 'exists:users,id'],
         ]);
 
-        $posyandu->update($request->all());
+        $posyandu->update($request->only('nama_posyandu', 'kabupaten', 'kecamatan', 'desa'));
+
+        $currentKetua = $posyandu->users()->where('role', 'ketua-kader')->first();
+        $newKetuaId = $request->ketua_kader_id;
+
+        if ($newKetuaId && $newKetuaId != $currentKetua?->id) {
+            if ($currentKetua) {
+                $currentKetua->update(['posyandu_id' => null]);
+            }
+            $newKetua = User::find($newKetuaId);
+            $newKetua->update(['posyandu_id' => $posyandu->id]);
+        } else if (is_null($newKetuaId) && $currentKetua) {
+            $currentKetua->update(['posyandu_id' => null]);
+        }
 
         return redirect()->route('admin.posyandu.index')->with('success', 'Data Posyandu berhasil diperbarui.');
     }

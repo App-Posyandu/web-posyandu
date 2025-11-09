@@ -79,40 +79,6 @@
                                     <x-input-error :messages="$errors->get('posyandu_id')" class="mt-2" />
                                 </div>
 
-                                {{-- <div x-data="{ previewUrl: '{{ $user->ktp ?? '' }}' }">
-                                    <x-input-label for="ktp" :value="__('Ubah KTP (Opsional)')" />
-                                    <div
-                                        class="mt-1 w-full h-32 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-md">
-                                        <img x-show="previewUrl" :src="previewUrl"
-                                            class="max-h-full max-w-full object-contain" alt="Preview KTP">
-                                        <span x-show="!previewUrl" class="text-gray-400">Tidak ada gambar KTP</span>
-                                    </div>
-                                    <label for="ktp"
-                                        class="mt-2 inline-block px-4 py-2 bg-white text-gray-700 rounded-md shadow-sm border border-gray-300 cursor-pointer hover:bg-gray-50 text-sm">
-                                        <span>Pilih File Baru...</span>
-                                    </label>
-                                    <input id="ktp" class="hidden" type="file" name="ktp" accept="image/*"
-                                        @change="previewUrl = URL.createObjectURL($event.target.files[0])" />
-                                    <x-input-error :messages="$errors->get('ktp')" class="mt-2" />
-                                </div>
-
-                                <div x-data="{ previewUrl: '{{ $user->kk ?? '' }}' }">
-                                    <x-input-label for="kk" :value="__('Ubah KK (Opsional)')" />
-                                    <div
-                                        class="mt-1 w-full h-32 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-md">
-                                        <img x-show="previewUrl" :src="previewUrl"
-                                            class="max-h-full max-w-full object-contain" alt="Preview KK">
-                                        <span x-show="!previewUrl" class="text-gray-400">Tidak ada gambar KK</span>
-                                    </div>
-                                    <label for="kk"
-                                        class="mt-2 inline-block px-4 py-2 bg-white text-gray-700 rounded-md shadow-sm border border-gray-300 cursor-pointer hover:bg-gray-50 text-sm">
-                                        <span>Pilih File Baru...</span>
-                                    </label>
-                                    <input id="kk" class="hidden" type="file" name="kk" accept="image/*"
-                                        @change="previewUrl = URL.createObjectURL($event.target.files[0])" />
-                                    <x-input-error :messages="$errors->get('kk')" class="mt-2" />
-                                </div> --}}
-
                                 <div>
                                     <x-input-label for="email" :value="__('Email')" />
                                     <x-text-input id="email" class="block mt-1 w-full" type="email" name="email"
@@ -139,6 +105,22 @@
                                         <option value="admin" @selected(old('role', $user->role) == 'admin')>Admin</option>
                                     </select>
                                     <x-input-error :messages="$errors->get('role')" class="mt-2" />
+                                </div>
+
+                                {{-- ✅ TAMBAHKAN DROPDOWN BIDANG (HANYA MUNCUL JIKA ROLE = KADER) --}}
+                                <div id="bidang-field" class="md:col-span-2" style="display: none;">
+                                    <x-input-label for="bidang_id" :value="__('Bidang Tugas')" />
+                                    <select id="bidang_id" name="bidang_id"
+                                        class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                        <option value="" disabled>Pilih Bidang</option>
+                                        @foreach ($bidangs as $bidang)
+                                            <option value="{{ $bidang->id }}" @selected(old('bidang_id', $user->bidang_id) == $bidang->id)>
+                                                {{ $bidang->nama_bidang }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <p class="mt-1 text-xs text-gray-500">Kader hanya bisa mengelola 1 bidang.</p>
+                                    <x-input-error :messages="$errors->get('bidang_id')" class="mt-2" />
                                 </div>
 
                                 <div class="mt-4 md:col-span-2">
@@ -169,4 +151,26 @@
             </div>
         </div>
     </div>
+
+    {{-- ✅ JAVASCRIPT: TAMPILKAN BIDANG JIKA ROLE = KADER --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const roleSelect = document.getElementById('role');
+            const bidangField = document.getElementById('bidang-field');
+            const bidangSelect = document.getElementById('bidang_id');
+
+            function toggleBidangField() {
+                if (roleSelect.value === 'kader') {
+                    bidangField.style.display = 'block';
+                    bidangSelect.required = true;
+                } else {
+                    bidangField.style.display = 'none';
+                    bidangSelect.required = false;
+                }
+            }
+
+            roleSelect.addEventListener('change', toggleBidangField);
+            toggleBidangField(); // Check on page load
+        });
+    </script>
 @endsection

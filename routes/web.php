@@ -40,25 +40,28 @@ Route::middleware('auth')->group(function () {
     Route::get('/ajuan/{ajuan}', [AjuanController::class, 'show'])->name('ajuan.show');
     // Route::get('/ajuan/dokumen/download', [AjuanController::class, 'downloadDokumen'])->name('ajuan.dokumen.download');
     Route::get('/ajuan/{ajuan}/dokumen/{key}', [AjuanController::class, 'downloadDokumen'])->name('ajuan.dokumen.download');
+    Route::get('/ajuan/{ajuan}/dokumen/{key}/stream', [AjuanController::class, 'streamDokumen'])->name('ajuan.dokumen.stream');
     Route::patch('/ajuan/{ajuan}/verify', [AjuanController::class, 'verifyAjuan'])->name('ajuan.verify');
 
     Route::middleware(['verified', 'role:kader,kabid,masyarakat,ketua-kader,admin'])->group(function () {
         Route::get('/ajuan', [AjuanController::class, 'index'])->name('ajuan.index');
     });
     Route::get('/ajuan/cetak/{id}', [AjuanController::class, 'cetak'])->name('ajuan.cetak');
-    // Route::resource('buku-saku', BukuSakuController::class);
-    Route::get('buku-saku', [BukuSakuController::class, 'index'])->name('buku-saku.index');
-    Route::post('buku-saku', [BukuSakuController::class, 'store'])
-        ->name('buku-saku.store')
-        ->middleware('role:kabid,admin');
-    Route::get('buku-saku/stream', [BukuSakuController::class, 'stream'])
-        ->name('buku-saku.stream');
+    Route::get('/ajuan/{ajuan}/dokumen/{key}/stream', [AjuanController::class, 'streamDokumen'])
+        ->name('ajuan.dokumen.stream');
+    Route::resource('buku_saku', BukuSakuController::class);
+    // Route::get('buku-saku', [BukuSakuController::class, 'index'])->name('buku-saku.index');
+    // Route::post('buku-saku', [BukuSakuController::class, 'store'])
+    //     ->name('buku-saku.store')
+    //     ->middleware('role:kabid,admin');
+    Route::get('/buku_saku/{bukuSaku}/stream', [BukuSakuController::class, 'stream'])->name('buku_saku.stream');
+
     // --- Rute Profil (dari Breeze) ---
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    Route::middleware(['auth', 'role:admin,kabid,ketua-kader,kader'])->prefix('api')->group(function () {
+    Route::prefix('api')->group(function () {
         Route::get('kecamatan', [PosyanduController::class, 'getKecamatan'])->name('api.kecamatan');
         Route::get('desa', [PosyanduController::class, 'getDesa'])->name('api.desa');
     });
@@ -76,6 +79,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
         Route::resource('users', UserController::class);
         Route::patch('/users/{user}/verify', [UserController::class, 'verify'])->name('users.verify');
+    });
+
+    Route::middleware(['role:kabid'])->prefix('admin')->name('admin.')->group(function () {
+        Route::resource('posyandu', PosyanduController::class);
     });
 });
 

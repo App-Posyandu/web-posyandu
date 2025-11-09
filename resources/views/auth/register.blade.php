@@ -1,5 +1,5 @@
 <x-guest-layout>
-    <form method="POST" action="{{ route('register') }}" enctype="multipart/form-data">
+    <form method="POST" action="{{ route('register') }}" enctype="multipart/form-data" x-data="registerForm()">
         @csrf
 
         @if (session()->has('google_user_email'))
@@ -63,24 +63,61 @@
             </div>
 
             <div>
-                <x-input-label class="text-sm md:text-lg" for="nama_posyandu" :value="__('Nama Posyandu')" />
-                <x-text-input id="nama_posyandu" class="block mt-1 w-full" type="text" name="nama_posyandu"
-                    :value="old('nama_posyandu')" required placeholder="Masukkan Nama Posyandu" />
-                <x-input-error :messages="$errors->get('nama_posyandu')" class="mt-2" />
+                <x-input-label class="text-sm md:text-lg" for="no_telepon" :value="__('Nomor Telepon')" />
+                <x-text-input id="no_telepon" class="block mt-1 w-full" type="text" name="no_telepon"
+                    :value="old('no_telepon')" required placeholder="Contoh: 081234567890" />
+                <x-input-error :messages="$errors->get('no_telepon')" class="mt-2" />
             </div>
 
+            {{-- ✅ COMBOBOX KABUPATEN --}}
+            <div>
+                <x-input-label class="text-sm md:text-lg" for="kabupaten" :value="__('Kabupaten')" />
+                <select id="kabupaten" x-model="kabupatenId" @change="loadKecamatan()"
+                    class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
+                    <option value="" disabled selected>Pilih Kabupaten</option>
+                    <template x-for="kab in kabupatens" :key="kab.id">
+                        <option :value="kab.id" x-text="kab.name"></option>
+                    </template>
+                </select>
+                <input type="hidden" name="kabupaten" :value="kabupatenName">
+                <x-input-error :messages="$errors->get('kabupaten')" class="mt-2" />
+            </div>
+
+            {{-- ✅ COMBOBOX KECAMATAN --}}
+            <div>
+                <x-input-label class="text-sm md:text-lg" for="kecamatan" :value="__('Kecamatan')" />
+                <select id="kecamatan" x-model="kecamatanId" @change="loadDesa()"
+                    class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                    :disabled="!kabupatenId" required>
+                    <option value="" disabled selected>Pilih Kecamatan</option>
+                    <template x-for="kec in kecamatans" :key="kec.id">
+                        <option :value="kec.id" x-text="kec.name"></option>
+                    </template>
+                </select>
+                <input type="hidden" name="kecamatan" :value="kecamatanName">
+                <x-input-error :messages="$errors->get('kecamatan')" class="mt-2" />
+            </div>
+
+            {{-- ✅ COMBOBOX DESA --}}
             <div>
                 <x-input-label class="text-sm md:text-lg" for="desa" :value="__('Desa/Kelurahan')" />
-                <x-text-input id="desa" class="block mt-1 w-full" type="text" name="desa" :value="old('desa')"
-                    required placeholder="Masukkan Desa/Kelurahan" />
+                <select id="desa" x-model="desaId" @change="desaName = desas.find(d => d.id === desaId)?.name"
+                    class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                    :disabled="!kecamatanId" required>
+                    <option value="" disabled selected>Pilih Desa/Kelurahan</option>
+                    <template x-for="des in desas" :key="des.id">
+                        <option :value="des.id" x-text="des.name"></option>
+                    </template>
+                </select>
+                <input type="hidden" name="desa" :value="desaName">
                 <x-input-error :messages="$errors->get('desa')" class="mt-2" />
             </div>
 
             <div>
-                <x-input-label class="text-sm md:text-lg" for="kecamatan" :value="__('Kecamatan')" />
-                <x-text-input id="kecamatan" class="block mt-1 w-full" type="text" name="kecamatan"
-                    :value="old('kecamatan')" required placeholder="Masukkan Kecamatan" />
-                <x-input-error :messages="$errors->get('kecamatan')" class="mt-2" />
+                <x-input-label class="text-sm md:text-lg" for="nama_posyandu" :value="__('Nama Posyandu')" />
+                <x-text-input id="nama_posyandu" class="block mt-1 w-full" type="text" name="nama_posyandu"
+                    :value="old('nama_posyandu')" required placeholder="Masukkan Nama Posyandu" />
+                <x-input-error :messages="$errors->get('nama_posyandu')" class="mt-2" />
             </div>
 
             <div x-data="{ fileName: '' }">
@@ -121,7 +158,7 @@
 
             <div>
                 <x-input-label class="text-sm md:text-lg" for="role" :value="__('Role')" />
-                <select id="role" name="role"
+                <select id="role" name="role" x-model="role"
                     class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                     <option value="" disabled selected>Pilih role</option>
                     <option value="masyarakat" @selected(old('role') == 'masyarakat')>Masyarakat</option>
@@ -129,11 +166,22 @@
                 </select>
                 <x-input-error :messages="$errors->get('role')" class="mt-2" />
             </div>
-            <div class="md:col-span-2">
-                <x-input-label class="text-sm md:text-lg" for="no_telepon" :value="__('Nomor Telepon')" />
-                <x-text-input id="no_telepon" class="block mt-1 w-full" type="text" name="no_telepon"
-                    :value="old('no_telepon')" required placeholder="Contoh: 081234567890" />
-                <x-input-error :messages="$errors->get('no_telepon')" class="mt-2" />
+
+            {{-- ✅ DROPDOWN BIDANG (HANYA MUNCUL JIKA ROLE = KADER) --}}
+            <div x-show="role === 'kader'" x-transition class="md:col-span-2">
+                <x-input-label class="text-sm md:text-lg" for="bidang_id" :value="__('Bidang Tugas')" />
+                <select id="bidang_id" name="bidang_id"
+                    class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                    :required="role === 'kader'">
+                    <option value="" disabled selected>Pilih Bidang</option>
+                    @foreach(\App\Models\BidangPengajuan::orderBy('nama_bidang')->get() as $bidang)
+                        <option value="{{ $bidang->id }}" @selected(old('bidang_id') == $bidang->id)>
+                            {{ $bidang->nama_bidang }}
+                        </option>
+                    @endforeach
+                </select>
+                <p class="mt-1 text-xs text-gray-500">Kader hanya bisa mengelola 1 bidang.</p>
+                <x-input-error :messages="$errors->get('bidang_id')" class="mt-2" />
             </div>
 
             <div class="md:col-span-2">
@@ -164,4 +212,68 @@
             </button>
         </div>
     </form>
+
+    <script>
+        function registerForm() {
+            return {
+                kabupatenId: '{{ old("kabupaten_id") }}',
+                kecamatanId: '{{ old("kecamatan_id") }}',
+                desaId: '{{ old("desa_id") }}',
+                kabupatenName: '{{ old("kabupaten") }}',
+                kecamatanName: '{{ old("kecamatan") }}',
+                desaName: '{{ old("desa") }}',
+                role: '{{ old("role") }}',
+                kabupatens: [],
+                kecamatans: [],
+                desas: [],
+
+                async init() {
+                    await this.loadKabupaten();
+                },
+
+                async loadKabupaten() {
+                    try {
+                        const response = await fetch('{{ env("API_WILAYAH_URL") }}regencies/33.json');
+                        this.kabupatens = await response.json();
+                    } catch (error) {
+                        console.error('Error loading kabupaten:', error);
+                    }
+                },
+
+                async loadKecamatan() {
+                    if (!this.kabupatenId) return;
+
+                    this.kecamatanId = '';
+                    this.desaId = '';
+                    this.kecamatans = [];
+                    this.desas = [];
+
+                    this.kabupatenName = this.kabupatens.find(k => k.id === this.kabupatenId)?.name;
+
+                    try {
+                        const response = await fetch(`{{ env("API_WILAYAH_URL") }}districts/${this.kabupatenId}.json`);
+                        this.kecamatans = await response.json();
+                    } catch (error) {
+                        console.error('Error loading kecamatan:', error);
+                    }
+                },
+
+                async loadDesa() {
+                    if (!this.kecamatanId) return;
+
+                    this.desaId = '';
+                    this.desas = [];
+
+                    this.kecamatanName = this.kecamatans.find(k => k.id === this.kecamatanId)?.name;
+
+                    try {
+                        const response = await fetch(`{{ env("API_WILAYAH_URL") }}villages/${this.kecamatanId}.json`);
+                        this.desas = await response.json();
+                    } catch (error) {
+                        console.error('Error loading desa:', error);
+                    }
+                }
+            }
+        }
+    </script>
 </x-guest-layout>

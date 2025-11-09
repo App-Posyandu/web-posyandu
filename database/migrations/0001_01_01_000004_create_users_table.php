@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->uuid('id')->primary();
-
+            $table->foreignUuid('bidang_id')->nullable();
             $table->foreignUuid('posyandu_id')->nullable();
             $table->string('name');
             $table->string('email')->unique();
@@ -40,6 +40,11 @@ return new class extends Migration
         });
 
         Schema::table('users', function (Blueprint $table) {
+            $table->foreign('bidang_id')
+                ->references('id')
+                ->on('bidang_pengajuans')
+                ->nullOnDelete();
+                
             $table->foreign('posyandu_id')
                 ->references('id')
                 ->on('posyandus')

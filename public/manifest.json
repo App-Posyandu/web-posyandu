@@ -2,7 +2,7 @@
     "name": "Sapa Posyandu",
     "short_name": "Posyandu",
     "start_url": "/index.php",
-    "background_color": "#EC4899z",
+    "background_color": "#EC4899",
     "description": "Sistem Aplikasi Pengelolaan Pos Pelayanan Terpadu",
     "display": "standalone",
     "orientation": "portrait",

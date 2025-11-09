@@ -22,6 +22,8 @@
                                 <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">No</th>
                                 <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Nama Posyandu
                                 </th>
+                                <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Ketua Kader
+                                </th>
                                 <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Desa/Kelurahan
                                 </th>
                                 <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Kecamatan</th>
