@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\BidangPengajuan;
 use App\Models\Posyandu;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -31,6 +32,7 @@ class UserFactory extends Factory
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
 
+            'bidang_id' => BidangPengajuan::inRandomOrder()->first()->id, // Asumsi Anda punya setidaknya 1 posyandu di database
             'posyandu_id' => Posyandu::inRandomOrder()->first()->id, // Asumsi Anda punya setidaknya 1 posyandu di database
             'role' => 'masyarakat',
             'nik' => fake()->unique()->numerify('################'), // Membuat 16 digit NIK unik
@@ -41,7 +43,7 @@ class UserFactory extends Factory
             'jenis_kelamin' => fake()->randomElement(['Laki-laki', 'Perempuan']),
             'ktp' => 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', // Placeholder Base64
             'kk' => 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', // Placeholder Base64
-            'verified_at' => null,
+            'verified_at' => now(),
             'verified_by' => null,
         ];
     }

@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('nama_posyandu');
             $table->string('desa');
             $table->string('kecamatan');
+            $table->string('kabupaten');
             $table->timestamps();
         });
     }

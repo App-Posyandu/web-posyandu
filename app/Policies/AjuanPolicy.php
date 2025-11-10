@@ -4,7 +4,7 @@ namespace App\Policies;
 
 use App\Models\Pengajuan;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
+use Illuminate\Support\Facades\Log;
 
 class AjuanPolicy
 {
@@ -21,6 +21,12 @@ class AjuanPolicy
      */
     public function view(User $user, Pengajuan $ajuan): bool
     {
+        Log::info('ViewAjuan Policy Check:', [
+            'user_id' => $user->id,
+            'ajuan_user_id' => $ajuan->user_id,
+            'user_role' => $user->role,
+            'result' => $user->id === $ajuan->user_id || $user->role !== 'masyarakat'
+        ]);
         return $user->id === $ajuan->user_id || $user->role !== 'masyarakat';
     }
 

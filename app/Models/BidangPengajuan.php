@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class BidangPengajuan extends Model
 {
-    use HasFactory,HasUuids;
+    use HasFactory, HasUuids;
 
     protected $primaryKey = 'id';
     public $incrementing = false;
@@ -21,4 +21,9 @@ class BidangPengajuan extends Model
         return $this->hasMany(Pengajuan::class, 'bidang_id', 'id');
     }
     
+    public function kaders()
+    {
+        return $this->hasMany(User::class, 'bidang_id', 'id')
+            ->where('role', 'kader');
+    }
 }

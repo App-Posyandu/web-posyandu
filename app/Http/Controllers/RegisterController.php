@@ -41,7 +41,7 @@ class RegisterController extends Controller
         session()->forget(['google_user_name', 'google_user_email']);
 
         Auth::login($user);
-
+        
         return redirect('/dashboard');
     }
 }

@@ -9,7 +9,7 @@
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-8 text-gray-900">
-                    <form method="POST" action="{{ route('buku-saku.update', $bukuSaku) }}" enctype="multipart/form-data">
+                    <form method="POST" action="{{ route('buku_saku.update', $bukuSaku) }}" enctype="multipart/form-data">
                         @csrf
                         @method('PATCH')
 
@@ -30,7 +30,7 @@
 
                             <div x-data="{
                                 // URL awal diisi dengan file yang sudah ada
-                                previewUrl: '{{ Storage::url($bukuSaku->file_path) }}'
+                                previewUrl: '{{ Illuminate\Support\Facades\Storage::url($bukuSaku->file_path) }}'
                             }">
                                 <x-input-label for="file" :value="__('File PDF (Opsional)')" />
 
@@ -56,7 +56,7 @@
                         </div>
 
                         <div class="flex items-center justify-end mt-8 gap-4">
-                            <a href="{{ route('buku-saku.index') }}" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md text-sm font-semibold hover:bg-gray-300">Batal</a>
+                            <a href="{{ route('buku_saku.index') }}" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md text-sm font-semibold hover:bg-gray-300">Batal</a>
                             <x-primary-button>
                                 {{ __('Simpan Perubahan') }}
                             </x-primary-button>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\BukuSaku;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -12,12 +13,14 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class BukuSakuController extends Controller
 {
+    use AuthorizesRequests;
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        $bukuSaku = BukuSaku::with('user')->latest()->first();
+        $bukuSaku = BukuSaku::with('user')->latest()->paginate(10);
         return view('admin.bukuSaku.index', compact('bukuSaku'));
     }
 
@@ -41,16 +44,17 @@ class BukuSakuController extends Controller
             'file' => ['required', 'file', 'mimes:pdf', 'max:10240'],
         ]);
 
-        $oldBukuSaku = BukuSaku::first();
-
         $path = $request->file('file')->store('buku_saku', 'public');
 
-        if ($oldBukuSaku) {
-            Storage::disk('public')->delete($oldBukuSaku->file_path);
-        }
+        // --- HAPUS LOGIKA REPLACE DI BAWAH INI ---
+        // $oldBukuSaku = BukuSaku::first();
+        // if ($oldBukuSaku) {
+        //     Storage::disk('public')->delete($oldBukuSaku->file_path);
+        // }
+        // BukuSaku::truncate();
+        // --- AKHIR DARI LOGIKA YANG DIHAPUS ---
 
-        BukuSaku::truncate();
-
+        // Logika create ini sudah benar
         BukuSaku::create([
             'user_id' => $user->id,
             'title' => $request->title,
@@ -58,7 +62,7 @@ class BukuSakuController extends Controller
             'file_path' => $path,
         ]);
 
-        return redirect()->route('buku-saku.index')->with('success', 'Buku Saku berhasil diperbarui.');
+        return redirect()->route('buku_saku.index')->with('success', 'Buku Saku baru berhasil diunggah.');
     }
 
     /**
@@ -85,7 +89,7 @@ class BukuSakuController extends Controller
         $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'file' => ['nullable', 'file', 'mimes:pdf', 'max:10240'], // File opsional saat update
+            'file' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
         ]);
 
         $data = $request->only('title', 'description');
@@ -109,7 +113,6 @@ class BukuSakuController extends Controller
     {
         Storage::disk('public')->delete($bukuSaku->file_path);
 
-        // Hapus data dari database
         $bukuSaku->delete();
 
         return redirect()->back()->with('success', 'Buku Saku berhasil dihapus.');
@@ -120,7 +123,7 @@ class BukuSakuController extends Controller
         $bukuSaku = BukuSaku::latest()->first();
 
         if (!$bukuSaku || !Storage::disk('public')->exists($bukuSaku->file_path)) {
-            return redirect()->route('buku-saku.index')->with('error', 'File Buku Saku tidak ditemukan.');
+            return redirect()->route('buku_saku.index')->with('error', 'File Buku Saku tidak ditemukan.');
         }
 
         $path = $bukuSaku->file_path;
