@@ -18,7 +18,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                         <div class="space-y-4">
                             <div>
-                                <dt class="text-sm font-medium text-gray-500">Nama Lengkap</dt>
+                                <dt class="text-sm font-mediebum text-gray-500">Nama Lengkap</dt>
                                 <dd class="mt-1 text-lg font-semibold text-gray-900">{{ $user->name }}</dd>
                             </div>
                             <div>

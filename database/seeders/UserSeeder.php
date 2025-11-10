@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\BidangPengajuan;
 use App\Models\Posyandu;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -21,8 +22,10 @@ class UserSeeder extends Seeder
         Schema::enableForeignKeyConstraints();
 
         $firstPosyandu = Posyandu::first();
+        $firstBidang = BidangPengajuan::first();
 
         User::create([
+            'bidang_id' => $firstBidang ? $firstBidang->id : null,
             'posyandu_id' => $firstPosyandu ? $firstPosyandu->id : null,
             'name' => 'Kader Eposy',
             'email' => 'kader@eposy.com',

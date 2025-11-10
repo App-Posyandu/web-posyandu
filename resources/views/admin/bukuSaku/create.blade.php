@@ -1,4 +1,6 @@
-<x-app-layout>
+@extends('dashboard.layouts.dashboard')
+@section('title', 'Unggah Buku Saku')
+@section('content')
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             {{ __('Unggah Buku Saku Baru') }}
@@ -6,10 +8,10 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+        <div class="w-full max-w-5xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-8 text-gray-900">
-                    <form method="POST" action="{{ route('buku-saku.store') }}" enctype="multipart/form-data">
+                    <form method="POST" action="{{ route('buku_saku.store') }}" enctype="multipart/form-data">
                         @csrf
                         <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">Formulir Buku Saku Baru</h2>
 
@@ -37,7 +39,7 @@
                         </div>
 
                         <div class="flex items-center justify-end mt-8 gap-4">
-                            <a href="{{ route('buku-saku.index') }}"
+                            <a href="{{ route('buku_saku.index') }}"
                                 class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md text-sm font-semibold hover:bg-gray-300">Batal</a>
                             <x-primary-button>
                                 {{ __('Simpan') }}
@@ -48,4 +50,4 @@
             </div>
         </div>
     </div>
-</x-app-layout>
+@endsection
