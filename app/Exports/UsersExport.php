@@ -19,14 +19,22 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
     protected $rowNumber = 0;
     protected $bidang; // Tambahan
 
-    public function __construct($bidang = 'all')
+    public function __construct($bidang = 'all', $desa = 'all')
     {
         $this->bidang = $bidang;
+        $this->desa = $desa;
     }
+
 
     public function collection()
     {
         $query = Pengajuan::query();
+        if ($this->desa && $this->desa !== 'all') {
+            $query->whereHas('user.posyandu', function ($q) {
+                $q->where('desa', $this->desa);
+            });
+        }
+
 
         if ($this->bidang !== 'all') {
             $query->whereHas('bidang', function ($q) {

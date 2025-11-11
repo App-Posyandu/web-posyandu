@@ -52,10 +52,16 @@ const returnFromCache = function (request) {
 };
 
 self.addEventListener("fetch", function (event) {
-    event.respondWith(checkResponse(event.request).catch(function () {
-        return returnFromCache(event.request);
-    }));
-    if(!event.request.url.startsWith('http')){
-        event.waitUntil(addToCache(event.request));
+    const url = event.request.url;
+
+    if (url.includes('/export-all-bidang-dan-desa') || url.includes('/export-bidang-dan-desa/')) {
+        return; // Jangan intercept, langsung fetch ke server
     }
+
+    event.respondWith(
+        checkResponse(event.request).catch(function () {
+            return returnFromCache(event.request);
+        })
+    );
 });
+

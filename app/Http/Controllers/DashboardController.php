@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\BidangPengajuan;
+use App\Models\Posyandu;
 use App\Models\Pengajuan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -117,6 +118,17 @@ class DashboardController extends Controller
             $semuaAjuan = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 5);
         }
 
-        return view('dashboard', compact('ajuanCounts', 'semuaAjuan', 'colors', 'isVerified', 'icons'));
+        //detect current user role
+        $currentUser = Auth::user();
+
+        $desas = Pengajuan::with('user.posyandu')
+            ->get()
+            ->map(fn($p) => optional($p->user->posyandu)->desa)
+            ->filter()
+            ->unique()
+            ->sort()
+            ->values();
+
+        return view('dashboard', compact('ajuanCounts', 'semuaAjuan', 'colors', 'isVerified', 'icons', 'desas', 'currentUser'));
     }
 }
