@@ -31,5 +31,12 @@ class AuthServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::define('view', [AjuanPolicy::class, 'view']);
+        Gate::define('verify', [AjuanPolicy::class, 'verify']);
+
+        Gate::define('viewAny', [BukuSakuPolicy::class, 'viewAny']);
+        Gate::define('view', [BukuSakuPolicy::class, 'view']);
+        Gate::define('create', [BukuSakuPolicy::class, 'create']);
+        Gate::define('update', [BukuSakuPolicy::class, 'update']);
+        Gate::define('delete', [BukuSakuPolicy::class, 'delete']);
     }
 }

@@ -10,7 +10,8 @@
             </div>
         </a>
     </div>
-    <div class="sm:flex sm:items-center sm:ms-6">
+    <div class="sm:flex sm:items-center sm:ms-6 gap-5">
+        @include('dashboard.partials.notification-dropdown')
         <x-dropdown align="right" width="48">
             <x-slot name="trigger">
                 <button

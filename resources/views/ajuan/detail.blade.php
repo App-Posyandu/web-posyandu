@@ -321,67 +321,46 @@
                 {{-- TAHAP 2: Tindak Lanjut --}}
                 {{-- Tampil jika status 'Diproses' DAN 'sudah_verifikasi' sudah true --}}
             @elseif ($ajuan->status_pengajuan === 'Diproses' && $ajuan->sudah_verifikasi)
-                <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-8 w-full max-w-4xl"
-                    x-data="{ kunjungan_lapangan: '{{ $ajuan->kunjungan_lapangan ? '1' : '0' }}' }">
+                <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-8 w-full max-w-4xl">
 
-                    <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Tahap 2: Tindak Lanjut & Keputusan</h2>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Tahap 2: Keputusan Pasca Kunjungan</h2>
 
                     <form method="POST" action="{{ route('ajuan.verify', $ajuan) }}">
                         @csrf
                         @method('PATCH')
-                        {{-- Penanda bahwa ini adalah submit Tahap 2 --}}
                         <input type="hidden" name="verification_step" value="2">
 
-                        <div class="block mb-4">
+                        <div class="block mb-4 border-t pt-6">
                             <label class="flex items-center">
                                 <input type="checkbox" name="ttd_kader" value="1" required
                                     class="h-5 w-5 rounded border-gray-400 text-pink-600 shadow-sm focus:ring-pink-500">
-                                <span class="ms-3 text-sm text-gray-700">Saya (Kader) menyetujui tindak lanjut ini.</span>
+                                <span class="ms-3 text-sm text-gray-700">Saya (Kader) menyetujui keputusan akhir
+                                    ini.</span>
                             </label>
                             <x-input-error :messages="$errors->get('ttd_kader')" class="mt-2" />
                         </div>
 
-                        {{-- <div class="mt-6 border-t pt-6">
-                            <h3 class="font-semibold mb-4 text-gray-700">Perlu Kunjungan Lapangan?</h3>
-                            <div class="space-y-3">
-                                <label class="flex items-center p-3 border rounded-md">
-                                    <input type="radio" name="kunjungan_lapangan" value="1"
-                                        x-model="kunjungan_lapangan" class="h-5 w-5 ...">
-                                    <span class="ms-3 text-sm text-gray-700">Ya, perlu kunjungan lapangan</span>
-                                </label>
-                                <label class="flex items-center p-3 border rounded-md">
-                                    <input type="radio" name="kunjungan_lapangan" value="0"
-                                        x-model="kunjungan_lapangan" class="h-5 w-5 ...">
-                                    <span class="ms-3 text-sm text-gray-700">Tidak, tidak perlu kunjungan lapangan</span>
-                                </label>
-                            </div>
-                        </div> --}}
-
-                        <div x-show="kunjungan_lapangan === '0'" class="mt-6" x-transition>
+                        <div class="mt-6">
                             <label for="status" class="block font-medium text-sm text-gray-700">Status Pengajuan
                                 Akhir</label>
                             <select id="status" name="status"
                                 class="mt-1 block w-full border-gray-300 focus:border-pink-500 focus:ring-pink-500 rounded-md shadow-sm">
+                                <option value="" disabled selected>Pilih Keputusan Akhir...</option>
                                 <option value="Disetujui">Setujui Pengajuan</option>
                                 <option value="Ditolak">Tolak Pengajuan</option>
                             </select>
                         </div>
 
                         <div class="mt-6">
-                            <label for="catatan_final" class="block font-medium text-sm text-gray-700">Catatan Akhir
-                                (Opsional)</label>
-                            <textarea id="catatan_final" name="catatan" rows="3"
-                                class="mt-1 block w-full border-gray-300 focus:border-pink-500 focus:ring-pink-500 rounded-md shadow-sm"
+                            <label for="catatan_final" class="block font-medium text-sm text-gray-700">Catatan Akhir (Wajib jika ditolak)</label>
+                            <textarea id="catatan_final" name="catatan" rows="3" class="mt-1 block w-full border-gray-300 focus:border-pink-500 focus:ring-pink-500 rounded-md shadow-sm"
                                 placeholder="Tambahkan catatan..."></textarea>
+                            <x-input-error :messages="$errors->get('catatan')" class="mt-2" />
                         </div>
 
                         <div class="flex items-center justify-end mt-8 space-x-4">
-                            <button type="submit"
-                                class="inline-flex items-center px-6 py-2 font-semibold text-sm text-white rounded-md"
-                                :class="kunjungan_lapangan === '1' ? 'bg-pink-500 hover:bg-pink-600' :
-                                    'bg-green-600 hover:bg-green-700'">
-                                <span x-show="kunjungan_lapangan === '0'">Simpan Keputusan Akhir</span>
-                                <span x-show="kunjungan_lapangan === '1'">Simpan (Lanjut Kunjungan)</span>
+                            <button type="submit" class="inline-flex items-center px-6 py-2 bg-pink-500 text-white font-semibold text-sm rounded-md">
+                                Simpan Keputusan Akhir
                             </button>
                         </div>
                     </form>

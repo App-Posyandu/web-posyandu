@@ -91,8 +91,7 @@
                         <div class="{{ auth()->user()->role === 'kabid' ? 'hidden' : '' }}">
                             <x-input-label for="role" :value="__('Role')" />
                             <select id="role" name="role"
-                                class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                                required>
+                                class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                                 <option value="" disabled selected>Pilih Role</option>
                                 @php $currentUserRole = auth()->user()->role; @endphp
 
@@ -153,26 +152,28 @@
         </div>
     </div>
 
-    {{-- ✅ JAVASCRIPT: TAMPILKAN BIDANG JIKA ROLE = KADER --}}
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const roleSelect = document.getElementById('role');
-            const bidangField = document.getElementById('bidang-field');
-            const bidangSelect = document.getElementById('bidang_id');
+    @push('scripts')
+        {{-- ✅ JAVASCRIPT: TAMPILKAN BIDANG JIKA ROLE = KADER --}}
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const roleSelect = document.getElementById('role');
+                const bidangField = document.getElementById('bidang-field');
+                const bidangSelect = document.getElementById('bidang_id');
 
-            function toggleBidangField() {
-                if (roleSelect.value === 'kader') {
-                    bidangField.style.display = 'block';
-                    bidangSelect.required = true;
-                } else {
-                    bidangField.style.display = 'none';
-                    bidangSelect.required = false;
-                    bidangSelect.value = '';
+                function toggleBidangField() {
+                    if (roleSelect.value === 'kader') {
+                        bidangField.style.display = 'block';
+                        bidangSelect.required = true;
+                    } else {
+                        bidangField.style.display = 'none';
+                        bidangSelect.required = false;
+                        bidangSelect.value = '';
+                    }
                 }
-            }
 
-            roleSelect.addEventListener('change', toggleBidangField);
-            toggleBidangField(); // Check on page load
-        });
-    </script>
+                roleSelect.addEventListener('change', toggleBidangField);
+                toggleBidangField(); // Check on page load
+            });
+        </script>
+    @endpush
 @endsection
