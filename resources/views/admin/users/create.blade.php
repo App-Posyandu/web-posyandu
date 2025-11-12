@@ -88,10 +88,12 @@
                             <x-input-error :messages="$errors->get('posyandu_id')" class="mt-2" />
                         </div>
 
-                        <div class="{{ auth()->user()->role === 'kabid' ? 'hidden' : '' }}">
+                        {{-- Ganti kondisi '===' dengan 'in_array' --}}
+                        <div class="{{ in_array(auth()->user()->role, ['kabid', 'ketua-kader']) ? 'hidden' : '' }}">
                             <x-input-label for="role" :value="__('Role')" />
-                            <select id="role" name="role"
-                                class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                            <select id="role" name="role" class="block mt-1 w-full border-gray-300 ...">
+                                {{-- Hapus 'required' dari sini agar tidak error saat disembunyikan --}}
+
                                 <option value="" disabled selected>Pilih Role</option>
                                 @php $currentUserRole = auth()->user()->role; @endphp
 
@@ -101,10 +103,11 @@
                                     <option value="ketua-kader" @selected(old('role') == 'ketua-kader')>Ketua Kader</option>
                                     <option value="kabid" @selected(old('role') == 'kabid')>Kabid</option>
                                     <option value="admin" @selected(old('role') == 'admin')>Admin</option>
+
                                 @elseif ($currentUserRole === 'kabid')
-                                    <option value="ketua-kader" @selected(old('role') == 'ketua-kader')>Ketua Kader</option>
+                                    <option value="ketua-kader" @selected(true)>Ketua Kader</option>
                                 @elseif ($currentUserRole === 'ketua-kader')
-                                    <option value="kader" @selected(old('role') == 'kader')>Kader</option>
+                                    <option value="kader" @selected(true)>Kader</option>
                                 @endif
                             </select>
                             <x-input-error :messages="$errors->get('role')" class="mt-2" />

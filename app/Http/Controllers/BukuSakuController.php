@@ -73,7 +73,7 @@ class BukuSakuController extends Controller
      */
     public function show(BukuSaku $bukuSaku)
     {
-        $this->authorize('view', $bukuSaku);
+        $this->authorize('viewBukuSaku', $bukuSaku);
         return view('admin.bukuSaku.edit', compact('bukuSaku'));
     }
 

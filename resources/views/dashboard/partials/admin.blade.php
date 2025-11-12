@@ -150,21 +150,16 @@
                 }
             }
         });
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script>
-        < script src = "https://cdn.jsdelivr.net/npm/sweetalert2@11" >
-    </script>
-    <script>
+
         @php
             use Illuminate\Support\Facades\Auth;
             $desaUser = optional(optional(Auth::user()->posyandu)->desa);
         @endphp
+
         const userRole = "{{ Auth::user()->role }}";
         const userDesa = "{{ Auth::user()?->posyandu?->desa ?? '' }}";
 
         document.getElementById('exportExcelBtn').addEventListener('click', function() {
-
             // HTML untuk select bidang (selalu muncul)
             let bidangSelectHTML = `
             <div>
@@ -190,6 +185,7 @@
                     <label class="block font-semibold mb-1 text-gray-700">Pilih Desa:</label>
                     <select id="selectDesa" class="w-full border rounded-md p-2" required>
                         <option value="" disabled selected>Pilih Desa</option>
+                        <option value="all">Semua Desa</option>
                         @foreach ($desas as $desa)
                             <option value="{{ $desa }}">{{ strtoupper($desa) }}</option>
                         @endforeach
@@ -263,17 +259,15 @@
 
         function exportData(bidang, desa) {
             if (userRole === 'ketua-kader') {
-                const url = `/export/${encodeURIComponent(bidang)}/${userDesa}`;
+                const url = `/admin/export/${encodeURIComponent(bidang)}/${userDesa}`;
                 window.location.href = url;
-            }
-            /* else if (bidang === 'all' && desa === 'all' && userRole === 'kabid') {
-                           window.location.href = `/export-all-bidang-dan-desa`;
-                       } */
-            else if (bidang === 'all' && userRole === 'kabid') {
-                window.location.href = `/export-all/${desa}`;
+            } else if (bidang === 'all' && userRole === 'kabid') {
+                window.location.href = `/admin/export-all/${desa}`;
             } else {
-                const url = `/export/${encodeURIComponent(bidang)}/${encodeURIComponent(desa)}`;
+                const url = `/admin/export/${encodeURIComponent(bidang)}/${encodeURIComponent(desa)}`;
                 window.location.href = url;
             }
         }
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+@endsection

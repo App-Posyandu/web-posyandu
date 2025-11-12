@@ -75,15 +75,27 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
         if (!$tanggal) return '';
 
         $namaHari = [
-            'Sunday' => 'Minggu', 'Monday' => 'Senin', 'Tuesday' => 'Selasa',
-            'Wednesday' => 'Rabu', 'Thursday' => 'Kamis', 'Friday' => 'Jumat',
+            'Sunday' => 'Minggu',
+            'Monday' => 'Senin',
+            'Tuesday' => 'Selasa',
+            'Wednesday' => 'Rabu',
+            'Thursday' => 'Kamis',
+            'Friday' => 'Jumat',
             'Saturday' => 'Sabtu'
         ];
         $namaBulan = [
-            1 => 'Januari', 2 => 'Februari', 3 => 'Maret',
-            4 => 'April', 5 => 'Mei', 6 => 'Juni',
-            7 => 'Juli', 8 => 'Agustus', 9 => 'September',
-            10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+            1 => 'Januari',
+            2 => 'Februari',
+            3 => 'Maret',
+            4 => 'April',
+            5 => 'Mei',
+            6 => 'Juni',
+            7 => 'Juli',
+            8 => 'Agustus',
+            9 => 'September',
+            10 => 'Oktober',
+            11 => 'November',
+            12 => 'Desember'
         ];
 
         $timestamp = strtotime($tanggal);
@@ -121,49 +133,49 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
 
     /** LOGO DI ATAS TABEL **/
     public function drawings()
-{
-    $drawings = [];
+    {
+        $drawings = [];
 
-    // Pusatkan logo sejajar secara horizontal di tengah sheet
-    $logos = [
-        [
-            'path' => public_path('assets/image/logo/logo_kebumen.png'),
-            'width' => 90,
-            'height' => 60,
-            'offsetX' => -30, // kiri dari tengah
-        ],
-        [
-            'path' => public_path('assets/image/logo/logo_posyandu.png'),
-            'width' => 85,
-            'height' => 60,
-            'offsetX' => 80, // tengah
-        ],
-        [
-            'path' => public_path('assets/image/logo/logo_sapaposyandu.png'),
-            'width' => 90,
-            'height' => 60,
-            'offsetX' => 200, // kanan dari tengah
-        ],
-    ];
+        // Pusatkan logo sejajar secara horizontal di tengah sheet
+        $logos = [
+            [
+                'path' => public_path('assets/image/logo/logo_kebumen.png'),
+                'width' => 90,
+                'height' => 60,
+                'offsetX' => -30, // kiri dari tengah
+            ],
+            [
+                'path' => public_path('assets/image/logo/logo_posyandu.png'),
+                'width' => 85,
+                'height' => 60,
+                'offsetX' => 80, // tengah
+            ],
+            [
+                'path' => public_path('assets/image/logo/logo_sapaposyandu.png'),
+                'width' => 90,
+                'height' => 60,
+                'offsetX' => 200, // kanan dari tengah
+            ],
+        ];
 
-    foreach ($logos as $index => $logo) {
-        if (file_exists($logo['path'])) {
-            $drawing = new Drawing();
-            $drawing->setPath($logo['path']);
-            $drawing->setHeight($logo['height']);
-            $drawing->setWidth($logo['width']);
+        foreach ($logos as $index => $logo) {
+            if (file_exists($logo['path'])) {
+                $drawing = new Drawing();
+                $drawing->setPath($logo['path']);
+                $drawing->setHeight($logo['height']);
+                $drawing->setWidth($logo['width']);
 
-            // Semua logo ditempatkan di sel "G1" (tengah lembar) tapi dengan offset berbeda
-            $drawing->setCoordinates('H1');
-            $drawing->setOffsetX($logo['offsetX']);
-            $drawing->setOffsetY(5);
+                // Semua logo ditempatkan di sel "G1" (tengah lembar) tapi dengan offset berbeda
+                $drawing->setCoordinates('H1');
+                $drawing->setOffsetX($logo['offsetX']);
+                $drawing->setOffsetY(5);
 
-            $drawings[] = $drawing;
+                $drawings[] = $drawing;
+            }
         }
-    }
 
-    return $drawings;
-}
+        return $drawings;
+    }
 
 
     public function registerEvents(): array
@@ -202,7 +214,11 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
 
                 // Baris kedua
                 $sheet->mergeCells('A3:M3');
-                $sheet->setCellValue('A3', "NAMA POSYANDU {$namaPosyandu}, DESA {$desa}, KECAMATAN {$kecamatan}, KABUPATEN KEBUMEN");
+                if ($this->desa !== 'all') {
+                    $sheet->setCellValue('A3', "NAMA POSYANDU {$namaPosyandu}, DESA {$desa}, KECAMATAN {$kecamatan}, KABUPATEN KEBUMEN");
+                } else {
+                    $sheet->setCellValue('A3', "KABUPATEN KEBUMEN");
+                }
                 $sheet->getStyle('A3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 $sheet->getStyle('A3')->getFont()->setBold(true);
 
@@ -212,6 +228,8 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
                     $sheet->setCellValue('A6', strtoupper($this->bidang));
                     $sheet->getStyle('A6')->getFont()->setBold(true);
                 }
+
+
 
                 // header tabel
                 $sheet->setCellValue('A7', 'NO.');
@@ -233,8 +251,16 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
                 $sheet->setCellValue('L8', 'DITOLAK');
 
                 $merge = [
-                    'A7:A8', 'B7:B8', 'C7:C8', 'D7:D8', 'E7:E8',
-                    'F7:G7', 'H7:H8', 'I7:J7', 'K7:L7', 'M7:M8',
+                    'A7:A8',
+                    'B7:B8',
+                    'C7:C8',
+                    'D7:D8',
+                    'E7:E8',
+                    'F7:G7',
+                    'H7:H8',
+                    'I7:J7',
+                    'K7:L7',
+                    'M7:M8',
                     'A6:B6'
                 ];
                 foreach ($merge as $range) $sheet->mergeCells($range);

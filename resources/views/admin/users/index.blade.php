@@ -8,13 +8,19 @@
             </h2>
         </x-slot>
 
+        @livewire('user-index')
+        {{-- <x-slot name="header">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                {{ __('Manajemen Pengguna') }}
+            </h2>
+        </x-slot>
+
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                 @if (session('success'))
                     <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg mb-6" role="alert">
                         <div class="flex">
                             <div class="py-1">
-                                {{-- Ganti ikon menjadi centang --}}
                                 <i class="bi bi-check-circle-fill mr-3"></i>
                             </div>
                             <div>
@@ -118,7 +124,6 @@
                                                 {{ ucfirst($user->role) }}</td>
 
                                             <td class="px-6 py-4 whitespace-nowrap">
-                                                {{-- Cek apakah verified_at BUKAN null --}}
                                                 @if ($user->verified_at)
                                                     <span
                                                         class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Terverifikasi</span>
@@ -139,8 +144,7 @@
                                                         class="flex items-center justify-center w-24 px-3 py-1 bg-yellow-500 text-white rounded-md text-xs hover:bg-yellow-600">Ubah</a>
                                                 @endif
 
-                                                {{-- Cek apakah verified_at ADALAH null --}}
-                                                @if (is_null($user->verified_at) && in_array($user->role, ['masyarakat','kader']))
+                                                @if (is_null($user->verified_at) && in_array($user->role, ['masyarakat', 'kader']))
                                                     @php
                                                         $currentUser = auth()->user();
                                                         $canVerify = false;
@@ -186,7 +190,7 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> --}}
 
     </div>
 @endsection

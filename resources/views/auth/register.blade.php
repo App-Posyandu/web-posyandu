@@ -1,5 +1,5 @@
 <x-guest-layout>
-    <form method="POST" action="{{ route('register') }}" enctype="multipart/form-data" x-data="dependentDropdowns()">
+    <form method="POST" action="{{ route('register') }}" x-data="dependentDropdowns()">
         @csrf
 
         @if (session()->has('google_user_email'))
