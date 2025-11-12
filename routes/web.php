@@ -85,16 +85,23 @@ Route::middleware('auth')->group(function () {
     // ✅ PENIMBANGAN & LAPORAN
     Route::middleware(['role:ketua-kader,kader,kabid'])->group(function () {
         Route::resource('penimbangan', PenimbanganController::class);
-        Route::get('/export/{bidang}', [LaporanController::class, 'exportExcelBidang'])->name('laporan.exportExcelBidang');
-        Route::get('/export-excel', [LaporanController::class, 'exportExcelAll'])->name('laporan.exportExcelAll');
     });
 
     // ✅ ADMIN ROUTES
+
     Route::middleware(['role:kabid,kader,admin,ketua-kader'])->prefix('admin')->name('admin.')->group(function () {
         Route::resource('posyandu', PosyanduController::class);
         Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
         Route::resource('users', UserController::class);
         Route::patch('/users/{user}/verify', [UserController::class, 'verify'])->name('users.verify');
+    });
+
+
+    Route::middleware(['role:kabid,ketua-kader'])->prefix('admin')->name('admin.')->group(function () {
+        Route::resource('posyandu', PosyanduController::class);
+        //Route::get('/export-all-bidang-dan-desa', [LaporanController::class, 'exportExcelAllBidangDanDesa'])->name('laporan.exportExcelAllBidangDanDesa');
+        Route::get('/export-all/{desa}', [LaporanController::class, 'exportExcelAll'])->name('laporan.exportExcelAll');
+        Route::get('/export/{bidang}/{desa}', [LaporanController::class, 'exportExcelBidang'])->name('laporan.exportExcelBidang');
     });
 });
 

@@ -153,62 +153,127 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
-    document.getElementById('exportExcelBtn').addEventListener('click', function() {
-        Swal.fire({
-            title: '<h2 class="text-xl font-bold text-gray-800 mb-2">Pilih Bidang untuk Di-Export</h2>',
-            html: `
-                <div class="grid grid-cols-2 gap-3 text-sm font-semibold">
-                    <button onclick="exportBidang('Bidang Perumahan Rakyat')" 
-                        class="swal2-confirm swal2-styled !bg-blue-500 hover:!bg-blue-600 flex items-center text-lg md:text-xl justify-center gap-2 py-4 rounded-md shadow">
-                        Perumahan Rakyat
-                    </button>
-                    <button onclick="exportBidang('Bidang Pendidikan')" 
-                        class="swal2-confirm swal2-styled !bg-orange-500 hover:!bg-orange-600 flex items-center text-lg md:text-xl justify-center gap-2 py-4 rounded-md shadow">
-                        Pendidikan
-                    </button>
-                    <button onclick="exportBidang('Bidang Kesehatan')" 
-                        class="swal2-confirm swal2-styled !bg-pink-500 hover:!bg-pink-600 flex items-center text-lg md:text-xl justify-center gap-2 py-4 rounded-md shadow">
-                        Kesehatan
-                    </button>
-                    <button onclick="exportBidang('Bidang Sosial')" 
-                        class="swal2-confirm swal2-styled !bg-rose-500 hover:!bg-rose-600 flex items-center text-lg md:text-xl justify-center gap-2 py-4 rounded-md shadow">
-                        Sosial
-                    </button>
-                    <button onclick="exportBidang('Bidang Pekerjaan Umum')" 
-                        class="swal2-confirm swal2-styled !bg-green-500 hover:!bg-green-600 flex items-center text-lg md:text-xl justify-center gap-2 py-4 rounded-md shadow">
-                        Pekerjaan Umum
-                    </button>
-                    <button onclick="exportBidang('Bidang Trantibumlinmas')" 
-                        class="swal2-confirm swal2-styled !bg-yellow-500 hover:!bg-yellow-600 flex items-center text-lg md:text-xl justify-center gap-2 py-4 rounded-md shadow">
-                        Trantibumlinmas
-                    </button>
+        < script src = "https://cdn.jsdelivr.net/npm/sweetalert2@11" >
+    </script>
+    <script>
+        @php
+            use Illuminate\Support\Facades\Auth;
+            $desaUser = optional(optional(Auth::user()->posyandu)->desa);
+        @endphp
+        const userRole = "{{ Auth::user()->role }}";
+        const userDesa = "{{ Auth::user()?->posyandu?->desa ?? '' }}";
+
+        document.getElementById('exportExcelBtn').addEventListener('click', function() {
+
+            // HTML untuk select bidang (selalu muncul)
+            let bidangSelectHTML = `
+            <div>
+                <label class="block font-semibold mb-1 text-gray-700">Pilih Bidang:</label>
+                <select id="selectBidang" class="w-full border rounded-md p-2" required>
+                    <option value="" disabled selected>Pilih Bidang</option>
+                    <option value="all">Semua Bidang</option>
+                    <option value="Bidang Perumahan Rakyat">Bidang Perumahan Rakyat</option>
+                    <option value="Bidang Pendidikan">Bidang Pendidikan</option>
+                    <option value="Bidang Kesehatan">Bidang Kesehatan</option>
+                    <option value="Bidang Sosial">Bidang Sosial</option>
+                    <option value="Bidang Pekerjaan Umum">Bidang Pekerjaan Umum</option>
+                    <option value="Bidang Trantibumlinmas">Bidang Trantibumlinmas</option>
+                </select>
+            </div>
+        `;
+
+            // HTML untuk select desa (hanya tampil jika role = kabid)
+            let desaSelectHTML = "";
+            @if (Auth::user()->role === 'kabid')
+                desaSelectHTML = `
+                <div>
+                    <label class="block font-semibold mb-1 text-gray-700">Pilih Desa:</label>
+                    <select id="selectDesa" class="w-full border rounded-md p-2" required>
+                        <option value="" disabled selected>Pilih Desa</option>
+                        @foreach ($desas as $desa)
+                            <option value="{{ $desa }}">{{ strtoupper($desa) }}</option>
+                        @endforeach
+                    </select>
                 </div>
-                <div class="mt-5">
-                    <button onclick="exportBidang('all')" 
+            `;
+            @endif
+
+            Swal.fire({
+                title: '<h2 class="text-xl font-bold text-gray-800 mb-2">Pilih Bidang & Desa untuk Di-Export</h2>',
+                html: `
+                <div class="space-y-4">
+                    ${bidangSelectHTML}
+                    ${desaSelectHTML}
+                    <button id="confirmExportBtn"
                         class="swal2-confirm swal2-styled !bg-emerald-600 hover:!bg-emerald-700 w-full py-4 rounded-md text-white font-bold shadow-lg">
-                         Export Semua Pengajuan
+                        Export Data
                     </button>
                 </div>
             `,
-            showConfirmButton: false,
-            showCancelButton: true,
-            cancelButtonText: 'Batal',
-            width: 600,
-            background: '#f9fafb',
-            customClass: {
-                popup: ' rounded-md md:rounded-2xl shadow-lg p-2 md:p-6',
-                cancelButton: 'bg-white outline outline-red-500 mt-4 text-red-500 hover:text-red-600 font-medium hover:bg-red-500 hover:text-white text-base md:text-lg py-2 px-6 '
-            }
-        });
-    });
+                showConfirmButton: false,
+                showCancelButton: true,
+                cancelButtonText: 'Batal',
+                width: 600,
+                background: '#f9fafb',
+                customClass: {
+                    popup: 'rounded-md md:rounded-2xl shadow-lg p-4 md:p-6',
+                    cancelButton: 'bg-white outline outline-red-500 mt-4 text-red-500 hover:text-red-600 font-medium hover:bg-red-500 hover:text-white text-base md:text-lg py-2 px-6'
+                }
+            });
 
-    function exportBidang(bidang) {
-    window.location.href = `/export/${encodeURIComponent(bidang)}`;
-}
-    function exportAll() {
-        window.location.href = `/export-excel`;
-    }
+            // Tangani klik tombol export
+            document.addEventListener('click', function handler(e) {
+                if (e.target && e.target.id === 'confirmExportBtn') {
+                    let bidang = null;
+                    let desa = null;
+
+                    if (userRole === 'ketua-kader') {
+                        bidang = document.getElementById('selectBidang').value;
+                        desa = userDesa; // otomatis dari database
+                    } else if (userRole === 'kabid') {
+                        bidang = document.getElementById('selectBidang').value;
+                        desa = document.getElementById('selectDesa')?.value || '';
+
+                    }
+
+                    if (!bidang) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Bidang Belum Dipilih!',
+                            text: 'Silakan pilih bidang terlebih dahulu sebelum export data.',
+                            confirmButtonColor: '#f87171',
+                            confirmButtonText: 'OK'
+                        });
+                        return;
+                    } else if (!desa) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Desa Belum Dipilih!',
+                            text: 'Silakan pilih desa terlebih dahulu sebelum export data.',
+                            confirmButtonColor: '#f87171',
+                            confirmButtonText: 'OK'
+                        });
+                        return;
+                    }
+                    exportData(bidang, desa);
+                    document.removeEventListener('click', handler);
+                }
+            });
+        });
+
+        function exportData(bidang, desa) {
+            if (userRole === 'ketua-kader') {
+                const url = `/export/${encodeURIComponent(bidang)}/${userDesa}`;
+                window.location.href = url;
+            }
+            /* else if (bidang === 'all' && desa === 'all' && userRole === 'kabid') {
+                           window.location.href = `/export-all-bidang-dan-desa`;
+                       } */
+            else if (bidang === 'all' && userRole === 'kabid') {
+                window.location.href = `/export-all/${desa}`;
+            } else {
+                const url = `/export/${encodeURIComponent(bidang)}/${encodeURIComponent(desa)}`;
+                window.location.href = url;
+            }
+        }
     </script>
-@endsection

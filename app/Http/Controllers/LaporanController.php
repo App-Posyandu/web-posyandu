@@ -13,13 +13,21 @@ class LaporanController extends Controller
         return view('dashboard.partials.laporan');
     }
     //export data pengajuan ke excel
-    public function exportExcelAll()
+    public function exportExcelAll($desa)
     {
-        //code to export data to excel
-        return Excel::download(new UsersExport, 'Laporan Data Pengajuan_Recap_All.xlsx');
+    // Export semua bidang tapi difilter berdasarkan desa
+        return Excel::download(new UsersExport('all', $desa), 'Laporan_Data_Pengajuan_Recap_All_' . strtoupper($desa) . '.xlsx');
     }
-    public function exportExcelBidang($bidang)
-{
-    return Excel::download(new UsersExport($bidang), 'Laporan Data Pengajuan_Recap_' . $bidang . '.xlsx');
-}
+    //export dari semmua data bidang dan semua data desa
+    public function exportExcelAllBidangDanDesa()
+    {
+        return Excel::download(new UsersExport(), 'Laporan_Data_Pengajuan_Recap_All.xlsx');
+    }
+
+
+    public function exportExcelBidang($bidang, $desa)
+    {
+        // Export berdasarkan bidang tertentu dan desa
+        return Excel::download(new UsersExport($bidang, $desa), 'Laporan_Data_Pengajuan_Recap_' . strtoupper($bidang) . '_' . strtoupper($desa) . '.xlsx');
+    }
 }
