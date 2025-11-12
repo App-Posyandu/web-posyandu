@@ -33,12 +33,18 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @forelse ($posyandus as $posyandu)
+                                @php
+                                    $ketuaKader = $posyandu->users->firstWhere('role', 'ketua-kader');
+                                @endphp
                                 <tr>
                                     <td class="px-6 py-4">{{ $loop->iteration + $posyandus->firstItem() - 1 }}</td>
                                     <td class="px-6 py-4 font-medium">{{ $posyandu->nama_posyandu }}</td>
-                                    <td>{{ explode('_', $posyandu->desa)[1] ?? '' }}</td>
-                                    <td>{{ explode('_', $posyandu->kecamatan)[1] ?? '' }}</td>
-                                    <td>{{ explode('_', $posyandu->kabupaten)[1] ?? '' }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                        {{ $ketuaKader?->name ?? 'Belum Ditentukan' }}
+                                    </td>
+                                    <td>{{ $posyandu->desa ?? '' }}</td>
+                                    <td>{{ $posyandu->kecamatan ?? '' }}</td>
+                                    <td>{{ $posyandu->kabupaten ?? '' }}</td>
 
                                     <td class="px-6 py-4 flex space-x-2">
                                         <a href="{{ route('admin.posyandu.edit', $posyandu) }}"

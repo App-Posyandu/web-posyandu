@@ -23,8 +23,8 @@ return new class extends Migration
             $table->enum('role', ['masyarakat', 'kader', 'kabid', 'ketua-kader', 'admin'])->default('masyarakat');
 
             // Kolom Tambahan dari Form Registrasi
-            $table->string('nik', 16)->unique();
-            $table->text('alamat');
+            $table->string('nik', 16)->unique()->nullable();
+            $table->text('alamat')->nullable();
             $table->string('tempat_lahir');
             $table->date('tanggal_lahir');
             $table->string('jenis_kelamin');
@@ -44,7 +44,7 @@ return new class extends Migration
                 ->references('id')
                 ->on('bidang_pengajuans')
                 ->nullOnDelete();
-                
+
             $table->foreign('posyandu_id')
                 ->references('id')
                 ->on('posyandus')

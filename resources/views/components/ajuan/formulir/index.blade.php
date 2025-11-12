@@ -5,15 +5,36 @@
         <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">Formulir Permohonan</h2>
 
         <div class="mb-6">
-            <label for="bidang_pelayanan" class="block font-medium text-base md:text-xl text-gray-700">Ubah bidang pelayanan</label>
-            <select id="bidang_pelayanan" onchange="window.location.href=this.value;"
-                class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm ">
-                @foreach ($allBidangs as $itemBidang)
-                    <option value="{{ route('ajuan.create', $itemBidang->slug) }}" @selected($bidang->slug == $itemBidang->slug)>
-                        {{ $itemBidang->nama_bidang }}
+            <label for="bidang_pelayanan" class="block font-medium text-base md:text-xl text-gray-700">Bidang
+                Pelayanan</label>
+
+            @php
+                $user = auth()->user();
+                $isKader = $user->role === 'kader';
+            @endphp
+            <select id="bidang_pelayanan" onchange="if(!this.disabled) window.location.href=this.value;"
+                class="block mt-1 w-full border-gray-300 rounded-md shadow-sm
+                           @if ($isKader) bg-gray-100 cursor-not-allowed @endif"
+                @if ($isKader) disabled @endif>
+
+                @if ($isKader && $user->bidang)
+                    {{-- Kader hanya akan melihat bidang mereka sendiri --}}
+                    <option value="{{ route('ajuan.create', $user->bidang->slug) }}" selected>
+                        {{ $user->bidang->nama_bidang }}
                     </option>
-                @endforeach
+                @else
+                    {{-- Admin/Masyarakat bisa melihat semua bidang --}}
+                    @foreach ($allBidangs as $itemBidang)
+                        <option value="{{ route('ajuan.create', $itemBidang->slug) }}" @selected($bidang->slug == $itemBidang->slug)>
+                            {{ $itemBidang->nama_bidang }}
+                        </option>
+                    @endforeach
+                @endif
             </select>
+
+            @if ($isKader)
+                <p class="mt-1 text-xs text-gray-500">Anda hanya dapat membuat pengajuan untuk bidang tugas Anda.</p>
+            @endif
         </div>
 
         <div class="space-y-4">
@@ -23,7 +44,8 @@
                         <label class="flex items-center">
                             <input type="checkbox" x-model="checked" name="permohonan_items[]" value="Lainnya..."
                                 class="rounded border-gray-300 text-pink-600 shadow-sm focus:ring-pink-500">
-                            <span class="ms-3 text-gray-700 text-base md:text-lg font-semibold">{{ $item }}</span>
+                            <span
+                                class="ms-3 text-gray-700 text-base md:text-lg font-semibold">{{ $item }}</span>
                         </label>
                         <div x-show="checked" x-transition class="mt-2">
                             <x-text-input type="text" name="lainnya_text" class="block w-full"

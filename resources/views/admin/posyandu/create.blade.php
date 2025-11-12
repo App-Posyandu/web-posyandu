@@ -20,7 +20,7 @@
                         <div>
                             <div class="flex justify-between items-center">
                                 <x-input-label for="ketua_kader_id" :value="__('Pilih Ketua Kader (Opsional)')" />
-                                <a href="{{ route('admin.users.create', ['source' => 'posyandu_create']) }}" target="_blank"
+                                <a href="{{ route('admin.users.create', ['source' => 'posyandu_create']) }}"
                                     class="text-sm text-pink-600 hover:underline">
                                     + Buat User Baru
                                 </a>

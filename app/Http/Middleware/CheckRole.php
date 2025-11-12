@@ -16,27 +16,27 @@ class CheckRole
      */
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
-        if (!Auth::check()) {
+        $user = Auth::user();
+        if (!$user) {
             return redirect('login');
         }
 
-        $user = Auth::user();
+        if (in_array($user->role, ['admin', 'kabid'])) {
+            return $next($request);
+        }
 
         if (!in_array($user->role, $roles)) {
             abort(403, 'AKSES DITOLAK: ROLE TIDAK SESUAI.');
         }
 
-        // Pengecekan 1: Role
         if (!in_array($user->role, $roles)) {
             abort(403, 'AKSES DITOLAK: ANDA TIDAK MEMILIKI ROLE YANG SESUAI.');
         }
 
-        // Pengecekan 2: Status Verifikasi untuk role tertentu
         if ($user->role === 'kader' && is_null($user->verified_at)) {
             return redirect()->route('dashboard')->with('error', 'Akun Anda belum diverifikasi oleh Ketua Kader.');
         }
 
-        // Jika semua lolos, izinkan akses
         return $next($request);
     }
 }

@@ -42,7 +42,7 @@ class DashboardController extends Controller
         }
 
         // ✅ REDIRECT KADER LANGSUNG KE AJUAN.INDEX
-        if ($user->role === 'kader') {
+        if ($user->role === 'kader') {  
             return redirect()->route('ajuan.index');
         }
 

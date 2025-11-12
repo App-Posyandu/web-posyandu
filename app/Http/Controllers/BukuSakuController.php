@@ -20,6 +20,7 @@ class BukuSakuController extends Controller
      */
     public function index()
     {
+        $this->authorize('viewAny', BukuSaku::class);
         $bukuSaku = BukuSaku::with('user')->latest()->paginate(10);
         return view('admin.bukuSaku.index', compact('bukuSaku'));
     }
@@ -29,6 +30,7 @@ class BukuSakuController extends Controller
      */
     public function create()
     {
+        $this->authorize('create', BukuSaku::class);
         return view('admin.bukuSaku.create');
     }
 
@@ -37,6 +39,7 @@ class BukuSakuController extends Controller
      */
     public function store(Request $request)
     {
+        $this->authorize('create', BukuSaku::class);
         $user = Auth::user();
         $request->validate([
             'title' => ['required', 'string', 'max:255'],
@@ -70,6 +73,7 @@ class BukuSakuController extends Controller
      */
     public function show(BukuSaku $bukuSaku)
     {
+        $this->authorize('view', $bukuSaku);
         return view('admin.bukuSaku.edit', compact('bukuSaku'));
     }
 
@@ -78,6 +82,7 @@ class BukuSakuController extends Controller
      */
     public function edit(BukuSaku $bukuSaku)
     {
+        $this->authorize('update', $bukuSaku);
         return view('admin.bukuSaku.edit', compact('bukuSaku'));
     }
 
@@ -86,6 +91,7 @@ class BukuSakuController extends Controller
      */
     public function update(Request $request, BukuSaku $bukuSaku)
     {
+        $this->authorize('update', $bukuSaku);
         $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
@@ -111,6 +117,7 @@ class BukuSakuController extends Controller
      */
     public function destroy(BukuSaku $bukuSaku)
     {
+        $this->authorize('delete', $bukuSaku);
         Storage::disk('public')->delete($bukuSaku->file_path);
 
         $bukuSaku->delete();
@@ -120,6 +127,7 @@ class BukuSakuController extends Controller
 
     public function stream(): StreamedResponse|RedirectResponse
     {
+        $this->authorize('viewAny', BukuSaku::class);
         $bukuSaku = BukuSaku::latest()->first();
 
         if (!$bukuSaku || !Storage::disk('public')->exists($bukuSaku->file_path)) {

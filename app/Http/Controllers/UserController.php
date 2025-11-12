@@ -93,7 +93,17 @@ class UserController extends Controller
                 break;
         }
 
-        $request->validate([
+        if ($currentUser->role === 'kabid') {
+            $request->merge(['role' => 'ketua-kader']);
+            $allowedRoles = ['ketua-kader'];
+        } elseif ($currentUser->role === 'ketua-kader') {
+            $request->merge(['role' => 'kader']);
+            $allowedRoles = ['kader'];
+        } elseif ($currentUser->role === 'admin') {
+            $allowedRoles = ['masyarakat', 'kader', 'ketua-kader', 'kabid', 'admin'];
+        }
+
+        $validationRules = [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', Password::defaults()],
@@ -107,11 +117,13 @@ class UserController extends Controller
             'jenis_kelamin' => ['required', 'string'],
             // 'ktp' => ['nullable', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:2048'],
             // 'kk' => ['nullable', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:2048'],
-        ]);
+        ];
 
         if ($request->role === 'kader') {
             $validationRules['bidang_id'] = ['required', 'uuid', 'exists:bidang_pengajuans,id'];
         }
+
+        $request->validate($validationRules);
 
         // // Proses file KTP jika diunggah
         // $ktpBase64 = null;
@@ -129,7 +141,7 @@ class UserController extends Controller
 
 
         // Buat user baru
-        $user = User::create([
+        $userData = [
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
@@ -141,15 +153,17 @@ class UserController extends Controller
             'tempat_lahir' => $request->tempat_lahir,
             'tanggal_lahir' => $request->tanggal_lahir,
             'jenis_kelamin' => $request->jenis_kelamin,
-            // 'ktp' => $ktpBase64,
-            // 'kk' => $kkBase64,
             'verified_at' => $isInstantVerified ? now() : null,
             'verified_by' => $isInstantVerified ? $currentUser->id : null,
-        ]);
+            'bidang_id' => $request->role === 'kader' ? $request->bidang_id : null, // 5. Simpan bidang_id
+        ];
+
 
         if ($request->role === 'kader' && $request->filled('bidang_id')) {
             $userData['bidang_id'] = $request->bidang_id;
         }
+
+        $user = User::create($userData);
 
         event(new Registered($user));
         if ($request->input('source') === 'posyandu_create') {

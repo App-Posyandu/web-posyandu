@@ -60,11 +60,15 @@ class PosyanduController extends Controller
             'ketua_kader_id' => ['nullable', 'uuid', 'exists:users,id'],
         ]);
 
+        $kabupatenName = explode('_', $request->kabupaten)[1] ?? $request->kabupaten;
+        $kecamatanName = explode('_', $request->kecamatan)[1] ?? $request->kecamatan;
+        $desaName = explode('_', $request->desa)[1] ?? $request->desa;
+
         $posyandu = Posyandu::create([
             'nama_posyandu' => $request->nama_posyandu,
-            'kabupaten' => $request->kabupaten,
-            'kecamatan' => $request->kecamatan,
-            'desa' => $request->desa,
+            'kabupaten' => $kabupatenName,
+            'kecamatan' => $kecamatanName,
+            'desa' => $desaName,
         ]);
 
         if ($request->filled('ketua_kader_id')) {
@@ -165,5 +169,41 @@ class PosyanduController extends Controller
         $kecamatanId = $request->query('kec_id');
         $desas = Http::get(env('API_WILAYAH_URL') . "villages/{$kecamatanId}.json")->json();
         return response()->json($desas);
+    }
+
+    public function getPosyanduByDesa(Request $request)
+    {
+        $desa = $request->query('desa');
+
+        $posyandus = Posyandu::where('desa', 'LIKE', "%{$desa}%")
+            ->orderBy('nama_posyandu')
+            ->get(['id', 'nama_posyandu']);
+
+        return response()->json($posyandus);
+    }
+
+    public function getPosyanduByWilayah(Request $request)
+    {
+        $request->validate([
+            'kabupaten' => 'required|string',
+            'kecamatan' => 'required|string',
+            'desa' => 'required|string',
+        ]);
+
+        $kabupatenName = $request->query('kabupaten');
+        $kecamatanName = $request->query('kecamatan');
+        $desaName = $request->query('desa');
+        $search = $request->query('search', '');
+
+        $posyandus = Posyandu::where('kabupaten', $kabupatenName)
+        ->where('kecamatan', $kecamatanName)
+        ->where('desa', $desaName)
+        ->when($search, function ($query, $search) {
+            return $query->where('nama_posyandu', 'like', "%{$search}%");
+        })
+        ->orderBy('nama_posyandu')
+        ->get(['id', 'nama_posyandu']);
+
+        return response()->json($posyandus);
     }
 }

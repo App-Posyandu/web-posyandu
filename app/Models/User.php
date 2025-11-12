@@ -40,6 +40,8 @@ class User extends Authenticatable
         'jenis_kelamin',
         'verified_at',
         'verified_by',
+        'posyandu_id',
+        'bidang_id',
     ];
 
     public function pengajuans()
@@ -60,7 +62,7 @@ class User extends Authenticatable
     {
         return $this->belongsTo(BidangPengajuan::class, 'bidang_id', 'id');
     }
-    
+
     /**
      * The attributes that should be hidden for serialization.
      *

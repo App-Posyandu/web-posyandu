@@ -11,12 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('posyandus', function (Blueprint $table) {
+        Schema::create('notifications', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('nama_posyandu');
-            $table->string('desa');
-            $table->string('kecamatan');
-            $table->string('kabupaten');
+            $table->string('type');
+            $table->uuidMorphs('notifiable');
+            $table->text('data');
+            $table->timestamp('read_at')->nullable();
             $table->timestamps();
         });
     }
@@ -26,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('posyandus');
+        Schema::dropIfExists('notifications');
     }
 };

@@ -69,4 +69,12 @@ class AjuanPolicy
     {
         return false;
     }
+
+    public function verify(User $user, Pengajuan $ajuan): bool
+    {
+        // Hanya user dengan role 'kader' DAN
+        // ajuan yang statusnya masih 'Diproses'
+        // yang boleh melakukan verifikasi.
+        return $user->role === 'kader' && $ajuan->status_pengajuan === 'Diproses';
+    }
 }

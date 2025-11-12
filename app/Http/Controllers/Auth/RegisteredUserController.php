@@ -10,17 +10,21 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
+use Str;
 
 class RegisteredUserController extends Controller
 {
     /**
      * Display the registration view.
      */
+    const PROVINCE_ID = 33;
     public function create(): View
     {
-        return view('auth.register');
+        $kabupatens = Http::get(env('API_WILAYAH_URL') . 'regencies/' . self::PROVINCE_ID . '.json')->json();
+        return view('auth.register', compact('kabupatens'));
     }
 
     /**
@@ -31,61 +35,74 @@ class RegisteredUserController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        // 1. Validasi semua input dari form
-        $request->validate([
+        $validationRules = [
             'name' => ['required', 'string', 'max:255'],
-            'nik' => ['required', 'string', 'digits:16', 'unique:users'],
-            'alamat' => ['required', 'string'],
+            // 'nik' => ['nullable', 'string', 'digits:16', 'unique:users'],
+            // 'alamat' => ['nullable', 'string'],
             'tempat_lahir' => ['required', 'string', 'max:255'],
             'tanggal_lahir' => ['required', 'date'],
             'jenis_kelamin' => ['required', 'string'],
-            'nama_posyandu' => ['required', 'string', 'max:255'],
             'desa' => ['required', 'string', 'max:255'],
             'kecamatan' => ['required', 'string', 'max:255'],
+            'kabupaten' => ['required', 'string', 'max:255'],
+            'posyandu_id' => ['required', 'string'],
+            'bidang_id' => ['nullable', 'string'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'role' => ['required', 'in:masyarakat,kader'],
-            'ktp' => ['required', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:2048'], // Maksimal 2MB
-            'kk' => ['required', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:2048'],  // Maksimal 2MB
-            'no_telepon' => ['required', 'string', 'max:20', 'unique:users']
-        ]);
+            // 'ktp' => ['nullable', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:2048'],
+            // 'kk' => ['nullable', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:2048'],
+            'no_telepon' => ['required', 'string', 'max:20', 'unique:users'],
+        ];
+
+        $posyanduId = $request->posyandu_id;
+
+        if (!\Illuminate\Support\Str::isUuid($posyanduId)) {
+            $newPosyandu = Posyandu::create([
+                'nama_posyandu' => $posyanduId,
+                'kabupaten' => explode('_', $request->kabupaten)[1] ?? $request->kabupaten,
+                'kecamatan' => explode('_', $request->kecamatan)[1] ?? $request->kecamatan,
+                'desa' => explode('_', $request->desa)[1] ?? $request->desa,
+            ]);
+            $posyanduId = $newPosyandu->id;
+        }
 
         if ($request->role === 'kader') {
             $validationRules['bidang_id'] = ['required', 'uuid', 'exists:bidang_pengajuans,id'];
         }
 
-        // 2. Proses file upload KTP menjadi Base64
-        $ktpBase64 = null;
-        if ($request->hasFile('ktp')) {
-            $ktpPath = $request->file('ktp')->getRealPath();
-            $ktpData = file_get_contents($ktpPath);
-            $ktpBase64 = 'data:image/' . $request->file('ktp')->getClientOriginalExtension() . ';base64,' . base64_encode($ktpData);
-        }
+        $request->validate($validationRules);
 
-        // 3. Proses file upload KK menjadi Base64
-        $kkBase64 = null;
-        if ($request->hasFile('kk')) {
-            $kkPath = $request->file('kk')->getRealPath();
-            $kkData = file_get_contents($kkPath);
-            $kkBase64 = 'data:image/' . $request->file('kk')->getClientOriginalExtension() . ';base64,' . base64_encode($kkData);
-        }
+        // $ktpBase64 = null;
+        // if ($request->hasFile('ktp')) {
+        //     $ktpPath = $request->file('ktp')->getRealPath();
+        //     $ktpData = file_get_contents($ktpPath);
+        //     $ktpBase64 = 'data:image/' . $request->file('ktp')->getClientOriginalExtension() . ';base64,' . base64_encode($ktpData);
+        // }
 
-        $posyandu = Posyandu::firstOrCreate(
-            [
-                'nama_posyandu' => $request->nama_posyandu,
-                'desa' => $request->desa,
-            ],
-            [
-                'kecamatan' => $request->kecamatan,
-                'kabupaten' => $request->kabupaten,
-            ]
-        );
+        // $kkBase64 = null;
+        // if ($request->hasFile('kk')) {
+        //     $kkPath = $request->file('kk')->getRealPath();
+        //     $kkData = file_get_contents($kkPath);
+        //     $kkBase64 = 'data:image/' . $request->file('kk')->getClientOriginalExtension() . ';base64,' . base64_encode($kkData);
+        // }
+
+        // $posyandu = Posyandu::firstOrCreate(
+        //     [
+        //         'nama_posyandu' => $request->nama_posyandu,
+        //         'desa' => $request->desa,
+        //     ],
+        //     [
+        //         'kecamatan' => $request->kecamatan,
+        //         'kabupaten' => $request->kabupaten,
+        //     ]
+        // );
 
         // 4. Buat user baru dengan semua data
-        $user = [
+        $userData = [
             'name' => $request->name,
-            'nik' => $request->nik,
-            'alamat' => $request->alamat,
+            // 'nik' => $request->nik,
+            // 'alamat' => $request->alamat,
             'tempat_lahir' => $request->tempat_lahir,
             'tanggal_lahir' => $request->tanggal_lahir,
             'jenis_kelamin' => $request->jenis_kelamin,
@@ -93,9 +110,11 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
             'no_telepon' => $request->no_telepon,
             'role' => $request->role,
-            'ktp' => $ktpBase64,
-            'kk' => $kkBase64,
+            // 'ktp' => $ktpBase64,
+            // 'kk' => $kkBase64,
+            'posyandu_id' => $posyanduId,
             'verified_at' => $request->role === 'masyarakat' ? now() : null,
+            'verified_by' => null,
         ];
 
         if ($request->role === 'kader' && $request->filled('bidang_id')) {
