@@ -93,6 +93,17 @@
                 </div>
             @endif
 
+            @if (auth()->user()->role === 'ketua-kader' && auth()->user()->posyandu)
+                <div class="mb-4 p-3 bg-pink-50 border-l-4 border-pink-500 rounded-lg">
+                    <div class="flex items-center">
+                        <i class="bi bi-info-circle-fill text-pink-500 mr-2"></i>
+                        <p class="text-sm text-gray-700">
+                            Anda mengelola pengajuan di <strong>{{ auth()->user()->posyandu->nama_posyandu }}</strong>
+                        </p>
+                    </div>
+                </div>
+            @endif
+
             @if (auth()->user()->role === 'masyarakat' && auth()->user()->posyandu)
                 <div class="mb-4 p-3 bg-pink-50 border-l-4 border-pink-500 rounded-lg">
                     <div class="flex items-center">

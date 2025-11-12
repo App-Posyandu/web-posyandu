@@ -21,52 +21,6 @@ class AjuanController extends Controller
     use AuthorizesRequests;
     public function index(User $user, Request $request)
     {
-        // $user = Auth::user();
-        // $alwaysVerifiedRoles = ['admin', 'kabid', 'ketua-kader', 'masyarakat'];
-        // $isVerified = in_array($user->role, $alwaysVerifiedRoles) || !is_null($user->verified_at);
-        // $query = Pengajuan::with(['user', 'bidang']);
-
-        // if ($user->role === 'masyarakat') {
-        //     $query->where('user_id', $user->id);
-        // } elseif ($user->role === 'kader') {
-        //     $query->where('bidang_id', $user->bidang_id)
-        //         ->whereHas('user', function ($q) use ($user) {
-        //             $q->where('posyandu_id', $user->posyandu_id);
-        //         });
-        // } elseif ($user->role === 'ketua-kader') {
-        //     $query->whereHas('user', function ($q) use ($user) {
-        //         $q->where('posyandu_id', $user->posyandu_id);
-        //     });
-        // }
-
-        // if ($request->filled('status')) {
-        //     $query->where('status_pengajuan', $request->status);
-        // }
-
-        // if ($request->filled('search')) {
-        //     $searchTerm = '%' . strtolower($request->input('search')) . '%';
-
-        //     $query->where(function ($q) use ($searchTerm) {
-
-        //         $q->whereHas('user', function ($userQuery) use ($searchTerm) {
-        //             $userQuery->whereRaw('LOWER(name) LIKE ?', [$searchTerm]);
-        //         })
-
-        //             ->orWhereRaw('LOWER(deskripsi_pengajuan) LIKE ?', [$searchTerm])
-
-        //             ->orWhereRaw('LOWER(status_pengajuan) LIKE ?', [$searchTerm])
-
-        //             ->orWhereHas('bidang', function ($bidangQuery) use ($searchTerm) {
-        //                 $bidangQuery->whereRaw('LOWER(nama_bidang) LIKE ?', [$searchTerm]);
-        //             });
-        //     });
-        // }
-        // $semuaAjuan = $query->latest()->paginate(5)->withQueryString();
-
-        // return view('ajuan.index', [
-        //     'semuaAjuan' => $semuaAjuan,
-        //     'isVerified' => $isVerified
-        // ]);
         return view('ajuan.index');
     }
 
@@ -372,7 +326,7 @@ class AjuanController extends Controller
 
     public function show(Pengajuan $ajuan)
     {
-        if (!Gate::forUser(Auth::user())->check('view', $ajuan)) {
+        if (!Gate::forUser(Auth::user())->check('viewAjuan', $ajuan)) {
             abort(403, 'Anda tidak memiliki akses untuk melihat pengajuan ini.');
         }
         $ajuan->load(['user', 'bidang', 'histories']);
@@ -584,6 +538,7 @@ class AjuanController extends Controller
                 'status' => $statusHistory,
                 'catatan' => $catatanHistory,
                 'diubah_oleh' => $user->id,
+                'created_at'=>now()
             ]);
 
             $targetUser->notify(new PengajuanStatusUpdated($ajuan, $statusHistory, $catatanHistory));

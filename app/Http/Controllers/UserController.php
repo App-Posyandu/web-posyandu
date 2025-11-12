@@ -22,46 +22,47 @@ class UserController extends Controller
 
     public function index(Request $request)
     {
-        $currentUser = Auth::user();
+        // $currentUser = Auth::user();
 
-        $query = User::with(['posyandu', 'bidang'])->latest();
+        // $query = User::with(['posyandu', 'bidang'])->latest();
 
-        switch ($currentUser->role) {
-            case 'kader':
-                $query->where('role', 'masyarakat')
-                    ->where('posyandu_id', $currentUser->posyandu_id);
-                break;
+        // switch ($currentUser->role) {
+        //     case 'kader':
+        //         $query->where('role', 'masyarakat')
+        //             ->where('posyandu_id', $currentUser->posyandu_id);
+        //         break;
 
-            case 'ketua-kader':
-                $query->whereIn('role', ['kader', 'masyarakat'])
-                    ->where('posyandu_id', $currentUser->posyandu_id);
-                break;
+        //     case 'ketua-kader':
+        //         $query->whereIn('role', ['kader', 'masyarakat'])
+        //             ->where('posyandu_id', $currentUser->posyandu_id);
+        //         break;
 
-            case 'kabid':
-                $query->whereIn('role', ['ketua-kader', 'kader', 'masyarakat']);
-                break;
-        }
+        //     case 'kabid':
+        //         $query->whereIn('role', ['ketua-kader', 'kader', 'masyarakat']);
+        //         break;
+        // }
 
-        if (in_array($currentUser->role, ['kader', 'ketua-kader'])) {
-            $query->where('posyandu_id', $currentUser->posyandu_id);
-        }
+        // if (in_array($currentUser->role, ['kader', 'ketua-kader'])) {
+        //     $query->where('posyandu_id', $currentUser->posyandu_id);
+        // }
 
-        if ($request->filled('search')) {
-            $searchTerm = $request->input('search');
-            $query->where(function ($q) use ($searchTerm) {
-                $q->where('name', 'like', '%' . $searchTerm . '%')
-                    ->orWhere('email', 'like', '%' . $searchTerm . '%')
-                    ->orWhere('nik', 'like', '%' . $searchTerm . '%');
-            });
-        }
+        // if ($request->filled('search')) {
+        //     $searchTerm = $request->input('search');
+        //     $query->where(function ($q) use ($searchTerm) {
+        //         $q->where('name', 'like', '%' . $searchTerm . '%')
+        //             ->orWhere('email', 'like', '%' . $searchTerm . '%')
+        //             ->orWhere('nik', 'like', '%' . $searchTerm . '%');
+        //     });
+        // }
 
-        if ($request->filled('role')) {
-            $query->where('role', $request->input('role'));
-        }
+        // if ($request->filled('role')) {
+        //     $query->where('role', $request->input('role'));
+        // }
 
-        $users = $query->paginate(10)->withQueryString();
+        // $users = $query->paginate(10)->withQueryString();
 
-        return view('admin.users.index', compact('users'));
+        // return view('admin.users.index', compact('users'));
+        return view('admin.users.index');
     }
 
     /**

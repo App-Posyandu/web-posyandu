@@ -9,10 +9,7 @@ self.addEventListener("install", function (event) {
     event.waitUntil(preLoad());
 });
 
-const filesToCache = [
-    '/',
-    '/offline.html'
-];
+const filesToCache = ["/", "/offline.html"];
 
 const checkResponse = function (request) {
     return new Promise(function (fulfill, reject) {
@@ -28,7 +25,7 @@ const checkResponse = function (request) {
 
 const addToCache = function (request) {
     // Only cache http(s) requests
-    if (!request.url.startsWith('http')) {
+    if (!request.url.startsWith("http")) {
         return Promise.resolve();
     }
     return caches.open("offline").then(function (cache) {
@@ -37,7 +34,6 @@ const addToCache = function (request) {
         });
     });
 };
-
 
 const returnFromCache = function (request) {
     return caches.open("offline").then(function (cache) {
@@ -54,7 +50,10 @@ const returnFromCache = function (request) {
 self.addEventListener("fetch", function (event) {
     const url = event.request.url;
 
-    if (url.includes('/export-all-bidang-dan-desa') || url.includes('/export-bidang-dan-desa/')) {
+    if (
+        url.includes("/export-all-bidang-dan-desa") ||
+        url.includes("/export-bidang-dan-desa/")
+    ) {
         return; // Jangan intercept, langsung fetch ke server
     }
 
@@ -64,4 +63,3 @@ self.addEventListener("fetch", function (event) {
         })
     );
 });
-

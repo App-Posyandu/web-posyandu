@@ -19,7 +19,7 @@ class BukuSakuPolicy
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, BukuSaku $bukuSaku): bool
+    public function viewBukuSaku(User $user, BukuSaku $bukuSaku): bool
     {
         return true;
     }

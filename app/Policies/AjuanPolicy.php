@@ -19,14 +19,8 @@ class AjuanPolicy
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, Pengajuan $ajuan): bool
+    public function viewAjuan(User $user, Pengajuan $ajuan): bool
     {
-        Log::info('ViewAjuan Policy Check:', [
-            'user_id' => $user->id,
-            'ajuan_user_id' => $ajuan->user_id,
-            'user_role' => $user->role,
-            'result' => $user->id === $ajuan->user_id || $user->role !== 'masyarakat'
-        ]);
         return $user->id === $ajuan->user_id || $user->role !== 'masyarakat';
     }
 
