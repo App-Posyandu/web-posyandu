@@ -32,9 +32,12 @@ class AjuanController extends Controller
         return Auth::id();
     }
 
-    public function pilihLayanan()
+    public function pilihLayanan(Request $request)
     {
         $user = Auth::user();
+        if ($request->has('on_behalf_of')) {
+            session(['ajuan_on_behalf_of_id' => $request->query('on_behalf_of')]);
+        }
         if ($user->role === 'masyarakat') {
             session()->forget('ajuan_on_behalf_of_id');
         }
@@ -55,20 +58,28 @@ class AjuanController extends Controller
             'trantibumlinmas' => asset('assets/image/icon/bidang/trantibumlinmas.svg'),
         ];
 
-        if ($user->role === 'kader' && $user->bidang_id) {
-            // Kader hanya bisa pilih bidangnya sendiri
-            $allBidangs = BidangPengajuan::where('id', $user->bidang_id)->get();
-        } else {
-            // Role lain bisa pilih semua bidang
-            $allBidangs = BidangPengajuan::orderBy('nama_bidang')->get();
-        }
+        $allBidangs = BidangPengajuan::orderBy('nama_bidang')->get();
 
         return view('dashboard.partials.pilih-layanan', compact('allBidangs', 'colors', 'icons'));
     }
 
-    public function pilihUser()
+    public function pilihUser(Request $request)
     {
         $user = Auth::user();
+        if ($request->has('user_id')) {
+
+            $masyarakatId = $request->query('user_id');
+
+            session(['ajuan_on_behalf_of_id' => $masyarakatId]);
+
+            if ($user->role === 'kader' && $user->bidang_id) {
+                $bidangSlug = $user->bidang->slug;
+                return redirect()->route('ajuan.create', $bidangSlug);
+            } else {
+                return redirect()->route('dashboard.partials.pilih-layanan');
+            }
+        }
+
         $query = User::where('role', 'masyarakat')
             ->whereNotNull('verified_at')
             ->orderBy('name');
@@ -365,12 +376,10 @@ class AjuanController extends Controller
         // Validasi input
         $request->validate([
             'deskripsi_pengajuan' => 'required|string|min:10',
-            // Tambahkan validasi lain jika diperlukan
         ]);
 
         $ajuan->load('bidang');
 
-        // Ambil data checklist yang baru
         $finalChecklistData = $request->input('permohonan_items', []);
         if (in_array('Lainnya...', $finalChecklistData) && $request->filled('lainnya_text')) {
             $finalChecklistData = array_map(fn($item) => $item === 'Lainnya...' ? 'Lainnya: ' . $request->lainnya_text : $item, $finalChecklistData);
@@ -493,7 +502,9 @@ class AjuanController extends Controller
                     'status_pengajuan' => $statusDitolak,
                     'sudah_verifikasi' => true, // Selesai verifikasi (ditolak)
                     'kunjungan_lapangan' => false, // Tidak jadi kunjungan
-                    'ttd_kader' => true,
+                    'ttd_kader' => false,
+                    'verified_formulir_items' => [], // Simpan checklist kosong
+                    'verified_administrasi_items' => [],
                 ]);
 
                 // <-- PERBAIKAN: Tambahkan History::create() yang hilang
@@ -528,6 +539,9 @@ class AjuanController extends Controller
                 'status_pengajuan' => 'Diproses',
                 'sudah_verifikasi' => true,
                 'kunjungan_lapangan' => true, // <-- Otomatis wajib kunjungan
+                'ttd_kader' => true, // ✅ TRUE karena kader sudah verifikasi
+                'verified_formulir_items' => $request->input('verified_formulir_items'), // ✅ Simpan item yang dicentang
+                'verified_administrasi_items' => $request->input('verified_administrasi_items'),
             ]);
 
             $statusHistory = 'Menunggu Kunjungan';
@@ -538,7 +552,7 @@ class AjuanController extends Controller
                 'status' => $statusHistory,
                 'catatan' => $catatanHistory,
                 'diubah_oleh' => $user->id,
-                'created_at'=>now()
+                'created_at' => now()
             ]);
 
             $targetUser->notify(new PengajuanStatusUpdated($ajuan, $statusHistory, $catatanHistory));
@@ -561,10 +575,12 @@ class AjuanController extends Controller
             $statusHistory = $statusAkhir;
             $catatanHistory = $request->catatan ?? "Pengajuan $statusAkhir setelah kunjungan lapangan.";
 
+            $ttdKader = ($statusAkhir === 'Disetujui');
+
             $ajuan->update([
                 'status_pengajuan' => $statusAkhir,
                 'kunjungan_lapangan' => true, // Tetap true (karena sudah dilakukan)
-                'ttd_kader' => $request->has('ttd_kader'),
+                'ttd_kader' => $ttdKader,
             ]);
 
             History::create([
@@ -588,6 +604,12 @@ class AjuanController extends Controller
     public function cetak($id)
     {
         $ajuan = Pengajuan::with(['user', 'bidang', 'histories.diubahOleh', 'latestHistory.diubahOleh'])->findOrFail($id);
+        
+        foreach (['verified_formulir_items', 'verified_administrasi_items', 'formulir_items', 'administrasi_items'] as $key) {
+            if (is_string($ajuan->$key)) {
+                $ajuan->$key = json_decode($ajuan->$key, true) ?? [];
+            }
+        }
 
         $templateData = $this->getBidangData($ajuan->bidang->slug);
         if (!$templateData) {

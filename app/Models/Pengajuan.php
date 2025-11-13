@@ -22,7 +22,10 @@ class Pengajuan extends Model
         'formulir_items',
         'administrasi_items',
         'sudah_verifikasi',
-        'kunjungan_lapangan'
+        'kunjungan_lapangan',
+        'verified_formulir_items',
+        'verified_administrasi_items',
+        'ttd_kader'
     ];
 
     protected $casts = [
@@ -30,6 +33,8 @@ class Pengajuan extends Model
         'administrasi_items' => 'array',
         'sudah_verifikasi' => 'boolean',
         'kunjungan_lapangan' => 'boolean',
+        'verified_formulir_items',
+        'verified_administrasi_items',
     ];
 
     public function user()
