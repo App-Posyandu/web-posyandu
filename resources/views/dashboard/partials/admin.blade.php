@@ -272,6 +272,7 @@
                     }
                     exportData(bidang, desa);
                     document.removeEventListener('click', handler);
+                    Swal.close();
                 }
             });
         });
