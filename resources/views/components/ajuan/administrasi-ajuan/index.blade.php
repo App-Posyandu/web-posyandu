@@ -20,7 +20,7 @@
                             class="block font-medium text-base md:text-lg text-gray-700 mb-1">{{ $label }}</label>
                         <div class="relative">
                             <div
-                                class="w-full flex items-center px-3 py-2 bg-gray-100 text-gray-500 rounded-md shadow-sm border border-gray-300">
+                                class="w-full flex items-center px-3 py-2 bg-white text-gray-500 rounded-md shadow-sm border border-gray-300">
                                 <span x-text="ktp_filename"></span>
                             </div>
                             <label for="ktp"
@@ -53,7 +53,7 @@
                             class="block font-medium text-base md:text-lg text-gray-700 mb-1">{{ $label }}</label>
                         <div class="relative">
                             <div
-                                class="w-full flex items-center px-3 py-2 bg-gray-100 text-gray-500 rounded-md shadow-sm border border-gray-300">
+                                class="w-full flex items-center px-3 py-2 bg-white text-gray-500 rounded-md shadow-sm border border-gray-300">
                                 <span x-text="kk_filename" class="truncate"></span>
                             </div>
                             <label for="kk"

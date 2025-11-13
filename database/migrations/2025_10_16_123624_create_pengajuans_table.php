@@ -21,6 +21,9 @@ return new class extends Migration
             $table->boolean('kunjungan_lapangan')->default(false);
             $table->json('formulir_items')->nullable();
             $table->json('administrasi_items')->nullable();
+            $table->boolean('ttd_kader')->default(false);
+            $table->json('verified_formulir_items')->nullable();
+            $table->json('verified_administrasi_items')->nullable();
             $table->timestamps();
         });
     }

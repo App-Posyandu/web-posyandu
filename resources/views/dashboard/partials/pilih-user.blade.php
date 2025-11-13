@@ -16,7 +16,7 @@
                     <div class="space-y-3 max-h-96 overflow-y-auto border p-4 rounded-md">
                         @forelse($masyarakatUsers as $user)
                             {{-- Link ini akan memulai alur, menyimpan ID user, dan redirect --}}
-                            <a href="{{ route('dashboard.partials.pilih-layanan', ['on_behalf_of' => $user->id]) }}"
+                            <a href="{{ route('dashboard.partials.pilih-user', ['user_id' => $user->id]) }}"
                                 class="block p-4 bg-gray-50 hover:bg-pink-100 rounded-md transition duration-150">
                                 <div class="font-semibold text-pink-600">{{ $user->name }}</div>
                                 <div class="text-sm text-gray-500">NIK: {{ $user->nik }}</div>
