@@ -201,7 +201,7 @@
                     ${bidangSelectHTML}
                     ${desaSelectHTML}
                     <button id="confirmExportBtn"
-                        class="swal2-confirm swal2-styled !bg-emerald-600 hover:!bg-emerald-700 w-full py-4 rounded-md text-white font-bold shadow-lg">
+                        class="swal2-confirm swal2-styled !mx-0 !bg-emerald-600 hover:!bg-emerald-700 w-full py-4 rounded-md text-white font-bold shadow-lg">
                         Export Data
                     </button>
                 </div>
