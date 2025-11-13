@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Models\Pengajuan;
+use App\Models\BidangPengajuan;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
@@ -27,23 +28,48 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
 
 
     public function collection()
-    {
-        $query = Pengajuan::query();
-        if ($this->desa && $this->desa !== 'all') {
-            $query->whereHas('user.posyandu', function ($q) {
-                $q->where('desa', $this->desa);
-            });
-        }
+{
+    $query = Pengajuan::query()
+        ->with(['user.posyandu', 'histories', 'bidang']);
 
-
-        if ($this->bidang !== 'all') {
-            $query->whereHas('bidang', function ($q) {
-                $q->where('nama_bidang', $this->bidang);
-            });
-        }
-
-        return $query->with(['user.posyandu', 'histories', 'bidang'])->get();
+    // Filter desa (jika bukan "all")
+    if ($this->desa !== 'all') {
+        $query->whereHas('user.posyandu', function ($q) {
+            $q->where('desa', $this->desa);
+        });
     }
+
+    // Filter bidang (jika bukan "all")
+    if ($this->bidang !== 'all') {
+        $query->whereHas('bidang', function ($q) {
+            $q->where('nama_bidang', $this->bidang);
+        });
+    }
+
+    // Jika semua desa dan semua bidang → urutkan berdasarkan desa & bidang
+    if ($this->desa === 'all' && $this->bidang === 'all') {
+        $query->join('bidang_pengajuans', 'pengajuans.bidang_id', '=', 'bidang_pengajuans.id')
+              ->join('users', 'pengajuans.user_id', '=', 'users.id')
+              ->join('posyandus', 'users.posyandu_id', '=', 'posyandus.id')
+              ->orderBy('posyandus.desa')
+              ->orderBy('bidang_pengajuans.nama_bidang')
+              ->select('pengajuans.*'); // pastikan hanya kolom pengajuans yang diambil
+    }else if ($this->desa === 'all') {
+        // Jika semua desa tapi bidang spesifik → urutkan berdasarkan desa
+        $query->join('users', 'pengajuans.user_id', '=', 'users.id')
+              ->join('posyandus', 'users.posyandu_id', '=', 'posyandus.id')
+              ->orderBy('posyandus.desa')
+              ->select('pengajuans.*');
+    }else if ($this->bidang === 'all') {
+        // Jika semua bidang tapi desa spesifik → urutkan berdasarkan bidang
+        $query->join('bidang_pengajuans', 'pengajuans.bidang_id', '=', 'bidang_pengajuans.id')
+              ->orderBy('bidang_pengajuans.nama_bidang')
+              ->select('pengajuans.*');
+    }
+
+    return $query->get();
+}
+
 
 
     public function startCell(): string
@@ -52,23 +78,36 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
     }
 
     public function headings(): array
-    {
-        return [
-            'NO',
-            'HARI/TANGGAL',
-            'NAMA',
-            'ALAMAT',
-            'TEMPAT TGL LAHIR',
-            'L',
-            'P',
-            'DESKRIPSI PERMOHONAN LAYANAN',
-            'SUDAH',
-            'KUNJUNGAN',
-            'DISETUJUI',
-            'DITOLAK',
-            'KETERANGAN',
-        ];
+{
+    $base = [
+        'NO',
+        'HARI/TANGGAL',
+        'NAMA',
+        'ALAMAT',
+        'TEMPAT TGL LAHIR',
+        'L',
+        'P',
+        'DESKRIPSI PERMOHONAN LAYANAN',
+        'SUDAH',
+        'KUNJUNGAN',
+        'DISETUJUI',
+        'DITOLAK',
+        'KETERANGAN',
+    ];
+
+    // Jika export semua bidang & desa → tambahkan kolom di akhir
+    if ($this->bidang === 'all' && $this->desa === 'all') {
+        $base[] = 'DESA';
+        $base[] = 'BIDANG';
+    }else if( $this->bidang === 'all'){
+        $base[] = 'BIDANG';
+    }else if( $this->desa === 'all'){
+        $base[] = 'DESA';
     }
+
+    return $base;
+}
+
 
     private function formatTanggalIndonesia($tanggal, $tipeFormat)
     {
@@ -110,26 +149,39 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
     }
 
     public function map($pengajuan): array
-    {
-        $this->rowNumber++;
-        $latestHistory = $pengajuan->histories->sortByDesc('created_at')->first();
+{
+    $this->rowNumber++;
+    $latestHistory = $pengajuan->histories->sortByDesc('created_at')->first();
 
-        return [
-            $this->rowNumber,
-            $this->formatTanggalIndonesia($pengajuan->created_at, 'lengkap'),
-            $pengajuan->user->name ?? '-',
-            $pengajuan->user->alamat ?? '-',
-            $pengajuan->user->tempat_lahir . ', ' . $this->formatTanggalIndonesia($pengajuan->user->tanggal_lahir, 'singkat'),
-            $pengajuan->user->jenis_kelamin == 'Laki-laki' ? '✓' : '',
-            $pengajuan->user->jenis_kelamin == 'Perempuan' ? '✓' : '',
-            $pengajuan->deskripsi_pengajuan,
-            $pengajuan->sudah_verifikasi == 'true' ? '✓' : '',
-            $pengajuan->kunjungan_lapangan == 'true' ? '✓' : '',
-            $pengajuan->status_pengajuan == 'Disetujui' ? '✓' : '',
-            $pengajuan->status_pengajuan == 'Ditolak' ? '✓' : '',
-            $latestHistory->catatan ?? '-',
-        ];
+    $data = [
+        $this->rowNumber,
+        $this->formatTanggalIndonesia($pengajuan->created_at, 'lengkap'),
+        $pengajuan->user->name ?? '-',
+        $pengajuan->user->alamat ?? '-',
+        $pengajuan->user->tempat_lahir . ', ' . $this->formatTanggalIndonesia($pengajuan->user->tanggal_lahir, 'singkat'),
+        $pengajuan->user->jenis_kelamin == 'Laki-laki' ? '✓' : '',
+        $pengajuan->user->jenis_kelamin == 'Perempuan' ? '✓' : '',
+        $pengajuan->deskripsi_pengajuan,
+        $pengajuan->sudah_verifikasi == 'true' ? '✓' : '',
+        $pengajuan->kunjungan_lapangan == 'true' ? '✓' : '',
+        $pengajuan->status_pengajuan == 'Disetujui' ? '✓' : '',
+        $pengajuan->status_pengajuan == 'Ditolak' ? '✓' : '',
+        $latestHistory->catatan ?? '-',
+    ];
+
+    // Jika semua desa & bidang → tambahkan dua kolom
+    if ($this->bidang === 'all' && $this->desa === 'all') {
+        $data[] = $pengajuan->user->posyandu->desa ?? '-';
+        $data[] = $pengajuan->bidang->nama_bidang ?? '-';
+    }else if( $this->bidang === 'all'){
+        $data[] = $pengajuan->bidang->nama_bidang ?? '-';
+    }else if( $this->desa === 'all'){
+        $data[] = $pengajuan->user->posyandu->desa ?? '-';
     }
+
+    return $data;
+}
+
 
     /** LOGO DI ATAS TABEL **/
     public function drawings()
@@ -227,9 +279,11 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
                     $sheet->mergeCells('A6:B6');
                     $sheet->setCellValue('A6', strtoupper($this->bidang));
                     $sheet->getStyle('A6')->getFont()->setBold(true);
+                }else if($this->bidang === 'all' && $this->desa === 'all'){
+                    $sheet->mergeCells('A6:B6');
+                    $sheet->setCellValue('A6', strtoupper('Semua pengajuan'));
+                    $sheet->getStyle('A6')->getFont()->setBold(true);
                 }
-
-
 
                 // header tabel
                 $sheet->setCellValue('A7', 'NO.');
@@ -249,6 +303,14 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
                 $sheet->setCellValue('J8', 'KUNJUNGAN');
                 $sheet->setCellValue('K8', 'DISETUJUI');
                 $sheet->setCellValue('L8', 'DITOLAK');
+                if( $this->bidang === 'all' && $this->desa === 'all') {
+                    $sheet->setCellValue('N7', 'DESA');
+                    $sheet->setCellValue('O7', 'BIDANG');
+                }else if( $this->bidang === 'all'){
+                    $sheet->setCellValue('N7', 'BIDANG');
+                }else if( $this->desa === 'all'){
+                    $sheet->setCellValue('N7', 'DESA');
+                }
 
                 $merge = [
                     'A7:A8',
@@ -263,10 +325,19 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
                     'M7:M8',
                     'A6:B6'
                 ];
+                $maxCell='M';
+                if( $this->bidang === 'all' && $this->desa === 'all') {
+                    $merge[] = 'N7:N8';
+                    $merge[] = 'O7:O8';
+                    $maxCell='O';
+                }else {
+                    $merge[] = 'N7:N8';
+                    $maxCell='N';
+                }
                 foreach ($merge as $range) $sheet->mergeCells($range);
 
                 $highestRow = $sheet->getHighestRow();
-                $sheet->getStyle('A7:M' . $highestRow)->applyFromArray([
+                $sheet->getStyle('A7:'.$maxCell . $highestRow)->applyFromArray([
                     'borders' => [
                         'allBorders' => [
                             'borderStyle' => Border::BORDER_THIN,
@@ -280,11 +351,12 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
                     ],
                 ]);
 
-                $sheet->getStyle('A7:M8')->getFont()->setBold(true);
-                foreach (range('A', 'M') as $col)
+                $sheet->getStyle('A7:'.$maxCell.'8')->getFont()->setBold(true);
+                foreach (range('A', $maxCell) as $col)
                     $sheet->getColumnDimension($col)->setAutoSize(true);
 
                 $sheet->getRowDimension(1)->setRowHeight(80);
+                
             },
         ];
     }
