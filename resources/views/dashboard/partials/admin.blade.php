@@ -162,9 +162,9 @@
         document.getElementById('exportExcelBtn').addEventListener('click', function() {
             // HTML untuk select bidang (selalu muncul)
             let bidangSelectHTML = `
-            <div>
-                <label class="block font-semibold mb-1 text-gray-700">Pilih Bidang:</label>
-                <select id="selectBidang" class="w-full border rounded-md p-2" required>
+            <div class="flex flex-col justify-start">
+                <label class="block text-start font-semibold mb-1 text-gray-700">Pilih Bidang:</label>
+                <select id="selectBidang" class="w-full  border rounded-md p-2" required>
                     <option value="" disabled selected>Pilih Bidang</option>
                     <option value="all">Semua Bidang</option>
                     <option value="Bidang Perumahan Rakyat">Bidang Perumahan Rakyat</option>
@@ -179,10 +179,12 @@
 
             // HTML untuk select desa (hanya tampil jika role = kabid)
             let desaSelectHTML = "";
+            const labelPilihanExport = (userRole === 'kabid') ? 'Pilih Bidang & Desa untuk Di-Export' : (
+                userRole === 'ketua-kader') ? 'Pilih Bidang untuk Di-Export' : '';
             @if (Auth::user()->role === 'kabid')
                 desaSelectHTML = `
-                <div>
-                    <label class="block font-semibold mb-1 text-gray-700">Pilih Desa:</label>
+                <div class="flex flex-col justify-start">
+                    <label class="block text-start font-semibold mb-1 text-gray-700">Pilih Desa:</label>
                     <select id="selectDesa" class="w-full border rounded-md p-2" required>
                         <option value="" disabled selected>Pilih Desa</option>
                         <option value="all">Semua Desa</option>
@@ -193,29 +195,33 @@
                 </div>
             `;
             @endif
-
             Swal.fire({
-                title: '<h2 class="text-xl font-bold text-gray-800 mb-2">Pilih Bidang & Desa untuk Di-Export</h2>',
+                title: `<h2 class="text-xl font-bold text-gray-800 mb-2">${labelPilihanExport}</h2>`,
                 html: `
-                <div class="space-y-4">
-                    ${bidangSelectHTML}
-                    ${desaSelectHTML}
-                    <button id="confirmExportBtn"
-                        class="swal2-confirm swal2-styled !mx-0 !bg-emerald-600 hover:!bg-emerald-700 w-full py-4 rounded-md text-white font-bold shadow-lg">
-                        Export Data
-                    </button>
-                </div>
-            `,
+        <div class="space-y-8">
+            ${bidangSelectHTML}
+            ${desaSelectHTML}
+            <div class="flex justify-between gap-4 mt-6">
+                <button id="cancelExportBtn"
+                    class=" bg-red-500 text-white hover:bg-red-700 hover:text-white font-medium rounded-md py-3 px-6 w-1/2 shadow">
+                    Batal
+                </button>
+                <button id="confirmExportBtn"
+                    class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-md py-3 px-6 w-1/2 shadow">
+                    Export Data
+                </button>
+            </div>
+        </div>
+    `,
                 showConfirmButton: false,
-                showCancelButton: true,
-                cancelButtonText: 'Batal',
+                showCancelButton: false,
                 width: 600,
                 background: '#f9fafb',
                 customClass: {
-                    popup: 'rounded-md md:rounded-2xl shadow-lg p-4 md:p-6',
-                    cancelButton: 'bg-white outline outline-red-500 mt-4 text-red-500 hover:text-red-600 font-medium hover:bg-red-500 hover:text-white text-base md:text-lg py-2 px-6'
+                    popup: 'rounded-md md:rounded-2xl shadow-lg p-4 md:p-6'
                 }
             });
+
 
             // Tangani klik tombol export
             document.addEventListener('click', function handler(e) {
@@ -250,6 +256,19 @@
                             confirmButtonText: 'OK'
                         });
                         return;
+                    }
+                    if (e.target.id === 'confirmExportBtn') {
+                        const bidang = document.getElementById('selectBidang').value;
+                        let desa = userRole === 'ketua-kader' ?
+                            userDesa :
+                            document.getElementById('selectDesa').value;
+
+                        exportData(bidang, desa);
+                        document.removeEventListener('click', handler);
+                    }
+
+                    if (e.target.id === 'cancelExportBtn') {
+                        Swal.close(); 
                     }
                     exportData(bidang, desa);
                     document.removeEventListener('click', handler);
