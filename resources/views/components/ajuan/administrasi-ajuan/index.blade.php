@@ -2,7 +2,8 @@
 @section('title', 'Administrasi Ajuan')
 @section('content')
     <div class="w-full sm:max-w-3xl mt-6 px-6 py-8 bg-white shadow-md overflow-hidden sm:rounded-lg z-10">
-        <form method="POST" action="{{ route('ajuan.store.administrasi') }}" enctype="multipart/form-data">
+        <form method="POST" action="{{ route('ajuan.store.administrasi') }}" enctype="multipart/form-data"
+            id="form-administrasi">
             @csrf
             <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">Administrasi Ajuan</h2>
 
@@ -29,7 +30,7 @@
                                 </div>
                                 <label for="ktp"
                                     class="absolute inset-y-0 right-0 flex items-center px-4 bg-pink-500 text-white rounded-r-md cursor-pointer hover:bg-pink-600">
-                                    <x-untitledui-upload class="w-5 h-5"/>
+                                    <x-untitledui-upload class="w-5 h-5" />
                                 </label>
                                 <input id="ktp" class="hidden" type="file" name="ktp"
                                     accept="image/*,application/pdf"
@@ -72,7 +73,7 @@
                                 </div>
                                 <label for="kk"
                                     class="absolute inset-y-0 right-0 flex items-center px-4 bg-pink-500 text-white rounded-r-md cursor-pointer hover:bg-pink-600">
-                                    <x-untitledui-upload class="w-5 h-5"/>
+                                    <x-untitledui-upload class="w-5 h-5" />
                                 </label>
                                 <input id="kk" class="hidden" type="file" name="kk"
                                     accept="image/*,application/pdf"
@@ -115,7 +116,7 @@
                                 </div>
                                 <label for="{{ $key }}"
                                     class="absolute inset-y-0 right-0 flex items-center px-4 bg-pink-500 text-white rounded-r-md cursor-pointer hover:bg-pink-600">
-                                    <x-untitledui-upload class="w-5 h-5"/>
+                                    <x-untitledui-upload class="w-5 h-5" />
                                 </label>
                                 <input id="{{ $key }}" class="hidden" type="file" name="{{ $key }}"
                                     accept="image/*,application/pdf"
@@ -155,8 +156,10 @@
             <div class="flex items-center justify-end mt-8 space-x-4">
                 <a href="{{ url()->previous() }}" id="kembali-administrasi"
                     class="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm md:text-base font-medium text-gray-700 bg-white hover:bg-gray-50">Kembali</a>
-                <button type="submit" id="submit-pengajuan"
-                    class="inline-flex items-center px-8 py-2 bg-pink-500 border border-transparent rounded-md font-semibold text-sm md:text-base text-white hover:bg-pink-600">Kirim</button>
+                <button type="button" id="submit-pengajuan"
+                    class="inline-flex items-center px-8 py-2 bg-pink-500 border border-transparent rounded-md font-semibold text-sm md:text-base text-white hover:bg-pink-600">
+                    Kirim
+                </button>
             </div>
         </form>
 
@@ -190,14 +193,14 @@
                         text: '',
                         icon: 'warning',
                         showCancelButton: true,
-                        confirmButtonText: '<i class="fa-solid fa-arrow-left"></i> Ya, kembali',
+                        confirmButtonText: '<i class="fa-solid fa-arrow-left"></i> Ya, Kirim',
                         cancelButtonText: '<i class="fa-solid fa-times"></i> Batal',
                         confirmButtonColor: '#ec4899',
                         cancelButtonColor: '#6b7280',
                         reverseButtons: true
                     }).then((result) => {
                         if (result.isConfirmed) {
-                            window.location.href = this.href;
+                            document.getElementById('form-administrasi').submit();
                         }
                     });
                 });

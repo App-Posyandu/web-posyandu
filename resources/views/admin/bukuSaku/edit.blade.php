@@ -1,9 +1,9 @@
 @extends('dashboard.layouts.dashboard')
-@section('title', 'Edit Buku Saku')
+@section('title', 'Edit Dokumen')
 @section('content')
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Ubah Buku Saku') }}
+            {{ __('Ubah Dokumen') }}
         </h2>
     </x-slot>
 
@@ -15,11 +15,11 @@
                         @csrf
                         @method('PATCH')
 
-                        <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">Formulir Ubah Buku Saku</h2>
+                        <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">Formulir Ubah Dokumen</h2>
 
                         <div class="space-y-4">
                             <div>
-                                <x-input-label for="title" :value="__('Judul Buku Saku')" />
+                                <x-input-label for="title" :value="__('Judul Dokumen')" />
                                 <x-text-input id="title" class="block mt-1 w-full" type="text" name="title"
                                     :value="old('title', $bukuSaku->title)" required autofocus />
                                 <x-input-error :messages="$errors->get('title')" class="mt-2" />

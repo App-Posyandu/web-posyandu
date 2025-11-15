@@ -181,10 +181,25 @@
 
             {{-- Container Accordion 3 Tahap --}}
             @if ($ajuan->status_pengajuan === 'Diproses')
-                <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-8 w-full max-w-5xl" x-data="{
+                <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-8 w-full max-w-4xl" x-data="{
                     step1Open: {{ !$ajuan->sudah_verifikasi ? 'true' : 'false' }},
                     step2Open: {{ $ajuan->sudah_verifikasi && !$ajuan->kunjungan_lapangan ? 'true' : 'false' }},
-                    step3Open: {{ $ajuan->sudah_verifikasi && $ajuan->kunjungan_lapangan && !$ajuan->ttd_kader ? 'true' : 'false' }}
+                    step3Open: {{ $ajuan->sudah_verifikasi && $ajuan->kunjungan_lapangan && !$ajuan->ttd_kader ? 'true' : 'false' }},
+                    toggleStep(step) {
+                        if (step === 1) {
+                            this.step1Open = !this.step1Open;
+                            this.step2Open = false;
+                            this.step3Open = false;
+                        } else if (step === 2 && {{ $ajuan->sudah_verifikasi ? 'true' : 'false' }}) {
+                            this.step1Open = false;
+                            this.step2Open = !this.step2Open;
+                            this.step3Open = false;
+                        } else if (step === 3 && {{ $ajuan->kunjungan_lapangan ? 'true' : 'false' }}) {
+                            this.step1Open = false;
+                            this.step2Open = false;
+                            this.step3Open = !this.step3Open;
+                        }
+                    }
                 }">
 
                     <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Proses Verifikasi Pengajuan</h2>
@@ -196,17 +211,19 @@
                         class="mb-4 border rounded-lg overflow-hidden {{ $ajuan->sudah_verifikasi ? 'bg-green-50 border-green-300' : 'bg-white border-gray-300' }}">
 
                         {{-- Header Accordion --}}
-                        <button @click="step1Open = !step1Open" type="button"
-                            class="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition">
+                        <button @click="toggleStep(1)" type="button"
+                            class="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors duration-200">
                             <div class="flex items-center space-x-3">
                                 @if ($ajuan->sudah_verifikasi)
-                                    <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <svg class="w-6 h-6 text-green-600 transition-transform duration-300"
+                                        :class="step1Open ? 'scale-110' : ''" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd"
                                             d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
                                             clip-rule="evenodd" />
                                     </svg>
                                 @else
-                                    <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <svg class="w-6 h-6 text-blue-600 transition-transform duration-300"
+                                        :class="step1Open ? 'scale-110' : ''" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd"
                                             d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z"
                                             clip-rule="evenodd" />
@@ -221,8 +238,8 @@
                                     @endif
                                 </span>
                             </div>
-                            <svg class="w-5 h-5 transition-transform" :class="step1Open ? 'rotate-180' : ''"
-                                fill="currentColor" viewBox="0 0 20 20">
+                            <svg class="w-5 h-5 transition-transform duration-300 ease-in-out"
+                                :class="step1Open ? 'rotate-180' : 'rotate-0'" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd"
                                     d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
                                     clip-rule="evenodd" />
@@ -230,7 +247,12 @@
                         </button>
 
                         {{-- Content Accordion --}}
-                        <div x-show="step1Open" x-collapse>
+                        <div x-show="step1Open" x-transition:enter="transition ease-out duration-300"
+                            x-transition:enter-start="opacity-0 transform -translate-y-2"
+                            x-transition:enter-end="opacity-100 transform translate-y-0"
+                            x-transition:leave="transition ease-in duration-200"
+                            x-transition:leave-start="opacity-100 transform translate-y-0"
+                            x-transition:leave-end="opacity-0 transform -translate-y-2" style="display: none;">
                             <div class="px-6 py-4 border-t">
                                 <form method="POST" action="{{ route('ajuan.verify', $ajuan) }}">
                                     @csrf
@@ -367,18 +389,19 @@
                         class="mb-4 border rounded-lg overflow-hidden {{ $ajuan->kunjungan_lapangan ? 'bg-green-50 border-green-300' : ($ajuan->sudah_verifikasi ? 'bg-white border-gray-300' : 'bg-gray-100 border-gray-200') }}">
 
                         {{-- Header Accordion --}}
-                        <button @click="step2Open = !step2Open" type="button"
-                            {{ !$ajuan->sudah_verifikasi ? 'disabled' : '' }}
-                            class="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition {{ !$ajuan->sudah_verifikasi ? 'cursor-not-allowed opacity-50' : '' }}">
+                        <button @click="toggleStep(2)" type="button" {{ !$ajuan->sudah_verifikasi ? 'disabled' : '' }}
+                            class="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors duration-200 {{ !$ajuan->sudah_verifikasi ? 'cursor-not-allowed opacity-50' : '' }}">
                             <div class="flex items-center space-x-3">
                                 @if ($ajuan->kunjungan_lapangan)
-                                    <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <svg class="w-6 h-6 text-green-600 transition-transform duration-300"
+                                        :class="step2Open ? 'scale-110' : ''" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd"
                                             d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
                                             clip-rule="evenodd" />
                                     </svg>
                                 @elseif ($ajuan->sudah_verifikasi)
-                                    <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <svg class="w-6 h-6 text-blue-600 transition-transform duration-300"
+                                        :class="step2Open ? 'scale-110' : ''" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd"
                                             d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z"
                                             clip-rule="evenodd" />
@@ -401,8 +424,8 @@
                                     @endif
                                 </span>
                             </div>
-                            <svg class="w-5 h-5 transition-transform" :class="step2Open ? 'rotate-180' : ''"
-                                fill="currentColor" viewBox="0 0 20 20">
+                            <svg class="w-5 h-5 transition-transform duration-300 ease-in-out"
+                                :class="step2Open ? 'rotate-180' : 'rotate-0'" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd"
                                     d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
                                     clip-rule="evenodd" />
@@ -411,7 +434,12 @@
 
                         {{-- Content Accordion --}}
                         @if ($ajuan->sudah_verifikasi)
-                            <div x-show="step2Open" x-collapse>
+                            <div x-show="step2Open" x-transition:enter="transition ease-out duration-300"
+                                x-transition:enter-start="opacity-0 transform -translate-y-2"
+                                x-transition:enter-end="opacity-100 transform translate-y-0"
+                                x-transition:leave="transition ease-in duration-200"
+                                x-transition:leave-start="opacity-100 transform translate-y-0"
+                                x-transition:leave-end="opacity-0 transform -translate-y-2" style="display: none;">
                                 <div class="px-6 py-4 border-t">
                                     <form method="POST" action="{{ route('ajuan.verify', $ajuan) }}">
                                         @csrf
@@ -531,6 +559,7 @@
                             </div>
                         @endif
                     </div>
+
                     {{-- ========================================= --}}
                     {{-- TAHAP 3: Keputusan Akhir --}}
                     {{-- ========================================= --}}
@@ -538,18 +567,19 @@
                         class="border rounded-lg overflow-hidden {{ $ajuan->ttd_kader ? 'bg-green-50 border-green-300' : ($ajuan->kunjungan_lapangan ? 'bg-white border-gray-300' : 'bg-gray-100 border-gray-200') }}">
 
                         {{-- Header Accordion --}}
-                        <button @click="step3Open = !step3Open" type="button"
-                            {{ !$ajuan->kunjungan_lapangan ? 'disabled' : '' }}
-                            class="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition {{ !$ajuan->kunjungan_lapangan ? 'cursor-not-allowed opacity-50' : '' }}">
+                        <button @click="toggleStep(3)" type="button" {{ !$ajuan->kunjungan_lapangan ? 'disabled' : '' }}
+                            class="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors duration-200 {{ !$ajuan->kunjungan_lapangan ? 'cursor-not-allowed opacity-50' : '' }}">
                             <div class="flex items-center space-x-3">
                                 @if ($ajuan->ttd_kader)
-                                    <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <svg class="w-6 h-6 text-green-600 transition-transform duration-300"
+                                        :class="step3Open ? 'scale-110' : ''" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd"
                                             d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
                                             clip-rule="evenodd" />
                                     </svg>
                                 @elseif ($ajuan->kunjungan_lapangan)
-                                    <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <svg class="w-6 h-6 text-blue-600 transition-transform duration-300"
+                                        :class="step3Open ? 'scale-110' : ''" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd"
                                             d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z"
                                             clip-rule="evenodd" />
@@ -572,8 +602,8 @@
                                     @endif
                                 </span>
                             </div>
-                            <svg class="w-5 h-5 transition-transform" :class="step3Open ? 'rotate-180' : ''"
-                                fill="currentColor" viewBox="0 0 20 20">
+                            <svg class="w-5 h-5 transition-transform duration-300 ease-in-out"
+                                :class="step3Open ? 'rotate-180' : 'rotate-0'" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd"
                                     d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
                                     clip-rule="evenodd" />
@@ -582,7 +612,12 @@
 
                         {{-- Content Accordion --}}
                         @if ($ajuan->kunjungan_lapangan)
-                            <div x-show="step3Open" x-collapse>
+                            <div x-show="step3Open" x-transition:enter="transition ease-out duration-300"
+                                x-transition:enter-start="opacity-0 transform -translate-y-2"
+                                x-transition:enter-end="opacity-100 transform translate-y-0"
+                                x-transition:leave="transition ease-in duration-200"
+                                x-transition:leave-start="opacity-100 transform translate-y-0"
+                                x-transition:leave-end="opacity-0 transform -translate-y-2" style="display: none;">
                                 <div class="px-6 py-4 border-t">
                                     <form method="POST" action="{{ route('ajuan.verify', $ajuan) }}">
                                         @csrf
@@ -752,6 +787,8 @@
                             </div>
                         @endif
                     </div>
+
+                </div>
             @endif
         @endif
     </div>

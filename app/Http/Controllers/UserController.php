@@ -106,11 +106,11 @@ class UserController extends Controller
 
         $validationRules = [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            // 'email' => ['nullable', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', Password::defaults()],
             'role' => ['required', Rule::in($allowedRoles)],
             'posyandu_id' => ['nullable', 'uuid', 'exists:posyandus,id'],
-            'nik' => ['required', 'string', 'digits:16', 'unique:users'],
+            // 'nik' => ['required', 'string', 'digits:16', 'unique:users'],
             'alamat' => ['required', 'string'],
             'no_telepon' => ['required', 'string', 'max:20', 'unique:users'],
             'tempat_lahir' => ['required', 'string', 'max:255'],

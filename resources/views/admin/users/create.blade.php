@@ -19,17 +19,10 @@
                         </div>
 
                         <div>
-                            <x-input-label for="nik" :value="__('NIK')" />
-                            <x-text-input id="nik" class="block mt-1 w-full" type="text" name="nik"
-                                :value="old('nik')" required placeholder="Masukkan 16 digit NIK" />
-                            <x-input-error :messages="$errors->get('nik')" class="mt-2" />
-                        </div>
-
-                        <div class="md:col-span-2">
-                            <x-input-label for="email" :value="__('Email')" />
-                            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email"
-                                :value="old('email')" required placeholder="contoh@email.com" />
-                            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+                            <x-input-label for="no_telepon" :value="__('Nomor Whatsapp')" />
+                            <x-text-input id="no_telepon" class="block mt-1 w-full" type="text" name="no_telepon"
+                                :value="old('no_telepon')" required />
+                            <x-input-error :messages="$errors->get('no_telepon')" class="mt-2" />
                         </div>
 
                         <div class="md:col-span-2">
@@ -66,12 +59,6 @@
                             <x-input-error :messages="$errors->get('jenis_kelamin')" class="mt-2" />
                         </div>
 
-                        <div>
-                            <x-input-label for="no_telepon" :value="__('Nomor Telepon')" />
-                            <x-text-input id="no_telepon" class="block mt-1 w-full" type="text" name="no_telepon"
-                                :value="old('no_telepon')" required />
-                            <x-input-error :messages="$errors->get('no_telepon')" class="mt-2" />
-                        </div>
 
                         <div>
                             <x-input-label for="posyandu_id" :value="__('Posyandu (Opsional)')" />
@@ -103,7 +90,6 @@
                                     <option value="ketua-kader" @selected(old('role') == 'ketua-kader')>Ketua Kader</option>
                                     <option value="kabid" @selected(old('role') == 'kabid')>Kabid</option>
                                     <option value="admin" @selected(old('role') == 'admin')>Admin</option>
-
                                 @elseif ($currentUserRole === 'kabid')
                                     <option value="ketua-kader" @selected(true)>Ketua Kader</option>
                                 @elseif ($currentUserRole === 'ketua-kader')
@@ -131,8 +117,8 @@
 
                         <div>
                             <x-input-label for="password" :value="__('Password')" />
-                            <x-text-input id="password" class="block mt-1 w-full" type="password" name="password"
-                                required autocomplete="new-password" />
+                            <x-text-input id="password" class="block mt-1 w-full" type="password" name="password" required
+                                autocomplete="new-password" />
                             <x-input-error :messages="$errors->get('password')" class="mt-2" />
                         </div>
 
@@ -144,8 +130,15 @@
                     </div>
 
                     <div class="flex items-center justify-end mt-8 gap-4">
-                        <a href="{{ route('admin.users.index') }}"
-                            class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md text-sm font-semibold hover:bg-gray-300">Batal</a>
+                        @php
+                            $cancelUrl = request()->has('source')
+                                ? route('admin.posyandu.create')
+                                : route('admin.users.index');
+                        @endphp
+                        <a href="{{ $cancelUrl }}"
+                            class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md text-sm font-semibold hover:bg-gray-300">
+                            Batal
+                        </a>
                         <x-primary-button>
                             {{ __('Simpan Pengguna') }}
                         </x-primary-button>

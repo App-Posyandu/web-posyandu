@@ -1,11 +1,11 @@
 @extends('dashboard.layouts.dashboard')
-@section('title', 'Buku Saku')
+@section('title', 'Dokumen')
 @section('content')
     <div class="w-full max-w-7xl mx-auto min-h-[70vh]" x-data="{ showModal: false, pdfUrl: '', pdfTitle: '' }" @keydown.escape.window="showModal = false">
 
         <x-slot name="header">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Buku Saku') }}
+                {{ __('Dokumen') }}
             </h2>
         </x-slot>
 
@@ -85,7 +85,7 @@
                                     </div>
                                 </div>
                             @empty
-                                <p class="text-gray-500">Belum ada buku saku yang diunggah.</p>
+                                <p class="text-gray-500">Belum ada dokumen yang diunggah.</p>
                             @endforelse
                         </div>
 

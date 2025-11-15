@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignUuid('bidang_id')->nullable();
             $table->foreignUuid('posyandu_id')->nullable();
             $table->string('name');
-            $table->string('email')->unique();
+            $table->string('email')->unique()->nullable();
             $table->string('no_telepon', 20)->unique()->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
