@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "7e99e7fb9950d600b4b2144c2dc7b2b2",
+    "content-hash": "34b9df47f816034f7e5f3fe442ac8e54",
     "packages": [
         {
             "name": "barryvdh/laravel-dompdf",
@@ -82,6 +82,87 @@
                 }
             ],
             "time": "2025-02-13T15:07:54+00:00"
+        },
+        {
+            "name": "blade-ui-kit/blade-icons",
+            "version": "1.8.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/driesvints/blade-icons.git",
+                "reference": "7b743f27476acb2ed04cb518213d78abe096e814"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/driesvints/blade-icons/zipball/7b743f27476acb2ed04cb518213d78abe096e814",
+                "reference": "7b743f27476acb2ed04cb518213d78abe096e814",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/contracts": "^8.0|^9.0|^10.0|^11.0|^12.0",
+                "illuminate/filesystem": "^8.0|^9.0|^10.0|^11.0|^12.0",
+                "illuminate/support": "^8.0|^9.0|^10.0|^11.0|^12.0",
+                "illuminate/view": "^8.0|^9.0|^10.0|^11.0|^12.0",
+                "php": "^7.4|^8.0",
+                "symfony/console": "^5.3|^6.0|^7.0",
+                "symfony/finder": "^5.3|^6.0|^7.0"
+            },
+            "require-dev": {
+                "mockery/mockery": "^1.5.1",
+                "orchestra/testbench": "^6.0|^7.0|^8.0|^9.0|^10.0",
+                "phpunit/phpunit": "^9.0|^10.5|^11.0"
+            },
+            "bin": [
+                "bin/blade-icons-generate"
+            ],
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "BladeUI\\Icons\\BladeIconsServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "files": [
+                    "src/helpers.php"
+                ],
+                "psr-4": {
+                    "BladeUI\\Icons\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Dries Vints",
+                    "homepage": "https://driesvints.com"
+                }
+            ],
+            "description": "A package to easily make use of icons in your Laravel Blade views.",
+            "homepage": "https://github.com/blade-ui-kit/blade-icons",
+            "keywords": [
+                "blade",
+                "icons",
+                "laravel",
+                "svg"
+            ],
+            "support": {
+                "issues": "https://github.com/blade-ui-kit/blade-icons/issues",
+                "source": "https://github.com/blade-ui-kit/blade-icons"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/sponsors/driesvints",
+                    "type": "github"
+                },
+                {
+                    "url": "https://www.paypal.com/paypalme/driesvints",
+                    "type": "paypal"
+                }
+            ],
+            "time": "2025-02-13T20:35:06+00:00"
         },
         {
             "name": "brick/math",
@@ -3079,6 +3160,71 @@
             "time": "2025-07-25T09:04:22+00:00"
         },
         {
+            "name": "mckenziearts/blade-untitledui-icons",
+            "version": "v1.4.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/mckenziearts/blade-untitledui-icons.git",
+                "reference": "6999f08ec6d9c9b42427a247e2acfcbfefd930c9"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/mckenziearts/blade-untitledui-icons/zipball/6999f08ec6d9c9b42427a247e2acfcbfefd930c9",
+                "reference": "6999f08ec6d9c9b42427a247e2acfcbfefd930c9",
+                "shasum": ""
+            },
+            "require": {
+                "blade-ui-kit/blade-icons": "^1.6",
+                "illuminate/support": "^9.0|^10.0|^11.0|^12.0",
+                "php": "^8.1"
+            },
+            "require-dev": {
+                "orchestra/testbench": "^7.0|^8.0|^9.0|^10",
+                "phpunit/phpunit": "^9.0|^10.5|^11.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Mckenziearts\\BladeUntitledUIIcons\\BladeUntitledUIIconsServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Mckenziearts\\BladeUntitledUIIcons\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Arthur Monney",
+                    "homepage": "https://arthurmonney.me"
+                }
+            ],
+            "description": "A package to easily make use of UntitledUI icons in your Laravel Blade views.",
+            "homepage": "https://github.com/mckenziearts/blade-untitledui-icons",
+            "keywords": [
+                "Untitled UI",
+                "blade",
+                "laravel"
+            ],
+            "support": {
+                "issues": "https://github.com/mckenziearts/blade-untitledui-icons/issues",
+                "source": "https://github.com/mckenziearts/blade-untitledui-icons/tree/v1.4.0"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/mckenziearts",
+                    "type": "github"
+                }
+            ],
+            "time": "2025-02-25T12:25:58+00:00"
+        },
+        {
             "name": "monolog/monolog",
             "version": "3.9.0",
             "source": {
@@ -4745,6 +4891,51 @@
                 "source": "https://github.com/MyIntervals/PHP-CSS-Parser/tree/v8.9.0"
             },
             "time": "2025-07-11T13:20:48+00:00"
+        },
+        {
+            "name": "sweetalert2/laravel",
+            "version": "1.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/sweetalert2/sweetalert2-laravel.git",
+                "reference": "d7cf99372491d65e5254b604470ff3154dacb80a"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/sweetalert2/sweetalert2-laravel/zipball/d7cf99372491d65e5254b604470ff3154dacb80a",
+                "reference": "d7cf99372491d65e5254b604470ff3154dacb80a",
+                "shasum": ""
+            },
+            "require": {
+                "laravel/framework": "^11.0 || ^12.0"
+            },
+            "suggest": {
+                "inertiajs/inertia-laravel": "Required to use SweetAlert2 with Inertia.js shared flash data.",
+                "livewire/livewire": "Required to have the WithSweetAlert trait use Livewire events to show popups on Livewire updates."
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "SweetAlert2\\Laravel\\ServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "SweetAlert2\\Laravel\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Official SweetAlert2 integration for Laravel framework",
+            "support": {
+                "issues": "https://github.com/sweetalert2/sweetalert2-laravel/issues",
+                "source": "https://github.com/sweetalert2/sweetalert2-laravel/tree/1.1.0"
+            },
+            "time": "2025-10-12T13:09:18+00:00"
         },
         {
             "name": "symfony/clock",

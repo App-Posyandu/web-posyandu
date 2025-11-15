@@ -2,7 +2,7 @@
 @section('title', 'Tambah Data Posyandu')
 @section('content')
     <div class="w-full max-w-4xl mx-auto sm:px-6 lg:px-8">
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+        <div class="bg-white shadow-sm sm:rounded-lg">
             <div class="p-8 text-gray-900">
 
                 <form method="POST" action="{{ route('admin.posyandu.store') }}" x-data="dependentDropdowns()">

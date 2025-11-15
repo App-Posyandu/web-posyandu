@@ -29,7 +29,7 @@
                     <div class="p-6 text-gray-900">
 
                         <div class="flex justify-between items-center mb-6">
-                            <h2 class="text-2xl font-bold text-gray-800">Daftar Buku Saku</h2>
+                            <h2 class="text-2xl font-bold text-gray-800">Daftar Dokumen</h2>
                             @can('create', \App\Models\BukuSaku::class)
                                 <a href="{{ route('buku_saku.create') }}"
                                     class="px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600">

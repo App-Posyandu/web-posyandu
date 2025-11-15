@@ -68,9 +68,9 @@
         </div>
     </div>
 
+    @include('sweetalert2::index')
     <script src="{{ asset('/sw.js') }}"></script>
     <script src="{{ asset('pwa-install.js') }}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     @stack('scripts')
     <script>
         if ("serviceWorker" in navigator) {
