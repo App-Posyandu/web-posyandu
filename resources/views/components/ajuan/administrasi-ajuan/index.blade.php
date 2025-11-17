@@ -162,47 +162,111 @@
                 </button>
             </div>
         </form>
-
         @push('scripts')
             <script>
-                document.getElementById('kembali-administrasi').addEventListener('click', function(e) {
-                    e.preventDefault();
+                let isSubmitting = false;
 
-                    Swal.fire({
-                        title: 'Kembali ke Halaman Sebelumnya?',
-                        text: 'Data yang belum disimpan akan hilang.',
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonText: '<i class="fa-solid fa-arrow-left"></i> Ya, kembali',
-                        cancelButtonText: '<i class="fa-solid fa-times"></i> Batal',
-                        confirmButtonColor: '#ec4899',
-                        cancelButtonColor: '#6b7280',
-                        reverseButtons: true
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            window.location.href = this.href;
-                        }
-                    });
+                window.addEventListener('beforeunload', function(e) {
+                    if (isSubmitting) return undefined;
+
+                    e.preventDefault();
+                    e.returnValue = '';
+                    return '';
                 });
 
-                document.getElementById('submit-pengajuan').addEventListener('click', function(e) {
-                    e.preventDefault();
+                document.addEventListener('DOMContentLoaded', function() {
 
-                    Swal.fire({
-                        title: 'Apakah data yang dikirim sudah benar?',
-                        text: '',
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonText: '<i class="fa-solid fa-arrow-left"></i> Ya, Kirim',
-                        cancelButtonText: '<i class="fa-solid fa-times"></i> Batal',
-                        confirmButtonColor: '#ec4899',
-                        cancelButtonColor: '#6b7280',
-                        reverseButtons: true
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            document.getElementById('form-administrasi').submit();
+                    // ============================================
+                    // INTERCEPT SEMUA LINK NAVIGASI
+                    // ============================================
+                    const links = document.querySelectorAll('a:not([id="kembali-administrasi"])');
+
+                    links.forEach(link => {
+                        const href = link.getAttribute('href');
+                        if (!href || href === '#' || href.startsWith('javascript:')) {
+                            return;
                         }
+
+                        link.addEventListener('click', function(e) {
+                            if (isSubmitting) return;
+
+                            e.preventDefault();
+                            const targetUrl = this.href;
+
+                            Swal.fire({
+                                title: 'Keluar dari Pengajuan?',
+                                text: 'Data yang sudah Anda upload akan hilang jika belum dikirim.',
+                                icon: 'warning',
+                                showCancelButton: true,
+                                confirmButtonText: '<i class="fa-solid fa-sign-out-alt"></i> Ya, keluar',
+                                cancelButtonText: '<i class="fa-solid fa-times"></i> Tetap di sini',
+                                confirmButtonColor: '#dc2626',
+                                cancelButtonColor: '#6b7280',
+                                reverseButtons: true
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    isSubmitting = true;
+                                    window.location.href = targetUrl;
+                                }
+                            });
+                        });
                     });
+
+                    // ============================================
+                    // HANDLER TOMBOL KEMBALI
+                    // ============================================
+                    const btnKembali = document.getElementById('kembali-administrasi');
+                    if (btnKembali) {
+                        btnKembali.addEventListener('click', function(e) {
+                            e.preventDefault();
+
+                            Swal.fire({
+                                title: 'Kembali ke Halaman Sebelumnya?',
+                                text: 'Data yang belum disimpan akan hilang.',
+                                icon: 'warning',
+                                showCancelButton: true,
+                                confirmButtonText: '<i class="fa-solid fa-arrow-left"></i> Ya, kembali',
+                                cancelButtonText: '<i class="fa-solid fa-times"></i> Batal',
+                                confirmButtonColor: '#ec4899',
+                                cancelButtonColor: '#6b7280',
+                                reverseButtons: true
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    isSubmitting = true;
+                                    window.location.href = this.href;
+                                }
+                            });
+                        });
+                    }
+
+                    // ============================================
+                    // HANDLER TOMBOL KIRIM (SUBMIT FORM)
+                    // ============================================
+                    const btnKirim = document.getElementById('submit-pengajuan');
+                    const form = document.getElementById('form-administrasi');
+
+                    if (btnKirim && form) {
+                        btnKirim.addEventListener('click', function(e) {
+                            e.preventDefault();
+
+                            Swal.fire({
+                                title: 'Apakah data yang dikirim sudah benar?',
+                                text: 'Pastikan semua dokumen sudah sesuai.',
+                                icon: 'question',
+                                showCancelButton: true,
+                                confirmButtonText: '<i class="fa-solid fa-paper-plane"></i> Ya, Kirim',
+                                cancelButtonText: '<i class="fa-solid fa-times"></i> Batal',
+                                confirmButtonColor: '#ec4899',
+                                cancelButtonColor: '#6b7280',
+                                reverseButtons: true
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    isSubmitting = true;
+                                    form.submit();
+                                }
+                            });
+                        });
+                    }
                 });
             </script>
         @endpush
