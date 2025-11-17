@@ -1,9 +1,9 @@
 @extends('dashboard.layouts.dashboard')
-@section('title', 'Unggah Buku Saku')
+@section('title', 'Unggah Dokumen')
 @section('content')
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Unggah Buku Saku Baru') }}
+            {{ __('Unggah Dokumen Baru') }}
         </h2>
     </x-slot>
 
@@ -13,11 +13,11 @@
                 <div class="p-8 text-gray-900">
                     <form method="POST" action="{{ route('buku_saku.store') }}" enctype="multipart/form-data">
                         @csrf
-                        <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">Formulir Buku Saku Baru</h2>
+                        <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">Formulir Dokumen Baru</h2>
 
                         <div class="space-y-4">
                             <div>
-                                <x-input-label for="title" :value="__('Judul Buku Saku')" />
+                                <x-input-label for="title" :value="__('Judul Dokumen')" />
                                 <x-text-input id="title" class="block mt-1 w-full" type="text" name="title"
                                     :value="old('title')" required autofocus />
                                 <x-input-error :messages="$errors->get('title')" class="mt-2" />

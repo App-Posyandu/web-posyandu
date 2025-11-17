@@ -66,6 +66,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/ajuan/{ajuan}/dokumen/{key}/stream', [AjuanController::class, 'streamDokumen'])->name('ajuan.dokumen.stream');
     Route::patch('/ajuan/{ajuan}/verify', [AjuanController::class, 'verifyAjuan'])->name('ajuan.verify');
     Route::get('/ajuan/cetak/{id}', [AjuanController::class, 'cetak'])->name('ajuan.cetak');
+    Route::get('/ajuan/get-items/{slug}', [AjuanController::class, 'getItemsAjax'])
+        ->name('ajuan.get-items')
+        ->middleware(['auth', 'verified']);
 
     // ✅ BUKU SAKU
     Route::resource('buku_saku', BukuSakuController::class);
@@ -91,6 +94,9 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware(['role:kabid,kader,admin,ketua-kader'])->prefix('admin')->name('admin.')->group(function () {
         Route::resource('posyandu', PosyanduController::class);
+        Route::get('admin/posyandu/clear-cache', [PosyanduController::class, 'clearWilayahCache'])
+            ->middleware(['auth', 'admin'])
+            ->name('admin.posyandu.clear-cache');
         Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
         Route::resource('users', UserController::class);
         Route::patch('/users/{user}/verify', [UserController::class, 'verify'])->name('users.verify');
@@ -99,6 +105,11 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware(['role:kabid,ketua-kader'])->prefix('admin')->name('admin.')->group(function () {
         Route::resource('posyandu', PosyanduController::class);
+        
+        Route::get('/users/import', function(){
+            return view('admin.users.import');
+        })->name('import.importPage');
+        Route::post('/users/import', [UserController::class, 'importProcess'])->name('import.importProcess');
         //Route::get('/export-all-bidang-dan-desa', [LaporanController::class, 'exportExcelAllBidangDanDesa'])->name('laporan.exportExcelAllBidangDanDesa');
 
         Route::get('/export-all/{desa}', [LaporanController::class, 'exportExcelAll'])->name('laporan.exportExcelAll');

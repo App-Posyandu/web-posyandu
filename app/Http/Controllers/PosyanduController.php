@@ -8,13 +8,38 @@ use App\Http\Requests\UpdatePosyanduRequest;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class PosyanduController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     const PROVINCE_ID = 33;
+    const API_TIMEOUT = 10; // 10 detik timeout
+    const CACHE_TTL = 3600; // Cache 1 jam
+
+    /**
+     * Helper: Fetch data dari API dengan caching dan timeout
+     */
+    private function fetchWilayahData($endpoint, $cacheKey)
+    {
+        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($endpoint) {
+            try {
+                $response = Http::timeout(self::API_TIMEOUT)
+                    ->retry(2, 100) // Retry 2x dengan delay 100ms
+                    ->get(env('API_WILAYAH_URL') . $endpoint);
+
+                if ($response->successful()) {
+                    return $response->json();
+                }
+
+                return ['data' => []];
+            } catch (\Exception $e) {
+                Log::error("Wilayah API Error: {$endpoint}", ['error' => $e->getMessage()]);
+                return ['data' => []];
+            }
+        });
+    }
+
     public function index(Request $request)
     {
         $query = Posyandu::with('users')->latest();
@@ -34,22 +59,22 @@ class PosyanduController extends Controller
         return view('admin.posyandu.index', compact('posyandus'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        $kabupatens = Http::get(env('API_WILAYAH_URL') . 'regencies/' . self::PROVINCE_ID . '.json')->json();
+        // Fetch kabupaten dengan caching
+        $kabupatens = $this->fetchWilayahData(
+            'regencies/' . self::PROVINCE_ID . '.json',
+            'kabupatens_jateng'
+        );
+
         $availableKetuas = User::where('role', 'ketua-kader')
             ->whereNull('posyandu_id')
             ->orderBy('name')
             ->get();
+
         return view('admin.posyandu.create', compact('kabupatens', 'availableKetuas'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $request->validate([
@@ -81,21 +106,18 @@ class PosyanduController extends Controller
         return redirect()->route('admin.posyandu.index')->with('success', 'Posyandu baru berhasil ditambahkan.');
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(Posyandu $posyandu)
     {
         //
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(Posyandu $posyandu)
     {
-        // Ambil daftar kabupaten di Jawa Tengah
-        $kabupatens = Http::get(env('API_WILAYAH_URL') . 'regencies/' . self::PROVINCE_ID . '.json')->json();
+        // Fetch kabupaten dengan caching
+        $kabupatens = $this->fetchWilayahData(
+            'regencies/' . self::PROVINCE_ID . '.json',
+            'kabupatens_jateng'
+        );
 
         $currentKetua = $posyandu->users()->where('role', 'ketua-kader')->first();
 
@@ -112,9 +134,6 @@ class PosyanduController extends Controller
         return view('admin.posyandu.edit', compact('posyandu', 'kabupatens', 'availableKetuas', 'currentKetua'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Posyandu $posyandu)
     {
         $request->validate([
@@ -143,9 +162,6 @@ class PosyanduController extends Controller
         return redirect()->route('admin.posyandu.index')->with('success', 'Data Posyandu berhasil diperbarui.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Posyandu $posyandu)
     {
         if ($posyandu->users()->count() > 0) {
@@ -156,18 +172,41 @@ class PosyanduController extends Controller
         return redirect()->route('admin.posyandu.index')->with('success', 'Posyandu berhasil dihapus.');
     }
 
-
+    /**
+     * Get Kecamatan by Kabupaten ID (dengan caching)
+     */
     public function getKecamatan(Request $request)
     {
         $kabupatenId = $request->query('kab_id');
-        $kecamatans = Http::get(env('API_WILAYAH_URL') . "districts/{$kabupatenId}.json")->json();
+
+        if (!$kabupatenId) {
+            return response()->json(['data' => []], 400);
+        }
+
+        $kecamatans = $this->fetchWilayahData(
+            "districts/{$kabupatenId}.json",
+            "kecamatans_{$kabupatenId}"
+        );
+
         return response()->json($kecamatans);
     }
 
+    /**
+     * Get Desa by Kecamatan ID (dengan caching)
+     */
     public function getDesa(Request $request)
     {
         $kecamatanId = $request->query('kec_id');
-        $desas = Http::get(env('API_WILAYAH_URL') . "villages/{$kecamatanId}.json")->json();
+
+        if (!$kecamatanId) {
+            return response()->json(['data' => []], 400);
+        }
+
+        $desas = $this->fetchWilayahData(
+            "villages/{$kecamatanId}.json",
+            "desas_{$kecamatanId}"
+        );
+
         return response()->json($desas);
     }
 
@@ -196,14 +235,30 @@ class PosyanduController extends Controller
         $search = $request->query('search', '');
 
         $posyandus = Posyandu::where('kabupaten', $kabupatenName)
-        ->where('kecamatan', $kecamatanName)
-        ->where('desa', $desaName)
-        ->when($search, function ($query, $search) {
-            return $query->where('nama_posyandu', 'like', "%{$search}%");
-        })
-        ->orderBy('nama_posyandu')
-        ->get(['id', 'nama_posyandu']);
+            ->where('kecamatan', $kecamatanName)
+            ->where('desa', $desaName)
+            ->when($search, function ($query, $search) {
+                return $query->where('nama_posyandu', 'like', "%{$search}%");
+            })
+            ->orderBy('nama_posyandu')
+            ->get(['id', 'nama_posyandu']);
 
         return response()->json($posyandus);
+    }
+
+    /**
+     * Clear cache wilayah (untuk admin)
+     */
+    public function clearWilayahCache()
+    {
+        Cache::forget('kabupatens_jateng');
+
+        // Clear semua cache kecamatan & desa
+        $keys = Cache::get('wilayah_cache_keys', []);
+        foreach ($keys as $key) {
+            Cache::forget($key);
+        }
+
+        return redirect()->back()->with('success', 'Cache wilayah berhasil dibersihkan.');
     }
 }

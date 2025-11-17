@@ -2,7 +2,7 @@
 @section('title', 'Tambah Data Posyandu')
 @section('content')
     <div class="w-full max-w-4xl mx-auto sm:px-6 lg:px-8">
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+        <div class="bg-white shadow-sm sm:rounded-lg">
             <div class="p-8 text-gray-900">
 
                 <form method="POST" action="{{ route('admin.posyandu.store') }}" x-data="dependentDropdowns()">
@@ -17,7 +17,8 @@
                             <x-input-error :messages="$errors->get('nama_posyandu')" class="mt-2" />
                         </div>
 
-                        <div>
+                        {{-- Combobox Ketua Kader --}}
+                        <div x-data="ketuaCombobox()" @click.away="open = false" class="relative">
                             <div class="flex justify-between items-center">
                                 <x-input-label for="ketua_kader_id" :value="__('Pilih Ketua Kader (Opsional)')" />
                                 <a href="{{ route('admin.users.create', ['source' => 'posyandu_create']) }}"
@@ -25,17 +26,40 @@
                                     + Buat User Baru
                                 </a>
                             </div>
-                            <select id="ketua_kader_id" name="ketua_kader_id"
-                                class="block mt-1 w-full border-gray-300 rounded-md shadow-sm">
-                                <option value="">-- Tidak ada/Pilih Nanti --</option>
-                                @foreach ($availableKetuas as $ketua)
-                                    <option value="{{ $ketua->id }}" @selected(old('ketua_kader_id') == $ketua->id)>
-                                        {{ $ketua->name }} ({{ $ketua->email }})
-                                    </option>
-                                @endforeach
-                            </select>
-                            <p class="mt-1 text-xs text-gray-500">Hanya menampilkan user dengan role "Ketua Kader" yang
-                                belum terhubung ke Posyandu lain. Jika user tidak ada, klik "Buat User Baru".</p>
+
+                            <input type="hidden" name="ketua_kader_id" :value="selected">
+
+                            <div class="relative">
+                                <input type="text" x-model="search" @focus="open = true" @input="open = true"
+                                    :placeholder="getSelectedName() || 'Cari Ketua Kader...'"
+                                    class="block mt-1 w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    autocomplete="off">
+
+                                <button type="button" @click="open = !open"
+                                    class="absolute inset-y-0 right-0 flex items-center px-3">
+                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <div x-show="open" x-transition
+                                class="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+
+                                <template x-for="user in filteredUsers()" :key="user.id">
+                                    <div @click="selectUser(user)" class="px-4 py-2 cursor-pointer hover:bg-indigo-50"
+                                        :class="{ 'bg-indigo-100': selected == user.id }">
+                                        <span x-text="`${user.name} (${user.email})`"></span>
+                                    </div>
+                                </template>
+
+                                <div x-show="filteredUsers().length === 0" class="px-4 py-2 text-gray-500 text-sm">
+                                    Tidak ada hasil
+                                </div>
+                            </div>
+
                             <x-input-error :messages="$errors->get('ketua_kader_id')" class="mt-2" />
                         </div>
 
@@ -82,19 +106,45 @@
                             <div class="relative">
                                 <input type="text" x-model="search" @focus="open = true" @input="open = true"
                                     :placeholder="getKecamatanName(selectedKecamatan) || 'Cari Kecamatan...'"
-                                    :disabled="kecamatanList.length === 0"
+                                    :disabled="kecamatanList.length === 0 && !loadingKecamatan"
                                     class="block mt-1 w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                                     autocomplete="off">
                                 <button type="button" @click="open = !open"
                                     class="absolute inset-y-0 right-0 flex items-center px-3"
-                                    :disabled="kecamatanList.length === 0">
-                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
+                                    :disabled="kecamatanList.length === 0 && !loadingKecamatan">
+                                    <svg x-show="!loadingKecamatan" class="w-5 h-5 text-gray-400" fill="none"
+                                        stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M19 9l-7 7-7-7"></path>
                                     </svg>
+                                    <svg x-show="loadingKecamatan" class="animate-spin h-5 w-5 text-indigo-500"
+                                        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10"
+                                            stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                        </path>
+                                    </svg>
                                 </button>
                             </div>
+
+                            {{-- Loading State --}}
+                            <div x-show="loadingKecamatan"
+                                class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
+                                <div class="px-4 py-3 flex items-center space-x-2">
+                                    <svg class="animate-spin h-4 w-4 text-indigo-500" xmlns="http://www.w3.org/2000/svg"
+                                        fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10"
+                                            stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                        </path>
+                                    </svg>
+                                    <span class="text-gray-600 text-sm">Memuat kecamatan...</span>
+                                </div>
+                            </div>
+
+                            {{-- Dropdown List --}}
                             <div x-show="open && !loadingKecamatan" x-transition
                                 class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
                                 <template
@@ -111,10 +161,6 @@
                                     Tidak ada hasil
                                 </div>
                             </div>
-                            <div x-show="loadingKecamatan"
-                                class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
-                                <div class="px-4 py-2 text-gray-500 text-sm">Memuat data kecamatan...</div>
-                            </div>
                         </div>
 
                         {{-- Combobox Desa --}}
@@ -124,19 +170,45 @@
                             <div class="relative">
                                 <input type="text" x-model="search" @focus="open = true" @input="open = true"
                                     :placeholder="getDesaName(selectedDesa) || 'Cari Desa/Kelurahan...'"
-                                    :disabled="desaList.length === 0"
+                                    :disabled="desaList.length === 0 && !loadingDesa"
                                     class="block mt-1 w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                                     autocomplete="off">
                                 <button type="button" @click="open = !open"
                                     class="absolute inset-y-0 right-0 flex items-center px-3"
-                                    :disabled="desaList.length === 0">
-                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
+                                    :disabled="desaList.length === 0 && !loadingDesa">
+                                    <svg x-show="!loadingDesa" class="w-5 h-5 text-gray-400" fill="none"
+                                        stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M19 9l-7 7-7-7"></path>
                                     </svg>
+                                    <svg x-show="loadingDesa" class="animate-spin h-5 w-5 text-indigo-500"
+                                        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10"
+                                            stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                        </path>
+                                    </svg>
                                 </button>
                             </div>
+
+                            {{-- Loading State --}}
+                            <div x-show="loadingDesa"
+                                class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
+                                <div class="px-4 py-3 flex items-center space-x-2">
+                                    <svg class="animate-spin h-4 w-4 text-indigo-500" xmlns="http://www.w3.org/2000/svg"
+                                        fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10"
+                                            stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                        </path>
+                                    </svg>
+                                    <span class="text-gray-600 text-sm">Memuat desa...</span>
+                                </div>
+                            </div>
+
+                            {{-- Dropdown List --}}
                             <div x-show="open && !loadingDesa" x-transition
                                 class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
                                 <template
@@ -153,10 +225,6 @@
                                     Tidak ada hasil
                                 </div>
                             </div>
-                            <div x-show="loadingDesa"
-                                class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
-                                <div class="px-4 py-2 text-gray-500 text-sm">Memuat data desa...</div>
-                            </div>
                         </div>
                     </div>
 
@@ -171,6 +239,7 @@
             </div>
         </div>
     </div>
+
     @push('scripts')
         <script>
             document.addEventListener('alpine:init', () => {
@@ -182,9 +251,8 @@
                     desaList: [],
                     loadingKecamatan: false,
                     loadingDesa: false,
-                    kabupatens: @json($kabupatens['data']),
+                    kabupatens: @json($kabupatens['data'] ?? []),
 
-                    // Helper function untuk mendapatkan nama dari value (format: code_name)
                     getKabupatenName(value) {
                         if (!value) return '';
                         return value.split('_').slice(1).join('_');
@@ -208,12 +276,19 @@
                         this.loadingKecamatan = true;
 
                         if (this.selectedKabupaten) {
-                            const kabId = this.selectedKabupaten.split('_')[0];
-                            const response = await fetch(
-                                `{{ route('api.kecamatan') }}?kab_id=${kabId}`);
-                            const data = await response.json();
-                            console.log(data.data);
-                            this.kecamatanList = data.data ?? [];
+                            try {
+                                const kabId = this.selectedKabupaten.split('_')[0];
+                                const response = await fetch(
+                                    `{{ route('api.kecamatan') }}?kab_id=${kabId}`);
+
+                                if (!response.ok) throw new Error('Network error');
+
+                                const data = await response.json();
+                                this.kecamatanList = data.data ?? [];
+                            } catch (error) {
+                                console.error('Error fetching kecamatan:', error);
+                                alert('Gagal memuat data kecamatan. Silakan coba lagi.');
+                            }
                         }
                         this.loadingKecamatan = false;
                     },
@@ -224,12 +299,47 @@
                         this.loadingDesa = true;
 
                         if (this.selectedKecamatan) {
-                            const kecId = this.selectedKecamatan.split('_')[0];
-                            const response = await fetch(`{{ route('api.desa') }}?kec_id=${kecId}`);
-                            const data = await response.json();
-                            this.desaList = data.data ?? [];
+                            try {
+                                const kecId = this.selectedKecamatan.split('_')[0];
+                                const response = await fetch(`{{ route('api.desa') }}?kec_id=${kecId}`);
+
+                                if (!response.ok) throw new Error('Network error');
+
+                                const data = await response.json();
+                                this.desaList = data.data ?? [];
+                            } catch (error) {
+                                console.error('Error fetching desa:', error);
+                                alert('Gagal memuat data desa. Silakan coba lagi.');
+                            }
                         }
                         this.loadingDesa = false;
+                    }
+                }));
+
+                Alpine.data('ketuaCombobox', () => ({
+                    open: false,
+                    search: '',
+                    selected: '{{ old('ketua_kader_id') }}',
+                    users: @json($availableKetuas),
+
+                    getSelectedName() {
+                        if (!this.selected) return '';
+                        const user = this.users.find(u => u.id == this.selected);
+                        return user ? `${user.name} (${user.email})` : '';
+                    },
+
+                    filteredUsers() {
+                        const keyword = this.search.toLowerCase();
+                        return this.users.filter(u =>
+                            u.name.toLowerCase().includes(keyword) ||
+                            u.email.toLowerCase().includes(keyword)
+                        );
+                    },
+
+                    selectUser(user) {
+                        this.selected = user.id;
+                        this.search = '';
+                        this.open = false;
                     }
                 }));
             });

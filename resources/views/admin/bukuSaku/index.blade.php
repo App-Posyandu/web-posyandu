@@ -1,11 +1,11 @@
 @extends('dashboard.layouts.dashboard')
-@section('title', 'Buku Saku')
+@section('title', 'Dokumen')
 @section('content')
     <div class="w-full max-w-7xl mx-auto min-h-[70vh]" x-data="{ showModal: false, pdfUrl: '', pdfTitle: '' }" @keydown.escape.window="showModal = false">
 
         <x-slot name="header">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Buku Saku') }}
+                {{ __('Dokumen') }}
             </h2>
         </x-slot>
 
@@ -29,7 +29,7 @@
                     <div class="p-6 text-gray-900">
 
                         <div class="flex justify-between items-center mb-6">
-                            <h2 class="text-2xl font-bold text-gray-800">Daftar Buku Saku</h2>
+                            <h2 class="text-2xl font-bold text-gray-800">Daftar Dokumen</h2>
                             @can('create', \App\Models\BukuSaku::class)
                                 <a href="{{ route('buku_saku.create') }}"
                                     class="px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600">
@@ -85,7 +85,7 @@
                                     </div>
                                 </div>
                             @empty
-                                <p class="text-gray-500">Belum ada buku saku yang diunggah.</p>
+                                <p class="text-gray-500">Belum ada dokumen yang diunggah.</p>
                             @endforelse
                         </div>
 

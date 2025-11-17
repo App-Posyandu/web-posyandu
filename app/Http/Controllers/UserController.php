@@ -109,11 +109,11 @@ class UserController extends Controller
 
         $validationRules = [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            // 'email' => ['nullable', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', Password::defaults()],
             'role' => ['required', Rule::in($allowedRoles)],
             'posyandu_id' => ['nullable', 'uuid', 'exists:posyandus,id'],
-            'nik' => ['required', 'string', 'digits:16', 'unique:users'],
+            // 'nik' => ['required', 'string', 'digits:16', 'unique:users'],
             'alamat' => ['required', 'string'],
             'no_telepon' => ['required', 'string', 'max:20', 'unique:users'],
             'tempat_lahir' => ['required', 'string', 'max:255'],
@@ -257,7 +257,22 @@ class UserController extends Controller
 
         return redirect()->route('admin.users.index')->with('success', 'Data pengguna berhasil diperbarui.');
     }
+    public function importPage()
+    {
+        return view('admin.users.import');
+    }
+    
 
+    public function importProcess(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv',
+        ]);
+    return back()->with('success', 'Import berhasil diproses.');
+}
+
+
+    
     /**
      * Remove the specified resource from storage.
      */

@@ -11,7 +11,7 @@
     <!-- PWA  -->
     <meta name="theme-color" content="#171717">
 
-    <link rel="manifest" href="{{ asset('./manifest.json') }}">
+    {{-- <link rel="manifest" href="{{ asset('./manifest.json') }}"> --}}
 
     <meta name="mobile-web-app-capable" content="yes">
 
@@ -41,9 +41,7 @@
 
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
@@ -68,9 +66,9 @@
         </div>
     </div>
 
+    @include('sweetalert2::index')
     <script src="{{ asset('/sw.js') }}"></script>
     <script src="{{ asset('pwa-install.js') }}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     @stack('scripts')
     <script>
         if ("serviceWorker" in navigator) {

@@ -29,48 +29,23 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
 
 
     public function collection()
-{
-    $query = Pengajuan::query()
-        ->with(['user.posyandu', 'histories', 'bidang']);
+    {
+        $query = Pengajuan::query();
+        if ($this->desa && $this->desa !== 'all') {
+            $query->whereHas('user.posyandu', function ($q) {
+                $q->where('desa', $this->desa);
+            });
+        }
 
-    // Filter desa (jika bukan "all")
-    if ($this->desa !== 'all') {
-        $query->whereHas('user.posyandu', function ($q) {
-            $q->where('desa', $this->desa);
-        });
+
+        if ($this->bidang !== 'all') {
+            $query->whereHas('bidang', function ($q) {
+                $q->where('nama_bidang', $this->bidang);
+            });
+        }
+
+        return $query->with(['user.posyandu', 'histories', 'bidang'])->get();
     }
-
-    // Filter bidang (jika bukan "all")
-    if ($this->bidang !== 'all') {
-        $query->whereHas('bidang', function ($q) {
-            $q->where('nama_bidang', $this->bidang);
-        });
-    }
-
-    // Jika semua desa dan semua bidang → urutkan berdasarkan desa & bidang
-    if ($this->desa === 'all' && $this->bidang === 'all') {
-        $query->join('bidang_pengajuans', 'pengajuans.bidang_id', '=', 'bidang_pengajuans.id')
-              ->join('users', 'pengajuans.user_id', '=', 'users.id')
-              ->join('posyandus', 'users.posyandu_id', '=', 'posyandus.id')
-              ->orderBy('posyandus.desa')
-              ->orderBy('bidang_pengajuans.nama_bidang')
-              ->select('pengajuans.*'); // pastikan hanya kolom pengajuans yang diambil
-    }else if ($this->desa === 'all') {
-        // Jika semua desa tapi bidang spesifik → urutkan berdasarkan desa
-        $query->join('users', 'pengajuans.user_id', '=', 'users.id')
-              ->join('posyandus', 'users.posyandu_id', '=', 'posyandus.id')
-              ->orderBy('posyandus.desa')
-              ->select('pengajuans.*');
-    }else if ($this->bidang === 'all') {
-        // Jika semua bidang tapi desa spesifik → urutkan berdasarkan bidang
-        $query->join('bidang_pengajuans', 'pengajuans.bidang_id', '=', 'bidang_pengajuans.id')
-              ->orderBy('bidang_pengajuans.nama_bidang')
-              ->select('pengajuans.*');
-    }
-
-    return $query->get();
-}
-
 
 
     public function startCell(): string
@@ -150,9 +125,9 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
     }
 
     public function map($pengajuan): array
-{
-    $this->rowNumber++;
-    $latestHistory = $pengajuan->histories->sortByDesc('created_at')->first();
+    {
+        $this->rowNumber++;
+        $latestHistory = $pengajuan->histories->sortByDesc('created_at')->first();
 
     $data = [
         $this->rowNumber,
@@ -285,11 +260,9 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
                     $sheet->mergeCells('A6:B6');
                     $sheet->setCellValue('A6', strtoupper($this->bidang));
                     $sheet->getStyle('A6')->getFont()->setBold(true);
-                }else if($this->bidang === 'all' && $this->desa === 'all'){
-                    $sheet->mergeCells('A6:B6');
-                    $sheet->setCellValue('A6', strtoupper('Semua pengajuan'));
-                    $sheet->getStyle('A6')->getFont()->setBold(true);
                 }
+
+
 
                 // header tabel
                 $sheet->setCellValue('A7', 'NO.');
@@ -343,7 +316,7 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
                 foreach ($merge as $range) $sheet->mergeCells($range);
 
                 $highestRow = $sheet->getHighestRow();
-                $sheet->getStyle('A7:'.$maxCell . $highestRow)->applyFromArray([
+                $sheet->getStyle('A7:M' . $highestRow)->applyFromArray([
                     'borders' => [
                         'allBorders' => [
                             'borderStyle' => Border::BORDER_THIN,
@@ -357,12 +330,11 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
                     ],
                 ]);
 
-                $sheet->getStyle('A7:'.$maxCell.'8')->getFont()->setBold(true);
-                foreach (range('A', $maxCell) as $col)
+                $sheet->getStyle('A7:M8')->getFont()->setBold(true);
+                foreach (range('A', 'M') as $col)
                     $sheet->getColumnDimension($col)->setAutoSize(true);
 
                 $sheet->getRowDimension(1)->setRowHeight(80);
-                
             },
         ];
     }

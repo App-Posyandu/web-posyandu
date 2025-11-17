@@ -2,7 +2,7 @@
 <div x-data="{ open: false }" class="relative">
 
     {{-- Tombol Lonceng --}}
-    <button @click="open = !open" class="relative text-gray-500 hover:text-gray-700 focus:outline-none">
+    <button @click="open = !open" class="relative px-2 py-1 rounded-md bg-white text-pink-500 hover:text-pink-700 focus:outline-none">
         <i class="bi bi-bell-fill text-xl"></i>
         {{-- Tampilkan titik merah jika ada notifikasi baru --}}
         @if (auth()->user()->unreadNotifications->count() > 0)

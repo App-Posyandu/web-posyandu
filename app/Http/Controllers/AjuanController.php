@@ -122,30 +122,36 @@ class AjuanController extends Controller
 
     public function storePermohonan(Request $request)
     {
-        // dd($request->all());
         $permohonanItems = $request->input('permohonan_items', []);
+
         $request->validate([
+            'bidang_pelayanan' => 'required|string|exists:bidang_pengajuans,slug',
             'deskripsi_pengajuan' => 'required|string|min:10',
         ]);
-        // $lainnyaText = $request->input('lainnya_text');
 
-        // if (in_array('Lainnya...', $permohonanItems) && !empty($lainnyaText)) {
-        //     $finalChecklist = array_map(function ($item) use ($lainnyaText) {
-        //         return $item === 'Lainnya...' ? 'Lainnya: ' . $lainnyaText : $item;
-        //     }, $permohonanItems);
-        // } else {
-        //     $finalChecklist = $permohonanItems;
-        // }
+        // Ambil bidang yang dipilih
+        $bidangSlug = $request->input('bidang_pelayanan');
+        $bidang = BidangPengajuan::where('slug', $bidangSlug)->firstOrFail();
 
+        // Get template data untuk bidang yang dipilih
+        $templateData = $this->getBidangData($bidangSlug);
+        if (!$templateData) {
+            return redirect()->back()->with('error', 'Template bidang tidak ditemukan.');
+        }
+
+        // Update session dengan bidang yang dipilih
+        session()->put('ajuan_data.bidang_id', $bidang->id);
+        session()->put('ajuan_data.bidang_slug', $bidang->slug);
+        session()->put('ajuan_data.bidang_nama', $bidang->nama_bidang);
+        session()->put('ajuan_data.administrasi_items_template', $templateData['administrasi_items']);
         session()->put('ajuan_data.selected_formulir_items', $permohonanItems);
         session()->put('ajuan_data.deskripsi_pengajuan', $request->input('deskripsi_pengajuan'));
 
-        // 3. Simpan juga teks dari input "Lainnya..." jika ada
-        if ($request->has('lainnya_text')) {
+        // Simpan teks "Lainnya..." jika ada
+        if ($request->has('lainnya_text') && !empty($request->input('lainnya_text'))) {
             session()->put('ajuan_data.lainnya_text', $request->input('lainnya_text'));
         }
 
-        // session()->put('components.ajuan.selected_formulir.index', $finalChecklist);
         return redirect()->route('ajuan.create.administrasi');
     }
 
@@ -381,7 +387,7 @@ class AjuanController extends Controller
         $ajuan->load('bidang');
 
         $finalChecklistData = $request->input('permohonan_items', []);
-        if (in_array('Lainnya...', $finalChecklistData) && $request->filled('lainnya_text')) {
+        if (in_array('Lainnya...', $finalChecklistData) && $request->filled(key: 'lainnya_text')) {
             $finalChecklistData = array_map(fn($item) => $item === 'Lainnya...' ? 'Lainnya: ' . $request->lainnya_text : $item, $finalChecklistData);
         }
 
@@ -448,7 +454,6 @@ class AjuanController extends Controller
 
                 $filename = "{$cleanLabel}-{$userName}.{$extension}";
 
-                // Buat response download manual
                 return response()->make($fileContents, 200, [
                     'Content-Type' => $mime,
                     'Content-Disposition' => 'attachment; filename="' . $filename . '"',
@@ -495,19 +500,17 @@ class AjuanController extends Controller
                     ['catatan.required' => 'Catatan wajib diisi jika menolak.']
                 );
 
-                // <-- PERBAIKAN: Definisikan status & catatan di sini
                 $statusDitolak = 'Ditolak';
                 $catatanDitolak = $request->catatan;
                 $ajuan->update([
                     'status_pengajuan' => $statusDitolak,
-                    'sudah_verifikasi' => true, // Selesai verifikasi (ditolak)
-                    'kunjungan_lapangan' => false, // Tidak jadi kunjungan
+                    'sudah_verifikasi' => true,
+                    'kunjungan_lapangan' => false,
                     'ttd_kader' => false,
-                    'verified_formulir_items' => [], // Simpan checklist kosong
+                    'verified_formulir_items' => [],
                     'verified_administrasi_items' => [],
                 ]);
 
-                // <-- PERBAIKAN: Tambahkan History::create() yang hilang
                 History::create([
                     'pengajuan_id' => $ajuan->id,
                     'status' => $statusDitolak,
@@ -516,7 +519,6 @@ class AjuanController extends Controller
                     'created_at' => now(),
                 ]);
 
-                // <-- PERBAIKAN: Kirim notifikasi DENGAN data yang benar
                 $targetUser->notify(new PengajuanStatusUpdated($ajuan, $statusDitolak, $catatanDitolak));
 
                 return redirect()->route('ajuan.index')->with('success', 'Pengajuan telah ditolak.');
@@ -534,13 +536,13 @@ class AjuanController extends Controller
                 'verified_administrasi_items.size' => 'Semua dokumen administrasi harus dicentang untuk lanjut.',
             ]);
 
-            // PERBAIKAN: Set kunjungan_lapangan ke true secara otomatis
+            // Update: Tahap 1 selesai, kunjungan_lapangan masih false
             $ajuan->update([
                 'status_pengajuan' => 'Diproses',
-                'sudah_verifikasi' => true,
-                'kunjungan_lapangan' => true, // <-- Otomatis wajib kunjungan
-                'ttd_kader' => true, // ✅ TRUE karena kader sudah verifikasi
-                'verified_formulir_items' => $request->input('verified_formulir_items'), // ✅ Simpan item yang dicentang
+                'sudah_verifikasi' => true, // ✅ Tahap 1 selesai
+                'kunjungan_lapangan' => false, // ❌ Belum kunjungan
+                'ttd_kader' => false, // Belum TTD final
+                'verified_formulir_items' => $request->input('verified_formulir_items'),
                 'verified_administrasi_items' => $request->input('verified_administrasi_items'),
             ]);
 
@@ -557,31 +559,28 @@ class AjuanController extends Controller
 
             $targetUser->notify(new PengajuanStatusUpdated($ajuan, $statusHistory, $catatanHistory));
 
-            // Kembali ke halaman detail (sekarang akan menampilkan Tahap 2)
-            return redirect()->route('ajuan.show', $ajuan)->with('success', 'Verifikasi dokumen berhasil. Silakan lakukan kunjungan lapangan dan update hasilnya.');
+            return redirect()->route('ajuan.index')->with('success', 'Verifikasi dokumen berhasil. Silakan lakukan kunjungan lapangan.');
         }
 
         // ===============================================
-        // == ALUR 2: TAHAP 2 (Keputusan Pasca Kunjungan)
+        // == ALUR 2: TAHAP 2 (Konfirmasi Kunjungan)
         // ===============================================
         elseif ($step == 2) {
             $request->validate([
-                'status' => ['required', 'in:Disetujui,Ditolak'], // Status akhir wajib
-                'catatan' => ['nullable', 'string', 'required_if:status,Ditolak'],
-                'ttd_kader' => ['required'], // TTD Kader wajib
+                'konfirmasi_kunjungan' => ['required', 'accepted'],
+                'catatan_kunjungan' => ['nullable', 'string', 'max:500'],
+            ], [
+                'konfirmasi_kunjungan.accepted' => 'Anda harus mengonfirmasi bahwa kunjungan telah dilakukan.',
             ]);
 
-            $statusAkhir = $request->status; // 'Disetujui' atau 'Ditolak'
-            $statusHistory = $statusAkhir;
-            $catatanHistory = $request->catatan ?? "Pengajuan $statusAkhir setelah kunjungan lapangan.";
-
-            $ttdKader = ($statusAkhir === 'Disetujui');
-
+            // Update: Kunjungan sudah dilakukan
             $ajuan->update([
-                'status_pengajuan' => $statusAkhir,
-                'kunjungan_lapangan' => true, // Tetap true (karena sudah dilakukan)
-                'ttd_kader' => $ttdKader,
+                'kunjungan_lapangan' => true, // ✅ Kunjungan selesai
+                'status_pengajuan' => 'Diproses', // Status tetap Diproses
             ]);
+
+            $statusHistory = 'Kunjungan Selesai';
+            $catatanHistory = $request->catatan_kunjungan ?? 'Kunjungan lapangan telah dilaksanakan.';
 
             History::create([
                 'pengajuan_id' => $ajuan->id,
@@ -592,6 +591,39 @@ class AjuanController extends Controller
             ]);
 
             $targetUser->notify(new PengajuanStatusUpdated($ajuan, $statusHistory, $catatanHistory));
+
+            return redirect()->route('ajuan.index')->with('success', 'Kunjungan lapangan berhasil dikonfirmasi. Silakan buat keputusan akhir.');
+        }
+
+        // ===============================================
+        // == ALUR 3: TAHAP 3 (Keputusan Akhir)
+        // ===============================================
+        elseif ($step == 3) {
+            $request->validate([
+                'status' => ['required', 'in:Disetujui,Ditolak'],
+                'catatan' => ['nullable', 'string', 'required_if:status,Ditolak'],
+                'ttd_kader' => ['required', 'accepted'],
+            ], [
+                'ttd_kader.accepted' => 'Anda harus menyetujui keputusan akhir ini.',
+            ]);
+
+            $statusAkhir = $request->status; // 'Disetujui' atau 'Ditolak'
+            $catatanHistory = $request->catatan ?? "Pengajuan $statusAkhir setelah kunjungan lapangan.";
+
+            $ajuan->update([
+                'status_pengajuan' => $statusAkhir,
+                'ttd_kader' => true, // ✅ Kader sudah TTD
+            ]);
+
+            History::create([
+                'pengajuan_id' => $ajuan->id,
+                'status' => $statusAkhir,
+                'catatan' => $catatanHistory,
+                'diubah_oleh' => $user->id,
+                'created_at' => now(),
+            ]);
+
+            $targetUser->notify(new PengajuanStatusUpdated($ajuan, $statusAkhir, $catatanHistory));
 
             return redirect()->route('ajuan.index')->with('success', 'Keputusan akhir berhasil disimpan.');
         }
@@ -604,7 +636,7 @@ class AjuanController extends Controller
     public function cetak($id)
     {
         $ajuan = Pengajuan::with(['user', 'bidang', 'histories.diubahOleh', 'latestHistory.diubahOleh'])->findOrFail($id);
-        
+
         foreach (['verified_formulir_items', 'verified_administrasi_items', 'formulir_items', 'administrasi_items'] as $key) {
             if (is_string($ajuan->$key)) {
                 $ajuan->$key = json_decode($ajuan->$key, true) ?? [];
@@ -670,5 +702,35 @@ class AjuanController extends Controller
             'Content-Type' => $mime,
             'Content-Disposition' => 'inline; filename="' . basename($fileData) . '"',
         ]);
+    }
+
+    public function getItemsAjax($slug)
+    {
+        try {
+            $bidang = BidangPengajuan::where('slug', $slug)->firstOrFail();
+
+            $templateData = $this->getBidangData($slug);
+
+            if (!$templateData) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Template tidak ditemukan untuk bidang ini'
+                ], 404);
+            }
+
+            $items = $templateData['formulir_items'] ?? [];
+
+            return response()->json([
+                'success' => true,
+                'items' => $items,
+                'bidang_nama' => $bidang->nama_bidang,
+                'bidang_slug' => $slug
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }
