@@ -47,12 +47,16 @@
 
         <div class="w-full max-w-7xl mx-auto ">
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-8">
+
+                {{-- tampilkan kolom search dan tombol export semua data pengajuan ke excel --}}
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold text-gray-800">List Pengajuan</h2>
 
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-3"> <!-- tambahkan flex & gap -->
                         <form action="{{ route('ajuan.index') }}" method="GET"
                             class="flex flex-col md:flex-row items-center gap-2 w-full md:w-auto">
+
+                            {{-- Filter berdasarkan Status --}}
                             <select name="status" onchange="this.form.submit()"
                                 class="border-gray-300 rounded-md shadow-sm text-sm w-full md:w-auto">
                                 <option value="">Semua Status</option>
@@ -71,11 +75,14 @@
                                 </button>
                             </div>
 
+                            {{-- Link untuk Reset/Clear Filter --}}
                             @if (request('search') || request('status'))
                                 <a href="{{ route('dashboard') }}"
                                     class="text-sm text-gray-600 hover:text-gray-900">Reset</a>
                             @endif
                         </form>
+
+                        {{-- Tombol untuk memunculkan pop-up pilihan bidang yang akan di-export ke excel menggunakan sweetalert2 --}}
                         <button id="exportExcelBtn"
                             class="flex items-center px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">
                             <i class="bi bi-file-earmark-excel-fill mr-2"></i> Export to Excel
@@ -191,14 +198,14 @@
                 title: '<h2 class="text-xl font-bold text-gray-800 mb-2">Pilih Bidang & Desa untuk Di-Export</h2>',
                 html: `
                 <div class="space-y-4">
-                    ${bidangSelectHTML}
-                    ${desaSelectHTML}
-                    <button id="confirmExportBtn"
+            ${bidangSelectHTML}
+            ${desaSelectHTML}
+                <button id="confirmExportBtn"
                         class="swal2-confirm swal2-styled !bg-emerald-600 hover:!bg-emerald-700 w-full py-4 rounded-md text-white font-bold shadow-lg">
-                        Export Data
-                    </button>
-                </div>
-            `,
+                    Export Data
+                </button>
+            </div>
+    `,
                 showConfirmButton: false,
                 showCancelButton: true,
                 cancelButtonText: 'Batal',
@@ -210,6 +217,7 @@
                 }
             });
 
+            // Tangani klik tombol export
             document.addEventListener('click', function handler(e) {
                 if (e.target && e.target.id === 'confirmExportBtn') {
                     let bidang = null;
