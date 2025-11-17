@@ -7,7 +7,7 @@
             @csrf
             <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">Administrasi Ajuan</h2>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6" x-data="{
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6 items-start" x-data="{
                 ktp_mode: '{{ $userKtp ? 'claimed' : 'upload' }}',
                 ktp_preview: '{{ $userKtp ?? '' }}',
                 ktp_filename: '{{ $userKtp ? 'KTP Terdaftar' : 'Pilih file' }}',
@@ -106,9 +106,9 @@
                             <x-input-error :messages="$errors->get('kk')" class="mt-2" />
                         </div>
                     @else
-                        <div x-data="{ fileName: '', filePreview: '' }">
+                        <div x-data="{ fileName: '', filePreview: '' }" class="flex flex-col h-full">
                             <label for="{{ $key }}"
-                                class="block font-medium text-sm text-gray-700 mb-1">{{ $label }}</label>
+                                class="block font-medium text-sm md:text-lg text-gray-700 mb-1 h-full">{{ $label }}</label>
                             <div class="relative">
                                 <div
                                     class="w-full flex items-center px-3 py-2 bg-white text-gray-500 rounded-md shadow-sm border border-gray-300">
@@ -121,7 +121,8 @@
                                 <input id="{{ $key }}" class="hidden" type="file" name="{{ $key }}"
                                     accept="image/*,application/pdf"
                                     @change="fileName = $event.target.files[0] ? $event.target.files[0].name : '';
-                                            filePreview = $event.target.files[0] ? URL.createObjectURL($event.target.files[0]) : ''" />
+                            filePreview = $event.target.files[0] ? URL.createObjectURL($event.target.files[0]) : ''" />
+
                             </div>
 
                             <!-- Preview Box dengan Icon untuk field lainnya -->
