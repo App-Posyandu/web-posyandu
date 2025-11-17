@@ -175,6 +175,7 @@
 
                 toggleBidangField(); // Check on page load
                 roleSelect.addEventListener('change', toggleBidangField);
+                toggleBidangField();
             });
         </script>
     @endpush
