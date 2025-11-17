@@ -40,7 +40,7 @@
             }
         }">
 
-        <form method="POST" action="{{ route('ajuan.store.permohonan') }}">
+        <form method="POST" action="{{ route('ajuan.store.permohonan') }}" id="form-formulir">
             @csrf
 
             @php
@@ -135,35 +135,136 @@
             </div>
 
             <div class="flex items-center justify-end mt-8 space-x-4">
-                <a href="{{ route('dashboard') }}" id="batal-pengajuan"
-                    class="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm md:text-base font-medium text-gray-700 bg-white hover:bg-gray-50">
-                    Batalkan Pengajuan
-                </a>
-                <button type="submit" :disabled="isLoading"
-                    class="inline-flex items-center px-8 py-2 bg-pink-500 border border-transparent rounded-md font-semibold text-sm md:text-base text-white hover:bg-pink-600 disabled:opacity-50 disabled:cursor-not-allowed">
-                    Selanjutnya
-                </button>
+                <div class="flex items-center justify-end mt-8 space-x-4">
+                    <a href="{{ route('dashboard') }}" id="batal-pengajuan"
+                        class="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm md:text-base font-medium text-gray-700 bg-white hover:bg-gray-50">
+                        Batalkan Pengajuan
+                    </a>
+                    <button type="button" id="btn-selanjutnya" :disabled="isLoading"
+                        class="inline-flex items-center px-8 py-2 bg-pink-500 border border-transparent rounded-md font-semibold text-sm md:text-base text-white hover:bg-pink-600 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Selanjutnya
+                    </button>
+                </div>
             </div>
         </form>
     </div>
 
     @push('scripts')
         <script>
-            document.getElementById('batal-pengajuan').addEventListener('click', function(e) {
-                e.preventDefault();
+            // ============================================
+            // KONFIRMASI KELUAR DARI PENGAJUAN
+            // ============================================
+            let isSubmitting = false;
 
-                Swal.fire({
-                    title: 'Batalkan Pengajuan?',
-                    text: 'Yakin ingin membatalkan dan kembali ke dashboard?',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Ya, batalkan',
-                    cancelButtonText: 'Tidak'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        window.location.href = this.href;
+            // Konfirmasi browser default ketika refresh/close tab
+            window.addEventListener('beforeunload', function(e) {
+                if (isSubmitting) return undefined;
+
+                e.preventDefault();
+                e.returnValue = '';
+                return '';
+            });
+
+            // Pastikan DOM sudah load
+            document.addEventListener('DOMContentLoaded', function() {
+
+                // ============================================
+                // INTERCEPT SEMUA LINK NAVIGASI
+                // ============================================
+                const links = document.querySelectorAll('a:not([id="batal-pengajuan"])');
+
+                links.forEach(link => {
+                    const href = link.getAttribute('href');
+                    if (!href || href === '#' || href.startsWith('javascript:')) {
+                        return;
                     }
+
+                    link.addEventListener('click', function(e) {
+                        if (isSubmitting) return;
+
+                        e.preventDefault();
+                        const targetUrl = this.href;
+
+                        Swal.fire({
+                            title: 'Keluar dari Pengajuan?',
+                            text: 'Data yang sudah Anda isi akan hilang jika belum disimpan.',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonText: '<i class="fa-solid fa-sign-out-alt"></i> Ya, keluar',
+                            cancelButtonText: '<i class="fa-solid fa-times"></i> Tetap di sini',
+                            confirmButtonColor: '#dc2626',
+                            cancelButtonColor: '#6b7280',
+                            reverseButtons: true
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                isSubmitting = true;
+                                window.location.href = targetUrl;
+                            }
+                        });
+                    });
                 });
+
+                // ============================================
+                // HANDLER TOMBOL BATALKAN PENGAJUAN
+                // ============================================
+                const btnBatal = document.getElementById('batal-pengajuan');
+                if (btnBatal) {
+                    btnBatal.addEventListener('click', function(e) {
+                        e.preventDefault();
+
+                        Swal.fire({
+                            title: 'Batalkan Pengajuan?',
+                            text: 'Yakin ingin membatalkan dan kembali ke dashboard?',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonText: '<i class="fa-solid fa-times"></i> Ya, batalkan',
+                            cancelButtonText: '<i class="fa-solid fa-arrow-left"></i> Tidak',
+                            confirmButtonColor: '#dc2626',
+                            cancelButtonColor: '#6b7280',
+                            reverseButtons: true
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                isSubmitting = true;
+                                window.location.href = this.href;
+                            }
+                        });
+                    });
+                }
+
+                // ============================================
+                // HANDLER TOMBOL SELANJUTNYA (SUBMIT FORM)
+                // ============================================
+                const btnSelanjutnya = document.getElementById('btn-selanjutnya');
+                const form = document.getElementById('form-formulir');
+
+                console.log('Button Selanjutnya:', btnSelanjutnya); // Debug
+                console.log('Form:', form); // Debug
+
+                if (btnSelanjutnya && form) {
+                    btnSelanjutnya.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        console.log('Tombol Selanjutnya diklik!'); // Debug
+
+                        Swal.fire({
+                            title: 'Lanjut ke Tahap Administrasi?',
+                            text: 'Pastikan data permohonan sudah benar.',
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonText: '<i class="fa-solid fa-arrow-right"></i> Ya, lanjut',
+                            cancelButtonText: '<i class="fa-solid fa-times"></i> Periksa lagi',
+                            confirmButtonColor: '#ec4899',
+                            cancelButtonColor: '#6b7280',
+                            reverseButtons: true
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                isSubmitting = true;
+                                form.submit();
+                            }
+                        });
+                    });
+                } else {
+                    console.error('Button atau Form tidak ditemukan!');
+                }
             });
         </script>
     @endpush
