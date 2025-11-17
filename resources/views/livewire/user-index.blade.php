@@ -34,7 +34,7 @@
 
                     <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                         <h2 class="text-2xl font-bold text-gray-800">List Pengguna</h2>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2">   
                             <a href="{{ route('admin.users.create') }}"
                                 class="px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600">
                                 <i class="bi bi-plus-circle-fill mr-2"></i>Tambah User
