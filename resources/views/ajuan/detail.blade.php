@@ -254,10 +254,12 @@
                             x-transition:leave-start="opacity-100 transform translate-y-0"
                             x-transition:leave-end="opacity-0 transform -translate-y-2" style="display: none;">
                             <div class="px-6 py-4 border-t">
-                                <form method="POST" action="{{ route('ajuan.verify', $ajuan) }}">
+                                <form method="POST" action="{{ route('ajuan.verify', $ajuan) }}"
+                                    id="form-ajuan-verify">
                                     @csrf
                                     @method('PATCH')
                                     <input type="hidden" name="verification_step" value="1">
+                                    <input type="hidden" name="tolak_langsung" id="tolak_langsung">
 
                                     {{-- Error Validasi --}}
                                     @if ($errors->has('verified_formulir_items') || $errors->has('verified_administrasi_items'))
@@ -367,17 +369,62 @@
                                     {{-- Tombol Aksi --}}
                                     @if (!$ajuan->sudah_verifikasi)
                                         <div class="flex items-center justify-end mt-8 space-x-4">
-                                            <button type="submit" name="tolak_langsung" value="Ditolak"
+                                            <button type="submit" id="dokumen-tidaksesuai" name="tolak_langsung"
+                                                value="Ditolak"
                                                 class="py-2 px-6 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
                                                 Dokumen Tidak Sesuai
                                             </button>
-                                            <button type="submit"
+                                            <button type="submit" id="submit-verifikasi"
                                                 class="inline-flex items-center px-6 py-2 bg-green-600 text-white font-semibold text-sm rounded-md hover:bg-green-700">
                                                 Setujui Verifikasi
                                             </button>
                                         </div>
                                     @endif
                                 </form>
+                                @push('scripts')
+                                    <script>
+                                        document.getElementById('dokumen-tidaksesuai').addEventListener('click', function(e) {
+                                            e.preventDefault();
+
+                                            Swal.fire({
+                                                title: 'Dokumen Tidak Sesuai?',
+                                                text: 'Tolak pengajuan karena dokumen tidak sesuai.',
+                                                icon: 'warning',
+                                                showCancelButton: true,
+                                                confirmButtonText: '<i class="fa-solid fa-arrow-left"></i> Tolak pengajuan',
+                                                cancelButtonText: '<i class="fa-solid fa-times"></i> Batal',
+                                                confirmButtonColor: '#ec4899',
+                                                cancelButtonColor: '#6b7280',
+                                                reverseButtons: true
+                                            }).then((result) => {
+                                                if (result.isConfirmed) {
+                                                    document.getElementById("tolak_langsung").value = "Ditolak";
+                                                    document.getElementById('form-ajuan-verify').submit();
+                                                }
+                                            });
+                                        });
+
+                                        document.getElementById('submit-verifikasi').addEventListener('click', function(e) {
+                                            e.preventDefault();
+
+                                            Swal.fire({
+                                                title: 'Apakah dokumen sudah sesuai?',
+                                                text: '',
+                                                icon: 'warning',
+                                                showCancelButton: true,
+                                                confirmButtonText: '<i class="fa-solid fa-arrow-left"></i> Ya, Kirim',
+                                                cancelButtonText: '<i class="fa-solid fa-times"></i> Batal',
+                                                confirmButtonColor: '#ec4899',
+                                                cancelButtonColor: '#6b7280',
+                                                reverseButtons: true
+                                            }).then((result) => {
+                                                if (result.isConfirmed) {
+                                                    document.getElementById('form-ajuan-verify').submit();
+                                                }
+                                            });
+                                        });
+                                    </script>
+                                @endpush
                             </div>
                         </div>
                     </div>
@@ -441,7 +488,8 @@
                                 x-transition:leave-start="opacity-100 transform translate-y-0"
                                 x-transition:leave-end="opacity-0 transform -translate-y-2" style="display: none;">
                                 <div class="px-6 py-4 border-t">
-                                    <form method="POST" action="{{ route('ajuan.verify', $ajuan) }}">
+                                    <form method="POST" action="{{ route('ajuan.verify', $ajuan) }}"
+                                        id="form-kunjunganlapangan">
                                         @csrf
                                         @method('PATCH')
                                         <input type="hidden" name="verification_step" value="2">
@@ -543,7 +591,7 @@
                                         {{-- Tombol Submit --}}
                                         @if (!$ajuan->kunjungan_lapangan)
                                             <div class="flex justify-end">
-                                                <button type="submit"
+                                                <button type="submit" id="confirm-kunjunganlapangan"
                                                     class="inline-flex items-center px-6 py-2 bg-blue-600 text-white font-semibold text-sm rounded-md hover:bg-blue-700 shadow-md">
                                                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor"
                                                         viewBox="0 0 24 24">
@@ -555,6 +603,29 @@
                                             </div>
                                         @endif
                                     </form>
+                                    @push('scripts')
+                                        <script>
+                                            document.getElementById('confirm-kunjunganlapangan').addEventListener('click', function(e) {
+                                                e.preventDefault();
+
+                                                Swal.fire({
+                                                    title: 'Apakah anda yakin sudah melakukan kunjungan?',
+                                                    text: '',
+                                                    icon: 'warning',
+                                                    showCancelButton: true,
+                                                    confirmButtonText: '<i class="fa-solid fa-arrow-left"></i> Ya, Kirim',
+                                                    cancelButtonText: '<i class="fa-solid fa-times"></i> Batal',
+                                                    confirmButtonColor: '#ec4899',
+                                                    cancelButtonColor: '#6b7280',
+                                                    reverseButtons: true
+                                                }).then((result) => {
+                                                    if (result.isConfirmed) {
+                                                        document.getElementById('form-kunjunganlapangan').submit();
+                                                    }
+                                                });
+                                            });
+                                        </script>
+                                    @endpush
                                 </div>
                             </div>
                         @endif
@@ -619,7 +690,7 @@
                                 x-transition:leave-start="opacity-100 transform translate-y-0"
                                 x-transition:leave-end="opacity-0 transform -translate-y-2" style="display: none;">
                                 <div class="px-6 py-4 border-t">
-                                    <form method="POST" action="{{ route('ajuan.verify', $ajuan) }}">
+                                    <form method="POST" action="{{ route('ajuan.verify', $ajuan) }}" id="form-keputusanakhir">
                                         @csrf
                                         @method('PATCH')
                                         <input type="hidden" name="verification_step" value="3">
@@ -759,7 +830,7 @@
                                                     class="inline-flex items-center px-6 py-2 bg-gray-200 text-gray-700 font-semibold text-sm rounded-md hover:bg-gray-300">
                                                     Batal
                                                 </a>
-                                                <button type="submit"
+                                                <button type="submit" id="confirm-keputusanakhir"
                                                     class="inline-flex items-center px-6 py-2 bg-pink-600 text-white font-semibold text-sm rounded-md hover:bg-pink-700 shadow-md">
                                                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor"
                                                         viewBox="0 0 24 24">
@@ -783,6 +854,29 @@
                                             </div>
                                         @endif
                                     </form>
+                                    @push('scripts')
+                                        <script>
+                                            document.getElementById('confirm-keputusanakhir').addEventListener('click', function(e) {
+                                                e.preventDefault();
+
+                                                Swal.fire({
+                                                    title: 'Apakah anda yakin dengan keputusan ini?',
+                                                    text: '',
+                                                    icon: 'warning',
+                                                    showCancelButton: true,
+                                                    confirmButtonText: '<i class="fa-solid fa-arrow-left"></i> Ya, Kirim',
+                                                    cancelButtonText: '<i class="fa-solid fa-times"></i> Batal',
+                                                    confirmButtonColor: '#ec4899',
+                                                    cancelButtonColor: '#6b7280',
+                                                    reverseButtons: true
+                                                }).then((result) => {
+                                                    if (result.isConfirmed) {
+                                                        document.getElementById('form-keputusanakhir').submit();
+                                                    }
+                                                });
+                                            });
+                                        </script>
+                                    @endpush
                                 </div>
                             </div>
                         @endif

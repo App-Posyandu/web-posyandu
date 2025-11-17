@@ -42,7 +42,7 @@ class DashboardController extends Controller
         }
 
         // ✅ REDIRECT KADER LANGSUNG KE AJUAN.INDEX
-        if ($user->role === 'kader') {  
+        if ($user->role === 'kader') {
             return redirect()->route('ajuan.index');
         }
 
@@ -118,7 +118,7 @@ class DashboardController extends Controller
             $semuaAjuan = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 5);
         }
 
-        //detect current user role
+        // Detect current user role
         $currentUser = Auth::user();
 
         $desas = Pengajuan::with('user.posyandu')
@@ -129,6 +129,16 @@ class DashboardController extends Controller
             ->sort()
             ->values();
 
-        return view('dashboard', compact('ajuanCounts', 'semuaAjuan', 'colors', 'isVerified', 'icons', 'desas', 'currentUser'));
+        // ✅ TIDAK PERLU $labels dan $data terpisah
+        // Chart akan ambil langsung dari $ajuanCounts di Blade
+        return view('dashboard', compact(
+            'ajuanCounts',
+            'semuaAjuan',
+            'colors',
+            'isVerified',
+            'icons',
+            'desas',
+            'currentUser'
+        ));
     }
 }

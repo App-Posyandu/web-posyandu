@@ -122,30 +122,36 @@ class AjuanController extends Controller
 
     public function storePermohonan(Request $request)
     {
-        // dd($request->all());
         $permohonanItems = $request->input('permohonan_items', []);
+
         $request->validate([
+            'bidang_pelayanan' => 'required|string|exists:bidang_pengajuans,slug',
             'deskripsi_pengajuan' => 'required|string|min:10',
         ]);
-        // $lainnyaText = $request->input('lainnya_text');
 
-        // if (in_array('Lainnya...', $permohonanItems) && !empty($lainnyaText)) {
-        //     $finalChecklist = array_map(function ($item) use ($lainnyaText) {
-        //         return $item === 'Lainnya...' ? 'Lainnya: ' . $lainnyaText : $item;
-        //     }, $permohonanItems);
-        // } else {
-        //     $finalChecklist = $permohonanItems;
-        // }
+        // Ambil bidang yang dipilih
+        $bidangSlug = $request->input('bidang_pelayanan');
+        $bidang = BidangPengajuan::where('slug', $bidangSlug)->firstOrFail();
 
+        // Get template data untuk bidang yang dipilih
+        $templateData = $this->getBidangData($bidangSlug);
+        if (!$templateData) {
+            return redirect()->back()->with('error', 'Template bidang tidak ditemukan.');
+        }
+
+        // Update session dengan bidang yang dipilih
+        session()->put('ajuan_data.bidang_id', $bidang->id);
+        session()->put('ajuan_data.bidang_slug', $bidang->slug);
+        session()->put('ajuan_data.bidang_nama', $bidang->nama_bidang);
+        session()->put('ajuan_data.administrasi_items_template', $templateData['administrasi_items']);
         session()->put('ajuan_data.selected_formulir_items', $permohonanItems);
         session()->put('ajuan_data.deskripsi_pengajuan', $request->input('deskripsi_pengajuan'));
 
-        // 3. Simpan juga teks dari input "Lainnya..." jika ada
-        if ($request->has('lainnya_text')) {
+        // Simpan teks "Lainnya..." jika ada
+        if ($request->has('lainnya_text') && !empty($request->input('lainnya_text'))) {
             session()->put('ajuan_data.lainnya_text', $request->input('lainnya_text'));
         }
 
-        // session()->put('components.ajuan.selected_formulir.index', $finalChecklist);
         return redirect()->route('ajuan.create.administrasi');
     }
 
@@ -381,7 +387,7 @@ class AjuanController extends Controller
         $ajuan->load('bidang');
 
         $finalChecklistData = $request->input('permohonan_items', []);
-        if (in_array('Lainnya...', $finalChecklistData) && $request->filled('lainnya_text')) {
+        if (in_array('Lainnya...', $finalChecklistData) && $request->filled(key: 'lainnya_text')) {
             $finalChecklistData = array_map(fn($item) => $item === 'Lainnya...' ? 'Lainnya: ' . $request->lainnya_text : $item, $finalChecklistData);
         }
 
@@ -448,7 +454,6 @@ class AjuanController extends Controller
 
                 $filename = "{$cleanLabel}-{$userName}.{$extension}";
 
-                // Buat response download manual
                 return response()->make($fileContents, 200, [
                     'Content-Type' => $mime,
                     'Content-Disposition' => 'attachment; filename="' . $filename . '"',
@@ -697,5 +702,35 @@ class AjuanController extends Controller
             'Content-Type' => $mime,
             'Content-Disposition' => 'inline; filename="' . basename($fileData) . '"',
         ]);
+    }
+
+    public function getItemsAjax($slug)
+    {
+        try {
+            $bidang = BidangPengajuan::where('slug', $slug)->firstOrFail();
+
+            $templateData = $this->getBidangData($slug);
+
+            if (!$templateData) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Template tidak ditemukan untuk bidang ini'
+                ], 404);
+            }
+
+            $items = $templateData['formulir_items'] ?? [];
+
+            return response()->json([
+                'success' => true,
+                'items' => $items,
+                'bidang_nama' => $bidang->nama_bidang,
+                'bidang_slug' => $slug
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }
