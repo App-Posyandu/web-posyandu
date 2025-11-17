@@ -4,6 +4,7 @@ namespace App\Exports;
 
 use App\Models\Pengajuan;
 use App\Models\BidangPengajuan;
+
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
@@ -96,14 +97,14 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
     ];
 
     // Jika export semua bidang & desa → tambahkan kolom di akhir
-    if ($this->bidang === 'all' && $this->desa === 'all') {
-        $base[] = 'DESA';
-        $base[] = 'BIDANG';
-    }else if( $this->bidang === 'all'){
-        $base[] = 'BIDANG';
-    }else if( $this->desa === 'all'){
-        $base[] = 'DESA';
-    }
+    // if ($this->bidang === 'all' && $this->desa === 'all') {
+    //     $base[] = 'DESA';
+    //     $base[] = 'BIDANG';
+    // }else if( $this->bidang === 'all'){
+    //     $base[] = 'BIDANG';
+    // }else if( $this->desa === 'all'){
+    //     $base[] = 'DESA';
+    // }
 
     return $base;
 }
@@ -166,16 +167,21 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
         $pengajuan->kunjungan_lapangan == 'true' ? '✓' : '',
         $pengajuan->status_pengajuan == 'Disetujui' ? '✓' : '',
         $pengajuan->status_pengajuan == 'Ditolak' ? '✓' : '',
-        $latestHistory->catatan ?? '-',
     ];
 
-    // Jika semua desa & bidang → tambahkan dua kolom
     if ($this->bidang === 'all' && $this->desa === 'all') {
-        $data[] = $pengajuan->user->posyandu->desa ?? '-';
-        $data[] = $pengajuan->bidang->nama_bidang ?? '-';
-    }else if( $this->bidang === 'all'){
-        $data[] = $pengajuan->bidang->nama_bidang ?? '-';
-    }else if( $this->desa === 'all'){
+        $desa   = $pengajuan->user->posyandu->desa ?? '-';
+        $bidang = $pengajuan->bidang->nama_bidang ?? '-';
+        $data[] = "{$desa}, {$bidang}";
+    }
+
+    // Semua bidang → tambahkan kolom BIDANG saja
+    else if ($this->bidang === 'all') {
+        $data[] =  $pengajuan->bidang->nama_bidang ?? '-';
+    }
+
+    // Semua desa → tambahkan kolom DESA saja
+    else if ($this->desa === 'all') {
         $data[] = $pengajuan->user->posyandu->desa ?? '-';
     }
 
@@ -303,14 +309,14 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
                 $sheet->setCellValue('J8', 'KUNJUNGAN');
                 $sheet->setCellValue('K8', 'DISETUJUI');
                 $sheet->setCellValue('L8', 'DITOLAK');
-                if( $this->bidang === 'all' && $this->desa === 'all') {
+/*                 if( $this->bidang === 'all' && $this->desa === 'all') {
                     $sheet->setCellValue('N7', 'DESA');
                     $sheet->setCellValue('O7', 'BIDANG');
                 }else if( $this->bidang === 'all'){
                     $sheet->setCellValue('N7', 'BIDANG');
                 }else if( $this->desa === 'all'){
                     $sheet->setCellValue('N7', 'DESA');
-                }
+                } */
 
                 $merge = [
                     'A7:A8',
@@ -326,14 +332,14 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
                     'A6:B6'
                 ];
                 $maxCell='M';
-                if( $this->bidang === 'all' && $this->desa === 'all') {
+/*                 if( $this->bidang === 'all' && $this->desa === 'all') {
                     $merge[] = 'N7:N8';
                     $merge[] = 'O7:O8';
                     $maxCell='O';
                 }else {
                     $merge[] = 'N7:N8';
                     $maxCell='N';
-                }
+                } */
                 foreach ($merge as $range) $sheet->mergeCells($range);
 
                 $highestRow = $sheet->getHighestRow();

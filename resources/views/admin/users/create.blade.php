@@ -103,7 +103,6 @@
                                     <option value="ketua-kader" @selected(old('role') == 'ketua-kader')>Ketua Kader</option>
                                     <option value="kabid" @selected(old('role') == 'kabid')>Kabid</option>
                                     <option value="admin" @selected(old('role') == 'admin')>Admin</option>
-
                                 @elseif ($currentUserRole === 'kabid')
                                     <option value="ketua-kader" @selected(true)>Ketua Kader</option>
                                 @elseif ($currentUserRole === 'ketua-kader')
@@ -142,14 +141,14 @@
                                 name="password_confirmation" required />
                         </div>
                     </div>
-
-                    <div class="flex items-center justify-end mt-8 gap-4">
-                        <a href="{{ route('admin.users.index') }}"
-                            class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md text-sm font-semibold hover:bg-gray-300">Batal</a>
-                        <x-primary-button>
-                            {{ __('Simpan Pengguna') }}
-                        </x-primary-button>
-                    </div>
+                    <div class="flex gap-3 ">
+                        <div class="w-full flex items-center justify-end mt-8 gap-4">
+                            <a href="{{ route('admin.users.index') }}"
+                                class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md text-sm font-semibold hover:bg-gray-300">Batal</a>
+                            <x-primary-button>
+                                {{ __('Simpan Pengguna') }}
+                            </x-primary-button>
+                        </div>
                 </form>
             </div>
         </div>
@@ -175,7 +174,7 @@
                 }
 
                 roleSelect.addEventListener('change', toggleBidangField);
-                toggleBidangField(); // Check on page load
+                toggleBidangField();
             });
         </script>
     @endpush

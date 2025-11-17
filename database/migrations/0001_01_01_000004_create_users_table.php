@@ -15,8 +15,8 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('bidang_id')->nullable();
             $table->foreignUuid('posyandu_id')->nullable();
-            $table->string('name');
-            $table->string('email')->unique();
+            $table->string('name')->nullable();
+            $table->string('email')->unique()->nullable();
             $table->string('no_telepon', 20)->unique()->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
@@ -25,9 +25,9 @@ return new class extends Migration
             // Kolom Tambahan dari Form Registrasi
             $table->string('nik', 16)->unique()->nullable();
             $table->text('alamat')->nullable();
-            $table->string('tempat_lahir');
-            $table->date('tanggal_lahir');
-            $table->string('jenis_kelamin');
+            $table->string('tempat_lahir')->nullable();
+            $table->date('tanggal_lahir')->nullable();
+            $table->string('jenis_kelamin')->nullable();
             $table->timestamp('verified_at')->nullable();
             $table->uuid('verified_by')->nullable();
 
