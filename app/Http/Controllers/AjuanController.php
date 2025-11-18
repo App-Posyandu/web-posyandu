@@ -129,17 +129,14 @@ class AjuanController extends Controller
             'deskripsi_pengajuan' => 'required|string|min:10',
         ]);
 
-        // Ambil bidang yang dipilih
         $bidangSlug = $request->input('bidang_pelayanan');
         $bidang = BidangPengajuan::where('slug', $bidangSlug)->firstOrFail();
 
-        // Get template data untuk bidang yang dipilih
         $templateData = $this->getBidangData($bidangSlug);
         if (!$templateData) {
             return redirect()->back()->with('error', 'Template bidang tidak ditemukan.');
         }
 
-        // Update session dengan bidang yang dipilih
         session()->put('ajuan_data.bidang_id', $bidang->id);
         session()->put('ajuan_data.bidang_slug', $bidang->slug);
         session()->put('ajuan_data.bidang_nama', $bidang->nama_bidang);
@@ -147,7 +144,6 @@ class AjuanController extends Controller
         session()->put('ajuan_data.selected_formulir_items', $permohonanItems);
         session()->put('ajuan_data.deskripsi_pengajuan', $request->input('deskripsi_pengajuan'));
 
-        // Simpan teks "Lainnya..." jika ada
         if ($request->has('lainnya_text') && !empty($request->input('lainnya_text'))) {
             session()->put('ajuan_data.lainnya_text', $request->input('lainnya_text'));
         }
@@ -188,18 +184,18 @@ class AjuanController extends Controller
         $validationRules = [];
         foreach ($ajuanData['administrasi_items_template'] as $key => $item) {
             if ($key === 'ktp') {
-                $validationRules[$key] = ['required_if:ktp_mode,upload', 'nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'];
+                $validationRules[$key] = ['required_if:ktp_mode,upload', 'nullable', 'file', 'mimes:jpg,jpeg,png', 'max:2048'];
             } elseif ($key === 'kk') {
-                $validationRules[$key] = ['required_if:kk_mode,upload', 'nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'];
+                $validationRules[$key] = ['required_if:kk_mode,upload', 'nullable', 'file', 'mimes:jpg,jpeg,png', 'max:2048'];
             } elseif ($key === 'kartu_bpjs') {
-                $validationRules[$key] = ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'];
+                $validationRules[$key] = ['nullable', 'file', 'mimes:jpg,jpeg,png', 'max:2048'];
             } else {
-                $validationRules[$key] = ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'];
+                $validationRules[$key] = ['required', 'file', 'mimes:jpg,jpeg,png', 'max:2048'];
             }
         }
         $validationRules['agreement'] = ['required'];
 
-        $request->validate($validationRules);
+        $request->validate($validationRules)    ;
 
         $uploadedFiles = [];
         foreach (array_keys($ajuanData['administrasi_items_template']) as $key) {
@@ -238,8 +234,6 @@ class AjuanController extends Controller
             'created_at' => now(),
         ]);
 
-        // Session::forget('ajuan_data');
-        // session()->put('ajuan_data.uploaded_files', $uploadedFiles);
         Session::forget('ajuan_data');
         Session::forget('ajuan_on_behalf_of_id');
 
@@ -367,19 +361,16 @@ class AjuanController extends Controller
         $allBidangs = BidangPengajuan::orderBy('nama_bidang')->get();
 
         return view('ajuan.edit', [
-            'ajuan' => $ajuan, // Data isian lama
-            'allBidangs' => $allBidangs, // Untuk dropdown
-            'templateData' => $templateData, // TEMPLATE formulir
+            'ajuan' => $ajuan, 
+            'allBidangs' => $allBidangs, 
+            'templateData' => $templateData, 
         ]);
     }
 
     public function update(Request $request, Pengajuan $ajuan)
     {
-        // Terapkan aturan 'update' dari policy.
-        // $this->authorize('update', $ajuan);
         $user = Auth::user();
 
-        // Validasi input
         $request->validate([
             'deskripsi_pengajuan' => 'required|string|min:10',
         ]);
@@ -391,11 +382,9 @@ class AjuanController extends Controller
             $finalChecklistData = array_map(fn($item) => $item === 'Lainnya...' ? 'Lainnya: ' . $request->lainnya_text : $item, $finalChecklistData);
         }
 
-        // Ambil data file yang sudah ada
         $dokumenData = $ajuan->administrasi_items;
-        // Perbarui file jika ada file baru yang diunggah
+
         $administrasiItemsTemplate = $ajuan->administrasi_items ?? [];
-        // dd($ajuan->bidang);
         foreach (array_keys($administrasiItemsTemplate) as $key) {
             if ($request->hasFile($key)) {
                 if (isset($dokumenData[$key])) {
@@ -406,7 +395,6 @@ class AjuanController extends Controller
             }
         }
 
-        // Update data di database
         $ajuan->update([
             'deskripsi_pengajuan' => $request->deskripsi_pengajuan,
             'formulir_items' => $finalChecklistData,
@@ -414,7 +402,6 @@ class AjuanController extends Controller
             'status_pengajuan' => 'Diproses',
         ]);
 
-        // Buat catatan history baru
         History::create([
             'pengajuan_id' => $ajuan->id,
             'status' => 'Direvisi & Diajukan Kembali',
@@ -478,22 +465,17 @@ class AjuanController extends Controller
 
     public function verifyAjuan(Request $request, Pengajuan $ajuan)
     {
-        $user = Auth::user(); // Kader yang sedang login
-        $targetUser = $ajuan->user; // Masyarakat yang punya ajuan
+        $user = Auth::user(); 
+        $targetUser = $ajuan->user; 
 
-        // Sebaiknya di-aktifkan untuk keamanan
         $this->authorize('verify', $ajuan);
 
         $step = $request->input('verification_step');
         $statusHistory = '';
         $catatanHistory = $request->catatan;
 
-        // ===============================================
-        // == ALUR 1: TAHAP 1 (Verifikasi Dokumen)
-        // ===============================================
         if ($step == 1) {
 
-            // --- Jika Kader mengklik "Tolak Langsung" ---
             if ($request->input('tolak_langsung') === 'Ditolak') {
                 $request->validate(
                     ['catatan' => 'required'],

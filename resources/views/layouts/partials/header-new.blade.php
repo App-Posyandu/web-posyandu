@@ -1,5 +1,5 @@
 <header class="w-full top-0 z-50 bg-white md:bg-transparent" x-data="{ mobileMenuOpen: false }">
-    <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-screen-2xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center">
 
             {{-- Logo Section --}}

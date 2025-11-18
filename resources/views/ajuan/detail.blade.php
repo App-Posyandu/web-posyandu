@@ -8,8 +8,8 @@
         fileType: '',
         isLoadingModal: false
     }" class="flex-grow gap-5 flex-col flex items-center justify-center py-12">
-        <div class="w-full max-w-4xl mx-auto">
-            <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-8">
+        <div class="w-full mx-8">
+            <div class="bg-white overflow-hidden shadow-xl md:mx-8 sm:rounded-2xl p-4 md:p-8">
 
                 <div class="flex justify-between items-start mb-6">
                     <div>
@@ -149,7 +149,6 @@
         </div>
         @if (auth()->user()->role === 'kader')
 
-            {{-- Modal Preview Dokumen --}}
             <div x-show="showModal" x-cloak x-transition.opacity
                 class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" @click.self="showModal = false">
                 <div
@@ -179,9 +178,9 @@
                 </div>
             </div>
 
-            {{-- Container Accordion 3 Tahap --}}
+            <div class="w-full mx-8">
             @if ($ajuan->status_pengajuan === 'Diproses')
-                <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-8 w-full max-w-4xl" x-data="{
+                <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-4 md:p-8 mx-0 md:mx-8" x-data="{
                     step1Open: {{ !$ajuan->sudah_verifikasi ? 'true' : 'false' }},
                     step2Open: {{ $ajuan->sudah_verifikasi && !$ajuan->kunjungan_lapangan ? 'true' : 'false' }},
                     step3Open: {{ $ajuan->sudah_verifikasi && $ajuan->kunjungan_lapangan && !$ajuan->ttd_kader ? 'true' : 'false' }},
@@ -204,13 +203,8 @@
 
                     <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Proses Verifikasi Pengajuan</h2>
 
-                    {{-- ========================================= --}}
-                    {{-- TAHAP 1: Verifikasi Dokumen --}}
-                    {{-- ========================================= --}}
                     <div
                         class="mb-4 border rounded-lg overflow-hidden {{ $ajuan->sudah_verifikasi ? 'bg-green-50 border-green-300' : 'bg-white border-gray-300' }}">
-
-                        {{-- Header Accordion --}}
                         <button @click="toggleStep(1)" type="button"
                             class="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors duration-200">
                             <div class="flex items-center space-x-3">
@@ -261,7 +255,6 @@
                                     <input type="hidden" name="verification_step" value="1">
                                     <input type="hidden" name="tolak_langsung" id="tolak_langsung">
 
-                                    {{-- Error Validasi --}}
                                     @if ($errors->has('verified_formulir_items') || $errors->has('verified_administrasi_items'))
                                         <div
                                             class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
@@ -272,7 +265,6 @@
                                     @endif
 
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        {{-- Detail Permohonan --}}
                                         <div>
                                             <h3 class="font-semibold mb-4 border-b pb-2">Detail Permohonan Diajukan</h3>
                                             <div class="space-y-3">
@@ -292,11 +284,10 @@
                                             </div>
                                         </div>
 
-                                        {{-- Dokumen Administrasi --}}
                                         <div>
                                             <h3 class="font-semibold mb-4 border-b pb-2">Dokumen Administrasi Terlampir
                                             </h3>
-                                            <div class="space-y-3">
+                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                                                 @forelse ($ajuan->administrasi_items ?? [] as $key => $path)
                                                     @php
                                                         $label =
@@ -355,7 +346,6 @@
                                         </div>
                                     </div>
 
-                                    {{-- Catatan --}}
                                     <div class="mt-6">
                                         <label for="catatan_tolak" class="block font-medium text-sm text-gray-700">
                                             Catatan (Wajib jika ditolak)
@@ -429,13 +419,8 @@
                         </div>
                     </div>
 
-                    {{-- ========================================= --}}
-                    {{-- TAHAP 2: Konfirmasi Kunjungan Lapangan --}}
-                    {{-- ========================================= --}}
                     <div
                         class="mb-4 border rounded-lg overflow-hidden {{ $ajuan->kunjungan_lapangan ? 'bg-green-50 border-green-300' : ($ajuan->sudah_verifikasi ? 'bg-white border-gray-300' : 'bg-gray-100 border-gray-200') }}">
-
-                        {{-- Header Accordion --}}
                         <button @click="toggleStep(2)" type="button" {{ !$ajuan->sudah_verifikasi ? 'disabled' : '' }}
                             class="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors duration-200 {{ !$ajuan->sudah_verifikasi ? 'cursor-not-allowed opacity-50' : '' }}">
                             <div class="flex items-center space-x-3">
@@ -514,7 +499,6 @@
                                             </div>
                                         </div>
 
-                                        {{-- Checklist Kunjungan --}}
                                         <div class="bg-white border border-gray-200 rounded-lg p-5 mb-4">
                                             <h4 class="font-semibold text-gray-800 mb-3">Checklist Kunjungan Lapangan</h4>
                                             <div class="space-y-2 text-sm text-gray-700">
@@ -631,13 +615,9 @@
                         @endif
                     </div>
 
-                    {{-- ========================================= --}}
-                    {{-- TAHAP 3: Keputusan Akhir --}}
-                    {{-- ========================================= --}}
                     <div
                         class="border rounded-lg overflow-hidden {{ $ajuan->ttd_kader ? 'bg-green-50 border-green-300' : ($ajuan->kunjungan_lapangan ? 'bg-white border-gray-300' : 'bg-gray-100 border-gray-200') }}">
 
-                        {{-- Header Accordion --}}
                         <button @click="toggleStep(3)" type="button" {{ !$ajuan->kunjungan_lapangan ? 'disabled' : '' }}
                             class="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors duration-200 {{ !$ajuan->kunjungan_lapangan ? 'cursor-not-allowed opacity-50' : '' }}">
                             <div class="flex items-center space-x-3">
@@ -681,7 +661,6 @@
                             </svg>
                         </button>
 
-                        {{-- Content Accordion --}}
                         @if ($ajuan->kunjungan_lapangan)
                             <div x-show="step3Open" x-transition:enter="transition ease-out duration-300"
                                 x-transition:enter-start="opacity-0 transform -translate-y-2"
@@ -717,7 +696,6 @@
                                             </div>
                                         </div>
 
-                                        {{-- Ringkasan Verifikasi --}}
                                         <div class="bg-white border border-gray-200 rounded-lg p-5 mb-6">
                                             <h4 class="font-semibold text-gray-800 mb-3 flex items-center">
                                                 <svg class="w-5 h-5 mr-2 text-gray-600" fill="none"
@@ -779,7 +757,6 @@
                                             </div>
                                         </div>
 
-                                        {{-- Pilihan Status Akhir --}}
                                         <div class="mb-6">
                                             <label for="status" class="block font-medium text-sm text-gray-700 mb-2">
                                                 Status Pengajuan Akhir <span class="text-red-500">*</span>
@@ -794,7 +771,6 @@
                                             <x-input-error :messages="$errors->get('status')" class="mt-2" />
                                         </div>
 
-                                        {{-- Catatan Akhir --}}
                                         <div class="mb-6">
                                             <label for="catatan_final"
                                                 class="block font-medium text-sm text-gray-700 mb-2">
@@ -807,7 +783,6 @@
                                             <x-input-error :messages="$errors->get('catatan')" class="mt-2" />
                                         </div>
 
-                                        {{-- TTD Kader --}}
                                         <div class="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-6">
                                             <label class="flex items-start space-x-3 cursor-pointer">
                                                 <input type="checkbox" name="ttd_kader" value="1"
@@ -823,7 +798,6 @@
                                             <x-input-error :messages="$errors->get('ttd_kader')" class="mt-2" />
                                         </div>
 
-                                        {{-- Tombol Submit --}}
                                         @if (!$ajuan->ttd_kader)
                                             <div class="flex justify-end space-x-3">
                                                 <a href="{{ route('ajuan.index') }}"
@@ -881,9 +855,9 @@
                             </div>
                         @endif
                     </div>
-
                 </div>
-            @endif
+                @endif
+            </div>
         @endif
     </div>
 @endsection

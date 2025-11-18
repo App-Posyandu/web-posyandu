@@ -1,7 +1,7 @@
 @extends('dashboard.layouts.dashboard')
 @section('title', 'Administrasi Ajuan')
 @section('content')
-    <div class="w-full sm:max-w-3xl mt-6 px-6 py-8 bg-white shadow-md overflow-hidden sm:rounded-lg z-10">
+    <div class="w-full lg:mx-8 mt-6 px-6 py-8 bg-white shadow-md overflow-hidden sm:rounded-lg z-10">
         <form method="POST" action="{{ route('ajuan.store.administrasi') }}" enctype="multipart/form-data"
             id="form-administrasi">
             @csrf
@@ -125,7 +125,6 @@
 
                             </div>
 
-                            <!-- Preview Box dengan Icon untuk field lainnya -->
                             <div x-show="filePreview" x-transition class="mt-3 relative">
                                 <div class="flex items-center gap-2 mb-2 text-gray-600">
                                     <i class="fa-solid fa-eye text-pink-500"></i>
@@ -177,9 +176,6 @@
 
                 document.addEventListener('DOMContentLoaded', function() {
 
-                    // ============================================
-                    // INTERCEPT SEMUA LINK NAVIGASI
-                    // ============================================
                     const links = document.querySelectorAll('a:not([id="kembali-administrasi"])');
 
                     links.forEach(link => {
@@ -213,9 +209,6 @@
                         });
                     });
 
-                    // ============================================
-                    // HANDLER TOMBOL KEMBALI
-                    // ============================================
                     const btnKembali = document.getElementById('kembali-administrasi');
                     if (btnKembali) {
                         btnKembali.addEventListener('click', function(e) {
@@ -240,9 +233,6 @@
                         });
                     }
 
-                    // ============================================
-                    // HANDLER TOMBOL KIRIM (SUBMIT FORM)
-                    // ============================================
                     const btnKirim = document.getElementById('submit-pengajuan');
                     const form = document.getElementById('form-administrasi');
 

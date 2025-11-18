@@ -1,5 +1,5 @@
 @section('content')
-    <div class="flex flex-col gap-4 md:gap-6 px-4 sm:px-6 lg:px-8 w-full max-w-7xl mx-auto">
+    <div class="flex flex-col gap-4 md:gap-6 px-4 sm:px-6 lg:px-8 w-full mx-auto">
         @if (!$isVerified)
             <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-3 md:p-4 rounded-lg" role="alert">
                 <div class="flex">
@@ -13,12 +13,10 @@
             </div>
         @endif
 
-        <!-- Dashboard Cards Section -->
         <div class="bg-white overflow-hidden shadow-xl rounded-lg md:rounded-2xl p-4 md:p-6 lg:p-8 w-full">
             <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6">Dashboard Ajuan Pelayanan</h2>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-                <!-- Cards Grid -->
                 <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                     @php
                         $bidangColors = [
@@ -51,11 +49,9 @@
             </div>
         </div>
 
-        <!-- List Pengajuan Section -->
         <div class="w-full">
             <div class="bg-white overflow-hidden shadow-xl rounded-lg md:rounded-2xl p-4 md:p-6 lg:p-8">
 
-                <!-- Header with Search and Export -->
                 <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-4 md:mb-6">
                     <h2 class="text-xl md:text-2xl font-bold text-gray-800">List Pengajuan</h2>
 
@@ -65,7 +61,7 @@
 
                             <!-- Filter Status -->
                             <select name="status" onchange="this.form.submit()"
-                                class="border-gray-300 rounded-md shadow-sm text-sm w-full sm:w-auto px-3 py-2">
+                                class="border-gray-300 rounded-md shadow-sm text-sm w-full sm:w-auto px-3 lg:pr-8 py-2">
                                 <option value="">Semua Status</option>
                                 <option value="Diproses" @selected(request('status') == 'Diproses')>Diproses</option>
                                 <option value="Disetujui" @selected(request('status') == 'Disetujui')>Disetujui</option>

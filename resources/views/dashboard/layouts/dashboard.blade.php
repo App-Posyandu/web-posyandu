@@ -8,7 +8,6 @@
 
     <title>@yield('title', 'Dashboard') - {{ config('app.name', 'Laravel') }}</title>
 
-    <!-- PWA  -->
     <meta name="theme-color" content="#171717">
 
     {{-- <link rel="manifest" href="{{ asset('./manifest.json') }}"> --}}
@@ -50,11 +49,11 @@
 
         <x-colorful-background />
 
-        <div class="relative z-10 flex flex-col min-h-screen">
+        <div class="relative z-10 flex flex-col min-h-screen max-w-screen-2xl">
 
             @include('layouts.partials.header-new')
 
-            <main class="flex-grow flex items-center justify-center min-h-[70vh]">
+            <main class="flex-grow flex justify-center mt-0 md:mt-6 min-h-[70vh]">
                 @yield('content')
             </main>
             <button id="pwa-install-btn"

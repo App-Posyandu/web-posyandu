@@ -1,6 +1,6 @@
 @extends('dashboard.layouts.dashboard')
 @section('content')
-    <div class="max-w-4xl w-full mx-auto sm:px-6 lg:px-8">
+    <div class="w-full max-w-5xl mx-auto sm:px-6 lg:px-8">
         @if (session('error'))
             <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg mb-6 max-w-4xl w-full mx-auto"
                 role="alert">
