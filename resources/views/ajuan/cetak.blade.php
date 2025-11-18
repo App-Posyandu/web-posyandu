@@ -393,13 +393,20 @@
                             <td class="cell-left">{{ $item }}</td>
                             <td>
                                 @php
-                                    $verifiedItems = $ajuan->verified_formulir_items;
-                                    if (is_string($verifiedItems)) {
-                                        $verifiedItems = json_decode($verifiedItems, true) ?? [];
+                                    $rawItems = $ajuan->verified_formulir_items;
+
+                                    if (is_string($rawItems)) {
+                                        $verifiedItems = json_decode($rawItems, true);
+                                    } else {
+                                        $verifiedItems = $rawItems;
+                                    }
+
+                                    if (!is_array($verifiedItems)) {
+                                        $verifiedItems = [];
                                     }
                                 @endphp
 
-                                @if (in_array($item, $verifiedItems))
+                                @if ($ajuan->sudah_verifikasi && in_array($item, $verifiedItems))
                                     @if ($checkBase64)
                                         <img src="{{ $checkBase64 }}" alt="Logo Check" class="img-check">
                                     @endif
@@ -413,23 +420,28 @@
                     @endforelse
                 </table>
 
-                {{-- Persyatan Administrasi --}}
                 <h4 class="sub-title">Dokumen Administrasi</h4>
                 <table class="table-content">
                     @forelse ($ajuan->administrasi_items ?? [] as $key => $path)
                         @php
                             $label = $templateData['administrasi_items'][$key] ?? ucfirst(str_replace('_', ' ', $key));
 
-                            $verifiedDocs = $ajuan->verified_administrasi_items ?? [];
+                            $rawDocs = $ajuan->verified_administrasi_items;
 
-                            if (is_string($verifiedDocs)) {
-                                $verifiedDocs = json_decode($verifiedDocs, true) ?? [];
+                            if (is_string($rawDocs)) {
+                                $verifiedDocs = json_decode($rawDocs, true);
+                            } else {
+                                $verifiedDocs = $rawDocs;
+                            }
+
+                            if (!is_array($verifiedDocs)) {
+                                $verifiedDocs = [];
                             }
                         @endphp
                         <tr>
                             <td class="cell-left">{{ $label }}</td>
                             <td>
-                                @if ($ajuan->sudah_verifikasi && is_array($verifiedDocs) && array_key_exists($key, $verifiedDocs))
+                                @if ($ajuan->sudah_verifikasi && array_key_exists($key, $verifiedDocs))
                                     @if ($checkBase64)
                                         <img src="{{ $checkBase64 }}" alt="Logo Check" class="img-check">
                                     @endif

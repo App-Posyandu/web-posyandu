@@ -53,6 +53,9 @@ Route::middleware('auth')->group(function () {
         ->middleware('role:admin,kabid,ketua-kader,kader')
         ->name('dashboard.partials.pilih-user');
 
+    Route::post('users/{user}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
+    Route::post('users/{user}/activate', [UserController::class, 'activate'])->name('users.activate');
+    
     // ✅ ROUTE AJUAN - TANPA MIDDLEWARE TAMBAHAN
     Route::get('/ajuan', [AjuanController::class, 'index'])->name('ajuan.index');
     Route::get('/ajuan/create/{bidang}', [AjuanController::class, 'create'])->name('ajuan.create');

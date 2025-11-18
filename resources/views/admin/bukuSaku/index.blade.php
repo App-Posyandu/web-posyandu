@@ -1,7 +1,7 @@
 @extends('dashboard.layouts.dashboard')
 @section('title', 'Dokumen')
 @section('content')
-    <div class="w-full max-w-7xl mx-auto min-h-[70vh]" x-data="{ showModal: false, pdfUrl: '', pdfTitle: '' }" @keydown.escape.window="showModal = false">
+    <div class="w-full mx-auto min-h-[70vh]" x-data="{ showModal: false, pdfUrl: '', pdfTitle: '' }" @keydown.escape.window="showModal = false">
 
         <x-slot name="header">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
@@ -9,7 +9,6 @@
             </h2>
         </x-slot>
 
-        <!-- Modal -->
         <div x-show="showModal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/75" x-transition>
             <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl h-5/6 flex flex-col" @click.away="showModal = false">
                 <div class="flex justify-between items-center p-4 border-b">
@@ -22,9 +21,8 @@
             </div>
         </div>
 
-        <!-- Daftar Buku -->
         <div class="py-12">
-            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div class=" w-full mx-auto sm:px-6 lg:px-8">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6 text-gray-900">
 

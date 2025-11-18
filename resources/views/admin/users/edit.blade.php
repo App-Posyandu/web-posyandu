@@ -1,176 +1,193 @@
 @extends('dashboard.layouts.dashboard')
-@section('title', 'Ubah Pengguna')
+@section('title', 'Kelola Status Pengguna')
 @section('content')
-    <div>
-        <x-slot name="header">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Ubah Data Pengguna: ') }} {{ $user->name }}
-            </h2>
-        </x-slot>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ __('Kelola Status Pengguna: ') }} {{ $user->name }}
+        </h2>
+    </x-slot>
 
-        <div class="py-12">
-            <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-8 text-gray-900">
-                        <form method="POST" action="{{ route('admin.users.update', $user) }}" enctype="multipart/form-data">
-                            @csrf
-                            @method('PATCH')
+    <div class="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="p-6 sm:p-8 text-gray-900">
 
-                            <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">Formulir Ubah Pengguna</h2>
+                {{-- User Info Card - Read Only --}}
+                <div class="bg-gradient-to-r from-pink-50 to-purple-50 rounded-lg p-6 mb-6 border border-pink-200">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0">
+                            <div
+                                class="w-16 h-16 bg-pink-500 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                                {{ strtoupper(substr($user->name, 0, 1)) }}
+                            </div>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-xl font-bold text-gray-800 mb-2">{{ $user->name }}</h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                                <div class="flex items-center gap-2">
+                                    <i class="bi bi-person-badge text-pink-600"></i>
+                                    <span class="text-gray-600">NIK:</span>
+                                    <span class="font-medium text-gray-800">{{ $user->nik }}</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <i class="bi bi-envelope text-pink-600"></i>
+                                    <span class="text-gray-600">Email:</span>
+                                    <span class="font-medium text-gray-800">{{ $user->email }}</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <i class="bi bi-telephone text-pink-600"></i>
+                                    <span class="text-gray-600">No. HP:</span>
+                                    <span class="font-medium text-gray-800">{{ $user->no_telepon }}</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <i class="bi bi-briefcase text-pink-600"></i>
+                                    <span class="text-gray-600">Role:</span>
+                                    <span class="font-medium text-gray-800">{{ ucfirst($user->role) }}</span>
+                                </div>
+                                @if ($user->posyandu)
+                                    <div class="flex items-center gap-2 sm:col-span-2">
+                                        <i class="bi bi-hospital text-pink-600"></i>
+                                        <span class="text-gray-600">Posyandu:</span>
+                                        <span class="font-medium text-gray-800">{{ $user->posyandu->nama_posyandu }}</span>
+                                    </div>
+                                @endif
+                                @if ($user->role === 'kader' && $user->bidang)
+                                    <div class="flex items-center gap-2 sm:col-span-2">
+                                        <i class="bi bi-folder text-pink-600"></i>
+                                        <span class="text-gray-600">Bidang:</span>
+                                        <span class="font-medium text-gray-800">{{ $user->bidang->nama_bidang }}</span>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                {{-- Form Edit Status --}}
+                <form method="POST" action="{{ route('admin.users.update', $user) }}">
+                    @csrf
+                    @method('PATCH')
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-6">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                            <i class="bi bi-toggle-on text-pink-600"></i>
+                            Kelola Status Akun
+                        </h2>
+
+                        {{-- Current Status Badge --}}
+                        <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+                            <div class="flex items-center justify-between">
                                 <div>
-                                    <x-input-label for="nik" :value="__('NIK')" />
-                                    <x-text-input id="nik" class="block mt-1 w-full" type="text" name="nik"
-                                        :value="old('nik', $user->nik)" required autofocus placeholder="Masukkan NIK" />
-                                    <x-input-error :messages="$errors->get('nik')" class="mt-2" />
-                                </div>
-
-                                <div>
-                                    <x-input-label for="name" :value="__('Nama Lengkap')" />
-                                    <x-text-input id="name" class="block mt-1 w-full" type="text" name="name"
-                                        :value="old('name', $user->name)" required placeholder="Masukkan nama lengkap" />
-                                    <x-input-error :messages="$errors->get('name')" class="mt-2" />
-                                </div>
-
-                                <div class="md:col-span-2">
-                                    <x-input-label for="alamat" :value="__('Alamat')" />
-                                    <textarea id="alamat" name="alamat"
-                                        class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                                        rows="3" required placeholder="Masukkan alamat lengkap">{{ old('alamat', $user->alamat) }}</textarea>
-                                    <x-input-error :messages="$errors->get('alamat')" class="mt-2" />
-                                </div>
-
-                                <div>
-                                    <x-input-label for="tempat_lahir" :value="__('Tempat Lahir')" />
-                                    <x-text-input id="tempat_lahir" class="block mt-1 w-full" type="text"
-                                        name="tempat_lahir" :value="old('tempat_lahir', $user->tempat_lahir)" required />
-                                    <x-input-error :messages="$errors->get('tempat_lahir')" class="mt-2" />
-                                </div>
-
-                                <div>
-                                    <x-input-label for="tanggal_lahir" :value="__('Tanggal Lahir')" />
-                                    <x-text-input id="tanggal_lahir" class="block mt-1 w-full" type="date"
-                                        name="tanggal_lahir" :value="old('tanggal_lahir', $user->tanggal_lahir)" required />
-                                    <x-input-error :messages="$errors->get('tanggal_lahir')" class="mt-2" />
-                                </div>
-
-                                <div>
-                                    <x-input-label for="jenis_kelamin" :value="__('Jenis Kelamin')" />
-                                    <select id="jenis_kelamin" name="jenis_kelamin"
-                                        class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                                        required>
-                                        <option value="Laki-laki" @selected(old('jenis_kelamin', $user->jenis_kelamin) == 'Laki-laki')>Laki-laki</option>
-                                        <option value="Perempuan" @selected(old('jenis_kelamin', $user->jenis_kelamin) == 'Perempuan')>Perempuan</option>
-                                    </select>
-                                    <x-input-error :messages="$errors->get('jenis_kelamin')" class="mt-2" />
-                                </div>
-
-                                <div>
-                                    <x-input-label for="posyandu_id" :value="__('Posyandu')" />
-                                    <select id="posyandu_id" name="posyandu_id"
-                                        class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                                        required>
-                                        @foreach ($posyandus as $posyandu)
-                                            <option value="{{ $posyandu->id }}" @selected(old('posyandu_id', $user->posyandu_id) == $posyandu->id)>
-                                                {{ $posyandu->nama_posyandu }}</option>
-                                        @endforeach
-                                    </select>
-                                    <x-input-error :messages="$errors->get('posyandu_id')" class="mt-2" />
-                                </div>
-
-                                <div>
-                                    <x-input-label for="email" :value="__('Email')" />
-                                    <x-text-input id="email" class="block mt-1 w-full" type="email" name="email"
-                                        :value="old('email', $user->email)" required />
-                                    <x-input-error :messages="$errors->get('email')" class="mt-2" />
-                                </div>
-
-                                <div>
-                                    <x-input-label for="no_telepon" :value="__('Nomor Telepon')" />
-                                    <x-text-input id="no_telepon" class="block mt-1 w-full" type="text"
-                                        name="no_telepon" :value="old('no_telepon', $user->no_telepon)" required />
-                                    <x-input-error :messages="$errors->get('no_telepon')" class="mt-2" />
-                                </div>
-
-                                <div class="md:col-span-2">
-                                    <x-input-label for="role" :value="__('Role')" />
-                                    <select id="role" name="role"
-                                        class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                                        required>
-                                        <option value="masyarakat" @selected(old('role', $user->role) == 'masyarakat')>Masyarakat</option>
-                                        <option value="kader" @selected(old('role', $user->role) == 'kader')>Kader</option>
-                                        <option value="ketua-kader" @selected(old('role', $user->role) == 'ketua-kader')>Ketua Kader</option>
-                                        <option value="kabid" @selected(old('role', $user->role) == 'kabid')>Kabid</option>
-                                        <option value="admin" @selected(old('role', $user->role) == 'admin')>Admin</option>
-                                    </select>
-                                    <x-input-error :messages="$errors->get('role')" class="mt-2" />
-                                </div>
-
-                                {{-- ✅ TAMBAHKAN DROPDOWN BIDANG (HANYA MUNCUL JIKA ROLE = KADER) --}}
-                                <div id="bidang-field" class="md:col-span-2" style="display: none;">
-                                    <x-input-label for="bidang_id" :value="__('Bidang Tugas')" />
-                                    <select id="bidang_id" name="bidang_id"
-                                        class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                                        <option value="" disabled>Pilih Bidang</option>
-                                        @foreach ($bidangs as $bidang)
-                                            <option value="{{ $bidang->id }}" @selected(old('bidang_id', $user->bidang_id) == $bidang->id)>
-                                                {{ $bidang->nama_bidang }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    <p class="mt-1 text-xs text-gray-500">Kader hanya bisa mengelola 1 bidang.</p>
-                                    <x-input-error :messages="$errors->get('bidang_id')" class="mt-2" />
-                                </div>
-
-                                <div class="mt-4 md:col-span-2">
-                                    <x-input-label for="password" :value="__('Password Baru (Opsional)')" />
-                                    <x-text-input id="password" class="block mt-1 w-full" type="password"
-                                        name="password" autocomplete="new-password"
-                                        placeholder="Biarkan kosong jika tidak ingin diubah" />
-                                    <x-input-error :messages="$errors->get('password')" class="mt-2" />
-                                </div>
-
-                                <div class="md:col-span-2">
-                                    <x-input-label for="password_confirmation" :value="__('Konfirmasi Password Baru')" />
-                                    <x-text-input id="password_confirmation" class="block mt-1 w-full" type="password"
-                                        name="password_confirmation" />
+                                    <p class="text-sm text-gray-600 mb-1">Status Saat Ini:</p>
+                                    @if ($user->is_active)
+                                        <span
+                                            class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800">
+                                            <i class="bi bi-check-circle-fill mr-2"></i>
+                                            Aktif
+                                        </span>
+                                    @else
+                                        <span
+                                            class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-800">
+                                            <i class="bi bi-x-circle-fill mr-2"></i>
+                                            Nonaktif
+                                        </span>
+                                    @endif
                                 </div>
                             </div>
+                        </div>
 
-                            <div class="flex items-center justify-end mt-8 gap-4">
-                                <a href="{{ route('admin.users.index') }}"
-                                    class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md text-sm font-semibold hover:bg-gray-300">Batal</a>
-                                <x-primary-button>
-                                    {{ __('Simpan Perubahan') }}
-                                </x-primary-button>
+                        {{-- Status Toggle --}}
+                        <div class="mb-6">
+                            <label
+                                class="flex items-center justify-between p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors duration-150">
+                                <div class="flex items-center gap-3">
+                                    <div class="flex-shrink-0">
+                                        <i class="bi bi-person-check text-2xl text-pink-600"></i>
+                                    </div>
+                                    <div>
+                                        <span class="block text-base font-semibold text-gray-800">Status Akun Aktif</span>
+                                        <span class="block text-sm text-gray-600">
+                                            {{ $user->is_active ? 'User dapat login dan mengakses sistem' : 'User tidak dapat login ke sistem' }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="flex-shrink-0">
+                                    <input type="checkbox" name="is_active" id="is_active" value="1"
+                                        {{ old('is_active', $user->is_active) ? 'checked' : '' }}
+                                        class="w-6 h-6 text-pink-600 bg-gray-100 border-gray-300 rounded focus:ring-pink-500 focus:ring-2">
+                                </div>
+                            </label>
+                            <x-input-error :messages="$errors->get('is_active')" class="mt-2" />
+                        </div>
+
+                        <div class="mt-4" x-data="{ isActive: {{ $user->is_active ? 'true' : 'false' }} }">
+                            <script>
+                                document.getElementById('is_active').addEventListener('change', function() {
+                                    const reasonInput = document.getElementById('reason_container');
+                                    if (this.checked) {
+                                        reasonInput.style.display = 'none';
+                                    } else {
+                                        reasonInput.style.display = 'block';
+                                    }
+                                });
+                            </script>
+
+                            <div id="reason_container" style="display: {{ $user->is_active ? 'none' : 'block' }};">
+                                <x-input-label for="reason" :value="__('Alasan Penonaktifan')" />
+                                <textarea id="reason" name="reason" rows="2" required
+                                    class="block mt-1 w-full border-gray-300 rounded-md shadow-sm focus:border-pink-500 focus:ring-pink-500"
+                                    placeholder="Contoh: User sudah pindah domisili, atau mengundurkan diri.">{{ old('reason', $user->deactivation_reason) }}</textarea>
+                                <x-input-error :messages="$errors->get('reason')" class="mt-2" />
                             </div>
-                        </form>
+                        </div>
+
+                        {{-- Warning Info --}}
+                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-exclamation-triangle-fill text-yellow-400"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-yellow-700">
+                                        <strong class="font-semibold">Perhatian:</strong>
+                                        Menonaktifkan user akan mencegah mereka login ke sistem.
+                                        User yang dinonaktifkan tidak akan kehilangan data mereka.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Action Buttons --}}
+                    <div class="flex flex-col sm:flex-row items-center justify-between mt-6 gap-3">
+                        <a href="{{ route('admin.users.index') }}"
+                            class="w-full sm:w-auto inline-flex items-center justify-center px-6 py-2.5 bg-gray-200 text-gray-800 rounded-md text-sm font-semibold hover:bg-gray-300 transition-colors duration-150">
+                            <i class="bi bi-arrow-left mr-2"></i>
+                            Kembali
+                        </a>
+
+                        <button type="submit"
+                            class="w-full sm:w-auto inline-flex items-center justify-center px-6 py-2.5 bg-pink-600 text-white rounded-md text-sm font-semibold hover:bg-pink-700 transition-colors duration-150 shadow-sm">
+                            <i class="bi bi-save mr-2"></i>
+                            Simpan Perubahan
+                        </button>
+                    </div>
+                </form>
+
+                {{-- Additional Info --}}
+                <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div class="flex items-start">
+                        <i class="bi bi-info-circle-fill text-blue-500 mr-3 mt-0.5"></i>
+                        <div class="text-sm text-blue-700">
+                            <p class="font-semibold mb-1">Info Tambahan:</p>
+                            <ul class="list-disc list-inside space-y-1 ml-2">
+                                <li>User yang dinonaktifkan tidak dapat login ke sistem</li>
+                                <li>Data user tetap tersimpan dan dapat diaktifkan kembali</li>
+                                <li>Untuk mengubah data user lainnya, hubungi administrator</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
-    {{-- ✅ JAVASCRIPT: TAMPILKAN BIDANG JIKA ROLE = KADER --}}
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const roleSelect = document.getElementById('role');
-            const bidangField = document.getElementById('bidang-field');
-            const bidangSelect = document.getElementById('bidang_id');
-
-            function toggleBidangField() {
-                if (roleSelect.value === 'kader') {
-                    bidangField.style.display = 'block';
-                    bidangSelect.required = true;
-                } else {
-                    bidangField.style.display = 'none';
-                    bidangSelect.required = false;
-                }
-            }
-
-            roleSelect.addEventListener('change', toggleBidangField);
-            toggleBidangField(); // Check on page load
-        });
-    </script>
 @endsection

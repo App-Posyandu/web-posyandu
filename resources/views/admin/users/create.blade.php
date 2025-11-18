@@ -1,7 +1,7 @@
 @extends('dashboard.layouts.dashboard')
 @section('title', 'Add Users')
 @section('content')
-    <div class="w-full max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="w-full mx-auto sm:px-6 lg:px-8">
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
             <div class="p-8 text-gray-900">
                 <form method="POST" action="{{ route('admin.users.store') }}" enctype="multipart/form-data">
@@ -75,21 +75,17 @@
                             <x-input-error :messages="$errors->get('posyandu_id')" class="mt-2" />
                         </div>
 
-                        {{-- Ganti kondisi '===' dengan 'in_array' --}}
-                        <div class="{{ in_array(auth()->user()->role, ['kabid', 'ketua-kader']) ? 'hidden' : '' }}">
+                        {{-- Role --}}
+                        <div
+                            class="{{ in_array(auth()->user()->role, ['kabid', 'ketua-kader']) ? 'hidden' : '' }} md:col-span-2">
                             <x-input-label for="role" :value="__('Role')" />
-                            <select id="role" name="role" class="block mt-1 w-full border-gray-300 ...">
-                                {{-- Hapus 'required' dari sini agar tidak error saat disembunyikan --}}
-
+                            <select id="role" name="role"
+                                class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                                 <option value="" disabled selected>Pilih Role</option>
                                 @php $currentUserRole = auth()->user()->role; @endphp
 
                                 @if ($currentUserRole === 'admin')
-                                    <option value="masyarakat" @selected(old('role') == 'masyarakat')>Masyarakat</option>
-                                    <option value="kader" @selected(old('role') == 'kader')>Kader</option>
-                                    <option value="ketua-kader" @selected(old('role') == 'ketua-kader')>Ketua Kader</option>
                                     <option value="kabid" @selected(old('role') == 'kabid')>Kabid</option>
-                                    <option value="admin" @selected(old('role') == 'admin')>Admin</option>
                                 @elseif ($currentUserRole === 'kabid')
                                     <option value="ketua-kader" @selected(true)>Ketua Kader</option>
                                 @elseif ($currentUserRole === 'ketua-kader')
@@ -97,6 +93,119 @@
                                 @endif
                             </select>
                             <x-input-error :messages="$errors->get('role')" class="mt-2" />
+                        </div>
+
+                        {{-- JENIS WILAYAH --}}
+                        <div class="md:col-span-2" id="jenis-wilayah-field" style="display: none;">
+                            <x-input-label for="jenis_wilayah" :value="__('Jenis Wilayah')" />
+                            <select id="jenis_wilayah" name="jenis_wilayah"
+                                class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                <option value="" disabled selected>Pilih Jenis Wilayah</option>
+                                <option value="kabupaten" @selected(old('jenis_wilayah') == 'kabupaten')>Kabupaten</option>
+                                <option value="kota" @selected(old('jenis_wilayah') == 'kota')>Kota</option>
+                            </select>
+                            <p class="mt-1 text-xs text-gray-500">Pilih apakah Kabid mengelola Kabupaten atau Kota.</p>
+                            <x-input-error :messages="$errors->get('jenis_wilayah')" class="mt-2" />
+                        </div>
+
+                        {{-- ✅ HIDDEN INPUT DI LUAR DIV YANG DISPLAY:NONE --}}
+                        <input type="hidden" id="kabupaten-hidden" name="kabupaten" value="">
+
+                        {{-- KABUPATEN COMBOBOX (HANYA UI) --}}
+                        <div id="kabupaten-field" style="display: none;" class="md:col-span-2">
+                            <div x-data="kabupatenCombobox()" @click.away="open = false" x-init="$watch('selectedKabupaten', value => {
+                                document.getElementById('kabupaten-hidden').value = value;
+                                console.log('✅ Kabupaten changed to:', value);
+                            })"
+                                class="relative">
+
+                                <x-input-label for="kabupaten" :value="__('Pilih Kabupaten')" />
+
+                                <div class="relative">
+                                    <input type="text" x-model="search" @focus="open = true" @input="open = true"
+                                        :placeholder="getKabupatenName(selectedKabupaten) || 'Cari Kabupaten...'"
+                                        class="block mt-1 w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        autocomplete="off">
+
+                                    <button type="button" @click="open = !open"
+                                        class="absolute inset-y-0 right-0 flex items-center px-3">
+                                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 9l-7 7-7-7"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                <div x-show="open" x-transition
+                                    class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                                    <template
+                                        x-for="kab in kabupatens.filter(k => k.name.toLowerCase().includes(search.toLowerCase()))"
+                                        :key="kab.code">
+                                        <div @click="selectedKabupaten = `${kab.code}_${kab.name}`; search = ''; open = false"
+                                            class="px-4 py-2 cursor-pointer hover:bg-indigo-50"
+                                            :class="{ 'bg-indigo-100': selectedKabupaten === `${kab.code}_${kab.name}` }"
+                                            x-text="getDisplayName(kab.name)">
+                                        </div>
+                                    </template>
+                                    <div x-show="kabupatens.filter(k => k.name.toLowerCase().includes(search.toLowerCase())).length === 0"
+                                        class="px-4 py-2 text-gray-500 text-sm">
+                                        Tidak ada hasil
+                                    </div>
+                                </div>
+
+                                <p class="mt-1 text-xs text-gray-500">Pilih kabupaten yang akan menjadi wilayah kerja
+                                    Kabid.</p>
+                                <x-input-error :messages="$errors->get('kabupaten')" class="mt-2" />
+                            </div>
+                        </div>
+
+                        {{-- KOTA COMBOBOX (HANYA UI) --}}
+                        <div id="kota-field" style="display: none;" class="md:col-span-2">
+                            <div x-data="kotaCombobox()" @click.away="open = false" x-init="$watch('selectedKota', value => {
+                                document.getElementById('kabupaten-hidden').value = value;
+                                console.log('✅ Kota changed to:', value);
+                            })"
+                                class="relative">
+
+                                <x-input-label for="kota" :value="__('Pilih Kota')" />
+
+                                <div class="relative">
+                                    <input type="text" x-model="search" @focus="open = true" @input="open = true"
+                                        :placeholder="getKotaName(selectedKota) || 'Cari Kota...'"
+                                        class="block mt-1 w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        autocomplete="off">
+
+                                    <button type="button" @click="open = !open"
+                                        class="absolute inset-y-0 right-0 flex items-center px-3">
+                                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 9l-7 7-7-7"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                <div x-show="open" x-transition
+                                    class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                                    <template
+                                        x-for="kota in kotas.filter(k => k.name.toLowerCase().includes(search.toLowerCase()))"
+                                        :key="kota.code">
+                                        <div @click="selectedKota = `${kota.code}_${kota.name}`; search = ''; open = false"
+                                            class="px-4 py-2 cursor-pointer hover:bg-indigo-50"
+                                            :class="{ 'bg-indigo-100': selectedKota === `${kota.code}_${kota.name}` }"
+                                            x-text="getDisplayName(kota.name)">
+                                        </div>
+                                    </template>
+                                    <div x-show="kotas.filter(k => k.name.toLowerCase().includes(search.toLowerCase())).length === 0"
+                                        class="px-4 py-2 text-gray-500 text-sm">
+                                        Tidak ada hasil
+                                    </div>
+                                </div>
+
+                                <p class="mt-1 text-xs text-gray-500">Pilih kota yang akan menjadi wilayah kerja Kabid.</p>
+                                <x-input-error :messages="$errors->get('kabupaten')" class="mt-2" />
+                            </div>
                         </div>
 
                         {{-- ✅ TAMBAHKAN DROPDOWN BIDANG (HANYA MUNCUL JIKA ROLE = KADER) --}}
@@ -117,8 +226,8 @@
 
                         <div>
                             <x-input-label for="password" :value="__('Password')" />
-                            <x-text-input id="password" class="block mt-1 w-full" type="password" name="password" required
-                                autocomplete="new-password" />
+                            <x-text-input id="password" class="block mt-1 w-full" type="password" name="password"
+                                required autocomplete="new-password" />
                             <x-input-error :messages="$errors->get('password')" class="mt-2" />
                         </div>
 
@@ -153,27 +262,104 @@
     </div>
 
     @push('scripts')
-        {{-- ✅ JAVASCRIPT: TAMPILKAN BIDANG JIKA ROLE = KADER --}}
         <script>
+            // ✅ PASTIKAN ALPINE INIT DULU
+            document.addEventListener('alpine:init', () => {
+                console.log('Alpine initialized'); // ← Debug log
+
+                // Alpine.data untuk Kabupaten
+                Alpine.data('kabupatenCombobox', () => ({
+                    open: false,
+                    search: '',
+                    selectedKabupaten: '{{ old('kabupaten') }}',
+                    kabupatens: @json($kabupatenList ?? []),
+
+                    init() {
+                        console.log('Kabupaten combobox init', this.selectedKabupaten); // ← Debug log
+                    },
+
+                    getKabupatenName(value) {
+                        if (!value) return '';
+                        let fullName = value.split('_').slice(1).join('_');
+                        return fullName.replace('Kabupaten ', '');
+                    },
+
+                    getDisplayName(name) {
+                        return name.replace('Kabupaten ', '');
+                    }
+                }));
+
+                // Alpine.data untuk Kota
+                Alpine.data('kotaCombobox', () => ({
+                    open: false,
+                    search: '',
+                    selectedKota: '{{ old('kabupaten') }}',
+                    kotas: @json($kotaList ?? []),
+
+                    init() {
+                        console.log('Kota combobox init', this.selectedKota); // ← Debug log
+                    },
+
+                    getKotaName(value) {
+                        if (!value) return '';
+                        let fullName = value.split('_').slice(1).join('_');
+                        return fullName.replace('Kota ', '');
+                    },
+
+                    getDisplayName(name) {
+                        return name.replace('Kota ', '');
+                    }
+                }));
+            });
+
+            // ✅ TOGGLE FIELDS SETELAH DOM READY
             document.addEventListener('DOMContentLoaded', function() {
                 const roleSelect = document.getElementById('role');
                 const bidangField = document.getElementById('bidang-field');
                 const bidangSelect = document.getElementById('bidang_id');
+                const jenisWilayahField = document.getElementById('jenis-wilayah-field');
+                const jenisWilayahSelect = document.getElementById('jenis_wilayah');
+                const kabupatenField = document.getElementById('kabupaten-field');
+                const kotaField = document.getElementById('kota-field');
 
-                function toggleBidangField() {
+                function toggleFields() {
+                    bidangField.style.display = 'none';
+                    bidangSelect.required = false;
+                    bidangSelect.value = '';
+
+                    jenisWilayahField.style.display = 'none';
+                    jenisWilayahSelect.required = false;
+
+                    kabupatenField.style.display = 'none';
+                    kotaField.style.display = 'none';
+
                     if (roleSelect.value === 'kader') {
                         bidangField.style.display = 'block';
                         bidangSelect.required = true;
-                    } else {
-                        bidangField.style.display = 'none';
-                        bidangSelect.required = false;
-                        bidangSelect.value = '';
+                    }
+
+                    if (roleSelect.value === 'kabid') {
+                        jenisWilayahField.style.display = 'block';
+                        jenisWilayahSelect.required = true;
                     }
                 }
 
-                toggleBidangField(); // Check on page load
-                roleSelect.addEventListener('change', toggleBidangField);
-                toggleBidangField();
+                function toggleWilayahField() {
+                    kabupatenField.style.display = 'none';
+                    kotaField.style.display = 'none';
+
+                    if (jenisWilayahSelect.value === 'kabupaten') {
+                        kabupatenField.style.display = 'block';
+                    } else if (jenisWilayahSelect.value === 'kota') {
+                        kotaField.style.display = 'block';
+                    }
+                }
+
+                toggleFields();
+                toggleWilayahField();
+
+                roleSelect.addEventListener('change', toggleFields);
+                jenisWilayahSelect.addEventListener('change', toggleWilayahField);
             });
             // Replace bagian script import di create.blade.php (user) dengan ini:
 

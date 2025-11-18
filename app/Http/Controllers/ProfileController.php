@@ -41,8 +41,8 @@ class ProfileController extends Controller
             'tanggal_lahir' => ['nullable', 'date'],
             'jenis_kelamin' => ['nullable', 'string'],
             'no_telepon' => ['nullable', 'string', 'max:20', Rule::unique(User::class)->ignore($user->id)],
-            'ktp' => ['nullable', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:2048'],
-            'kk' => ['nullable', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:2048'],
+            'ktp' => ['nullable', 'file', 'mimes:jpeg,png,jpg', 'max:2048'],
+            'kk' => ['nullable', 'file', 'mimes:jpeg,png,jpg', 'max:2048'],
         ]);
 
         $user->fill($request->except(['ktp', 'kk']));

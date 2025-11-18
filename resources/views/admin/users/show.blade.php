@@ -1,100 +1,236 @@
 @extends('dashboard.layouts.dashboard')
-@section('title', 'Detail Pengguna' . ' - ' . $user->name)
+@section('title', 'Detail Pengguna - ' . $user->name)
 @section('content')
     <div class="py-12">
         <div class="w-full max-w-7xl mx-auto sm:px-6 lg:px-8">
+
+            {{-- Tombol Kembali & Edit --}}
+            <div class="flex justify-between items-center mb-6">
+                <a href="{{ route('admin.users.index') }}" class="flex items-center text-gray-600 hover:text-gray-900">
+                    <i class="bi bi-arrow-left mr-2"></i> Kembali ke Daftar
+                </a>
+                @if (auth()->user()->role === 'admin')
+                    <a href="{{ route('admin.users.edit', $user) }}"
+                        class="px-4 py-2 bg-yellow-500 text-white rounded-md text-sm font-semibold hover:bg-yellow-600 shadow-sm">
+                        <i class="bi bi-pencil-square mr-2"></i> Ubah Data / Status
+                    </a>
+                @endif
+            </div>
+
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-8 text-gray-900">
 
-                    <div class="flex justify-end gap-2 mb-6">
-                        <a href="{{ route('admin.users.index') }}"
-                            class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md text-sm font-semibold hover:bg-gray-300">Kembali</a>
-                        @if (auth()->user()->role === 'admin')
-                            <a href="#"
-                                class="px-4 py-2 bg-yellow-500 text-white rounded-md text-sm font-semibold hover:bg-yellow-600">Ubah</a>
-                        @endif
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                        <div class="space-y-4">
-                            <div>
-                                <dt class="text-sm font-mediebum text-gray-500">Nama Lengkap</dt>
-                                <dd class="mt-1 text-lg font-semibold text-gray-900">{{ $user->name }}</dd>
-                            </div>
-                            <div>
-                                <dt class="text-sm font-medium text-gray-500">NIK</dt>
-                                <dd class="mt-1 text-gray-900">{{ $user->nik }}</dd>
-                            </div>
-                            <div>
-                                <dt class="text-sm font-medium text-gray-500">Email</dt>
-                                <dd class="mt-1 text-gray-900">{{ $user->email }}</dd>
-                            </div>
-                            <div>
-                                <dt class="text-sm font-medium text-gray-500">Alamat</dt>
-                                <dd class="mt-1 text-gray-900">{{ $user->alamat }}</dd>
-                            </div>
-                            <div>
-                                <dt class="text-sm font-medium text-gray-500">Nomor Telepon</dt>
-                                <dd class="mt-1 text-gray-900">{{ $user->no_telepon ?? 'N/A' }}</dd>
+                    {{-- Header Profil --}}
+                    <div class="flex flex-col md:flex-row items-start gap-6 mb-8 border-b pb-8">
+                        <div class="flex-shrink-0">
+                            <div
+                                class="w-24 h-24 bg-pink-500 rounded-full flex items-center justify-center text-white text-4xl font-bold shadow-md">
+                                {{ strtoupper(substr($user->name, 0, 1)) }}
                             </div>
                         </div>
-                        <div class="space-y-4">
-                            <div>
-                                <dt class="text-sm font-medium text-gray-500">Role & Status</dt>
-                                <dd class="mt-1 flex items-center gap-2">
+                        <div class="flex-1 w-full">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h2 class="text-3xl font-bold text-gray-900">{{ $user->name }}</h2>
+                                    <p class="text-gray-500">{{ $user->email }}</p>
+                                </div>
+                                <div class="flex flex-col items-end gap-2">
+                                    {{-- Badge Role --}}
                                     <span
-                                        class="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">{{ ucfirst($user->role) }}</span>
-                                    @if ($user->verified_at)
+                                        class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-blue-100 text-blue-800 border border-blue-200">
+                                        {{ ucfirst($user->role) }}
+                                    </span>
+
+                                    {{-- Badge Status Akun --}}
+                                    @if ($user->is_active)
                                         <span
-                                            class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Terverifikasi</span>
+                                            class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-green-100 text-green-800 border border-green-200 flex items-center gap-1">
+                                            <i class="bi bi-check-circle-fill"></i> Aktif
+                                        </span>
                                     @else
                                         <span
-                                            class="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Belum
-                                            Diverifikasi</span>
+                                            class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-red-100 text-red-800 border border-red-200 flex items-center gap-1">
+                                            <i class="bi bi-x-circle-fill"></i> Nonaktif
+                                        </span>
                                     @endif
-                                </dd>
+
+                                    {{-- Badge Verifikasi --}}
+                                    @if ($user->verified_at)
+                                        <span
+                                            class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-teal-100 text-teal-800 border border-teal-200 flex items-center gap-1">
+                                            <i class="bi bi-shield-check"></i> Terverifikasi
+                                        </span>
+                                    @else
+                                        <span
+                                            class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-yellow-100 text-yellow-800 border border-yellow-200 flex items-center gap-1">
+                                            <i class="bi bi-hourglass-split"></i> Belum Verifikasi
+                                        </span>
+                                    @endif
+                                </div>
                             </div>
-                            <div>
-                                <dt class="text-sm font-medium text-gray-500">Tempat, Tanggal Lahir</dt>
-                                <dd class="mt-1 text-gray-900">{{ $user->tempat_lahir }},
-                                    {{ \Carbon\Carbon::parse($user->tanggal_lahir)->format('d F Y') }}</dd>
+
+                            {{-- Info Penonaktifan (Hanya Muncul Jika Nonaktif) --}}
+                            @if (!$user->is_active)
+                                <div class="mt-4 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-md">
+                                    <h4 class="text-sm font-bold text-red-800 mb-1 flex items-center">
+                                        <i class="bi bi-exclamation-triangle-fill mr-2"></i> Akun Dinonaktifkan
+                                    </h4>
+                                    <p class="text-sm text-red-700">
+                                        <span class="font-semibold">Alasan:</span>
+                                        {{ $user->deactivation_reason ?? 'Tidak ada alasan spesifik.' }}
+                                    </p>
+                                    <p class="text-xs text-red-500 mt-1">
+                                        Dinonaktifkan pada:
+                                        {{ \Carbon\Carbon::parse($user->deactivated_at)->format('d F Y, H:i') }}
+                                        @php
+                                            // Opsional: Ambil nama admin yang menonaktifkan (jika relasi ada)
+                                            $admin = \App\Models\User::find($user->deactivated_by);
+                                        @endphp
+                                        @if ($admin)
+                                            oleh {{ $admin->name }}
+                                        @endif
+                                    </p>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
+                    {{-- Grid Informasi Detail --}}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+
+                        {{-- Kolom Kiri: Biodata --}}
+                        <div class="space-y-6">
+                            <h3 class="text-lg font-semibold text-gray-800 border-b pb-2">Biodata Diri</h3>
+
+                            <div class="grid grid-cols-1 gap-4">
+                                <div>
+                                    <dt class="text-xs uppercase tracking-wider text-gray-500 font-semibold">NIK</dt>
+                                    <dd class="mt-1 text-base text-gray-900 font-medium">{{ $user->nik ?? '-' }}</dd>
+                                </div>
+                                <div>
+                                    <dt class="text-xs uppercase tracking-wider text-gray-500 font-semibold">Tempat, Tanggal
+                                        Lahir</dt>
+                                    <dd class="mt-1 text-base text-gray-900">
+                                        {{ $user->tempat_lahir ?? '-' }},
+                                        {{ $user->tanggal_lahir ? \Carbon\Carbon::parse($user->tanggal_lahir)->format('d F Y') : '-' }}
+                                    </dd>
+                                </div>
+                                <div>
+                                    <dt class="text-xs uppercase tracking-wider text-gray-500 font-semibold">Jenis Kelamin
+                                    </dt>
+                                    <dd class="mt-1 text-base text-gray-900">{{ $user->jenis_kelamin ?? '-' }}</dd>
+                                </div>
+                                <div>
+                                    <dt class="text-xs uppercase tracking-wider text-gray-500 font-semibold">Nomor Telepon
+                                    </dt>
+                                    <dd class="mt-1 text-base text-gray-900">{{ $user->no_telepon ?? '-' }}</dd>
+                                </div>
+                                <div>
+                                    <dt class="text-xs uppercase tracking-wider text-gray-500 font-semibold">Alamat</dt>
+                                    <dd class="mt-1 text-base text-gray-900">{{ $user->alamat ?? '-' }}</dd>
+                                </div>
                             </div>
+                        </div>
+
+                        {{-- Kolom Kanan: Penugasan & Dokumen --}}
+                        <div class="space-y-8">
+                            {{-- Info Penugasan --}}
                             <div>
-                                <dt class="text-sm font-medium text-gray-500">Jenis Kelamin</dt>
-                                <dd class="mt-1 text-gray-900">{{ $user->jenis_kelamin }}</dd>
+                                <h3 class="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">Penugasan</h3>
+                                <div class="grid grid-cols-1 gap-4">
+                                    <div>
+                                        <dt class="text-xs uppercase tracking-wider text-gray-500 font-semibold">Posyandu
+                                        </dt>
+                                        <dd class="mt-1 text-base text-gray-900 flex items-center gap-2">
+                                            <i class="bi bi-hospital text-pink-500"></i>
+                                            {{ $user->posyandu?->nama_posyandu ?? 'Belum Terdaftar' }}
+                                        </dd>
+                                    </div>
+                                    @if ($user->role === 'kader')
+                                        <div>
+                                            <dt class="text-xs uppercase tracking-wider text-gray-500 font-semibold">Bidang
+                                                Tugas</dt>
+                                            <dd class="mt-1 text-base text-gray-900 flex items-center gap-2">
+                                                <i class="bi bi-folder text-blue-500"></i>
+                                                {{ $user->bidang->nama_bidang ?? '-' }}
+                                            </dd>
+                                        </div>
+                                    @endif
+                                </div>
                             </div>
+
+                            {{-- Dokumen (KTP/KK) --}}
                             <div>
-                                <dt class="text-sm font-medium text-gray-500">Posyandu</dt>
-                                <dd class="mt-1 text-gray-900">
-                                    {{ $user->posyandu?->nama_posyandu ?? 'Belum Terdaftar' }}</dd>
+                                <h3 class="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">Dokumen</h3>
+                                <div class="grid grid-cols-2 gap-4">
+                                    {{-- KTP --}}
+                                    <div x-data="{ open: false }">
+                                        <dt class="text-xs uppercase tracking-wider text-gray-500 font-semibold mb-2">KTP
+                                        </dt>
+                                        @if ($user->ktp)
+                                            <div class="relative group cursor-pointer" @click="open = true">
+                                                <img src="{{ $user->ktp }}" alt="KTP"
+                                                    class="w-full h-24 object-cover rounded-lg border shadow-sm transition transform group-hover:scale-105">
+                                                <div
+                                                    class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition rounded-lg flex items-center justify-center">
+                                                    <i
+                                                        class="bi bi-eye text-white opacity-0 group-hover:opacity-100 text-2xl"></i>
+                                                </div>
+                                            </div>
+                                            {{-- Modal Preview KTP --}}
+                                            <div x-show="open"
+                                                class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 p-4"
+                                                x-transition style="display: none;">
+                                                <div class="relative max-w-3xl w-full" @click.away="open = false">
+                                                    <button @click="open = false"
+                                                        class="absolute -top-10 right-0 text-white hover:text-gray-300 text-2xl">&times;</button>
+                                                    <img src="{{ $user->ktp }}" class="w-full rounded-lg shadow-2xl">
+                                                </div>
+                                            </div>
+                                        @else
+                                            <div
+                                                class="w-full h-24 bg-gray-100 rounded-lg border border-dashed flex items-center justify-center text-gray-400 text-xs text-center p-2">
+                                                Tidak ada KTP
+                                            </div>
+                                        @endif
+                                    </div>
+
+                                    {{-- KK --}}
+                                    <div x-data="{ open: false }">
+                                        <dt class="text-xs uppercase tracking-wider text-gray-500 font-semibold mb-2">KK
+                                        </dt>
+                                        @if ($user->kk)
+                                            <div class="relative group cursor-pointer" @click="open = true">
+                                                <img src="{{ $user->kk }}" alt="KK"
+                                                    class="w-full h-24 object-cover rounded-lg border shadow-sm transition transform group-hover:scale-105">
+                                                <div
+                                                    class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition rounded-lg flex items-center justify-center">
+                                                    <i
+                                                        class="bi bi-eye text-white opacity-0 group-hover:opacity-100 text-2xl"></i>
+                                                </div>
+                                            </div>
+                                            {{-- Modal Preview KK --}}
+                                            <div x-show="open"
+                                                class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 p-4"
+                                                x-transition style="display: none;">
+                                                <div class="relative max-w-3xl w-full" @click.away="open = false">
+                                                    <button @click="open = false"
+                                                        class="absolute -top-10 right-0 text-white hover:text-gray-300 text-2xl">&times;</button>
+                                                    <img src="{{ $user->kk }}" class="w-full rounded-lg shadow-2xl">
+                                                </div>
+                                            </div>
+                                        @else
+                                            <div
+                                                class="w-full h-24 bg-gray-100 rounded-lg border border-dashed flex items-center justify-center text-gray-400 text-xs text-center p-2">
+                                                Tidak ada KK
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <hr class="my-8">
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div>
-                            <h3 class="font-semibold mb-2">Kartu Tanda Penduduk (KTP)</h3>
-                            @if ($user->ktp)
-                                <img src="{{ $user->ktp }}" alt="Foto KTP" class="w-full h-auto rounded-lg border">
-                            @else
-                                <div
-                                    class="w-full h-48 flex items-center justify-center bg-gray-100 rounded-lg border text-gray-400">
-                                    Tidak ada gambar KTP</div>
-                            @endif
-                        </div>
-                        <div>
-                            <h3 class="font-semibold mb-2">Kartu Keluarga (KK)</h3>
-                            @if ($user->kk)
-                                <img src="{{ $user->kk }}" alt="Foto KK" class="w-full h-auto rounded-lg border">
-                            @else
-                                <div
-                                    class="w-full h-48 flex items-center justify-center bg-gray-100 rounded-lg border text-gray-400">
-                                    Tidak ada gambar KK</div>
-                            @endif
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>

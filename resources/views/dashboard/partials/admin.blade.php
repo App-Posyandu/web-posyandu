@@ -1,5 +1,5 @@
 @section('content')
-    <div class="flex flex-col gap-4 md:gap-6 px-4 sm:px-6 lg:px-8 w-full max-w-7xl mx-auto">
+    <div class="flex flex-col gap-4 md:gap-6 px-4 sm:px-6 lg:px-8 w-full mx-auto">
         @if (!$isVerified)
             <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-3 md:p-4 rounded-lg" role="alert">
                 <div class="flex">
@@ -267,11 +267,11 @@
                 desaSelectHTML = `
             <div class="relative text-left">
                 <label class="block text-start font-semibold mb-1 text-gray-700">Pilih Desa:</label>
-                
+
                 <input type="hidden" id="desaValue">
-                
+
                 <div class="relative">
-                    <input 
+                    <input
                         type="text"
                         id="desaSearch"
                         placeholder="Cari desa..."
@@ -287,8 +287,8 @@
                         </svg>
                     </button>
                 </div>
-                
-                <div id="desaDropdownList" 
+
+                <div id="desaDropdownList"
                     class="hidden absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
                     <div id="desaOptions"></div>
                 </div>
