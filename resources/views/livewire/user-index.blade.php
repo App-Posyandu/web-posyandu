@@ -1,6 +1,5 @@
-<div class="w-full max-w-7xl mx-auto sm:px-6 lg:px-8">
+<div class="w-full mx-auto sm:px-6 lg:px-8">
     <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-8">
-        {{-- ALERT SUCCESS --}}
         @if (session('success'))
             <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg mb-6" role="alert">
                 <div class="flex">
@@ -13,7 +12,6 @@
             </div>
         @endif
 
-        {{-- ALERT ERROR --}}
         @if (session('error'))
             <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg mb-6" role="alert">
                 <div class="flex">
@@ -27,7 +25,6 @@
         @endif
         <div class="p-6 text-gray-900">
 
-            {{-- HEADER / FILTER --}}
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                 <h2 class="text-xl md:text-2xl font-bold text-gray-800">List Pengguna</h2>
 
@@ -37,7 +34,6 @@
                         <i class="bi bi-plus-circle-fill mr-2"></i>Tambah User
                     </a>
 
-                    {{-- Filter --}}
                     <div class="flex flex-col md:flex-row gap-2 w-full md:w-auto">
                         <select wire:model.live="role"
                             class="border-gray-300 rounded-md shadow-sm text-sm py-2 w-full md:w-auto">
@@ -81,7 +77,6 @@
                 </div>
             </div>
 
-            {{-- LOADING --}}
             <div wire:loading class="mb-4">
                 <div class="flex items-center justify-center p-4">
                     <svg class="animate-spin h-5 w-5 text-pink-500 mr-3" xmlns="http://www.w3.org/2000/svg"
@@ -96,7 +91,6 @@
                 </div>
             </div>
 
-            {{-- TABEL --}}
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
@@ -150,7 +144,6 @@
                                     @endif
                                 </td>
 
-                                {{-- ACTION BUTTONS RESPONSIVE --}}
                                 <td class="px-4 py-3">
                                     <div class="grid grid-cols-2 md:flex md:flex-col gap-2 w-full">
 

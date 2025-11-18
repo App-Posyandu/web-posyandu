@@ -1,9 +1,9 @@
 @extends('dashboard.layouts.dashboard')
 @section('title', 'Detail Pengguna' . ' - ' . $user->name)
 @section('content')
-    <div class="py-12">
-        <div class="w-full max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+    <div class="py-12 w-full">
+        <div class="w-full mx-auto sm:px-6 lg:px-8">
+            <div class="bg-white w-full overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-8 text-gray-900">
 
                     <div class="flex justify-end gap-2 mb-6">

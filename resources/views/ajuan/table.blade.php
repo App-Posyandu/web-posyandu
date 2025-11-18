@@ -33,7 +33,7 @@
                     <td class="px-2 md:px-4 py-1 md:py-2 whitespace-nowrap text-base font-medium text-gray-900">
                         {{ $ajuan->bidang->nama_bidang ?? 'N/A' }}</td>
                     <td class="px-6 py-4 text-sm text-gray-500">
-                        {{ \Illuminate\Support\Str::limit($ajuan->deskripsi_pengajuan ?? 'Tidak ada deskripsi', 50) }}
+                        {{ \Illuminate\Support\Str::limit($ajuan->deskripsi_pengajuan ?? 'Tidak ada deskripsi', 30) }}
                     </td>
                     <td class="px-2 md:px-4 py-1 md:py-2 whitespace-nowrap text-base text-gray-500">
                         <div class="flex flex-col space-y-1">

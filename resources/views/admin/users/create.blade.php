@@ -1,7 +1,7 @@
 @extends('dashboard.layouts.dashboard')
 @section('title', 'Add Users')
 @section('content')
-    <div class="w-full max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="w-full mx-auto sm:px-6 lg:px-8">
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
             <div class="p-8 text-gray-900">
                 <form method="POST" action="{{ route('admin.users.store') }}" enctype="multipart/form-data">
@@ -75,11 +75,9 @@
                             <x-input-error :messages="$errors->get('posyandu_id')" class="mt-2" />
                         </div>
 
-                        {{-- Ganti kondisi '===' dengan 'in_array' --}}
                         <div class="{{ in_array(auth()->user()->role, ['kabid', 'ketua-kader']) ? 'hidden' : '' }}">
                             <x-input-label for="role" :value="__('Role')" />
                             <select id="role" name="role" class="block mt-1 w-full border-gray-300 ...">
-                                {{-- Hapus 'required' dari sini agar tidak error saat disembunyikan --}}
 
                                 <option value="" disabled selected>Pilih Role</option>
                                 @php $currentUserRole = auth()->user()->role; @endphp
@@ -99,7 +97,6 @@
                             <x-input-error :messages="$errors->get('role')" class="mt-2" />
                         </div>
 
-                        {{-- ✅ TAMBAHKAN DROPDOWN BIDANG (HANYA MUNCUL JIKA ROLE = KADER) --}}
                         <div id="bidang-field" style="display: none;">
                             <x-input-label for="bidang_id" :value="__('Bidang Tugas')" />
                             <select id="bidang_id" name="bidang_id"
@@ -149,7 +146,6 @@
     </div>
 
     @push('scripts')
-        {{-- ✅ JAVASCRIPT: TAMPILKAN BIDANG JIKA ROLE = KADER --}}
         <script>
             document.addEventListener('DOMContentLoaded', function() {
                 const roleSelect = document.getElementById('role');
@@ -168,7 +164,7 @@
                 }
 
                 roleSelect.addEventListener('change', toggleBidangField);
-                toggleBidangField(); // Check on page load
+                toggleBidangField(); 
             });
         </script>
     @endpush

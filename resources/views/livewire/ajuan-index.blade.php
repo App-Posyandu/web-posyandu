@@ -1,4 +1,4 @@
-<div class="w-full max-w-7xl mx-auto sm:px-6 lg:px-8">
+<div class="w-full mx-auto sm:px-6 lg:px-8">
     <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-8">
         @if (session('success'))
             <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg mb-6" role="alert">
@@ -28,10 +28,10 @@
             </div>
         @endif
 
-        <div class="flex md:flex-row justify-between items-center mb-6 gap-4">
-            {{-- TAMPILKAN BIDANG JIKA USER ADALAH KADER --}}
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+            
             @if (auth()->user()->role === 'kader' && auth()->user()->bidang)
-                <h2 class="text-2xl font-bold text-gray-800">
+                <h2 class="text-lg md:text-2xl font-bold text-gray-800">
                     List Pengajuan
                     <span class="text-pink-600">{{ auth()->user()->bidang->nama_bidang }}</span>
                 </h2>
@@ -39,18 +39,14 @@
                 <h2 class="text-2xl font-bold text-gray-800">List Pengajuan</h2>
             @endif
 
-            <div class="flex items-center gap-2">
+            <div class="flex md:flex-row items-center gap-2">
                 @if (auth()->user()->role === 'kader')
                     <a href="{{ route('dashboard.partials.pilih-user') }}"
-                        class="px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600">
-                        <i class="bi bi-plus-circle-fill mr-2"></i>Tambah Ajuan
+                        class="px-3 lg:px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600">
+                        <i class="bi bi-plus-circle-fill lg:mr-2"></i> <span class="hidden lg:inline">Tambah Ajuan</span>
                     </a>
                 @endif
-
-                {{-- Filter dan Search dengan Livewire --}}
-                <div class="flex flex-col md:flex-row items-center gap-2 w-full md:w-auto">
-                    {{-- Filter berdasarkan Status --}}
-                    <select wire:model.live="status"
+                <div class="flex flex-row md:flex-row items-center gap-2 w-full md:w-auto">                    <select wire:model.live="status"
                         class="border-gray-300 rounded-md shadow-sm text-sm w-full md:w-auto">
                         <option value="">Semua Status</option>
                         <option value="Diproses">Diproses</option>
@@ -58,7 +54,6 @@
                         <option value="Ditolak">Ditolak</option>
                     </select>
 
-                    {{-- Search Input --}}
                     <div class="relative w-full md:w-auto">
                         <input type="text" wire:model.live.debounce.300ms="search"
                             placeholder="Cari berdasarkan nama..."
@@ -68,7 +63,6 @@
                         </div>
                     </div>
 
-                    {{-- Tombol Reset Filter --}}
                     @if ($search || $status)
                         <button wire:click="resetFilters" type="button"
                             class="text-sm text-gray-600 hover:text-gray-900">

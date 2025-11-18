@@ -1,5 +1,5 @@
 @section('content')
-    <div class="max-w-4xl w-full mx-auto sm:px-6 lg:px-8">
+    <div class="w-full max-w-5xl mx-auto sm:px-6 lg:px-8">
         @if (session('error'))
             <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg mb-6 max-w-4xl w-full mx-auto"
                 role="alert">
@@ -12,7 +12,7 @@
                 </div>
             </div>
         @endif
-        <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-8">
+        <div class="bg-white w-full overflow-hidden shadow-xl sm:rounded-2xl p-8">
 
             <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">
                 Pilih Ajuan Layanan
