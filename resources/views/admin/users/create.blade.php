@@ -125,21 +125,27 @@
                                 name="password_confirmation" required />
                         </div>
                     </div>
+                    <div class="flex items-center justify-between mt-8">
 
-                    <div class="flex items-center justify-end mt-8 gap-4">
-                        @php
-                            $cancelUrl = request()->has('source')
-                                ? route('admin.posyandu.create')
-                                : route('admin.users.index');
-                        @endphp
-                        <a href="{{ $cancelUrl }}"
-                            class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md text-sm font-semibold hover:bg-gray-300">
-                            Batal
-                        </a>
-                        <x-primary-button>
-                            {{ __('Simpan Pengguna') }}
-                        </x-primary-button>
+                        <div class="flex items-center gap-4">
+                            @php
+                                $cancelUrl = request()->has('source')
+                                    ? route('admin.posyandu.create')
+                                    : route('admin.users.index');
+                            @endphp
+
+                            <a href="{{ $cancelUrl }}"
+                                class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md text-sm font-semibold hover:bg-gray-300">
+                                Batal
+                            </a>
+
+                            <x-primary-button>
+                                {{ __('Simpan Pengguna') }}
+                            </x-primary-button>
+                        </div>
+
                     </div>
+
                 </form>
             </div>
         </div>
@@ -163,6 +169,7 @@
                     }
                 }
 
+                toggleBidangField(); // Check on page load
                 roleSelect.addEventListener('change', toggleBidangField);
                 toggleBidangField(); 
             });

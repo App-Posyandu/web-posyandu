@@ -12,6 +12,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
+use App\Imports\UsersImport;
+use App\Imports\PosyanduImport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class UserController extends Controller
 {
@@ -254,7 +257,22 @@ class UserController extends Controller
 
         return redirect()->route('admin.users.index')->with('success', 'Data pengguna berhasil diperbarui.');
     }
+    public function importPage()
+    {
+        return view('admin.users.import');
+    }
+    
 
+    public function importProcess(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv',
+        ]);
+    return back()->with('success', 'Import berhasil diproses.');
+}
+
+
+    
     /**
      * Remove the specified resource from storage.
      */
