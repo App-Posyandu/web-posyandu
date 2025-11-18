@@ -17,34 +17,45 @@
         @csrf
 
         <div>
-            <x-input-label for="email" :value="__('Email atau nomor telephone')" class="font-semibold text-lg md:text-xl" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')"
-                required autofocus autocomplete="username" placeholder="Masukkan email atau nomor telephone" />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+            <x-input-label for="login" :value="__('Email / No. Telepon')" />
+            <x-text-input id="login" class="block mt-1 w-full" type="text" name="login" :value="old('login')"
+                required autofocus autocomplete="username" placeholder="Masukkan email atau nomor telepon" />
+            <x-input-error :messages="$errors->get('login')" class="mt-2" />
         </div>
 
-        <div class="mt-4" x-data="{ show: false }">
-            <x-input-label for="password" :value="__('Password')" class="font-semibold text-lg md:text-xl" />
-            <div class="relative">
-                <x-text-input id="password" class="block mt-1 w-full" x-bind:type="show ? 'text' : 'password'"
-                    name="password" required autocomplete="current-password" placeholder="Masukkan password" />
-                <div class="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5">
-                    <button type="button" @click="show = !show" class="text-gray-500">
-                        <i class="bi" :class="show ? 'bi-eye-slash' : 'bi-eye'"></i>
-                    </button>
-                </div>
-            </div>
+        <!-- Password -->
+        <div class="mt-4">
+            <x-input-label for="password" :value="__('Password')" />
+            <x-text-input id="password" class="block mt-1 w-full" type="password" name="password" required
+                autocomplete="current-password" />
             <x-input-error :messages="$errors->get('password')" class="mt-2" />
         </div>
 
+        <div class="mt-4 flex justify-between items-center">
+            <label for="remember_me" class="inline-flex items-center">
+                <input id="remember_me" type="checkbox"
+                    class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" name="remember">
+                <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
+            </label>
+            <div>
+                @if (\Illuminate\Support\Facades\Route::has('password.request'))
+                    <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                        href="{{ route('password.request') }}">
+                        {{ __('Forgot your password?') }}
+                    </a>
+                @endif
+            </div>
+        </div>
 
-        <div class="text-right mt-2">
-            @if (Illuminate\Support\Facades\Route::has('password.request'))
-                <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md"
-                    href="{{ route('password.request') }}">
-                    {{ __('Lupa password') }}
-                </a>
-            @endif
+
+        <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <p class="text-xs text-blue-800">
+                💡 <strong>Tips:</strong> Anda bisa login menggunakan:
+            </p>
+            <ul class="text-xs text-blue-700 mt-1 ml-4 list-disc">
+                <li>Email: contoh@email.com</li>
+                <li>No. Telepon: 08123456789</li>
+            </ul>
         </div>
 
         <div class="mt-6">

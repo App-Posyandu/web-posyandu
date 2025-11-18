@@ -18,7 +18,7 @@
                         </div>
 
                         {{-- Combobox Ketua Kader --}}
-                        <div x-data="ketuaCombobox()" @click.away="open = false" class="relative">
+                        {{-- <div x-data="ketuaCombobox()" @click.away="open = false" class="relative">
                             <div class="flex justify-between items-center">
                                 <x-input-label for="ketua_kader_id" :value="__('Pilih Ketua Kader (Opsional)')" />
                                 <a href="{{ route('admin.users.create', ['source' => 'posyandu_create']) }}"
@@ -61,43 +61,76 @@
                             </div>
 
                             <x-input-error :messages="$errors->get('ketua_kader_id')" class="mt-2" />
-                        </div>
+                        </div> --}}
 
                         {{-- Combobox Kabupaten --}}
-                        <div x-data="{ open: false, search: '' }" @click.away="open = false" class="relative">
-                            <x-input-label for="kabupaten" :value="__('Kabupaten')" />
-                            <input type="hidden" name="kabupaten" :value="selectedKabupaten">
-                            <div class="relative">
-                                <input type="text" x-model="search" @focus="open = true" @input="open = true"
-                                    :placeholder="getKabupatenName(selectedKabupaten) || 'Cari Kabupaten...'"
-                                    class="block mt-1 w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                    autocomplete="off">
-                                <button type="button" @click="open = !open"
-                                    class="absolute inset-y-0 right-0 flex items-center px-3">
-                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M19 9l-7 7-7-7"></path>
-                                    </svg>
-                                </button>
+                        @if (auth()->user()->role === 'kabid' && auth()->user()->kabupaten)
+                            <div>
+                                <x-input-label for="kabupaten" :value="__('Kabupaten')" />
+                                <input type="hidden" name="kabupaten" value="{{ auth()->user()->kabupaten }}">
+                                <input type="text" value="{{ auth()->user()->kabupaten }}" disabled
+                                    class="block mt-1 w-full border-gray-300 rounded-md shadow-sm bg-gray-100 cursor-not-allowed">
+                                <p class="mt-1 text-xs text-gray-500">Kabupaten sudah ditetapkan oleh Admin.</p>
                             </div>
-                            <div x-show="open" x-transition
-                                class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-                                <template
-                                    x-for="kab in kabupatens.filter(k => k.name.toLowerCase().includes(search.toLowerCase()))"
-                                    :key="kab.code">
-                                    <div @click="selectedKabupaten = `${kab.code}_${kab.name}`; search = ''; open = false; fetchKecamatan()"
-                                        class="px-4 py-2 cursor-pointer hover:bg-indigo-50"
-                                        :class="{ 'bg-indigo-100': selectedKabupaten === `${kab.code}_${kab.name}` }"
-                                        x-text="kab.name">
-                                    </div>
-                                </template>
-                                <div x-show="kabupatens.filter(k => k.name.toLowerCase().includes(search.toLowerCase())).length === 0"
-                                    class="px-4 py-2 text-gray-500 text-sm">
-                                    Tidak ada hasil
+
+                            <script>
+                                document.addEventListener('alpine:init', () => {
+                                    Alpine.store('posyanduForm', {
+                                        selectedKabupaten: '{{ auth()->user()->kabupaten }}'
+                                    });
+                                });
+                            </script>
+                        @else
+                            {{-- Combobox Kabupaten --}}
+                            @if (auth()->user()->role === 'kabid' && auth()->user()->kabupaten)
+                                {{-- KABID: Kabupaten/Kota sudah fixed --}}
+                                <div>
+                                    <x-input-label for="kabupaten" :value="__('Wilayah Kerja')" />
+                                    <input type="hidden" name="kabupaten" value="{{ auth()->user()->kabupaten }}">
+                                    <input type="text" value="{{ auth()->user()->kabupaten }}" disabled
+                                        class="block mt-1 w-full border-gray-300 rounded-md shadow-sm bg-gray-100 cursor-not-allowed">
+                                    <p class="mt-1 text-xs text-gray-500">
+                                        {{ ucfirst(auth()->user()->jenis_wilayah) }} sudah ditetapkan oleh Admin.
+                                    </p>
                                 </div>
-                            </div>
-                        </div>
+                            @else
+                                {{-- ADMIN atau role lain: Pilih kabupaten --}}
+                                <div x-data="{ open: false, search: '' }" @click.away="open = false" class="relative">
+                                    <x-input-label for="kabupaten" :value="__('Kabupaten')" />
+                                    <input type="hidden" name="kabupaten" :value="selectedKabupaten">
+                                    <div class="relative">
+                                        <input type="text" x-model="search" @focus="open = true" @input="open = true"
+                                            :placeholder="getKabupatenName(selectedKabupaten) || 'Cari Kabupaten...'"
+                                            class="block mt-1 w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                            autocomplete="off">
+                                        <button type="button" @click="open = !open"
+                                            class="absolute inset-y-0 right-0 flex items-center px-3">
+                                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M19 9l-7 7-7-7"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <div x-show="open" x-transition
+                                        class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                                        <template
+                                            x-for="kab in kabupatens.filter(k => k.name.toLowerCase().includes(search.toLowerCase()))"
+                                            :key="kab.code">
+                                            <div @click="selectedKabupaten = `${kab.code}_${kab.name}`; search = ''; open = false; fetchKecamatan()"
+                                                class="px-4 py-2 cursor-pointer hover:bg-indigo-50"
+                                                :class="{ 'bg-indigo-100': selectedKabupaten === `${kab.code}_${kab.name}` }"
+                                                x-text="kab.name">
+                                            </div>
+                                        </template>
+                                        <div x-show="kabupatens.filter(k => k.name.toLowerCase().includes(search.toLowerCase())).length === 0"
+                                            class="px-4 py-2 text-gray-500 text-sm">
+                                            Tidak ada hasil
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+                        @endif
 
                         {{-- Combobox Kecamatan --}}
                         <div x-data="{ open: false, search: '' }" @click.away="open = false" class="relative">
@@ -244,7 +277,11 @@
         <script>
             document.addEventListener('alpine:init', () => {
                 Alpine.data('dependentDropdowns', () => ({
-                    selectedKabupaten: '',
+                    selectedKabupaten: @if (auth()->user()->role === 'kabid')
+                        '{{ auth()->user()->kabupaten }}'
+                    @else
+                        ''
+                    @endif ,
                     selectedKecamatan: '',
                     selectedDesa: '',
                     kecamatanList: [],
@@ -252,6 +289,18 @@
                     loadingKecamatan: false,
                     loadingDesa: false,
                     kabupatens: @json($kabupatens['data'] ?? []),
+
+                    init() {
+                        @if (auth()->user()->role === 'kabid' && auth()->user()->kabupaten)
+                            const kabupatenData = @json($kabupatens['data'] ?? []);
+                            const foundKab = kabupatenData.find(k => k.name ===
+                                '{{ auth()->user()->kabupaten }}');
+                            if (foundKab) {
+                                this.selectedKabupaten = `${foundKab.code}_${foundKab.name}`;
+                                this.fetchKecamatan();
+                            }
+                        @endif
+                    },
 
                     getKabupatenName(value) {
                         if (!value) return '';
@@ -301,7 +350,8 @@
                         if (this.selectedKecamatan) {
                             try {
                                 const kecId = this.selectedKecamatan.split('_')[0];
-                                const response = await fetch(`{{ route('api.desa') }}?kec_id=${kecId}`);
+                                const response = await fetch(
+                                    `{{ route('api.desa') }}?kec_id=${kecId}`);
 
                                 if (!response.ok) throw new Error('Network error');
 

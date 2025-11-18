@@ -38,7 +38,7 @@
                             <x-dropdown-link :href="route('admin.users.index')">{{ __('Users') }}</x-dropdown-link>
                         @endif
 
-                        @if (auth()->user()->role === 'kabid')
+                        @if (in_array(auth()->user()->role, ['admin', 'kabid']))
                             <x-dropdown-link :href="route('admin.posyandu.index')">{{ __('Posyandu') }}</x-dropdown-link>
                         @endif
 
