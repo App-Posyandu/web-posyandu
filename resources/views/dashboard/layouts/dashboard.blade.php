@@ -49,7 +49,7 @@
 
         <x-colorful-background />
 
-        <div class="relative z-10 flex flex-col min-h-screen max-w-screen-2xl">
+        <div class="relative z-10 flex flex-col min-h-screen">
 
             @include('layouts.partials.header-new')
 

@@ -22,7 +22,7 @@
                     @if ($key === 'ktp')
                         <div>
                             <label for="ktp"
-                                class="block font-medium text-base md:text-lg text-gray-700 mb-1">{{ $label }}</label>
+                                class="block font-medium text-base md:text-lg text-gray-700 mb-1">{{ $label }}<span class="text-red-600">*</span></label>
                             <div class="relative">
                                 <div
                                     class="w-full flex items-center px-3 py-2 bg-white text-gray-500 rounded-md shadow-sm border border-gray-300">
@@ -65,7 +65,7 @@
                     @elseif ($key === 'kk')
                         <div>
                             <label for="kk"
-                                class="block font-medium text-base md:text-lg text-gray-700 mb-1">{{ $label }}</label>
+                                class="block font-medium text-base md:text-lg text-gray-700 mb-1">{{ $label }}<span class="text-red-600">*</span></label>
                             <div class="relative">
                                 <div
                                     class="w-full flex items-center px-3 py-2 bg-white text-gray-500 rounded-md shadow-sm border border-gray-300">
@@ -108,7 +108,7 @@
                     @else
                         <div x-data="{ fileName: '', filePreview: '' }" class="flex flex-col h-full">
                             <label for="{{ $key }}"
-                                class="block font-medium text-sm md:text-lg text-gray-700 mb-1 h-full">{{ $label }}</label>
+                                class="block font-medium text-sm md:text-lg text-gray-700 mb-1 h-full">{{ $label }}<span class="text-red-600">*</span></label>
                             <div class="relative">
                                 <div
                                     class="w-full flex items-center px-3 py-2 bg-white text-gray-500 rounded-md shadow-sm border border-gray-300">
@@ -119,7 +119,7 @@
                                     <x-untitledui-upload class="w-5 h-5" />
                                 </label>
                                 <input id="{{ $key }}" class="hidden" type="file" name="{{ $key }}"
-                                    accept="image/*,application/pdf"
+                                    accept="image/*"
                                     @change="fileName = $event.target.files[0] ? $event.target.files[0].name : '';
                             filePreview = $event.target.files[0] ? URL.createObjectURL($event.target.files[0]) : ''" />
 

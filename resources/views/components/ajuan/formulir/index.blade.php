@@ -119,7 +119,7 @@
 
                 <div class="mt-6">
                     <label for="deskripsi_pengajuan" class="block font-medium text-lg md:text-xl text-gray-700">
-                        Deskripsi Pengajuan
+                        Deskripsi Pengajuan <span class="text-red-600">*</span>
                     </label>
                     <textarea id="deskripsi_pengajuan" name="deskripsi_pengajuan"
                         class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"

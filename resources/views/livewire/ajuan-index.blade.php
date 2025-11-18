@@ -1,6 +1,4 @@
 <div class="w-full mx-auto sm:px-6 lg:px-8">
-    <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-8">
-<div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8">
 
         {{-- Success Alert --}}
