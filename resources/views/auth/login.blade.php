@@ -1,6 +1,97 @@
 <x-guest-layout>
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
+    {{-- ✅ MODAL BUKU PANDUAN --}}
+    <div id="guideModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            {{-- Background overlay --}}
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+
+            {{-- Modal panel --}}
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
+                            {{-- Icon Book --}}
+                            <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                            </svg>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                                📚 Buku Panduan Pengguna
+                            </h3>
+                            <div class="mt-2">
+                                <p class="text-sm text-gray-500 mb-4">
+                                    Selamat datang di <strong>SAPA POSYANDU</strong>! Sebelum memulai, silakan lihat buku panduan untuk membantu Anda menggunakan sistem ini.
+                                </p>
+
+                                {{-- Preview PDF --}}
+                                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <div class="flex items-center space-x-2">
+                                            <svg class="w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                                <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"></path>
+                                            </svg>
+                                            <div>
+                                                <p class="text-sm font-semibold text-gray-900">Panduan_SAPA_POSYANDU.pdf</p>
+                                                <p class="text-xs text-gray-500">Buku panduan lengkap sistem</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Embedded PDF Preview --}}
+                                    <div class="relative w-full" style="height: 400px;">
+                                        <iframe
+                                            src="https://drive.google.com/file/d/18TIpDP-BjaseFDf0q32GpEMyzM7E_wJi/preview"
+                                            class="w-full h-full rounded border border-gray-300"
+                                            allow="autoplay">
+                                        </iframe>
+                                    </div>
+                                </div>
+
+                                {{-- Download Button --}}
+                                <div class="mt-4 flex items-center justify-center space-x-3">
+                                    <a href="https://drive.google.com/uc?export=download&id=18TIpDP-BjaseFDf0q32GpEMyzM7E_wJi"
+                                       target="_blank"
+                                       class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                        Download Panduan
+                                    </a>
+                                    <a href="https://drive.google.com/file/d/18TIpDP-BjaseFDf0q32GpEMyzM7E_wJi/view"
+                                       target="_blank"
+                                       class="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-md transition">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                        </svg>
+                                        Buka di Tab Baru
+                                    </a>
+                                </div>
+
+                                {{-- Checkbox: Jangan tampilkan lagi --}}
+                                <div class="mt-4 flex items-center">
+                                    <input id="dontShowAgain" type="checkbox"
+                                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                    <label for="dontShowAgain" class="ml-2 block text-sm text-gray-700">
+                                        Jangan tampilkan lagi
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" onclick="closeGuideModal()"
+                            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-pink-600 text-base font-medium text-white hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Mengerti, Lanjutkan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="flex items-center justify-center space-x-4 mb-6">
         <img src={{ asset('assets/image/logo/logo_kebumen.png') }} alt="Logo Kebumen" class="h-16">
         <img src={{ asset('assets/image/logo/logo_posyandu.png') }} alt="Logo Posyandu" class="h-16">
@@ -13,6 +104,17 @@
         <p class="text-pink-500 text-xl font-semibold">Pelayanan Elektronik Posyandu</p>
     </div>
 
+    {{-- ✅ TOMBOL BUKA PANDUAN --}}
+    <div class="mb-4 text-center">
+        <button type="button" onclick="openGuideModal()"
+                class="inline-flex items-center px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 text-sm font-medium rounded-lg transition">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+            </svg>
+            📖 Lihat Buku Panduan
+        </button>
+    </div>
+
     <form method="POST" action="{{ route('login') }}">
         @csrf
 
@@ -23,7 +125,6 @@
             <x-input-error :messages="$errors->get('login')" class="mt-2" />
         </div>
 
-        <!-- Password -->
         <div class="mt-4">
             <x-input-label for="password" :value="__('Password')" />
             <x-text-input id="password" class="block mt-1 w-full" type="password" name="password" required
@@ -46,7 +147,6 @@
                 @endif
             </div>
         </div>
-
 
         <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
             <p class="text-xs text-blue-800">
@@ -86,4 +186,47 @@
             </a>
         </p>
     </div>
+
+    {{-- ✅ JAVASCRIPT --}}
+    <script>
+        // Check if user has seen guide before (using localStorage for guest)
+        const hasSeenGuide = localStorage.getItem('hasSeenGuide');
+
+        // Show modal on first visit
+        if (!hasSeenGuide) {
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(() => {
+                    document.getElementById('guideModal').classList.remove('hidden');
+                }, 500); // Delay 500ms agar smooth
+            });
+        }
+
+        function openGuideModal() {
+            document.getElementById('guideModal').classList.remove('hidden');
+        }
+
+        function closeGuideModal() {
+            const dontShowAgain = document.getElementById('dontShowAgain').checked;
+
+            if (dontShowAgain) {
+                localStorage.setItem('hasSeenGuide', 'true');
+            }
+
+            document.getElementById('guideModal').classList.add('hidden');
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('guideModal')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeGuideModal();
+            }
+        });
+
+        // Close with ESC key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeGuideModal();
+            }
+        });
+    </script>
 </x-guest-layout>
