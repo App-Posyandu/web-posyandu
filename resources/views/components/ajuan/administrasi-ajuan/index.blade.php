@@ -1,7 +1,7 @@
 @extends('dashboard.layouts.dashboard')
 @section('title', 'Administrasi Ajuan')
 @section('content')
-    <div class="w-full sm:max-w-3xl mt-6 px-6 py-8 bg-white shadow-md overflow-hidden sm:rounded-lg z-10">
+    <div class="w-full lg:mx-8 mt-6 px-6 py-8 bg-white shadow-md overflow-hidden sm:rounded-lg z-10">
         <form method="POST" action="{{ route('ajuan.store.administrasi') }}" enctype="multipart/form-data"
             id="form-administrasi">
             @csrf
@@ -22,7 +22,7 @@
                     @if ($key === 'ktp')
                         <div>
                             <label for="ktp"
-                                class="block font-medium text-base md:text-lg text-gray-700 mb-1">{{ $label }}</label>
+                                class="block font-medium text-base md:text-lg text-gray-700 mb-1">{{ $label }}<span class="text-red-600">*</span></label>
                             <div class="relative">
                                 <div
                                     class="w-full flex items-center px-3 py-2 bg-white text-gray-500 rounded-md shadow-sm border border-gray-300">
@@ -65,7 +65,7 @@
                     @elseif ($key === 'kk')
                         <div>
                             <label for="kk"
-                                class="block font-medium text-base md:text-lg text-gray-700 mb-1">{{ $label }}</label>
+                                class="block font-medium text-base md:text-lg text-gray-700 mb-1">{{ $label }}<span class="text-red-600">*</span></label>
                             <div class="relative">
                                 <div
                                     class="w-full flex items-center px-3 py-2 bg-white text-gray-500 rounded-md shadow-sm border border-gray-300">
@@ -108,7 +108,7 @@
                     @else
                         <div x-data="{ fileName: '', filePreview: '' }" class="flex flex-col h-full">
                             <label for="{{ $key }}"
-                                class="block font-medium text-sm md:text-lg text-gray-700 mb-1 h-full">{{ $label }}</label>
+                                class="block font-medium text-sm md:text-lg text-gray-700 mb-1 h-full">{{ $label }}<span class="text-red-600">*</span></label>
                             <div class="relative">
                                 <div
                                     class="w-full flex items-center px-3 py-2 bg-white text-gray-500 rounded-md shadow-sm border border-gray-300">
@@ -119,13 +119,12 @@
                                     <x-untitledui-upload class="w-5 h-5" />
                                 </label>
                                 <input id="{{ $key }}" class="hidden" type="file" name="{{ $key }}"
-                                    accept="image/*,application/pdf"
+                                    accept="image/*"
                                     @change="fileName = $event.target.files[0] ? $event.target.files[0].name : '';
                             filePreview = $event.target.files[0] ? URL.createObjectURL($event.target.files[0]) : ''" />
 
                             </div>
 
-                            <!-- Preview Box dengan Icon untuk field lainnya -->
                             <div x-show="filePreview" x-transition class="mt-3 relative">
                                 <div class="flex items-center gap-2 mb-2 text-gray-600">
                                     <i class="fa-solid fa-eye text-pink-500"></i>
@@ -177,9 +176,6 @@
 
                 document.addEventListener('DOMContentLoaded', function() {
 
-                    // ============================================
-                    // INTERCEPT SEMUA LINK NAVIGASI
-                    // ============================================
                     const links = document.querySelectorAll('a:not([id="kembali-administrasi"])');
 
                     links.forEach(link => {
@@ -213,9 +209,6 @@
                         });
                     });
 
-                    // ============================================
-                    // HANDLER TOMBOL KEMBALI
-                    // ============================================
                     const btnKembali = document.getElementById('kembali-administrasi');
                     if (btnKembali) {
                         btnKembali.addEventListener('click', function(e) {
@@ -240,9 +233,6 @@
                         });
                     }
 
-                    // ============================================
-                    // HANDLER TOMBOL KIRIM (SUBMIT FORM)
-                    // ============================================
                     const btnKirim = document.getElementById('submit-pengajuan');
                     const form = document.getElementById('form-administrasi');
 

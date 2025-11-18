@@ -7,6 +7,7 @@ use App\Http\Requests\StorePosyanduRequest;
 use App\Http\Requests\UpdatePosyanduRequest;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -61,18 +62,30 @@ class PosyanduController extends Controller
 
     public function create()
     {
-        // Fetch kabupaten dengan caching
-        $kabupatens = $this->fetchWilayahData(
-            'regencies/' . self::PROVINCE_ID . '.json',
-            'kabupatens_jateng'
-        );
+        $currentUser = Auth::user();
+
+        // ✅ Jika user adalah Kabid, kabupaten/kota sudah fixed
+        if ($currentUser->role === 'kabid' && $currentUser->kabupaten) {
+            $kabupatens = null; // Tidak perlu dropdown kabupaten
+            $fixedWilayah = [
+                'nama' => $currentUser->kabupaten,
+                'jenis' => $currentUser->jenis_wilayah
+            ];
+        } else {
+            // Untuk admin atau role lain, tampilkan semua kabupaten
+            $kabupatens = $this->fetchWilayahData(
+                'regencies/' . self::PROVINCE_ID . '.json',
+                'kabupatens_jateng'
+            );
+            $fixedWilayah = null;
+        }
 
         $availableKetuas = User::where('role', 'ketua-kader')
             ->whereNull('posyandu_id')
             ->orderBy('name')
             ->get();
 
-        return view('admin.posyandu.create', compact('kabupatens', 'availableKetuas'));
+        return view('admin.posyandu.create', compact('kabupatens', 'availableKetuas', 'fixedWilayah'));
     }
 
     public function store(Request $request)
@@ -82,7 +95,7 @@ class PosyanduController extends Controller
             'kabupaten' => 'required|string',
             'kecamatan' => 'required|string',
             'desa' => 'required|string',
-            'ketua_kader_id' => ['nullable', 'uuid', 'exists:users,id'],
+            // 'ketua_kader_id' => ['nullable', 'uuid', 'exists:users,id'],
         ]);
 
         $kabupatenName = explode('_', $request->kabupaten)[1] ?? $request->kabupaten;
@@ -96,12 +109,12 @@ class PosyanduController extends Controller
             'desa' => $desaName,
         ]);
 
-        if ($request->filled('ketua_kader_id')) {
-            $ketuaKader = User::find($request->ketua_kader_id);
-            if ($ketuaKader) {
-                $ketuaKader->update(['posyandu_id' => $posyandu->id]);
-            }
-        }
+        // if ($request->filled('ketua_kader_id')) {
+        //     $ketuaKader = User::find($request->ketua_kader_id);
+        //     if ($ketuaKader) {
+        //         $ketuaKader->update(['posyandu_id' => $posyandu->id]);
+        //     }
+        // }
 
         return redirect()->route('admin.posyandu.index')->with('success', 'Posyandu baru berhasil ditambahkan.');
     }

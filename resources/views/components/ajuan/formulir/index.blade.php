@@ -4,7 +4,7 @@
 
 @section('content')
 
-    <div class="w-full sm:max-w-3xl mt-6 px-6 py-8 bg-white shadow-md overflow-hidden sm:rounded-lg z-10"
+    <div class="w-full mt-6 mx-0 lg:mx-8 px-6 py-8 bg-white shadow-md overflow-hidden sm:rounded-lg z-10"
         x-data="{
             selectedBidang: '{{ $bidang->slug }}',
             items: @js($items),
@@ -59,10 +59,8 @@
 
             <div class="mb-6">
                 @if ($isKader)
-                    {{-- Hidden input untuk Kader --}}
                     <input type="hidden" name="bidang_pelayanan" value="{{ $user->bidang->slug }}">
                 @else
-                    {{-- Dropdown untuk Masyarakat - No Reload --}}
                     <div class="relative">
                         <select id="bidang_pelayanan" name="bidang_pelayanan" x-model="selectedBidang"
                             @change="changeBidang($event.target.value)"
@@ -89,11 +87,9 @@
                 @endif
             </div>
 
-            {{-- Items Container with Loading State --}}
             <div class="space-y-4" :class="isLoading ? 'opacity-50 pointer-events-none' : ''">
                 <template x-for="(item, index) in items" :key="index">
                     <div>
-                        {{-- Item "Lainnya..." dengan text input --}}
                         <template x-if="item === 'Lainnya...'">
                             <div x-data="{ checked: false }" class="p-4 border rounded-md">
                                 <label class="flex items-center">
@@ -111,7 +107,6 @@
                             </div>
                         </template>
 
-                        {{-- Item biasa (checkbox) --}}
                         <template x-if="item !== 'Lainnya...'">
                             <label class="flex items-center">
                                 <input type="checkbox" name="permohonan_items[]" :value="item"
@@ -122,10 +117,9 @@
                     </div>
                 </template>
 
-                {{-- Deskripsi Pengajuan --}}
                 <div class="mt-6">
                     <label for="deskripsi_pengajuan" class="block font-medium text-lg md:text-xl text-gray-700">
-                        Deskripsi Pengajuan
+                        Deskripsi Pengajuan <span class="text-red-600">*</span>
                     </label>
                     <textarea id="deskripsi_pengajuan" name="deskripsi_pengajuan"
                         class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"

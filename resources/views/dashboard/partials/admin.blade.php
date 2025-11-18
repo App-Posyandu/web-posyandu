@@ -1,5 +1,5 @@
 @section('content')
-    <div class="flex flex-col gap-4 md:gap-6 px-4 sm:px-6 lg:px-8 w-full max-w-7xl mx-auto">
+    <div class="flex flex-col gap-4 md:gap-6 px-4 sm:px-6 lg:px-8 w-full mx-auto">
         @if (!$isVerified)
             <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-3 md:p-4 rounded-lg" role="alert">
                 <div class="flex">
@@ -245,71 +245,167 @@
 
         document.getElementById('exportExcelBtn').addEventListener('click', function() {
             let bidangSelectHTML = `
-            <div>
-                <label class="block font-semibold mb-1 text-gray-700 text-sm md:text-base">Pilih Bidang:</label>
-                <select id="selectBidang" class="w-full border rounded-md p-2 text-sm md:text-base" required>
-                    <option value="" disabled selected>Pilih Bidang</option>
-                    <option value="all">Semua Bidang</option>
-                    <option value="Bidang Perumahan Rakyat">Bidang Perumahan Rakyat</option>
-                    <option value="Bidang Pendidikan">Bidang Pendidikan</option>
-                    <option value="Bidang Kesehatan">Bidang Kesehatan</option>
-                    <option value="Bidang Sosial">Bidang Sosial</option>
-                    <option value="Bidang Pekerjaan Umum">Bidang Pekerjaan Umum</option>
-                    <option value="Bidang Trantibumlinmas">Bidang Trantibumlinmas</option>
-                </select>
-            </div>
-        `;
+        <div class="flex flex-col justify-start">
+            <label class="block text-start font-semibold mb-1 text-gray-700">Pilih Bidang:</label>
+            <select id="selectBidang" class="w-full border rounded-md p-2" required>
+                <option value="" disabled selected>Pilih Bidang</option>
+                <option value="all">Semua Bidang</option>
+                <option value="Bidang Perumahan Rakyat">Bidang Perumahan Rakyat</option>
+                <option value="Bidang Pendidikan">Bidang Pendidikan</option>
+                <option value="Bidang Kesehatan">Bidang Kesehatan</option>
+                <option value="Bidang Sosial">Bidang Sosial</option>
+                <option value="Bidang Pekerjaan Umum">Bidang Pekerjaan Umum</option>
+                <option value="Bidang Trantibumlinmas">Bidang Trantibumlinmas</option>
+            </select>
+        </div>
+    `;
 
             let desaSelectHTML = "";
             @if (Auth::user()->role === 'kabid')
+                const desas = @json($desas);
+
                 desaSelectHTML = `
-                <div>
-                    <label class="block font-semibold mb-1 text-gray-700 text-sm md:text-base">Pilih Desa:</label>
-                    <select id="selectDesa" class="w-full border rounded-md p-2 text-sm md:text-base" required>
-                        <option value="" disabled selected>Pilih Desa</option>
-                        <option value="all">Semua Desa</option>
-                        @foreach ($desas as $desa)
-                            <option value="{{ $desa }}">{{ strtoupper($desa) }}</option>
-                        @endforeach
-                    </select>
+            <div class="relative text-left">
+                <label class="block text-start font-semibold mb-1 text-gray-700">Pilih Desa:</label>
+
+                <input type="hidden" id="desaValue">
+
+                <div class="relative">
+                    <input
+                        type="text"
+                        id="desaSearch"
+                        placeholder="Cari desa..."
+                        class="block w-full border border-gray-300 rounded-md p-2"
+                        autocomplete="off"
+                    >
+                    <button type="button" id="toggleDesaDropdown"
+                        class="absolute inset-y-0 right-0 flex items-center px-3">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
                 </div>
-            `;
+
+                <div id="desaDropdownList"
+                    class="hidden absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                    <div id="desaOptions"></div>
+                </div>
+            </div>
+        `;
             @endif
 
             Swal.fire({
                 title: '<h2 class="text-lg md:text-xl font-bold text-gray-800 mb-2">Pilih Bidang & Desa untuk Di-Export</h2>',
                 html: `
-                <div class="space-y-3 md:space-y-4">
-                    ${bidangSelectHTML}
-                    ${desaSelectHTML}
+            <div class="space-y-8">
+                ${bidangSelectHTML}
+                ${desaSelectHTML}
+                <div class="flex justify-between gap-4 mt-6">
+                    <button id="cancelExportBtn"
+                        class="bg-red-500 text-white hover:bg-red-700 font-medium rounded-md py-3 px-6 w-1/2 shadow">
+                        Batal
+                    </button>
                     <button id="confirmExportBtn"
-                        class="swal2-confirm swal2-styled !bg-emerald-600 hover:!bg-emerald-700 w-full py-3 md:py-4 rounded-md text-white text-sm md:text-base font-bold shadow-lg">
+                        class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-md py-3 px-6 w-1/2 shadow">
                         Export Data
                     </button>
                 </div>
-            `,
+            </div>
+        `,
                 showConfirmButton: false,
-                showCancelButton: true,
-                cancelButtonText: 'Batal',
-                width: window.innerWidth < 640 ? '95%' : 600,
+                showCancelButton: false,
+                width: 600,
                 background: '#f9fafb',
                 customClass: {
-                    popup: 'rounded-lg md:rounded-2xl shadow-lg p-4 md:p-6',
-                    cancelButton: 'bg-white outline outline-red-500 mt-3 md:mt-4 text-red-500 hover:text-red-600 text-sm md:text-base font-medium hover:bg-red-500 hover:text-white py-2 px-4 md:px-6'
+                    popup: 'rounded-md md:rounded-2xl shadow-lg p-4 md:p-6'
+                },
+                didOpen: () => {
+                    // Initialize dropdown desa dengan vanilla JS
+                    @if (Auth::user()->role === 'kabid')
+                        const desas = @json($desas);
+                        const searchInput = document.getElementById('desaSearch');
+                        const dropdownList = document.getElementById('desaDropdownList');
+                        const desaOptions = document.getElementById('desaOptions');
+                        const toggleBtn = document.getElementById('toggleDesaDropdown');
+                        const desaValue = document.getElementById('desaValue');
+
+                        // Fungsi untuk render options
+                        function renderOptions(filter = '') {
+                            const filtered = filter ?
+                                desas.filter(d => d.toLowerCase().includes(filter.toLowerCase())) :
+                                desas;
+
+                            if (filtered.length === 0) {
+                                desaOptions.innerHTML =
+                                    '<div class="px-4 py-2 text-gray-500 text-sm">Tidak ada hasil</div>';
+                                return;
+                            }
+
+                            desaOptions.innerHTML = filtered.map(desa =>
+                                `<div class="desa-option px-4 py-2 cursor-pointer hover:bg-indigo-50" data-value="${desa}">
+                            ${desa}
+                        </div>`
+                            ).join('');
+
+                            // Event listener untuk setiap option
+                            document.querySelectorAll('.desa-option').forEach(option => {
+                                option.addEventListener('click', function() {
+                                    const value = this.getAttribute('data-value');
+                                    searchInput.value = value;
+                                    desaValue.value = value;
+                                    dropdownList.classList.add('hidden');
+                                });
+                            });
+                        }
+
+                        // Initial render
+                        renderOptions();
+
+                        // Show dropdown on focus
+                        searchInput.addEventListener('focus', () => {
+                            dropdownList.classList.remove('hidden');
+                        });
+
+                        // Filter saat typing
+                        searchInput.addEventListener('input', (e) => {
+                            renderOptions(e.target.value);
+                            dropdownList.classList.remove('hidden');
+                        });
+
+                        // Toggle dropdown
+                        toggleBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            dropdownList.classList.toggle('hidden');
+                        });
+
+                        // Close dropdown saat click di luar
+                        document.addEventListener('click', (e) => {
+                            if (!searchInput.contains(e.target) && !dropdownList.contains(e
+                                    .target) && !toggleBtn.contains(e.target)) {
+                                dropdownList.classList.add('hidden');
+                            }
+                        });
+                    @endif
                 }
             });
 
+            // Event listener untuk tombol
             document.addEventListener('click', function handler(e) {
-                if (e.target && e.target.id === 'confirmExportBtn') {
-                    let bidang = null;
+                if (e.target.id === 'cancelExportBtn') {
+                    Swal.close();
+                    document.removeEventListener('click', handler);
+                }
+
+                if (e.target.id === 'confirmExportBtn') {
+                    let bidang = document.getElementById('selectBidang').value;
                     let desa = null;
 
                     if (userRole === 'ketua-kader') {
-                        bidang = document.getElementById('selectBidang').value;
                         desa = userDesa;
                     } else if (userRole === 'kabid') {
-                        bidang = document.getElementById('selectBidang').value;
-                        desa = document.getElementById('selectDesa')?.value || '';
+                        desa = document.getElementById('desaValue')?.value || '';
                     }
 
                     if (!bidang) {
@@ -321,7 +417,9 @@
                             confirmButtonText: 'OK'
                         });
                         return;
-                    } else if (!desa) {
+                    }
+
+                    if (userRole === 'kabid' && !desa) {
                         Swal.fire({
                             icon: 'warning',
                             title: 'Desa Belum Dipilih!',
@@ -331,8 +429,10 @@
                         });
                         return;
                     }
+
                     exportData(bidang, desa);
                     document.removeEventListener('click', handler);
+                    Swal.close();
                 }
             });
         });
@@ -348,5 +448,29 @@
                 window.location.href = url;
             }
         }
+    </script>
+    <script>
+        document.addEventListener("alpine:init", () => {
+            Alpine.data("desaDropdown", () => ({
+                open: false,
+                search: "",
+                selected: "",
+                desas: @json($desas), // ← dari database
+
+                filteredDesa() {
+                    if (this.search === "") return this.desas;
+                    return this.desas.filter(d =>
+                        d.toLowerCase().includes(this.search.toLowerCase())
+                    );
+                },
+
+                selectDesa(desa) {
+                    this.selected = desa;
+                    this.search = desa;
+                    this.open = false;
+                    document.getElementById("desaValue").value = desa;
+                },
+            }));
+        });
     </script>
 @endsection

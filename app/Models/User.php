@@ -31,6 +31,8 @@ class User extends Authenticatable
         'role',
         'ktp',
         'kk',
+        'kabupaten',
+        'jenis_wilayah',
 
         'nik',
         'alamat',
@@ -42,6 +44,10 @@ class User extends Authenticatable
         'verified_by',
         'posyandu_id',
         'bidang_id',
+        'is_active',
+        'deactivated_at',
+        'deactivated_by',
+        'deactivation_reason',
     ];
 
     public function pengajuans()
@@ -61,6 +67,27 @@ class User extends Authenticatable
     public function bidang()
     {
         return $this->belongsTo(BidangPengajuan::class, 'bidang_id', 'id');
+    }
+
+    public function histories()
+    {
+        return $this->hasMany(UserHistory::class, 'user_id')->latest();
+    }
+
+    public function deactivatedBy()
+    {
+        return $this->belongsTo(User::class, 'deactivated_by');
+    }
+
+    // ✅ TAMBAHKAN HELPER METHOD
+    public function isActive()
+    {
+        return $this->status === 'active';
+    }
+
+    public function isInactive()
+    {
+        return $this->status === 'inactive';
     }
 
     /**
@@ -83,6 +110,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean'
         ];
     }
 }

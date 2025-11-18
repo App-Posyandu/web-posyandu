@@ -21,6 +21,8 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->enum('role', ['masyarakat', 'kader', 'kabid', 'ketua-kader', 'admin'])->default('masyarakat');
+            $table->string('kabupaten')->nullable();
+            $table->enum('jenis_wilayah', ['kabupaten', 'kota'])->nullable();
 
             // Kolom Tambahan dari Form Registrasi
             $table->string('nik', 16)->unique()->nullable();
@@ -31,6 +33,11 @@ return new class extends Migration
             $table->timestamp('verified_at')->nullable();
             $table->uuid('verified_by')->nullable();
 
+            $table->boolean('is_active')->default(true);
+            $table->timestamp('deactivated_at')->nullable();
+            $table->uuid('deactivated_by')->nullable();
+            $table->text('deactivation_reason')->nullable();
+
             // Kolom untuk file Base64
             $table->longText('ktp')->nullable();
             $table->longText('kk')->nullable();
@@ -38,6 +45,18 @@ return new class extends Migration
             $table->rememberToken();
             $table->timestamps();
         });
+
+        Schema::create('user_histories', function (Blueprint $table) {
+            $table->uuid('id')->primary();
+            $table->foreignUuid('user_id')->constrained('users', 'id')->cascadeOnDelete();
+            $table->foreignUuid('action_by')->constrained('users', 'id')->nullOnDelete();
+            $table->enum('action_type', ['created', 'updated', 'activated', 'deactivated', 'role_changed', 'verified']);
+            $table->text('description')->nullable();
+            $table->json('old_data')->nullable();
+            $table->json('new_data')->nullable();
+            $table->timestamps();
+        });
+
 
         Schema::table('users', function (Blueprint $table) {
             $table->foreign('bidang_id')
@@ -82,5 +101,6 @@ return new class extends Migration
         Schema::dropIfExists('users');
         Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
+        Schema::dropIfExists('user_histories');
     }
 };
