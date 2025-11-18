@@ -11,7 +11,7 @@
     <!-- PWA  -->
     <meta name="theme-color" content="#171717">
 
-    {{-- <link rel="manifest" href="{{ asset('./manifest.json') }}"> --}}
+    <link rel="manifest" href="{{ asset('./manifest.json') }}">
 
     <meta name="mobile-web-app-capable" content="yes">
 

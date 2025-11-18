@@ -13,8 +13,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use App\Imports\UsersImport;
-use App\Imports\PosyanduImport;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Log;
+use App\Exports\UsersTemplateExport;
 
 class UserController extends Controller
 {
@@ -257,22 +258,17 @@ class UserController extends Controller
 
         return redirect()->route('admin.users.index')->with('success', 'Data pengguna berhasil diperbarui.');
     }
-    public function importPage()
-    {
-        return view('admin.users.import');
-    }
-    
 
     public function importProcess(Request $request)
     {
         $request->validate([
             'file' => 'required|mimes:xlsx,xls,csv',
         ]);
-    return back()->with('success', 'Import berhasil diproses.');
-}
+        return back()->with('success', 'Import berhasil diproses.');
+    }
 
 
-    
+
     /**
      * Remove the specified resource from storage.
      */
@@ -299,5 +295,95 @@ class UserController extends Controller
         }
 
         return redirect()->back()->with('error', 'Anda tidak memiliki hak untuk memverifikasi user ini.');
+    }
+    public function importExcel(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls'
+        ]);
+
+        try {
+            Excel::import(new UsersImport, $request->file('file'));
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data berhasil diimport!'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+    public function exportTemplate()
+    {
+        try {
+            // Ambil semua posyandu yang terdaftar
+            $posyandus = Posyandu::select('desa', 'kecamatan', 'kabupaten')
+                ->orderBy('kecamatan')
+                ->orderBy('desa')
+                ->get();
+
+            Log::info('Export User Template', ['total_posyandu' => $posyandus->count()]);
+
+            if ($posyandus->isEmpty()) {
+                // Fallback jika tidak ada posyandu
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Belum ada data posyandu terdaftar. Silakan tambahkan posyandu terlebih dahulu.'
+                ], 404);
+            }
+
+            $dataRows = [];
+
+            // Loop setiap posyandu untuk generate baris
+            foreach ($posyandus as $posyandu) {
+                $dataRows[] = [
+                    'desa' => $this->cleanDesaName($posyandu->desa),
+                    'kecamatan' => $this->cleanKecamatanName($posyandu->kecamatan),
+                    'kabupaten' => strtoupper($posyandu->kabupaten)
+                ];
+            }
+
+            Log::info('Total Rows Generated', ['count' => count($dataRows)]);
+
+            $filename = 'Template_User_Ketua_Kader_' . date('Y-m-d_His') . '.xlsx';
+
+            return Excel::download(
+                new UsersTemplateExport($dataRows),
+                $filename
+            );
+
+        } catch (\Exception $e) {
+            Log::error('Export User Template Error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal generate template: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Helper: Clean nama desa
+     */
+    private function cleanDesaName($name)
+    {
+        $cleaned = str_ireplace(['DESA ', 'KELURAHAN '], '', $name);
+        return strtoupper(trim($cleaned));
+    }
+
+    /**
+     * Helper: Clean nama kecamatan
+     */
+    private function cleanKecamatanName($name)
+    {
+        $cleaned = str_ireplace('KECAMATAN ', '', $name);
+        return strtoupper(trim($cleaned));
     }
 }

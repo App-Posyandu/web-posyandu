@@ -3,29 +3,27 @@
 namespace App\Http\Controllers;
 
 use App\Models\Posyandu;
-use App\Http\Requests\StorePosyanduRequest;
-use App\Http\Requests\UpdatePosyanduRequest;
+use App\Imports\PosyanduImport;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\PosyanduTemplateExport;
 
 class PosyanduController extends Controller
 {
     const PROVINCE_ID = 33;
-    const API_TIMEOUT = 10; // 10 detik timeout
-    const CACHE_TTL = 3600; // Cache 1 jam
+    const API_TIMEOUT = 10;
+    const CACHE_TTL = 3600;
 
-    /**
-     * Helper: Fetch data dari API dengan caching dan timeout
-     */
     private function fetchWilayahData($endpoint, $cacheKey)
     {
         return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($endpoint) {
             try {
                 $response = Http::timeout(self::API_TIMEOUT)
-                    ->retry(2, 100) // Retry 2x dengan delay 100ms
+                    ->retry(2, 100)
                     ->get(env('API_WILAYAH_URL') . $endpoint);
 
                 if ($response->successful()) {
@@ -61,7 +59,6 @@ class PosyanduController extends Controller
 
     public function create()
     {
-        // Fetch kabupaten dengan caching
         $kabupatens = $this->fetchWilayahData(
             'regencies/' . self::PROVINCE_ID . '.json',
             'kabupatens_jateng'
@@ -72,7 +69,45 @@ class PosyanduController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('admin.posyandu.create', compact('kabupatens', 'availableKetuas'));
+        $allKecamatan = Posyandu::select('kecamatan')
+            ->distinct()
+            ->orderBy('kecamatan')
+            ->pluck('kecamatan')
+            ->map(fn($kec) => trim(str_ireplace('KECAMATAN', '', $kec)))
+            ->filter()
+            ->values();
+
+        $allDesa = Posyandu::select('desa')
+            ->distinct()
+            ->orderBy('desa')
+            ->pluck('desa')
+            ->map(function ($desa) {
+                $cleaned = str_ireplace(['DESA', 'KELURAHAN'], '', $desa);
+                return trim($cleaned);
+            })
+            ->filter()
+            ->values();
+
+        if ($allKecamatan->isEmpty()) {
+            $allKecamatan = collect([
+                'ADIMULYO', 'ALIAN', 'AMBAL', 'AYAH', 'BONOROWO', 'BULUSPESANTREN',
+                'BUAYAN', 'GOMBONG', 'KARANGANYAR', 'KARANGGAYAM', 'KARANGSAMBUNG',
+                'KEBUMEN', 'KLIRONG', 'KUWARASAN', 'KUTOWINANGUN', 'MIRIT', 'PADURESO',
+                'PEJAGOAN', 'PETANAHAN', 'PONCOWARNO', 'PREMBUN', 'PURING', 'ROWOKELE',
+                'SADANG', 'SEMPOR', 'SRUWENG'
+            ]);
+        }
+
+        if ($allDesa->isEmpty()) {
+            $allDesa = collect([]);
+        }
+
+        return view('admin.posyandu.create', compact(
+            'kabupatens',
+            'availableKetuas',
+            'allKecamatan',
+            'allDesa'
+        ));
     }
 
     public function store(Request $request)
@@ -106,14 +141,85 @@ class PosyanduController extends Controller
         return redirect()->route('admin.posyandu.index')->with('success', 'Posyandu baru berhasil ditambahkan.');
     }
 
-    public function show(Posyandu $posyandu)
+    public function import(Request $request)
     {
-        //
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls',
+            'kecamatan' => 'required|string',
+            'desa' => 'required|string'
+        ]);
+
+        try {
+            $file = $request->file('file');
+            $kecamatan = $request->input('kecamatan');
+            $desa = $request->input('desa');
+
+            $desaFormatted = strtoupper($desa);
+            if (stripos($desaFormatted, 'DESA') === false && stripos($desaFormatted, 'KELURAHAN') === false) {
+                $desaFormatted = 'DESA ' . $desaFormatted;
+            }
+
+            $kecamatanFormatted = strtoupper($kecamatan);
+            if (stripos($kecamatanFormatted, 'KECAMATAN') === false) {
+                $kecamatanFormatted = 'KECAMATAN ' . $kecamatanFormatted;
+            }
+
+            $countBefore = Posyandu::count();
+            Excel::import(new PosyanduImport(), $file);
+            $countAfter = Posyandu::count();
+            $imported = $countAfter - $countBefore;
+
+            Posyandu::whereNull('kecamatan')
+                ->orWhere('kecamatan', '')
+                ->orWhereNull('desa')
+                ->orWhere('desa', '')
+                ->update([
+                    'kecamatan' => $kecamatanFormatted,
+                    'desa' => $desaFormatted,
+                    'kabupaten' => 'KEBUMEN'
+                ]);
+
+            $message = $imported > 0
+                ? "Berhasil import {$imported} posyandu ke {$desa}, {$kecamatan}"
+                : "Import selesai. Data mungkin sudah ada atau tidak valid.";
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'imported' => $imported
+            ]);
+
+        } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
+            $failures = $e->failures();
+            $errors = [];
+
+            foreach ($failures as $failure) {
+                $errors[] = "Baris {$failure->row()}: " . implode(', ', $failure->errors());
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal pada beberapa baris.',
+                'errors' => $errors
+            ], 422);
+
+        } catch (\Exception $e) {
+            Log::error('Import Posyandu Error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memproses file: ' . $e->getMessage()
+            ], 500);
+        }
     }
+
+    public function show(Posyandu $posyandu) { }
 
     public function edit(Posyandu $posyandu)
     {
-        // Fetch kabupaten dengan caching
         $kabupatens = $this->fetchWilayahData(
             'regencies/' . self::PROVINCE_ID . '.json',
             'kabupatens_jateng'
@@ -172,9 +278,6 @@ class PosyanduController extends Controller
         return redirect()->route('admin.posyandu.index')->with('success', 'Posyandu berhasil dihapus.');
     }
 
-    /**
-     * Get Kecamatan by Kabupaten ID (dengan caching)
-     */
     public function getKecamatan(Request $request)
     {
         $kabupatenId = $request->query('kab_id');
@@ -191,9 +294,6 @@ class PosyanduController extends Controller
         return response()->json($kecamatans);
     }
 
-    /**
-     * Get Desa by Kecamatan ID (dengan caching)
-     */
     public function getDesa(Request $request)
     {
         $kecamatanId = $request->query('kec_id');
@@ -246,19 +346,257 @@ class PosyanduController extends Controller
         return response()->json($posyandus);
     }
 
-    /**
-     * Clear cache wilayah (untuk admin)
-     */
     public function clearWilayahCache()
     {
         Cache::forget('kabupatens_jateng');
 
-        // Clear semua cache kecamatan & desa
         $keys = Cache::get('wilayah_cache_keys', []);
         foreach ($keys as $key) {
             Cache::forget($key);
         }
 
         return redirect()->back()->with('success', 'Cache wilayah berhasil dibersihkan.');
+    }
+
+    /**
+     * ✅ FIXED: Export dengan data wilayah yang sudah di-fetch dari API
+     */
+    public function exportByDesaKecamatan($desa, $kecamatan)
+    {
+        $desaName = urldecode($desa);
+        $kecamatanName = urldecode($kecamatan);
+
+        Log::info('Export Template Request', [
+            'desa' => $desaName,
+            'kecamatan' => $kecamatanName
+        ]);
+
+        try {
+            $apiUrl = env('API_WILAYAH_URL', 'https://wilayah.id/api/');
+            $dataRows = [];
+
+            // 1. Fetch kabupaten untuk dapat ID Kebumen
+            $kabupatenUrl = $apiUrl . 'regencies/33.json';
+            Log::info('Fetching Kabupaten', ['url' => $kabupatenUrl]);
+            
+            $kabupatenResponse = Http::timeout(20)->get($kabupatenUrl);
+            
+            Log::info('Kabupaten Response', [
+                'status' => $kabupatenResponse->status(),
+                'successful' => $kabupatenResponse->successful(),
+            ]);
+            
+            $kabupatens = $kabupatenResponse->json()['data'] ?? [];
+            
+            // ✅ FIX: Cari berdasarkan nama yang mengandung "KEBUMEN"
+            $kebumen = collect($kabupatens)->first(function($kab) {
+                return stripos($kab['name'], 'KEBUMEN') !== false;
+            });
+            
+            // ✅ FIX: Gunakan format code yang benar (33.05 bukan 3404)
+            $kabupatenId = $kebumen['code'] ?? '33.05';
+
+            Log::info('Kabupaten ID', [
+                'id' => $kabupatenId, 
+                'kebumen_found' => !is_null($kebumen),
+            ]);
+
+            // SKENARIO 1: SEMUA KECAMATAN + SEMUA DESA
+            if (
+                ($kecamatanName === 'all' || $kecamatanName === 'SEMUA KECAMATAN') &&
+                ($desaName === 'all' || $desaName === 'SEMUA DESA')
+            ) {
+                Log::info('Scenario: SEMUA KECAMATAN + SEMUA DESA');
+
+                // 2. Fetch semua kecamatan di Kebumen
+                $kecamatanUrl = $apiUrl . "districts/{$kabupatenId}.json";
+                Log::info('Fetching Kecamatan', ['url' => $kecamatanUrl]);
+                
+                $kecamatanResponse = Http::timeout(15)->get($kecamatanUrl);
+                
+                Log::info('Kecamatan Response', [
+                    'status' => $kecamatanResponse->status(),
+                    'successful' => $kecamatanResponse->successful(),
+                    'body_preview' => substr($kecamatanResponse->body(), 0, 200)
+                ]);
+                
+                $kecamatans = $kecamatanResponse->json()['data'] ?? [];
+
+                Log::info('Total Kecamatan', [
+                    'count' => count($kecamatans),
+                    'sample' => array_slice($kecamatans, 0, 2)
+                ]);
+
+                // 3. Loop setiap kecamatan, fetch semua desa
+                foreach ($kecamatans as $index => $kec) {
+                    $desaUrl = $apiUrl . "villages/{$kec['code']}.json";
+                    Log::info("Fetching Desa [{$index}]", [
+                        'kecamatan' => $kec['name'],
+                        'url' => $desaUrl
+                    ]);
+                    
+                    $desaResponse = Http::timeout(15)->get($desaUrl);
+                    
+                    if (!$desaResponse->successful()) {
+                        Log::warning("Failed to fetch desa", [
+                            'kecamatan' => $kec['name'],
+                            'status' => $desaResponse->status()
+                        ]);
+                        continue;
+                    }
+                    
+                    $desas = $desaResponse->json()['data'] ?? [];
+
+                    Log::info("Kecamatan: {$kec['name']}", [
+                        'total_desa' => count($desas),
+                        'sample_desa' => array_slice($desas, 0, 2)
+                    ]);
+
+                    // 4. Setiap desa = 1 baris dengan kolom desa dan kecamatan auto-fill
+                    foreach ($desas as $ds) {
+                        $dataRows[] = [
+                            'desa' => $this->cleanDesaName($ds['name']),
+                            'kecamatan' => $this->cleanKecamatanName($kec['name'])
+                        ];
+                    }
+                }
+            }
+            // SKENARIO 2: KECAMATAN SPESIFIK + SEMUA DESA
+            else if ($desaName === 'all' || $desaName === 'SEMUA DESA') {
+                Log::info('Scenario: KECAMATAN SPESIFIK + SEMUA DESA', ['kecamatan' => $kecamatanName]);
+
+                // 2. Fetch semua kecamatan
+                $kecamatanResponse = Http::timeout(15)->get($apiUrl . "districts/{$kabupatenId}.json");
+                $kecamatans = $kecamatanResponse->json()['data'] ?? [];
+
+                // 3. Cari kecamatan yang dipilih
+                $selectedKec = collect($kecamatans)->first(function ($kec) use ($kecamatanName) {
+                    $cleanKecName = $this->cleanKecamatanName($kec['name']);
+                    $cleanInput = $this->cleanKecamatanName($kecamatanName);
+                    return stripos($cleanKecName, $cleanInput) !== false ||
+                        stripos($cleanInput, $cleanKecName) !== false;
+                });
+
+                if ($selectedKec) {
+                    // 4. Fetch semua desa di kecamatan ini
+                    $desaResponse = Http::timeout(15)->get($apiUrl . "villages/{$selectedKec['code']}.json");
+                    $desas = $desaResponse->json()['data'] ?? [];
+
+                    Log::info("Kecamatan: {$selectedKec['name']}", ['total_desa' => count($desas)]);
+
+                    // 5. Setiap desa = 1 baris
+                    foreach ($desas as $ds) {
+                        $dataRows[] = [
+                            'desa' => $this->cleanDesaName($ds['name']),
+                            'kecamatan' => $this->cleanKecamatanName($selectedKec['name'])
+                        ];
+                    }
+                }
+            }
+            // SKENARIO 3: KECAMATAN SPESIFIK + DESA SPESIFIK
+            else {
+                Log::info('Scenario: KECAMATAN SPESIFIK + DESA SPESIFIK', [
+                    'kecamatan' => $kecamatanName,
+                    'desa' => $desaName
+                ]);
+
+                // Generate 20 baris dengan data yang sama
+                for ($i = 0; $i < 20; $i++) {
+                    $dataRows[] = [
+                        'desa' => $this->cleanDesaName($desaName),
+                        'kecamatan' => $this->cleanKecamatanName($kecamatanName)
+                    ];
+                }
+            }
+
+            Log::info('Total Rows Generated', ['count' => count($dataRows)]);
+
+            // Fallback jika tidak ada data
+            if (empty($dataRows)) {
+                for ($i = 0; $i < 10; $i++) {
+                    $dataRows[] = [
+                        'desa' => $this->cleanDesaName($desaName),
+                        'kecamatan' => $this->cleanKecamatanName($kecamatanName)
+                    ];
+                }
+            }
+
+            // Generate filename
+            $filename = 'Template_Posyandu_';
+            if ($kecamatanName === 'all' || $kecamatanName === 'SEMUA KECAMATAN') {
+                $filename .= 'Semua_Kecamatan_';
+            } else {
+                $filename .= $this->cleanKecamatanName($kecamatanName) . '_';
+            }
+
+            if ($desaName === 'all' || $desaName === 'SEMUA DESA') {
+                $filename .= 'Semua_Desa_';
+            } else {
+                $filename .= $this->cleanDesaName($desaName) . '_';
+            }
+
+            $filename .= date('Y-m-d_His') . '.xlsx';
+
+            // Export ke Excel dengan data yang sudah auto-fill
+            return Excel::download(
+                new PosyanduTemplateExport($dataRows),
+                $filename
+            );
+
+        } catch (\Exception $e) {
+            Log::error('Export Template Error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            // Fallback
+            $fallbackRows = [];
+            for ($i = 0; $i < 10; $i++) {
+                $fallbackRows[] = [
+                    'desa' => $this->cleanDesaName($desaName),
+                    'kecamatan' => $this->cleanKecamatanName($kecamatanName)
+                ];
+            }
+
+            return Excel::download(
+                new PosyanduTemplateExport($fallbackRows),
+                'Template_Posyandu_Fallback_' . date('Y-m-d_His') . '.xlsx'
+            );
+        }
+    }
+
+    private function cleanDesaName($name)
+    {
+        if ($name === 'all' || $name === 'SEMUA DESA') {
+            return '';
+        }
+
+        $cleaned = str_ireplace(['DESA ', 'KELURAHAN '], '', $name);
+        return strtoupper(trim($cleaned));
+    }
+
+    private function cleanKecamatanName($name)
+    {
+        if ($name === 'all' || $name === 'SEMUA KECAMATAN') {
+            return '';
+        }
+
+        $cleaned = str_ireplace('KECAMATAN ', '', $name);
+        return strtoupper(trim($cleaned));
+    }
+
+    public function exportAllPosyandu()
+    {
+        return $this->exportByDesaKecamatan('all', 'all');
+    }
+
+    public function exportByKecamatan($kecamatan)
+    {
+        return $this->exportByDesaKecamatan('all', $kecamatan);
+    }
+
+    public function exportByDesa($desa)
+    {
+        return $this->exportByDesaKecamatan($desa, 'all');
     }
 }

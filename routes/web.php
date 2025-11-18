@@ -105,12 +105,37 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware(['role:kabid,ketua-kader'])->prefix('admin')->name('admin.')->group(function () {
         Route::resource('posyandu', PosyanduController::class);
-        
-        Route::get('/users/import', function(){
+
+        Route::get('/users/import', function () {
             return view('admin.users.import');
         })->name('import.importPage');
         Route::post('/users/import', [UserController::class, 'importProcess'])->name('import.importProcess');
+        Route::get('export-user-template', [UserController::class, 'exportTemplate'])
+            ->name('users.export.template');
         //Route::get('/export-all-bidang-dan-desa', [LaporanController::class, 'exportExcelAllBidangDanDesa'])->name('laporan.exportExcelAllBidangDanDesa');
+
+        Route::post('/admin/users/import', [UserController::class, 'importExcel'])->name('users.import');
+        Route::post('/admin/posyandu/import', [UserController::class, 'importPosyandu'])->name('posyandu.import');
+
+        Route::get('export-posyandu-all', [PosyanduController::class, 'exportAllPosyandu'])
+            ->name('posyandu.export.all');
+
+        // Export berdasarkan kecamatan (single parameter)
+        Route::get('export-posyandu-kecamatan/{kecamatan}', [PosyanduController::class, 'exportByKecamatan'])
+            ->name('posyandu.export.kecamatan');
+
+        // Export berdasarkan desa (single parameter)
+        Route::get('export-posyandu-desa/{desa}', [PosyanduController::class, 'exportByDesa'])
+            ->name('posyandu.export.desa');
+
+        // Export dengan filter custom dari form (POST)
+        Route::post('export-posyandu', [PosyanduController::class, 'exportWithFilter'])
+            ->name('posyandu.export.filter');
+
+        // Export berdasarkan desa dan kecamatan (untuk template import)
+// HARUS DI PALING BAWAH karena catch-all pattern
+        Route::get('export-posyandu/{desa}/{kecamatan}', [PosyanduController::class, 'exportByDesaKecamatan'])
+            ->name('posyandu.export.template');
 
         Route::get('/export-all/{desa}', [LaporanController::class, 'exportExcelAll'])->name('laporan.exportExcelAll');
         Route::get('/export/{bidang}/{desa}', [LaporanController::class, 'exportExcelBidang'])->name('laporan.exportExcelBidang');
