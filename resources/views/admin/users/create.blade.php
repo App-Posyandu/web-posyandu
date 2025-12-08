@@ -239,21 +239,21 @@
                     </div>
                     <div class="flex gap-3">
                         <div class="flex items-center justify-between mt-8 gap-4">
-                            <!-- Tombol Import di kiri -->
+                            @php
+                                $cancelUrl = route('admin.users.index');
+                            @endphp
+                            <div class="flex gap-4">
+                                <a href="{{ $cancelUrl }}"
+                                class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md text-sm font-semibold hover:bg-gray-300">
+                                Batal
+                            </a>
+                            <x-primary-button>
+                                {{ __('Simpan Pengguna') }}
+                            </x-primary-button>
                             <button type="button" id="importBtn"
                                 class="px-4 py-2 bg-emerald-600 text-white rounded-md text-sm font-semibold hover:bg-emerald-700">
                                 Import Nama Pengguna
                             </button>
-
-                            <!-- Tombol Batal & Simpan di kanan -->
-                            <div class="flex gap-4">
-                                <a href="{{ $cancelUrl }}"
-                                    class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md text-sm font-semibold hover:bg-gray-300">
-                                    Batal
-                                </a>
-                                <x-primary-button>
-                                    {{ __('Simpan Pengguna') }}
-                                </x-primary-button>
                             </div>
                         </div>
                 </form>
