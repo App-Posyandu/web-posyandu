@@ -239,6 +239,9 @@
                     </div>
                     <div class="flex gap-3">
                         <div class="flex items-center justify-between mt-8 gap-4">
+                            @php
+                                $cancelUrl = route('admin.users.index');
+                            @endphp
                             <!-- Tombol Import di kiri -->
                             <button type="button" id="importBtn"
                                 class="px-4 py-2 bg-emerald-600 text-white rounded-md text-sm font-semibold hover:bg-emerald-700">
