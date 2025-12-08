@@ -77,19 +77,22 @@ class PosyanduTemplateExport implements FromArray, WithHeadings, WithEvents, Wit
                 'path' => public_path('assets/image/logo/logo_kebumen.png'),
                 'width' => 85,
                 'height' => 60,
-                'offsetX' => -30, // kiri dari tengah
+                'offsetX' => 0, // kiri dari tengah
+                'position' => 'C1',
             ],
             [
                 'path' => public_path('assets/image/logo/logo_posyandu.png'),
                 'width' => 85,
                 'height' => 60,
-                'offsetX' => 80, // tengah
+                'offsetX' => 90, // tengah
+                'position' => 'C1',
             ],
             [
                 'path' => public_path('assets/image/logo/logo_sapaposyandu.png'),
                 'width' => 95,
                 'height' => 60,
-                'offsetX' => 250, // kanan dari tengah
+                'offsetX' => 50, // kanan dari tengah
+                'position' => 'D1',
             ],
         ];
 
@@ -99,7 +102,7 @@ class PosyanduTemplateExport implements FromArray, WithHeadings, WithEvents, Wit
                 $drawing->setPath($logo['path']);
                 $drawing->setHeight($logo['height']);
                 $drawing->setWidth($logo['width']);
-                $drawing->setCoordinates('C1');
+                $drawing->setCoordinates($logo['position']);
                 $drawing->setOffsetX($logo['offsetX']);
                 $drawing->setOffsetY(5);
                 $drawings[] = $drawing;
