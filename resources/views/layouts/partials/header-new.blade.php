@@ -34,12 +34,13 @@
                     <x-slot name="content">
                         <x-dropdown-link :href="route('dashboard')">{{ __('Beranda') }}</x-dropdown-link>
 
-                        @if (in_array(auth()->user()->role, ['admin', 'kader', 'kabid', 'ketua-kader']))
+                        @if (in_array(auth()->user()->role, ['admin', 'kader', 'kabid', 'admin-kecamatan', 'ketua-kader']))
                             <x-dropdown-link :href="route('admin.users.index')">{{ __('Users') }}</x-dropdown-link>
                         @endif
 
                         @if (in_array(auth()->user()->role, ['admin', 'kabid']))
                             <x-dropdown-link :href="route('admin.posyandu.index')">{{ __('Posyandu') }}</x-dropdown-link>
+                            <x-dropdown-link :href="route('admin.kecamatan.index')">{{ __('Kecamatan') }}</x-dropdown-link>
                         @endif
 
                         <x-dropdown-link :href="route('buku_saku.index')">{{ __('Dokumen') }}</x-dropdown-link>

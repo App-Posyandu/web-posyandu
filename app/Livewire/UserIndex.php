@@ -44,29 +44,54 @@ class UserIndex extends Component
 
         $query = User::with(['posyandu', 'bidang'])->latest();
 
-        // Filter berdasarkan role user yang login
+        // 1. Filter Hirarki Role berdasarkan role user yang login
         switch ($currentUser->role) {
             case 'kader':
-                $query->where('role', 'masyarakat')
-                    ->where('posyandu_id', $currentUser->posyandu_id);
+                $query->where('role', 'masyarakat');
                 break;
 
             case 'ketua-kader':
-                $query->whereIn('role', ['kader', 'masyarakat'])
-                    ->where('posyandu_id', $currentUser->posyandu_id);
+                $query->whereIn('role', ['kader', 'masyarakat']);
+                break;
+
+            case 'admin-kecamatan':
+                $query->whereIn('role', ['ketua-kader', 'kader', 'masyarakat']);
                 break;
 
             case 'kabid':
-                $query->whereIn('role', ['ketua-kader', 'kader', 'masyarakat']);
+                // PERBAIKAN: Tambahkan admin-kecamatan!
+                $query->whereIn('role', ['admin-kecamatan', 'ketua-kader', 'kader', 'masyarakat']);
+                break;
+
+            case 'admin':
+                // Admin bisa lihat semua role
+                // Tidak perlu filter role
                 break;
         }
 
-        // Filter tambahan untuk kader dan ketua-kader
+        // 2. Filter Wilayah (Multi-Tenancy)
         if (in_array($currentUser->role, ['kader', 'ketua-kader'])) {
+            // Filter berdasarkan posyandu
             $query->where('posyandu_id', $currentUser->posyandu_id);
+        } elseif ($currentUser->role === 'admin-kecamatan') {
+            // Filter berdasarkan kecamatan
+            if ($currentUser->kecamatan) {
+                $kecamatanName = explode('_', $currentUser->kecamatan)[1] ?? $currentUser->kecamatan;
+                $query->where('kecamatan', 'LIKE', "%{$kecamatanName}%");
+            }
+        } elseif ($currentUser->role === 'kabid') {
+            // Filter berdasarkan bidang (jika ada)
+            // if ($currentUser->bidang_id) {
+            //     $query->where(function ($q) use ($currentUser) {
+            //         $q->where('bidang_id', $currentUser->bidang_id)
+            //             ->orWhereNull('bidang_id'); // User yang belum punya bidang
+            //     });
+            // }
+            // Jika tidak ada bidang_id, kabid bisa lihat semua
         }
+        // Admin tidak perlu filter wilayah
 
-        // Filter berdasarkan search
+        // 3. Filter berdasarkan search
         if ($this->search) {
             $searchTerm = $this->search;
             $query->where(function ($q) use ($searchTerm) {
@@ -76,8 +101,8 @@ class UserIndex extends Component
             });
         }
 
-        // Filter berdasarkan role
-        if ($this->role) {
+        // 4. Filter berdasarkan role (dari dropdown filter)
+        if ($this->role && $this->role !== '') {
             $query->where('role', $this->role);
         }
 

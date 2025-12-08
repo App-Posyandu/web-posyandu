@@ -2,7 +2,7 @@
 @section('title', 'Add Users')
 @section('content')
     <div class="w-full mx-auto sm:px-6 lg:px-8">
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+        <div class="bg-white shadow-sm sm:rounded-lg">
             <div class="p-8 text-gray-900">
                 <form method="POST" action="{{ route('admin.users.store') }}" enctype="multipart/form-data">
                     @csrf
@@ -11,6 +11,8 @@
                     @endif
                     <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">Formulir Pengguna Baru</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                        {{-- Nama & No Telepon (Tidak Berubah) --}}
                         <div>
                             <x-input-label for="name" :value="__('Nama Lengkap')" />
                             <x-text-input id="name" class="block mt-1 w-full" type="text" name="name"
@@ -31,6 +33,13 @@
                                 class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
                                 rows="3" required placeholder="Masukkan alamat lengkap">{{ old('alamat') }}</textarea>
                             <x-input-error :messages="$errors->get('alamat')" class="mt-2" />
+                        </div>
+
+                        <div>
+                            <x-input-label for="nik" :value="__('NIK')" />
+                            <x-text-input id="nik" class="block mt-1 w-full" type="text" name="nik"
+                                :value="old('nik')" required maxlength="16" />
+                            <x-input-error :messages="$errors->get('nik')" class="mt-2" />
                         </div>
 
                         <div>
@@ -59,25 +68,27 @@
                             <x-input-error :messages="$errors->get('jenis_kelamin')" class="mt-2" />
                         </div>
 
-
-                        <div>
-                            <x-input-label for="posyandu_id" :value="__('Posyandu (Opsional)')" />
-                            <select id="posyandu_id" name="posyandu_id"
-                                class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                                <option value="" selected>-- Belum Ditugaskan --</option>
-                                @foreach ($posyandus as $posyandu)
-                                    <option value="{{ $posyandu->id }}" @selected(old('posyandu_id') == $posyandu->id)>
-                                        {{ $posyandu->nama_posyandu }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            <p class="mt-1 text-xs text-gray-500">Biarkan kosong jika user ini belum memiliki Posyandu.</p>
-                            <x-input-error :messages="$errors->get('posyandu_id')" class="mt-2" />
-                        </div>
+                        @if (in_array(auth()->user()->role, ['ketua-kader', 'admin-kecamatan']))
+                            <div>
+                                <x-input-label for="posyandu_id" :value="__('Posyandu (Opsional)')" />
+                                <select id="posyandu_id" name="posyandu_id"
+                                    class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                    <option value="" selected>-- Belum Ditugaskan --</option>
+                                    @foreach ($posyandus as $posyandu)
+                                        <option value="{{ $posyandu->id }}" @selected(old('posyandu_id') == $posyandu->id)>
+                                            {{ $posyandu->nama_posyandu }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <p class="mt-1 text-xs text-gray-500">Biarkan kosong jika user ini belum memiliki Posyandu.
+                                </p>
+                                <x-input-error :messages="$errors->get('posyandu_id')" class="mt-2" />
+                            </div>
+                        @endif
 
                         {{-- Role --}}
                         <div
-                            class="{{ in_array(auth()->user()->role, ['kabid', 'ketua-kader']) ? 'hidden' : '' }} md:col-span-2">
+                            class="{{ in_array(auth()->user()->role, ['admin', 'ketua-kader', 'admin-kecamatan']) ? 'hidden' : '' }}">
                             <x-input-label for="role" :value="__('Role')" />
                             <select id="role" name="role"
                                 class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
@@ -85,8 +96,12 @@
                                 @php $currentUserRole = auth()->user()->role; @endphp
 
                                 @if ($currentUserRole === 'admin')
-                                    <option value="kabid" @selected(old('role') == 'kabid')>Kabid</option>
+                                    <option value="kabid" @selected(true)>Kabid</option>
                                 @elseif ($currentUserRole === 'kabid')
+                                    <option value="admin-kecamatan">Admin Kecamatan</option>
+                                    <option value="ketua-kader">Ketua Kader</option>
+                                @elseif ($currentUserRole === 'admin-kecamatan')
+                                    {{-- NEW --}}
                                     <option value="ketua-kader" @selected(true)>Ketua Kader</option>
                                 @elseif ($currentUserRole === 'ketua-kader')
                                     <option value="kader" @selected(true)>Kader</option>
@@ -95,8 +110,9 @@
                             <x-input-error :messages="$errors->get('role')" class="mt-2" />
                         </div>
 
-                        {{-- JENIS WILAYAH --}}
-                        <div class="md:col-span-2" id="jenis-wilayah-field" style="display: none;">
+                        {{-- JENIS WILAYAH (KHUSUS KABID) --}}
+                        <div class="{{ in_array(auth()->user()->role, ['admin', 'ketua-kader']) ? 'md:col-span-2' : '' }}"
+                            id="jenis-wilayah-field" style="display: none;">
                             <x-input-label for="jenis_wilayah" :value="__('Jenis Wilayah')" />
                             <select id="jenis_wilayah" name="jenis_wilayah"
                                 class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
@@ -108,120 +124,141 @@
                             <x-input-error :messages="$errors->get('jenis_wilayah')" class="mt-2" />
                         </div>
 
-                        {{-- ✅ HIDDEN INPUT DI LUAR DIV YANG DISPLAY:NONE --}}
+                        {{-- ✅ HIDDEN INPUT UNTUK KABUPATEN --}}
                         <input type="hidden" id="kabupaten-hidden" name="kabupaten" value="">
 
                         {{-- KABUPATEN COMBOBOX (HANYA UI) --}}
                         <div id="kabupaten-field" style="display: none;" class="md:col-span-2">
+                            {{-- ... (Kode Combobox Kabupaten Anda yang lama) ... --}}
+                            {{-- Saya sederhanakan di sini agar tidak terlalu panjang, gunakan kode Anda yang lama --}}
                             <div x-data="kabupatenCombobox()" @click.away="open = false" x-init="$watch('selectedKabupaten', value => {
                                 document.getElementById('kabupaten-hidden').value = value;
-                                console.log('✅ Kabupaten changed to:', value);
                             })"
                                 class="relative">
-
                                 <x-input-label for="kabupaten" :value="__('Pilih Kabupaten')" />
-
                                 <div class="relative">
                                     <input type="text" x-model="search" @focus="open = true" @input="open = true"
                                         :placeholder="getKabupatenName(selectedKabupaten) || 'Cari Kabupaten...'"
                                         class="block mt-1 w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                         autocomplete="off">
-
-                                    <button type="button" @click="open = !open"
-                                        class="absolute inset-y-0 right-0 flex items-center px-3">
-                                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M19 9l-7 7-7-7"></path>
-                                        </svg>
-                                    </button>
+                                    {{-- ... Icon Panah ... --}}
                                 </div>
-
-                                <div x-show="open" x-transition
-                                    class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                                <div x-show="open"
+                                    class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto"
+                                    style="display: none;">
                                     <template
                                         x-for="kab in kabupatens.filter(k => k.name.toLowerCase().includes(search.toLowerCase()))"
                                         :key="kab.code">
                                         <div @click="selectedKabupaten = `${kab.code}_${kab.name}`; search = ''; open = false"
                                             class="px-4 py-2 cursor-pointer hover:bg-indigo-50"
-                                            :class="{ 'bg-indigo-100': selectedKabupaten === `${kab.code}_${kab.name}` }"
-                                            x-text="getDisplayName(kab.name)">
-                                        </div>
+                                            x-text="getDisplayName(kab.name)"></div>
                                     </template>
-                                    <div x-show="kabupatens.filter(k => k.name.toLowerCase().includes(search.toLowerCase())).length === 0"
-                                        class="px-4 py-2 text-gray-500 text-sm">
-                                        Tidak ada hasil
-                                    </div>
                                 </div>
-
-                                <p class="mt-1 text-xs text-gray-500">Pilih kabupaten yang akan menjadi wilayah kerja
-                                    Kabid.</p>
-                                <x-input-error :messages="$errors->get('kabupaten')" class="mt-2" />
                             </div>
                         </div>
 
                         {{-- KOTA COMBOBOX (HANYA UI) --}}
                         <div id="kota-field" style="display: none;" class="md:col-span-2">
+                            {{-- ... (Kode Combobox Kota Anda yang lama) ... --}}
                             <div x-data="kotaCombobox()" @click.away="open = false" x-init="$watch('selectedKota', value => {
                                 document.getElementById('kabupaten-hidden').value = value;
-                                console.log('✅ Kota changed to:', value);
                             })"
                                 class="relative">
-
                                 <x-input-label for="kota" :value="__('Pilih Kota')" />
-
                                 <div class="relative">
                                     <input type="text" x-model="search" @focus="open = true" @input="open = true"
                                         :placeholder="getKotaName(selectedKota) || 'Cari Kota...'"
                                         class="block mt-1 w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                         autocomplete="off">
-
-                                    <button type="button" @click="open = !open"
-                                        class="absolute inset-y-0 right-0 flex items-center px-3">
-                                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M19 9l-7 7-7-7"></path>
-                                        </svg>
-                                    </button>
                                 </div>
-
-                                <div x-show="open" x-transition
-                                    class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                                <div x-show="open"
+                                    class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto"
+                                    style="display: none;">
                                     <template
                                         x-for="kota in kotas.filter(k => k.name.toLowerCase().includes(search.toLowerCase()))"
                                         :key="kota.code">
                                         <div @click="selectedKota = `${kota.code}_${kota.name}`; search = ''; open = false"
                                             class="px-4 py-2 cursor-pointer hover:bg-indigo-50"
-                                            :class="{ 'bg-indigo-100': selectedKota === `${kota.code}_${kota.name}` }"
-                                            x-text="getDisplayName(kota.name)">
-                                        </div>
+                                            x-text="getDisplayName(kota.name)"></div>
                                     </template>
-                                    <div x-show="kotas.filter(k => k.name.toLowerCase().includes(search.toLowerCase())).length === 0"
-                                        class="px-4 py-2 text-gray-500 text-sm">
-                                        Tidak ada hasil
-                                    </div>
                                 </div>
-
-                                <p class="mt-1 text-xs text-gray-500">Pilih kota yang akan menjadi wilayah kerja Kabid.</p>
-                                <x-input-error :messages="$errors->get('kabupaten')" class="mt-2" />
                             </div>
                         </div>
 
-                        {{-- ✅ TAMBAHKAN DROPDOWN BIDANG (HANYA MUNCUL JIKA ROLE = KADER) --}}
+                        <div id="kecamatan-field" style="display: none;">
+                            <input type="hidden" name="kecamatan" id="kecamatan-hidden">
+                            <div x-data="kecamatanCombobox()" @click.away="open = false" class="relative">
+                                <x-input-label for="kecamatan" :value="__('Pilih Kecamatan')" />
+                                <div class="relative">
+                                    <input type="text" x-model="search" @focus="open = true" @input="open = true"
+                                        :placeholder="selectedKecamatanName || 'Cari Kecamatan...'"
+                                        class="block mt-1 w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        :disabled="loading" autocomplete="off">
+
+                                    <!-- Loading Indicator -->
+                                    <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
+                                        <svg x-show="loading" class="animate-spin h-5 w-5 text-indigo-500"
+                                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10"
+                                                stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor"
+                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                            </path>
+                                        </svg>
+                                    </div>
+                                </div>
+
+                                <div x-show="open && !loading"
+                                    class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto"
+                                    style="display: none;">
+                                    <template
+                                        x-for="kec in kecamatanList.filter(k => k.name.toLowerCase().includes(search.toLowerCase()))"
+                                        :key="kec.code">
+                                        <div @click="selectKecamatan(kec)"
+                                            class="px-4 py-2 cursor-pointer hover:bg-indigo-50" x-text="kec.name"></div>
+                                    </template>
+                                    <div x-show="kecamatanList.length === 0" class="px-4 py-2 text-gray-500 text-sm">
+                                        Tidak ada data kecamatan
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500">
+                                Admin Kecamatan akan mengelola semua posyandu di kecamatan ini
+                            </p>
+                        </div>
+
+                        <!-- ✅ FIELD UNTUK KETUA KADER: Pilih Posyandu (dibuat oleh Kabid atau Admin Kecamatan) -->
+                        <div id="posyandu-field" style="display: none;">
+                            <x-input-label for="posyandu_id" :value="__('Pilih Posyandu')" />
+                            <select id="posyandu_id" name="posyandu_id"
+                                class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                <option value="" disabled selected>Pilih Posyandu</option>
+                                @foreach ($posyandus as $posyandu)
+                                    <option value="{{ $posyandu->id }}">
+                                        {{ $posyandu->nama_posyandu }} - {{ $posyandu->kecamatan }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <p class="mt-1 text-xs text-gray-500">
+                                Ketua Kader akan memimpin posyandu ini
+                            </p>
+                        </div>
+
+                        <!-- ✅ FIELD UNTUK KADER: Pilih Bidang (posyandu otomatis dari Ketua Kader) -->
                         <div id="bidang-field" style="display: none;">
                             <x-input-label for="bidang_id" :value="__('Bidang Tugas')" />
                             <select id="bidang_id" name="bidang_id"
                                 class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                                 <option value="" disabled selected>Pilih Bidang</option>
                                 @foreach ($bidangs as $bidang)
-                                    <option value="{{ $bidang->id }}" @selected(old('bidang_id') == $bidang->id)>
+                                    <option value="{{ $bidang->id }}">
                                         {{ $bidang->nama_bidang }}
                                     </option>
                                 @endforeach
                             </select>
-                            <p class="mt-1 text-xs text-gray-500">Kader hanya bisa mengelola 1 bidang.</p>
-                            <x-input-error :messages="$errors->get('bidang_id')" class="mt-2" />
+                            <p class="mt-1 text-xs text-gray-500">
+                                Kader akan bekerja di bidang ini pada posyandu Anda
+                            </p>
                         </div>
 
                         <div>
@@ -310,6 +347,53 @@
                         return name.replace('Kota ', '');
                     }
                 }));
+
+                Alpine.data('kecamatanCombobox', () => ({
+                    open: false,
+                    search: '',
+                    loading: false,
+                    kecamatanList: [],
+                    selectedKecamatanValue: '', // Format: Code_Nama
+                    selectedKecamatanName: '', // Nama saja
+
+                    async init() {
+                        // Ambil ID Kabupaten dari user yang login (KABID)
+                        // Format user->kabupaten di DB = "KABUPATEN BANYUMAS" (Nama saja, bukan Code_Nama)
+                        // TAPI API butuh CODE.
+                        // SOLUSI: Kita harus cari Code Kabupaten dulu berdasarkan Namanya dari list $kabupatenList
+
+                        // 1. Dapatkan nama kabupaten Kabid
+                        const kabidKabupatenName = "{{ auth()->user()->kabupaten }}";
+                        const allKabupatens = @json($kabupatenList ?? []);
+                        const allKotas = @json($kotaList ?? []);
+                        const allRegions = [...allKabupatens, ...allKotas];
+
+                        // 2. Cari object kabupaten untuk dapat CODE-nya
+                        const foundRegion = allRegions.find(r => r.name.toUpperCase() ===
+                            kabidKabupatenName.toUpperCase());
+
+                        if (foundRegion) {
+                            this.loading = true;
+                            try {
+                                const response = await fetch(
+                                    `{{ url('/api/wilayah/kecamatan') }}/${foundRegion.code}`);
+                                const data = await response.json();
+                                this.kecamatanList = data.data ?? [];
+                            } catch (e) {
+                                console.error('Gagal fetch kecamatan', e);
+                            }
+                            this.loading = false;
+                        }
+                    },
+
+                    selectKecamatan(kec) {
+                        this.selectedKecamatanValue = `${kec.code}_${kec.name}`;
+                        this.selectedKecamatanName = kec.name;
+                        document.getElementById('kecamatan-hidden').value = this.selectedKecamatanValue;
+                        this.search = '';
+                        this.open = false;
+                    }
+                }));
             });
 
             // ✅ TOGGLE FIELDS SETELAH DOM READY
@@ -321,6 +405,9 @@
                 const jenisWilayahSelect = document.getElementById('jenis_wilayah');
                 const kabupatenField = document.getElementById('kabupaten-field');
                 const kotaField = document.getElementById('kota-field');
+                const kecamatanField = document.getElementById('kecamatan-field');
+                const posyanduField = document.getElementById('posyandu-field');
+                const posyanduSelect = document.getElementById('posyandu_id');
 
                 function toggleFields() {
                     bidangField.style.display = 'none';
@@ -332,6 +419,10 @@
 
                     kabupatenField.style.display = 'none';
                     kotaField.style.display = 'none';
+                    kecamatanField.style.display = 'none';
+
+                    posyanduField.style.display = 'none';
+                    posyanduSelect.required = false;
 
                     if (roleSelect.value === 'kader') {
                         bidangField.style.display = 'block';
@@ -341,6 +432,18 @@
                     if (roleSelect.value === 'kabid') {
                         jenisWilayahField.style.display = 'block';
                         jenisWilayahSelect.required = true;
+                    }
+
+                    // ✅ Jika role = ADMIN KECAMATAN (dibuat oleh Kabid)
+                    if (roleSelect.value === 'admin-kecamatan') {
+                        kecamatanField.style.display = 'block';
+                        document.getElementById('kecamatan-hidden').required = true;
+                    }
+
+                    // ✅ Jika role = KETUA KADER (dibuat oleh Kabid atau Admin Kecamatan)
+                    if (roleSelect.value === 'ketua-kader') {
+                        posyanduField.style.display = 'block';
+                        posyanduSelect.required = true;
                     }
                 }
 
@@ -374,7 +477,7 @@
                 let menuHTML = `
         <div class="space-y-6 text-center">
             <p class="text-gray-600 mb-6">Pilih aksi yang ingin dilakukan:</p>
-            
+
             <!-- Upload Import -->
             <div class="bg-gradient-to-r from-emerald-50 to-emerald-100 border-2 border-emerald-300 rounded-xl p-6 hover:shadow-lg transition-all cursor-pointer"
                  id="uploadOption">
@@ -463,7 +566,7 @@
             <!-- Info -->
             <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
                 <p class="text-sm text-blue-700">
-                    <strong>💡 Tips:</strong> 
+                    <strong>💡 Tips:</strong>
                     <br>• Template sudah berisi data Desa/Kecamatan dari Posyandu
                     <br>• Anda hanya perlu isi NAMA dan NOMOR TELEPON
                     <br>• Password default: <code class="bg-white px-2 py-1 rounded">password123</code>

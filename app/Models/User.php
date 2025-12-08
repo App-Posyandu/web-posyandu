@@ -32,6 +32,7 @@ class User extends Authenticatable
         'ktp',
         'kk',
         'kabupaten',
+        'kecamatan',
         'jenis_wilayah',
 
         'nik',
@@ -88,6 +89,11 @@ class User extends Authenticatable
     public function isInactive()
     {
         return $this->status === 'inactive';
+    }
+
+    public function setNikAttribute($value)
+    {
+        $this->attributes['nik'] = empty($value) ? null : $value;
     }
 
     /**

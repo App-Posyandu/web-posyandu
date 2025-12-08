@@ -19,7 +19,6 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
-use Illuminate\Support\Facades\Log;
 use App\Exports\UsersTemplateExport;
 
 class UserController extends Controller
@@ -56,7 +55,83 @@ class UserController extends Controller
 
     public function index(Request $request)
     {
-        return view('admin.users.index');
+        $currentUser = Auth::user();
+        $query = User::with(['posyandu', 'bidang'])->latest();
+
+        // 1. Filter Hirarki Role
+        switch ($currentUser->role) {
+            case 'kader':
+                $query->where('role', 'masyarakat');
+                break;
+            case 'ketua-kader':
+                $query->whereIn('role', ['kader', 'masyarakat']);
+                break;
+            case 'admin-kecamatan':
+                $query->whereIn('role', ['ketua-kader', 'kader', 'masyarakat']);
+                break;
+            case 'kabid':
+                $query->whereIn('role', ['admin-kecamatan', 'ketua-kader', 'kader', 'masyarakat']);
+                break;
+        }
+
+        // 2. Filter Wilayah (Multi-Tenancy)
+        if (in_array($currentUser->role, ['kader', 'ketua-kader'])) {
+            $query->where('posyandu_id', $currentUser->posyandu_id);
+        } elseif ($currentUser->role === 'admin-kecamatan') {
+            $kecamatanName = explode('_', $currentUser->kecamatan)[1] ?? $currentUser->kecamatan;
+            $query->where(function ($q) use ($kecamatanName, $currentUser) {
+                $q->where('kecamatan', 'LIKE', "%{$kecamatanName}%")
+                    ->orWhere(function ($subQ) use ($currentUser) {
+                        $subQ->where('role', 'admin-kecamatan')
+                            ->where('kecamatan', $currentUser->kecamatan);
+                    });
+            });
+        } elseif ($currentUser->role === 'kabid') {
+            // ✅ TAMBAHKAN INI!
+            // Kabid bisa lihat semua user, ATAU filter berdasarkan bidang jika diperlukan
+            // if ($currentUser->kabupaten) {
+            //     $query->where(function ($q) use ($currentUser) {
+            //         $q->where('kabupaten', $currentUser->kabupaten)
+            //             ->orWhereNull('kabupaten'); // User yang belum set kabupaten
+            //     });
+            // }
+            // Jika bidang_id NULL, kabid bisa lihat SEMUA (tidak ada filter tambahan)
+        }
+
+        // 3. Search
+        if ($request->filled('search')) {
+            $searchTerm = $request->input('search');
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('name', 'like', '%' . $searchTerm . '%')
+                    ->orWhere('email', 'like', '%' . $searchTerm . '%')
+                    ->orWhere('nik', 'like', '%' . $searchTerm . '%');
+            });
+        }
+
+        // 4. Filter Role
+        if ($request->filled('role') && $request->input('role') !== '') {
+            $query->where('role', $request->input('role'));
+        }
+
+        // if ($currentUser->role === 'kabid') {
+        //     dd([
+        //         'current_user' => [
+        //             'name' => $currentUser->name,
+        //             'role' => $currentUser->role,
+        //             'bidang_id' => $currentUser->bidang_id,
+        //             'kabupaten' => $currentUser->kabupaten,
+        //         ],
+        //         'sql' => $query->toSql(),
+        //         'bindings' => $query->getBindings(),
+        //         'total_users' => User::count(),
+        //         'total_admin_kecamatan' => User::where('role', 'admin-kecamatan')->count(),
+        //         'query_count' => $query->count(),
+        //         'first_5_results' => $query->limit(5)->get(['id', 'name', 'role', 'bidang_id'])
+        //     ]);
+        // }
+
+        $users = $query->paginate(10)->withQueryString();
+        return view('admin.users.index', compact('users'));
     }
 
     /**
@@ -67,23 +142,19 @@ class UserController extends Controller
         $posyandus = Posyandu::orderBy('nama_posyandu')->get();
         $bidangs = BidangPengajuan::orderBy('nama_bidang')->get();
 
-        // ✅ Fetch Kabupaten dan Kota dari API
+        // Fetch Kabupaten dan Kota dari API
         $wilayahData = $this->fetchWilayahData(
             'regencies/' . self::PROVINCE_ID . '.json',
             'kabupatens_jateng'
         );
 
-        // ✅ Pisahkan berdasarkan prefix "Kabupaten" dan "Kota"
         $kabupatenList = [];
         $kotaList = [];
 
         foreach (($wilayahData['data'] ?? []) as $wilayah) {
-            // Cek apakah nama diawali dengan "Kota"
             if (stripos($wilayah['name'], 'Kota ') === 0) {
                 $kotaList[] = $wilayah;
-            }
-            // Cek apakah nama diawali dengan "Kabupaten"
-            elseif (stripos($wilayah['name'], 'Kabupaten ') === 0) {
+            } elseif (stripos($wilayah['name'], 'Kabupaten ') === 0) {
                 $kabupatenList[] = $wilayah;
             }
         }
@@ -98,76 +169,114 @@ class UserController extends Controller
     {
         $currentUser = Auth::user();
         $allowedRoles = [];
+
         switch ($currentUser->role) {
             case 'admin':
-                $allowedRoles = ['masyarakat', 'kader', 'ketua-kader', 'kabid', 'admin'];
+                $allowedRoles = ['masyarakat', 'kader', 'ketua-kader', 'admin-kecamatan', 'kabid', 'admin'];
                 break;
             case 'kabid':
+                $allowedRoles = ['admin-kecamatan', 'ketua-kader'];
+                break;
+            case 'admin-kecamatan':
                 $allowedRoles = ['ketua-kader'];
+                $request->merge(['role' => 'ketua-kader']);
                 break;
             case 'ketua-kader':
                 $allowedRoles = ['kader'];
+                $request->merge(['role' => 'kader']);
                 break;
         }
 
-        if ($currentUser->role === 'kabid') {
-            $request->merge(['role' => 'ketua-kader']);
-            $allowedRoles = ['ketua-kader'];
-        } elseif ($currentUser->role === 'ketua-kader') {
-            $request->merge(['role' => 'kader']);
-            $allowedRoles = ['kader'];
-        } elseif ($currentUser->role === 'admin') {
-            $allowedRoles = ['masyarakat', 'kader', 'ketua-kader', 'kabid', 'admin'];
-        }
-
+        // ✅ Base validation rules
         $validationRules = [
             'name' => ['required', 'string', 'max:255'],
             'password' => ['required', 'confirmed', Password::defaults()],
             'role' => ['required', Rule::in($allowedRoles)],
-            'posyandu_id' => ['nullable', 'uuid', 'exists:posyandus,id'],
             'alamat' => ['required', 'string'],
             'no_telepon' => ['required', 'string', 'max:20', 'unique:users'],
             'tempat_lahir' => ['required', 'string', 'max:255'],
             'tanggal_lahir' => ['required', 'date'],
             'jenis_kelamin' => ['required', 'string'],
+            'nik' => ['nullable', 'string', 'max:16', 'unique:users,nik'],
         ];
 
+        // ✅ Validation untuk Admin Kecamatan
+        if ($request->role === 'admin-kecamatan') {
+            $validationRules['kecamatan'] = ['required', 'string'];
+            // Kabupaten diambil dari Kabid, tidak perlu validasi
+        }
+
+        // ✅ Validation untuk Ketua Kader
+        if ($request->role === 'ketua-kader') {
+            $validationRules['posyandu_id'] = ['required', 'uuid', 'exists:posyandus,id'];
+        }
+
+        // ✅ Validation untuk Kader
+        if ($request->role === 'kader') {
+            $validationRules['bidang_id'] = ['required', 'uuid', 'exists:bidang_pengajuans,id'];
+            // Posyandu otomatis dari Ketua Kader yang buat
+        }
+
+        // ✅ Validation untuk Kabid
         if ($request->role === 'kabid') {
             $validationRules['jenis_wilayah'] = ['required', 'in:kabupaten,kota'];
             $validationRules['kabupaten'] = ['required', 'string'];
         }
 
-        if ($request->role === 'kader') {
-            $validationRules['bidang_id'] = ['required', 'uuid', 'exists:bidang_pengajuans,id'];
-        }
-
         $request->validate($validationRules);
 
-        $isInstantVerified = in_array($request->role, ['admin', 'kabid', 'ketua-kader']);
+        // Tentukan apakah langsung terverifikasi
+        $isInstantVerified = in_array($request->role, ['admin', 'kabid', 'admin-kecamatan', 'ketua-kader']);
 
-        // Simpan password asli sebelum di-hash
+        // Simpan password asli untuk notifikasi
         $plainPassword = $request->password;
 
+        // ✅ LOGIKA PENENTUAN WILAYAH & POSYANDU
         $kabupatenName = null;
+        $kecamatanName = null;
         $jenisWilayah = null;
+        $posyanduId = null;
 
-        if ($request->filled('kabupaten') && $request->role === 'kabid') {
+        // 1. Jika membuat KABID baru (hanya Admin yang bisa)
+        if ($request->role === 'kabid' && $request->filled('kabupaten')) {
             $kabupatenName = explode('_', $request->kabupaten)[1] ?? $request->kabupaten;
-        }
-
-        if ($request->filled('jenis_wilayah') && $request->role === 'kabid') {
             $jenisWilayah = $request->jenis_wilayah;
         }
 
-        // Buat user baru
+        // 2. Jika KABID membuat Admin Kecamatan
+        if ($request->role === 'admin-kecamatan' && $currentUser->role === 'kabid') {
+            $kabupatenName = $currentUser->kabupaten; // Inherit kabupaten dari Kabid
+            $kecamatanName = explode('_', $request->kecamatan)[1] ?? $request->kecamatan;
+        }
+
+        // 3. Jika KABID atau ADMIN KECAMATAN membuat Ketua Kader
+        if ($request->role === 'ketua-kader') {
+            $posyanduId = $request->posyandu_id; // User pilih posyandu
+
+            // Ambil data posyandu untuk get kabupaten & kecamatan
+            $posyandu = \App\Models\Posyandu::find($posyanduId);
+            if ($posyandu) {
+                $kabupatenName = $posyandu->kabupaten;
+                $kecamatanName = $posyandu->kecamatan;
+            }
+        }
+
+        // 4. Jika KETUA KADER membuat Kader
+        if ($request->role === 'kader' && $currentUser->role === 'ketua-kader') {
+            // Otomatis inherit semua dari Ketua Kader
+            $posyanduId = $currentUser->posyandu_id;
+            $kabupatenName = $currentUser->kabupaten;
+            $kecamatanName = $currentUser->kecamatan;
+        }
+
+        // ✅ Buat user baru
         $userData = [
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($plainPassword),
             'role' => $request->role,
-            'posyandu_id' => $request->posyandu_id,
-            'nik' => $request->nik,
-            'status' => 'active',
+            'posyandu_id' => $posyanduId,
+            'nik' => $request->filled('nik') ? $request->nik : null, // ✅ NULL jika kosong
             'alamat' => $request->alamat,
             'no_telepon' => $request->no_telepon,
             'tempat_lahir' => $request->tempat_lahir,
@@ -177,37 +286,33 @@ class UserController extends Controller
             'verified_by' => $isInstantVerified ? $currentUser->id : null,
             'bidang_id' => $request->role === 'kader' ? $request->bidang_id : null,
             'kabupaten' => $kabupatenName,
+            'kecamatan' => $kecamatanName,
             'jenis_wilayah' => $jenisWilayah,
+            'is_active' => true,
         ];
-
-        if ($request->role === 'kader' && $request->filled('bidang_id')) {
-            $userData['bidang_id'] = $request->bidang_id;
-        }
 
         $user = User::create($userData);
 
         event(new Registered($user));
 
-        // Import notification class di bagian atas controller
-        // use App\Notifications\UserCreatedNotification;
-
-        // Kirim notifikasi ke user yang baru dibuat
-        if (in_array($request->role, ['kabid', 'ketua-kader'])) {
+        // Kirim notifikasi
+        if (in_array($request->role, ['kabid', 'admin-kecamatan', 'ketua-kader'])) {
             $user->notify(new \App\Notifications\UserCreatedNotification($user->toArray(), $plainPassword, $currentUser->name));
         }
 
         // Generate pesan WhatsApp
-        if (in_array($request->role, ['kabid', 'ketua-kader'])) {
+        if (in_array($request->role, ['kabid', 'admin-kecamatan', 'ketua-kader'])) {
             $this->sendWhatsAppMessage($user, $plainPassword, $currentUser);
         }
 
+        // Redirect berdasarkan source
         if ($request->input('source') === 'posyandu_create') {
             return redirect()->route('admin.posyandu.create')
                 ->with('success', 'User Ketua Kader berhasil dibuat! Silakan refresh halaman dan pilih dari dropdown.');
         }
 
         // Tambahkan info WhatsApp ke flash message
-        if (in_array($request->role, ['kabid', 'ketua-kader'])) {
+        if (in_array($request->role, ['kabid', 'ketua-kader', 'admin-kecamatan'])) {
             return redirect()->route('admin.users.index')
                 ->with('success', 'User baru berhasil ditambahkan.')
                 ->with('whatsapp_link', $this->generateWhatsAppLink($user, $plainPassword, $currentUser));
@@ -221,6 +326,7 @@ class UserController extends Controller
         $roleNames = [
             'kabid' => 'Kepala Bidang',
             'ketua-kader' => 'Ketua Kader',
+            'admin-kecamatan' => 'Admin Kecamatan',
         ];
 
         $roleName = $roleNames[$user->role] ?? $user->role;
@@ -307,7 +413,6 @@ class UserController extends Controller
         // Validasi input status
         $request->validate([
             'is_active' => ['nullable', 'boolean'],
-            // Tambahkan validasi alasan (opsional tapi disarankan)
             'reason' => ['required', 'string', 'max:255'],
         ]);
 
@@ -403,7 +508,6 @@ class UserController extends Controller
                 'success' => true,
                 'message' => 'Data berhasil diimport!'
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -449,7 +553,6 @@ class UserController extends Controller
                 new UsersTemplateExport($dataRows),
                 $filename
             );
-
         } catch (\Exception $e) {
             Log::error('Export User Template Error', [
                 'error' => $e->getMessage(),

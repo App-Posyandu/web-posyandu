@@ -4,6 +4,7 @@ use App\Http\Controllers\AjuanController;
 use App\Http\Controllers\BukuSakuController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GoogleLoginController;
+use App\Http\Controllers\KecamatanController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PenimbanganController;
@@ -50,12 +51,12 @@ Route::middleware('auth')->group(function () {
 
     // ✅ PILIH USER (UNTUK KADER MEMBUAT AJUAN ATAS NAMA MASYARAKAT)
     Route::get('/admin/ajuan/pilih-user', [AjuanController::class, 'pilihUser'])
-        ->middleware('role:admin,kabid,ketua-kader,kader')
+        ->middleware('role:admin,kabid,ketua-kader,kader,admin-kecamatan')
         ->name('dashboard.partials.pilih-user');
 
     Route::post('users/{user}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
     Route::post('users/{user}/activate', [UserController::class, 'activate'])->name('users.activate');
-    
+
     // ✅ ROUTE AJUAN - TANPA MIDDLEWARE TAMBAHAN
     Route::get('/ajuan', [AjuanController::class, 'index'])->name('ajuan.index');
     Route::get('/ajuan/create/{bidang}', [AjuanController::class, 'create'])->name('ajuan.create');
@@ -88,15 +89,8 @@ Route::middleware('auth')->group(function () {
         Route::get('desa', [PosyanduController::class, 'getDesa'])->name('api.desa');
     });
 
-    // ✅ PENIMBANGAN & LAPORAN
-    Route::middleware(['role:ketua-kader,kader,kabid'])->group(function () {
-        Route::resource('penimbangan', PenimbanganController::class);
-    });
-
     // ✅ ADMIN ROUTES
-
-    Route::middleware(['role:kabid,kader,admin,ketua-kader'])->prefix('admin')->name('admin.')->group(function () {
-        Route::resource('posyandu', PosyanduController::class);
+    Route::middleware(['role:kabid,kader,admin,ketua-kader,admin-kecamatan'])->prefix('admin')->name('admin.')->group(function () {
         Route::get('admin/posyandu/clear-cache', [PosyanduController::class, 'clearWilayahCache'])
             ->middleware(['auth', 'admin'])
             ->name('admin.posyandu.clear-cache');
@@ -106,7 +100,8 @@ Route::middleware('auth')->group(function () {
     });
 
 
-    Route::middleware(['role:kabid,ketua-kader'])->prefix('admin')->name('admin.')->group(function () {
+    Route::middleware(['role:kabid,admin-kecamatan,ketua-kader'])->prefix('admin')->name('admin.')->group(function () {
+        Route::resource('kecamatan', KecamatanController::class);
         Route::resource('posyandu', PosyanduController::class);
 
         Route::get('/users/import', function () {
@@ -136,7 +131,7 @@ Route::middleware('auth')->group(function () {
             ->name('posyandu.export.filter');
 
         // Export berdasarkan desa dan kecamatan (untuk template import)
-// HARUS DI PALING BAWAH karena catch-all pattern
+        // HARUS DI PALING BAWAH karena catch-all pattern
         Route::get('export-posyandu/{desa}/{kecamatan}', [PosyanduController::class, 'exportByDesaKecamatan'])
             ->name('posyandu.export.template');
 

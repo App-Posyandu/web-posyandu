@@ -20,8 +20,9 @@ return new class extends Migration
             $table->string('no_telepon', 20)->unique()->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->enum('role', ['masyarakat', 'kader', 'kabid', 'ketua-kader', 'admin'])->default('masyarakat');
+            $table->enum('role', ['masyarakat', 'kader', 'kabid', 'admin-kecamatan', 'ketua-kader', 'admin'])->default('masyarakat');
             $table->string('kabupaten')->nullable();
+            $table->string('kecamatan')->nullable();
             $table->enum('jenis_wilayah', ['kabupaten', 'kota'])->nullable();
 
             // Kolom Tambahan dari Form Registrasi

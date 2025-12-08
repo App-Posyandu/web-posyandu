@@ -72,26 +72,29 @@
 
                 {{-- Filter --}}
                 <div class="flex flex-col md:flex-row gap-2 w-full md:w-auto">
-                    <select wire:model.live="role"
-                        class="border-gray-300 rounded-md shadow-sm text-sm py-2 w-full md:w-auto focus:ring-pink-500 focus:border-pink-500">
+                    <select wire:model.live="role" class="border-gray-300 rounded-md shadow-sm text-sm">
                         @if ($currentUser->role === 'admin')
                             <option value="">Semua Role</option>
                             <option value="masyarakat">Masyarakat</option>
                             <option value="kader">Kader</option>
                             <option value="ketua-kader">Ketua Kader</option>
+                            <option value="admin-kecamatan">Admin Kecamatan</option>
                             <option value="kabid">Kabid</option>
-                        @elseif ($currentUser->role === 'kader')
+                        @elseif ($currentUser->role === 'kabid')
                             <option value="">Semua Role</option>
+                            <option value="admin-kecamatan">Admin Kecamatan</option>
+                            <option value="ketua-kader">Ketua Kader</option>
+                            <option value="kader">Kader</option>
+                            <option value="masyarakat">Masyarakat</option>
+                        @elseif ($currentUser->role === 'admin-kecamatan')
+                            <option value="">Semua Role</option>
+                            <option value="ketua-kader">Ketua Kader</option>
+                            <option value="kader">Kader</option>
                             <option value="masyarakat">Masyarakat</option>
                         @elseif ($currentUser->role === 'ketua-kader')
                             <option value="">Semua Role</option>
                             <option value="masyarakat">Masyarakat</option>
                             <option value="kader">Kader</option>
-                        @elseif ($currentUser->role === 'kabid')
-                            <option value="">Semua Role</option>
-                            <option value="masyarakat">Masyarakat</option>
-                            <option value="kader">Kader</option>
-                            <option value="ketua-kader">Ketua Kader</option>
                         @endif
                     </select>
 
@@ -156,26 +159,48 @@
                             <td class="px-4 py-3 text-sm text-gray-500">
                                 {{ $loop->iteration + $users->firstItem() - 1 }}
                             </td>
+
+                            {{-- ✅ NAMA & INFO WILAYAH/POSYANDU --}}
                             <td class="px-4 py-3 whitespace-nowrap">
                                 <div class="font-medium text-gray-900">
                                     {{ $user->name }}
                                 </div>
                                 <div class="text-gray-500 text-sm">
-                                    {{ $user->posyandu?->nama_posyandu ?? 'Belum Terdaftar' }}
+                                    @if (in_array($user->role, ['masyarakat', 'kader', 'ketua-kader']))
+                                        <i class="bi bi-geo-alt-fill text-xs mr-1"></i>
+                                        {{ $user->posyandu?->nama_posyandu ?? 'Belum Terdaftar' }}
+                                    @elseif ($user->role === 'admin-kecamatan')
+                                        <i class="bi bi-pin-map-fill text-xs mr-1"></i>
+                                        Kec. {{ $user->kecamatan ?? '-' }}
+                                    @elseif ($user->role === 'kabid')
+                                        <i class="bi bi-building text-xs mr-1"></i>
+                                        {{ $user->kabupaten ?? '-' }}
+                                    @else
+                                        -
+                                    @endif
                                 </div>
                             </td>
 
                             <td class="px-4 py-3 whitespace-nowrap">
                                 <div class="text-gray-900 text-sm">
-                                    {{ $user->email }}
+                                    {{ $user->email ?? '-' }}
                                 </div>
                                 <div class="text-gray-500 text-xs">
-                                    NIK: {{ $user->nik }}
+                                    NIK: {{ $user->nik ?? '-' }}
                                 </div>
                             </td>
 
                             <td class="px-4 py-3 text-gray-700 text-sm">
-                                {{ ucfirst($user->role) }}
+                                <span
+                                    class="px-2 py-1 rounded-full text-xs font-semibold
+                            @if ($user->role === 'admin') bg-purple-100 text-purple-800
+                            @elseif($user->role === 'kabid') bg-blue-100 text-blue-800
+                            @elseif($user->role === 'admin-kecamatan') bg-indigo-100 text-indigo-800
+                            @elseif($user->role === 'ketua-kader') bg-green-100 text-green-800
+                            @elseif($user->role === 'kader') bg-yellow-100 text-yellow-800
+                            @else bg-gray-100 text-gray-800 @endif">
+                                    {{ ucfirst(str_replace('-', ' ', $user->role)) }}
+                                </span>
                             </td>
 
                             <td class="px-4 py-3">
@@ -264,8 +289,20 @@
                                     <h3 class="text-sm font-semibold text-gray-900">
                                         {{ $user->name }}
                                     </h3>
+                                    {{-- ✅ INFO WILAYAH/POSYANDU --}}
                                     <p class="text-xs text-gray-500">
-                                        {{ $user->posyandu?->nama_posyandu ?? 'Belum Terdaftar' }}
+                                        @if (in_array($user->role, ['masyarakat', 'kader', 'ketua-kader']))
+                                            <i class="bi bi-geo-alt-fill mr-1"></i>
+                                            {{ $user->posyandu?->nama_posyandu ?? 'Belum Terdaftar' }}
+                                        @elseif ($user->role === 'admin-kecamatan')
+                                            <i class="bi bi-pin-map-fill mr-1"></i>
+                                            Kec. {{ $user->kecamatan ?? '-' }}
+                                        @elseif ($user->role === 'kabid')
+                                            <i class="bi bi-building mr-1"></i>
+                                            {{ $user->kabupaten ?? '-' }}
+                                        @else
+                                            -
+                                        @endif
                                     </p>
                                 </div>
                             </div>
@@ -283,8 +320,8 @@
                                 <span class="text-xs font-medium text-gray-500">Email</span>
                             </div>
                             <div class="flex-1">
-                                <p class="text-sm text-gray-900">{{ $user->email }}</p>
-                                <p class="text-xs text-gray-500 mt-1">NIK: {{ $user->nik }}</p>
+                                <p class="text-sm text-gray-900">{{ $user->email ?? '-' }}</p>
+                                <p class="text-xs text-gray-500 mt-1">NIK: {{ $user->nik ?? '-' }}</p>
                             </div>
                         </div>
 
@@ -294,8 +331,15 @@
                                 <span class="text-xs font-medium text-gray-500">Role</span>
                             </div>
                             <div class="flex-1">
-                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                                    {{ ucfirst($user->role) }}
+                                <span
+                                    class="px-2 py-1 text-xs font-semibold rounded-full
+                            @if ($user->role === 'admin') bg-purple-100 text-purple-800
+                            @elseif($user->role === 'kabid') bg-blue-100 text-blue-800
+                            @elseif($user->role === 'admin-kecamatan') bg-indigo-100 text-indigo-800
+                            @elseif($user->role === 'ketua-kader') bg-green-100 text-green-800
+                            @elseif($user->role === 'kader') bg-yellow-100 text-yellow-800
+                            @else bg-gray-100 text-gray-800 @endif">
+                                    {{ ucfirst(str_replace('-', ' ', $user->role)) }}
                                 </span>
                             </div>
                         </div>
