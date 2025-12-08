@@ -75,23 +75,27 @@ class UsersTemplateExport implements FromArray, WithHeadings, WithEvents, WithDr
         $logos = [
             [
                 'path' => public_path('assets/image/logo/logo_kebumen.png'),
-                'width' => 90,
-                'height' => 90,
-                'offsetX' => 20,
+                'width' => 85,
+                'height' => 60,
+                'offsetX' => 0, // kiri dari tengah
+                'position' => 'C1',
             ],
             [
                 'path' => public_path('assets/image/logo/logo_posyandu.png'),
-                'width' => 90,
-                'height' => 90,
-                'offsetX' => 150,
+                'width' => 85,
+                'height' => 60,
+                'offsetX' => 100, // tengah
+                'position' => 'C1',
             ],
             [
                 'path' => public_path('assets/image/logo/logo_sapaposyandu.png'),
-                'width' => 90,
-                'height' => 90,
-                'offsetX' => 280,
+                'width' => 95,
+                'height' => 60,
+                'offsetX' => 80, // kanan dari tengah
+                'position' => 'D1',
             ],
         ];
+
 
         foreach ($logos as $logo) {
             if (file_exists($logo['path'])) {
@@ -99,13 +103,12 @@ class UsersTemplateExport implements FromArray, WithHeadings, WithEvents, WithDr
                 $drawing->setPath($logo['path']);
                 $drawing->setHeight($logo['height']);
                 $drawing->setWidth($logo['width']);
-                $drawing->setCoordinates('C1');
+                $drawing->setCoordinates($logo['position']);
                 $drawing->setOffsetX($logo['offsetX']);
                 $drawing->setOffsetY(5);
                 $drawings[] = $drawing;
             }
         }
-
         return $drawings;
     }
 

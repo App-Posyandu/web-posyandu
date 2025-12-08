@@ -275,25 +275,25 @@
                         </div>
                     </div>
                     <div class="flex gap-3">
-                        <div class="w-full flex items-center justify-end mt-8 gap-4">
+                        <div class="flex items-center justify-between mt-8 gap-4">
                             @php
-                                $cancelUrl = request()->has('source')
-                                    ? route('admin.posyandu.create')
-                                    : route('admin.users.index');
+                                $cancelUrl = route('admin.users.index');
                             @endphp
-                            <a href="{{ $cancelUrl }}"
+                            <div class="flex gap-4">
+                                <a href="{{ $cancelUrl }}"
                                 class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md text-sm font-semibold hover:bg-gray-300">
                                 Batal
                             </a>
                             <x-primary-button>
                                 {{ __('Simpan Pengguna') }}
                             </x-primary-button>
+                            <button type="button" id="importBtn"
+                                class="px-4 py-2 bg-emerald-600 text-white rounded-md text-sm font-semibold hover:bg-emerald-700">
+                                Import Nama Pengguna
+                            </button>
+                            </div>
                         </div>
-                    </div>
                 </form>
-                <button id="importBtn" q class="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700">
-                    Import Nama Pengguna
-                </button>
             </div>
         </div>
     </div>
@@ -481,7 +481,7 @@
             <!-- Upload Import -->
             <div class="bg-gradient-to-r from-emerald-50 to-emerald-100 border-2 border-emerald-300 rounded-xl p-6 hover:shadow-lg transition-all cursor-pointer"
                  id="uploadOption">
-                <div class="flex items-center justify-center gap-4">
+                <div class="flex  gap-4">
                     <div class="bg-emerald-500 p-4 rounded-full">
                         <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
@@ -497,7 +497,7 @@
             <!-- Download Template -->
             <div class="bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-300 rounded-xl p-6 hover:shadow-lg transition-all cursor-pointer"
                  id="downloadOption">
-                <div class="flex items-center justify-center gap-4">
+                <div class="flex items-center gap-4">
                     <div class="bg-blue-500 p-4 rounded-full">
                         <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -566,7 +566,7 @@
             <!-- Info -->
             <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
                 <p class="text-sm text-blue-700">
-                    <strong>💡 Tips:</strong>
+                    <strong>Tips:</strong>
                     <br>• Template sudah berisi data Desa/Kecamatan dari Posyandu
                     <br>• Anda hanya perlu isi NAMA dan NOMOR TELEPON
                     <br>• Password default: <code class="bg-white px-2 py-1 rounded">password123</code>
@@ -580,7 +580,7 @@
                     ← Kembali
                 </button>
                 <button id="importExcelBtn"
-                    class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-md shadow flex items-center gap-2">
+                    class="px-6 py-2.5 bg-pink-500 hover:bg-pink-600 text-white font-bold rounded-md shadow flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
                     </svg>
