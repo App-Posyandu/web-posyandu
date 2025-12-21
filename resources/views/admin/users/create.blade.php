@@ -281,16 +281,16 @@
                             @endphp
                             <div class="flex gap-4">
                                 <a href="{{ $cancelUrl }}"
-                                class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md text-sm font-semibold hover:bg-gray-300">
-                                Batal
-                            </a>
-                            <x-primary-button>
-                                {{ __('Simpan Pengguna') }}
-                            </x-primary-button>
-                            <button type="button" id="importBtn"
-                                class="px-4 py-2 bg-emerald-600 text-white rounded-md text-sm font-semibold hover:bg-emerald-700">
-                                Import Nama Pengguna
-                            </button>
+                                    class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md text-sm font-semibold hover:bg-gray-300">
+                                    Batal
+                                </a>
+                                <x-primary-button>
+                                    {{ __('Simpan Pengguna') }}
+                                </x-primary-button>
+                                {{-- <button type="button" id="importBtn"
+                                    class="px-4 py-2 bg-emerald-600 text-white rounded-md text-sm font-semibold hover:bg-emerald-700">
+                                    Import Nama Pengguna
+                                </button> --}}
                             </div>
                         </div>
                 </form>

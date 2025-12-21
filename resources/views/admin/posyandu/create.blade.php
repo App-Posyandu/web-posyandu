@@ -290,20 +290,67 @@
                     loadingDesa: false,
                     kabupatens: @json($kabupatens['data'] ?? []),
 
-                    init() {
+                    async init() {
+                        console.log('Init dependentDropdowns');
+
                         @if (auth()->user()->role === 'kabid' && auth()->user()->kabupaten)
                             const kabupatenData = @json($kabupatens['data'] ?? []);
-                            const foundKab = kabupatenData.find(k => k.name ===
-                                '{{ auth()->user()->kabupaten }}');
+                            const kabupatenName = '{{ auth()->user()->kabupaten }}';
+
+                            console.log('Mencari kabupaten:', kabupatenName);
+                            console.log('Data kabupaten tersedia:', kabupatenData.length, 'items');
+
+                            // ✅ Normalisasi nama untuk pencarian yang lebih fleksibel
+                            const normalizedSearch = kabupatenName.toLowerCase().trim();
+
+                            // ✅ Cari dengan berbagai cara
+                            let foundKab = kabupatenData.find(k => {
+                                const normalizedName = k.name.toLowerCase().trim();
+
+                                // Exact match
+                                if (normalizedName === normalizedSearch) return true;
+
+                                // Match tanpa prefix "kabupaten" / "kota"
+                                const withoutPrefix = normalizedName.replace(
+                                    /^(kabupaten|kota)\s+/i, '');
+                                const searchWithoutPrefix = normalizedSearch.replace(
+                                    /^(kabupaten|kota)\s+/i, '');
+                                if (withoutPrefix === searchWithoutPrefix) return true;
+
+                                // Contains match (untuk case seperti "BANJARNEGARA" vs "Kabupaten Banjarnegara")
+                                if (normalizedName.includes(searchWithoutPrefix)) return true;
+                                if (searchWithoutPrefix.includes(withoutPrefix)) return true;
+
+                                return false;
+                            });
+
                             if (foundKab) {
+                                console.log('✅ Kabupaten ditemukan:', foundKab);
                                 this.selectedKabupaten = `${foundKab.code}_${foundKab.name}`;
-                                this.fetchKecamatan();
+
+                                // Langsung fetch kecamatan
+                                await this.fetchKecamatan();
+                            } else {
+                                console.error('❌ Kabupaten tidak ditemukan dalam data:', kabupatenName);
+                                console.log('Data kabupaten yang tersedia:');
+                                kabupatenData.slice(0, 5).forEach(k => console.log('-', k.name));
+
+                                // ✅ Fallback: Jika format sudah code_nama
+                                if (kabupatenName.includes('_')) {
+                                    console.log('Mencoba format code_nama...');
+                                    this.selectedKabupaten = kabupatenName;
+                                    await this.fetchKecamatan();
+                                } else {
+                                    alert(
+                                        `Data kabupaten "${kabupatenName}" tidak ditemukan di sistem. Silakan hubungi admin untuk memperbarui data wilayah.`);
+                                }
                             }
                         @endif
                     },
 
                     getKabupatenName(value) {
                         if (!value) return '';
+                        // Jika format: "3302_Kabupaten Banyumas"
                         return value.split('_').slice(1).join('_');
                     },
 
@@ -318,51 +365,90 @@
                     },
 
                     async fetchKecamatan() {
+                        console.log('Fetching kecamatan untuk:', this.selectedKabupaten);
+
+                        // Reset state
                         this.kecamatanList = [];
                         this.desaList = [];
                         this.selectedKecamatan = '';
                         this.selectedDesa = '';
-                        this.loadingKecamatan = true;
+                        this.loadingKecamatan = true; // ✅ Set loading SEBELUM fetch
 
-                        if (this.selectedKabupaten) {
-                            try {
-                                const kabId = this.selectedKabupaten.split('_')[0];
-                                const response = await fetch(
-                                    `{{ route('api.kecamatan') }}?kab_id=${kabId}`);
-
-                                if (!response.ok) throw new Error('Network error');
-
-                                const data = await response.json();
-                                this.kecamatanList = data.data ?? [];
-                            } catch (error) {
-                                console.error('Error fetching kecamatan:', error);
-                                alert('Gagal memuat data kecamatan. Silakan coba lagi.');
-                            }
+                        if (!this.selectedKabupaten) {
+                            this.loadingKecamatan = false;
+                            return;
                         }
-                        this.loadingKecamatan = false;
+
+                        try {
+                            const kabId = this.selectedKabupaten.split('_')[0];
+                            console.log('Fetching kecamatan dengan kabId:', kabId);
+
+                            const response = await fetch(
+                                `{{ route('api.kecamatan') }}?kab_id=${kabId}`
+                            );
+
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+
+                            const data = await response.json();
+                            console.log('Data kecamatan berhasil dimuat:', data);
+
+                            this.kecamatanList = data.data ?? [];
+
+                            if (this.kecamatanList.length === 0) {
+                                console.warn('Tidak ada kecamatan ditemukan untuk kabupaten ini');
+                                alert(
+                                    'Tidak ada data kecamatan untuk wilayah ini. Silakan hubungi admin.');
+                            }
+                        } catch (error) {
+                            console.error('Error fetching kecamatan:', error);
+                            alert('Gagal memuat data kecamatan. Silakan coba lagi atau hubungi admin.');
+                        } finally {
+                            this.loadingKecamatan = false; // ✅ Set false SETELAH selesai
+                        }
                     },
 
                     async fetchDesa() {
+                        console.log('Fetching desa untuk:', this.selectedKecamatan);
+
                         this.desaList = [];
                         this.selectedDesa = '';
-                        this.loadingDesa = true;
+                        this.loadingDesa = true; // ✅ Set loading SEBELUM fetch
 
-                        if (this.selectedKecamatan) {
-                            try {
-                                const kecId = this.selectedKecamatan.split('_')[0];
-                                const response = await fetch(
-                                    `{{ route('api.desa') }}?kec_id=${kecId}`);
-
-                                if (!response.ok) throw new Error('Network error');
-
-                                const data = await response.json();
-                                this.desaList = data.data ?? [];
-                            } catch (error) {
-                                console.error('Error fetching desa:', error);
-                                alert('Gagal memuat data desa. Silakan coba lagi.');
-                            }
+                        if (!this.selectedKecamatan) {
+                            this.loadingDesa = false;
+                            return;
                         }
-                        this.loadingDesa = false;
+
+                        try {
+                            const kecId = this.selectedKecamatan.split('_')[0];
+                            console.log('Fetching desa dengan kecId:', kecId);
+
+                            const response = await fetch(
+                                `{{ route('api.desa') }}?kec_id=${kecId}`
+                            );
+
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+
+                            const data = await response.json();
+                            console.log('Data desa berhasil dimuat:', data);
+
+                            this.desaList = data.data ?? [];
+
+                            if (this.desaList.length === 0) {
+                                console.warn('Tidak ada desa ditemukan untuk kecamatan ini');
+                                alert(
+                                'Tidak ada data desa untuk kecamatan ini. Silakan hubungi admin.');
+                            }
+                        } catch (error) {
+                            console.error('Error fetching desa:', error);
+                            alert('Gagal memuat data desa. Silakan coba lagi atau hubungi admin.');
+                        } finally {
+                            this.loadingDesa = false; // ✅ Set false SETELAH selesai
+                        }
                     }
                 }));
 
@@ -370,7 +456,7 @@
                     open: false,
                     search: '',
                     selected: '{{ old('ketua_kader_id') }}',
-                    users: @json($availableKetuas),
+                    users: @json($availableKetuas ?? []),
 
                     getSelectedName() {
                         if (!this.selected) return '';

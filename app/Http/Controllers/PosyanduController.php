@@ -392,26 +392,26 @@ class PosyanduController extends Controller
             // 1. Fetch kabupaten untuk dapat ID Kebumen
             $kabupatenUrl = $apiUrl . 'regencies/33.json';
             Log::info('Fetching Kabupaten', ['url' => $kabupatenUrl]);
-            
+
             $kabupatenResponse = Http::timeout(20)->get($kabupatenUrl);
-            
+
             Log::info('Kabupaten Response', [
                 'status' => $kabupatenResponse->status(),
                 'successful' => $kabupatenResponse->successful(),
             ]);
-            
+
             $kabupatens = $kabupatenResponse->json()['data'] ?? [];
-            
+
             // ✅ FIX: Cari berdasarkan nama yang mengandung "KEBUMEN"
             $kebumen = collect($kabupatens)->first(function($kab) {
                 return stripos($kab['name'], 'KEBUMEN') !== false;
             });
-            
+
             // ✅ FIX: Gunakan format code yang benar (33.05 bukan 3404)
             $kabupatenId = $kebumen['code'] ?? '33.05';
 
             Log::info('Kabupaten ID', [
-                'id' => $kabupatenId, 
+                'id' => $kabupatenId,
                 'kebumen_found' => !is_null($kebumen),
             ]);
 
@@ -425,15 +425,15 @@ class PosyanduController extends Controller
                 // 2. Fetch semua kecamatan di Kebumen
                 $kecamatanUrl = $apiUrl . "districts/{$kabupatenId}.json";
                 Log::info('Fetching Kecamatan', ['url' => $kecamatanUrl]);
-                
+
                 $kecamatanResponse = Http::timeout(15)->get($kecamatanUrl);
-                
+
                 Log::info('Kecamatan Response', [
                     'status' => $kecamatanResponse->status(),
                     'successful' => $kecamatanResponse->successful(),
                     'body_preview' => substr($kecamatanResponse->body(), 0, 200)
                 ]);
-                
+
                 $kecamatans = $kecamatanResponse->json()['data'] ?? [];
 
                 Log::info('Total Kecamatan', [
@@ -448,9 +448,9 @@ class PosyanduController extends Controller
                         'kecamatan' => $kec['name'],
                         'url' => $desaUrl
                     ]);
-                    
+
                     $desaResponse = Http::timeout(15)->get($desaUrl);
-                    
+
                     if (!$desaResponse->successful()) {
                         Log::warning("Failed to fetch desa", [
                             'kecamatan' => $kec['name'],
@@ -458,7 +458,7 @@ class PosyanduController extends Controller
                         ]);
                         continue;
                     }
-                    
+
                     $desas = $desaResponse->json()['data'] ?? [];
 
                     Log::info("Kecamatan: {$kec['name']}", [

@@ -41,31 +41,62 @@ class AjuanIndex extends Component
     public function render()
     {
         $user = Auth::user();
-        $alwaysVerifiedRoles = ['admin', 'kabid', 'ketua-kader', 'masyarakat'];
+        $alwaysVerifiedRoles = ['admin', 'kabid', 'admin-kecamatan', 'ketua-kader', 'masyarakat'];
         $isVerified = in_array($user->role, $alwaysVerifiedRoles) || !is_null($user->verified_at);
 
         $query = Pengajuan::with(['user', 'bidang']);
 
-        // Filter berdasarkan role
-        if ($user->role === 'masyarakat') {
-            $query->where('user_id', $user->id);
-        } elseif ($user->role === 'kader') {
-            $query->where('bidang_id', $user->bidang_id)
-                ->whereHas('user', function ($q) use ($user) {
+        // ✅ Filter berdasarkan role
+        switch ($user->role) {
+            case 'masyarakat':
+                // Hanya pengajuan milik user sendiri
+                $query->where('user_id', $user->id);
+                break;
+
+            case 'kader':
+                // Pengajuan di posyandu-nya untuk bidang yang dikelola
+                $query->where('bidang_id', $user->bidang_id)
+                    ->whereHas('user', function ($q) use ($user) {
+                        $q->where('posyandu_id', $user->posyandu_id);
+                    });
+                break;
+
+            case 'ketua-kader':
+                // Semua pengajuan di posyandu-nya (semua bidang)
+                $query->whereHas('user', function ($q) use ($user) {
                     $q->where('posyandu_id', $user->posyandu_id);
                 });
-        } elseif ($user->role === 'ketua-kader') {
-            $query->whereHas('user', function ($q) use ($user) {
-                $q->where('posyandu_id', $user->posyandu_id);
-            });
+                break;
+
+            case 'admin-kecamatan':
+                // ✅ Semua pengajuan dari user yang berada di kecamatan yang sama
+                if ($user->kecamatan) {
+                    $query->whereHas('user', function ($q) use ($user) {
+                        $q->where('kecamatan', 'LIKE', '%' . $user->kecamatan . '%');
+                    });
+                }
+                break;
+
+            case 'kabid':
+                // ✅ Semua pengajuan di kabupaten yang dikelola kabid
+                if ($user->kabupaten) {
+                    $query->whereHas('user', function ($q) use ($user) {
+                        $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%');
+                    });
+                }
+                break;
+
+            case 'admin':
+                // Admin bisa lihat semua (tidak ada filter)
+                break;
         }
 
-        // Filter berdasarkan status
+        // ✅ Filter berdasarkan status
         if ($this->status) {
             $query->where('status_pengajuan', $this->status);
         }
 
-        // Filter berdasarkan search
+        // ✅ Filter berdasarkan search
         if ($this->search) {
             $searchTerm = '%' . strtolower($this->search) . '%';
 
@@ -73,15 +104,15 @@ class AjuanIndex extends Component
                 $q->whereHas('user', function ($userQuery) use ($searchTerm) {
                     $userQuery->whereRaw('LOWER(name) LIKE ?', [$searchTerm]);
                 })
-                ->orWhereRaw('LOWER(deskripsi_pengajuan) LIKE ?', [$searchTerm])
-                ->orWhereRaw('LOWER(status_pengajuan) LIKE ?', [$searchTerm])
-                ->orWhereHas('bidang', function ($bidangQuery) use ($searchTerm) {
-                    $bidangQuery->whereRaw('LOWER(nama_bidang) LIKE ?', [$searchTerm]);
-                });
+                    ->orWhereRaw('LOWER(deskripsi_pengajuan) LIKE ?', [$searchTerm])
+                    ->orWhereRaw('LOWER(status_pengajuan) LIKE ?', [$searchTerm])
+                    ->orWhereHas('bidang', function ($bidangQuery) use ($searchTerm) {
+                        $bidangQuery->whereRaw('LOWER(nama_bidang) LIKE ?', [$searchTerm]);
+                    });
             });
         }
 
-        $semuaAjuan = $query->latest()->paginate(5);
+        $semuaAjuan = $query->latest()->paginate(10);
 
         return view('livewire.ajuan-index', [
             'semuaAjuan' => $semuaAjuan,
