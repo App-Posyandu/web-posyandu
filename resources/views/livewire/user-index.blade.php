@@ -79,6 +79,7 @@
                             <option value="kader">Kader</option>
                             <option value="ketua-kader">Ketua Kader</option>
                             <option value="admin-kecamatan">Admin Kecamatan</option>
+                            <option value="operator-desa">Operator Desa</option>
                             <option value="kabid">Kabid</option>
                         @elseif ($currentUser->role === 'kabid')
                             <option value="">Semua Role</option>
@@ -91,10 +92,17 @@
                             <option value="ketua-kader">Ketua Kader</option>
                             <option value="kader">Kader</option>
                             <option value="masyarakat">Masyarakat</option>
+                        @elseif ($currentUser->role === 'operator-desa')
+                            <option value="">Semua Role</option>
+                            <option value="kader">Kader</option>
+                            <option value="masyarakat">Masyarakat</option>
                         @elseif ($currentUser->role === 'ketua-kader')
                             <option value="">Semua Role</option>
                             <option value="masyarakat">Masyarakat</option>
                             <option value="kader">Kader</option>
+                        @elseif ($currentUser->role === 'kader')
+                            <option value="">Semua Role</option>
+                            <option value="masyarakat">Masyarakat</option>
                         @endif
                     </select>
 

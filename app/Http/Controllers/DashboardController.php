@@ -46,6 +46,10 @@ class DashboardController extends Controller
             return redirect()->route('ajuan.index');
         }
 
+        if ($user->role === 'operator-desa') {
+            return redirect()->route('operator-desa.kaders');
+        }
+
         // ✅ UNTUK KETUA KADER, ADMIN KECAMATAN, KABID, DAN ADMIN - TAMPILKAN DASHBOARD
         $ajuanQuery = Pengajuan::query();
         $query = Pengajuan::with(['user', 'bidang']);

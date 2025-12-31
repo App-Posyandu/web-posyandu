@@ -11,6 +11,9 @@ use App\Http\Controllers\PenimbanganController;
 use App\Http\Controllers\PosyanduController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
+use App\Models\Kabupaten;
+use App\Models\Kecamatan;
+use App\Models\Posyandu;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
 
@@ -39,6 +42,54 @@ Route::prefix('api/wilayah')->group(function () {
 
     // Ambil daftar posyandu berdasarkan nama desa
     Route::get('posyandu', [PosyanduController::class, 'getPosyanduByWilayah'])->name('api.posyandu.by-wilayah');
+});
+
+Route::prefix('api/db')->group(function () {
+    // Get all kabupaten dari database
+    Route::get('kabupaten', function () {
+        $kabupatens = Kabupaten::orderBy('jenis')->orderBy('nama_kabupaten')->get();
+        return response()->json([
+            'success' => true,
+            'data' => $kabupatens
+        ]);
+    })->name('api.db.kabupaten');
+
+    // Get kecamatan berdasarkan kabupaten_id dari database
+    Route::get('kecamatan/{kabupaten_id}', function ($kabupaten_id) {
+        $kecamatans = Kecamatan::where('kabupaten_id', $kabupaten_id)
+            ->orderBy('nama_kecamatan')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $kecamatans
+        ]);
+    })->name('api.db.kecamatan');
+
+    // Get posyandu berdasarkan kecamatan_id dari database
+    Route::get('posyandu/by-kecamatan/{kecamatan_id}', function ($kecamatan_id) {
+        $posyandus = Posyandu::where('kecamatan_id', $kecamatan_id)
+            ->orderBy('nama_posyandu')
+            ->get(['id', 'nama_posyandu', 'desa']);
+
+        return response()->json([
+            'success' => true,
+            'data' => $posyandus
+        ]);
+    })->name('api.db.posyandu.by-kecamatan');
+
+    // Get posyandu berdasarkan kabupaten_id dari database
+    Route::get('posyandu/by-kabupaten/{kabupaten_id}', function ($kabupaten_id) {
+        $posyandus = Posyandu::with('kecamatanRelation')
+            ->where('kabupaten_id', $kabupaten_id)
+            ->orderBy('nama_posyandu')
+            ->get(['id', 'nama_posyandu', 'desa', 'kecamatan_id']);
+
+        return response()->json([
+            'success' => true,
+            'data' => $posyandus
+        ]);
+    })->name('api.db.posyandu.by-kabupaten');
 });
 
 Route::middleware('auth')->group(function () {
@@ -87,6 +138,17 @@ Route::middleware('auth')->group(function () {
     Route::prefix('api')->group(function () {
         Route::get('kecamatan', [PosyanduController::class, 'getKecamatan'])->name('api.kecamatan');
         Route::get('desa', [PosyanduController::class, 'getDesa'])->name('api.desa');
+    });
+
+    Route::middleware(['auth'])->prefix('operator-desa')->name('operator-desa.')->group(function () {
+        Route::get('/kaders', [UserController::class, 'kaderIndex'])->name('kaders');
+        Route::post('/kaders/{kader}/deactivate', [UserController::class, 'deactivateKader'])->name('kaders.deactivate');
+        Route::post('/kaders/{kader}/reactivate', [UserController::class, 'reactivateKader'])->name('kaders.reactivate');
+    });
+
+    Route::middleware(['auth'])->prefix('ketua-kader')->name('ketua-kader.')->group(function () {
+        Route::get('/takeover', [UserController::class, 'takeoverIndex'])->name('takeover');
+        Route::post('/takeover/{kader}/reset', [UserController::class, 'takeoverResetPassword'])->name('takeover.reset');
     });
 
     // ✅ ADMIN ROUTES

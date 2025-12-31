@@ -12,6 +12,9 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\PosyanduTemplateExport;
+use App\Models\UserHistory;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class PosyanduController extends Controller
 {
@@ -104,11 +107,32 @@ class PosyanduController extends Controller
 
         if ($allKecamatan->isEmpty()) {
             $allKecamatan = collect([
-                'ADIMULYO', 'ALIAN', 'AMBAL', 'AYAH', 'BONOROWO', 'BULUSPESANTREN',
-                'BUAYAN', 'GOMBONG', 'KARANGANYAR', 'KARANGGAYAM', 'KARANGSAMBUNG',
-                'KEBUMEN', 'KLIRONG', 'KUWARASAN', 'KUTOWINANGUN', 'MIRIT', 'PADURESO',
-                'PEJAGOAN', 'PETANAHAN', 'PONCOWARNO', 'PREMBUN', 'PURING', 'ROWOKELE',
-                'SADANG', 'SEMPOR', 'SRUWENG'
+                'ADIMULYO',
+                'ALIAN',
+                'AMBAL',
+                'AYAH',
+                'BONOROWO',
+                'BULUSPESANTREN',
+                'BUAYAN',
+                'GOMBONG',
+                'KARANGANYAR',
+                'KARANGGAYAM',
+                'KARANGSAMBUNG',
+                'KEBUMEN',
+                'KLIRONG',
+                'KUWARASAN',
+                'KUTOWINANGUN',
+                'MIRIT',
+                'PADURESO',
+                'PEJAGOAN',
+                'PETANAHAN',
+                'PONCOWARNO',
+                'PREMBUN',
+                'PURING',
+                'ROWOKELE',
+                'SADANG',
+                'SEMPOR',
+                'SRUWENG'
             ]);
         }
 
@@ -131,13 +155,13 @@ class PosyanduController extends Controller
             'kabupaten' => 'required|string',
             'kecamatan' => 'required|string',
             'desa' => 'required|string',
-            // 'ketua_kader_id' => ['nullable', 'uuid', 'exists:users,id'],
         ]);
 
         $kabupatenName = explode('_', $request->kabupaten)[1] ?? $request->kabupaten;
         $kecamatanName = explode('_', $request->kecamatan)[1] ?? $request->kecamatan;
         $desaName = explode('_', $request->desa)[1] ?? $request->desa;
 
+        // ✅ Buat Posyandu
         $posyandu = Posyandu::create([
             'nama_posyandu' => $request->nama_posyandu,
             'kabupaten' => $kabupatenName,
@@ -145,14 +169,84 @@ class PosyanduController extends Controller
             'desa' => $desaName,
         ]);
 
-        // if ($request->filled('ketua_kader_id')) {
-        //     $ketuaKader = User::find($request->ketua_kader_id);
-        //     if ($ketuaKader) {
-        //         $ketuaKader->update(['posyandu_id' => $posyandu->id]);
-        //     }
-        // }
+        // ✅ Auto-generate 6 Kader (1 untuk setiap bidang)
+        $this->createKadersForPosyandu($posyandu);
 
-        return redirect()->route('admin.posyandu.index')->with('success', 'Posyandu baru berhasil ditambahkan.');
+        return redirect()
+            ->route('admin.posyandu.index')
+            ->with('success', 'Posyandu dan 6 akun kader berhasil dibuat.');
+    }
+
+    /**
+     * ✅ Generate 6 akun kader untuk posyandu baru
+     */
+    private function createKadersForPosyandu(Posyandu $posyandu)
+    {
+        // Ambil semua bidang
+        $bidangs = \App\Models\BidangPengajuan::orderBy('nama_bidang')->get();
+
+        if ($bidangs->count() !== 6) {
+            Log::warning("Expected 6 bidangs but found {$bidangs->count()}");
+        }
+
+        $createdKaders = [];
+
+        foreach ($bidangs as $index => $bidang) {
+            // Generate username unik
+            // Format: kader-{bidang_slug}-{posyandu_id_short}
+            $bidangSlug = Str::slug($bidang->nama_bidang);
+            $posyanduShort = substr($posyandu->id, 0, 8);
+            $username = "kader-{$bidangSlug}-{$posyanduShort}";
+
+            // Generate password default
+            $defaultPassword = 'kader123';
+
+            // Buat akun kader
+            $kader = User::create([
+                'name' => "Kader " . $bidang->nama_bidang . " - " . $posyandu->nama_posyandu,
+                'email' => null, // Email opsional
+                'no_telepon' => null, // Bisa diisi nanti
+                'password' => Hash::make($defaultPassword),
+                'role' => 'kader',
+                'bidang_id' => $bidang->id,
+                'posyandu_id' => $posyandu->id,
+                'kabupaten' => $posyandu->kabupaten,
+                'kecamatan' => $posyandu->kecamatan,
+                'verified_at' => now(), // Langsung terverifikasi
+                'verified_by' => Auth::id(),
+                'is_active' => true,
+                'nik' => null, // Bisa diisi nanti
+                'alamat' => "Posyandu {$posyandu->nama_posyandu}",
+                'tempat_lahir' => null,
+                'tanggal_lahir' => null,
+                'jenis_kelamin' => null,
+            ]);
+
+            // Log untuk tracking
+            UserHistory::create([
+                'user_id' => $kader->id,
+                'action_by' => Auth::id(),
+                'action_type' => 'created',
+                'description' => "Akun kader auto-generated untuk {$bidang->nama_bidang} di {$posyandu->nama_posyandu}",
+                'new_data' => [
+                    'username' => $username,
+                    'default_password' => $defaultPassword,
+                    'bidang' => $bidang->nama_bidang,
+                    'posyandu' => $posyandu->nama_posyandu,
+                ],
+            ]);
+
+            $createdKaders[] = [
+                'kader' => $kader,
+                'username' => $username,
+                'password' => $defaultPassword,
+            ];
+        }
+
+        // Simpan info kader ke session untuk ditampilkan
+        session()->flash('created_kaders', $createdKaders);
+
+        return $createdKaders;
     }
 
     public function import(Request $request)
@@ -202,7 +296,6 @@ class PosyanduController extends Controller
                 'message' => $message,
                 'imported' => $imported
             ]);
-
         } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
             $failures = $e->failures();
             $errors = [];
@@ -216,7 +309,6 @@ class PosyanduController extends Controller
                 'message' => 'Validasi gagal pada beberapa baris.',
                 'errors' => $errors
             ], 422);
-
         } catch (\Exception $e) {
             Log::error('Import Posyandu Error', [
                 'error' => $e->getMessage(),
@@ -230,7 +322,7 @@ class PosyanduController extends Controller
         }
     }
 
-    public function show(Posyandu $posyandu) { }
+    public function show(Posyandu $posyandu) {}
 
     public function edit(Posyandu $posyandu)
     {
@@ -403,7 +495,7 @@ class PosyanduController extends Controller
             $kabupatens = $kabupatenResponse->json()['data'] ?? [];
 
             // ✅ FIX: Cari berdasarkan nama yang mengandung "KEBUMEN"
-            $kebumen = collect($kabupatens)->first(function($kab) {
+            $kebumen = collect($kabupatens)->first(function ($kab) {
                 return stripos($kab['name'], 'KEBUMEN') !== false;
             });
 
@@ -556,7 +648,6 @@ class PosyanduController extends Controller
                 new PosyanduTemplateExport($dataRows),
                 $filename
             );
-
         } catch (\Exception $e) {
             Log::error('Export Template Error', [
                 'error' => $e->getMessage(),

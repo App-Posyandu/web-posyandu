@@ -88,7 +88,7 @@
 
                         {{-- Role --}}
                         <div
-                            class="{{ in_array(auth()->user()->role, ['admin', 'ketua-kader', 'admin-kecamatan']) ? 'hidden' : '' }}">
+                            class="{{ in_array(auth()->user()->role, ['ketua-kader', 'admin-kecamatan', 'kader']) ? 'hidden' : '' }}">
                             <x-input-label for="role" :value="__('Role')" />
                             <select id="role" name="role"
                                 class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
@@ -96,7 +96,13 @@
                                 @php $currentUserRole = auth()->user()->role; @endphp
 
                                 @if ($currentUserRole === 'admin')
-                                    <option value="kabid" @selected(true)>Kabid</option>
+                                    <option value="ketua-posyandu">Ketua Posyandu</option>
+                                    <option value="kabid">Kabid</option>
+                                    <option value="admin-kecamatan">Admin Kecamatan</option>
+                                    <option value="ketua-kader">Ketua Kader</option>
+                                    <option value="operator-desa">Operator Desa</option>
+                                    <option value="kader">Kader</option>
+                                    <option value="masyarakat">Masyarakat</option>
                                 @elseif ($currentUserRole === 'kabid')
                                     <option value="admin-kecamatan">Admin Kecamatan</option>
                                     <option value="ketua-kader">Ketua Kader</option>
@@ -105,6 +111,8 @@
                                     <option value="ketua-kader" @selected(true)>Ketua Kader</option>
                                 @elseif ($currentUserRole === 'ketua-kader')
                                     <option value="kader" @selected(true)>Kader</option>
+                                @elseif ($currentUserRole === 'kader')
+                                    <option value="masyarakat" @selected(true)>Masyarakat</option>
                                 @endif
                             </select>
                             <x-input-error :messages="$errors->get('role')" class="mt-2" />
@@ -287,10 +295,10 @@
                                 <x-primary-button>
                                     {{ __('Simpan Pengguna') }}
                                 </x-primary-button>
-                                {{-- <button type="button" id="importBtn"
+                                <button type="button" id="importBtn"
                                     class="px-4 py-2 bg-emerald-600 text-white rounded-md text-sm font-semibold hover:bg-emerald-700">
                                     Import Nama Pengguna
-                                </button> --}}
+                                </button>
                             </div>
                         </div>
                 </form>

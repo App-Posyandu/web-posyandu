@@ -76,7 +76,15 @@ class AjuanIndex extends Component
                     });
                 }
                 break;
-
+            case 'operator-desa':
+                // Operator Desa hanya bisa lihat pengajuan dari kader di kecamatannya
+                $query->whereHas(
+                    'user',
+                    fn($q) =>
+                    $q->where('role', 'kader')
+                        ->where('kecamatan', $user->kecamatan)
+                );
+                break;
             case 'kabid':
                 // ✅ Semua pengajuan di kabupaten yang dikelola kabid
                 if ($user->kabupaten) {

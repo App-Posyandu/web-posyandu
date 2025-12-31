@@ -37,6 +37,27 @@
                         @if (in_array(auth()->user()->role, ['admin', 'kader', 'kabid', 'admin-kecamatan', 'ketua-kader']))
                             <x-dropdown-link :href="route('admin.users.index')">{{ __('Users') }}</x-dropdown-link>
                         @endif
+                        {{-- Menu untuk Operator Desa --}}
+                        @if (auth()->user()->role === 'operator-desa')
+                            <li>
+                                <a href="{{ route('operator-desa.kaders') }}"
+                                    class="{{ request()->routeIs('operator-desa.*') ? 'active' : '' }}">
+                                    <i class="bi bi-people-fill"></i>
+                                    <span>Kelola Kader</span>
+                                </a>
+                            </li>
+                        @endif
+
+                        {{-- Menu untuk Ketua Kader --}}
+                        @if (auth()->user()->role === 'ketua-kader')
+                            <li>
+                                <a href="{{ route('ketua-kader.takeover') }}"
+                                    class="{{ request()->routeIs('ketua-kader.takeover*') ? 'active' : '' }}">
+                                    <i class="bi bi-key-fill"></i>
+                                    <span>Ambil Alih Kader</span>
+                                </a>
+                            </li>
+                        @endif
 
                         @if (in_array(auth()->user()->role, ['admin', 'kabid']))
                             <x-dropdown-link :href="route('admin.posyandu.index')">{{ __('Posyandu') }}</x-dropdown-link>
@@ -112,6 +133,27 @@
                         class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-pink-500 transition duration-150 ease-in-out">
                         <i class="bi bi-people mr-2"></i> Users
                     </a>
+                @endif
+                {{-- Menu untuk Operator Desa --}}
+                @if (auth()->user()->role === 'operator-desa')
+                    <li>
+                        <a href="{{ route('operator-desa.kaders') }}"
+                            class="{{ request()->routeIs('operator-desa.*') ? 'active' : '' }}">
+                            <i class="bi bi-people-fill"></i>
+                            <span>Kelola Kader</span>
+                        </a>
+                    </li>
+                @endif
+
+                {{-- Menu untuk Ketua Kader --}}
+                @if (auth()->user()->role === 'ketua-kader')
+                    <li>
+                        <a href="{{ route('ketua-kader.takeover') }}"
+                            class="{{ request()->routeIs('ketua-kader.takeover*') ? 'active' : '' }}">
+                            <i class="bi bi-key-fill"></i>
+                            <span>Ambil Alih Kader</span>
+                        </a>
+                    </li>
                 @endif
 
                 @if (auth()->user()->role === 'kabid')

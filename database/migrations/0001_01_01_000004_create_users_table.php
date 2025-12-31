@@ -20,10 +20,17 @@ return new class extends Migration
             $table->string('no_telepon', 20)->unique()->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->enum('role', ['masyarakat', 'kader', 'kabid', 'admin-kecamatan', 'ketua-kader', 'admin'])->default('masyarakat');
+            $table->enum('role', ['masyarakat', 'kader', 'operator-desa', 'ketua-kader', 'admin-kecamatan', 'kabid', 'ketua-posyandu', 'admin'])->default('masyarakat');
             $table->string('kabupaten')->nullable();
             $table->string('kecamatan')->nullable();
+            
             $table->enum('jenis_wilayah', ['kabupaten', 'kota'])->nullable();
+
+            $table->foreignUuid('kabupaten_id')
+                ->nullable();
+
+            $table->foreignUuid('kecamatan_id')
+                ->nullable();
 
             // Kolom Tambahan dari Form Registrasi
             $table->string('nik', 16)->unique()->nullable();

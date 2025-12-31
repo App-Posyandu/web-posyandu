@@ -6,22 +6,22 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Kecamatan extends Model
+class Kabupaten extends Model
 {
     use HasFactory, HasUuids;
 
     protected $fillable = [
-        'nama_kecamatan',
-        'kabupaten_id',
+        'nama_kabupaten',
+        'jenis',
     ];
 
-    public function kabupaten()
+    public function kecamatans()
     {
-        return $this->belongsTo(Kabupaten::class);
+        return $this->hasMany(Kecamatan::class);
     }
 
-    public function posyandus()
+    public function getNamaLengkapAttribute()
     {
-        return $this->hasMany(Posyandu::class);
+        return ucfirst($this->jenis) . ' ' . $this->nama_kabupaten;
     }
 }

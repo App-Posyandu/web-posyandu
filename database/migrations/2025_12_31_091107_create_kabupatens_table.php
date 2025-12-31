@@ -8,16 +8,16 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('kecamatans', function (Blueprint $table) {
+        Schema::create('kabupatens', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('nama_kecamatan');
-            $table->foreignUuid('kabupaten_id');
+            $table->string('nama_kabupaten');
+            $table->enum('jenis', ['kabupaten', 'kota']); // Untuk membedakan Kabupaten/Kota
             $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('kecamatans');
+        Schema::dropIfExists('kabupatens');
     }
 };

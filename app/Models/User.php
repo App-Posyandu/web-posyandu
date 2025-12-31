@@ -33,6 +33,8 @@ class User extends Authenticatable
         'kk',
         'kabupaten',
         'kecamatan',
+        'kabupaten_id',
+        'kecamatan_id',
         'jenis_wilayah',
 
         'nik',
@@ -73,6 +75,63 @@ class User extends Authenticatable
     public function histories()
     {
         return $this->hasMany(UserHistory::class, 'user_id')->latest();
+    }
+
+    public function kabupatenRelation()
+    {
+        return $this->belongsTo(Kabupaten::class, 'kabupaten_id');
+    }
+
+    public function kecamatanRelation()
+    {
+        return $this->belongsTo(Kecamatan::class, 'kecamatan_id');
+    }
+
+    public function getWilayahLengkapAttribute()
+    {
+        $parts = [];
+
+        if ($this->posyandu && $this->posyandu->desa) {
+            $parts[] = $this->posyandu->desa;
+        }
+
+        if ($this->kecamatanRelation) {
+            $parts[] = 'Kec. ' . $this->kecamatanRelation->nama_kecamatan;
+        } elseif ($this->kecamatan) {
+            // Fallback ke string lama
+            $parts[] = 'Kec. ' . str_replace('KECAMATAN ', '', $this->kecamatan);
+        }
+
+        if ($this->kabupatenRelation) {
+            $parts[] = $this->kabupatenRelation->nama_lengkap;
+        } elseif ($this->kabupaten) {
+            // Fallback ke string lama
+            $parts[] = $this->kabupaten;
+        }
+
+        return implode(', ', $parts) ?: '-';
+    }
+
+    /**
+     * Get nama kabupaten (from relation or fallback to string)
+     */
+    public function getKabupatenNameAttribute()
+    {
+        if ($this->kabupatenRelation) {
+            return $this->kabupatenRelation->nama_lengkap;
+        }
+        return $this->kabupaten ?? '-';
+    }
+
+    /**
+     * Get nama kecamatan (from relation or fallback to string)
+     */
+    public function getKecamatanNameAttribute()
+    {
+        if ($this->kecamatanRelation) {
+            return $this->kecamatanRelation->nama_kecamatan;
+        }
+        return $this->kecamatan ? str_replace('KECAMATAN ', '', $this->kecamatan) : '-';
     }
 
     public function deactivatedBy()

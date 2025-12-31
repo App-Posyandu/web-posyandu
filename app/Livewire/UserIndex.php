@@ -58,6 +58,11 @@ class UserIndex extends Component
                 $query->whereIn('role', ['ketua-kader', 'kader', 'masyarakat']);
                 break;
 
+            case 'operator-desa':
+                $query->where('role', 'kader')
+                    ->where('kecamatan', $currentUser->kecamatan);
+                break;
+
             case 'kabid':
                 // PERBAIKAN: Tambahkan admin-kecamatan!
                 $query->whereIn('role', ['admin-kecamatan', 'ketua-kader', 'kader', 'masyarakat']);
