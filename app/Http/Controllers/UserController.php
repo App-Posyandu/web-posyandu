@@ -65,24 +65,33 @@ class UserController extends Controller
             case 'kader':
                 $query->where('role', 'masyarakat');
                 break;
-            case 'ketua-kader':
-                $query->whereIn('role', ['kader', 'masyarakat']);
-                break;
+
             case 'operator-desa':
-                $query->whereIn('role', ['ketua-kader', 'kader'])
-                    ->where('kecamatan', $currentUser->kecamatan)
-                    ->where('desa', $currentUser->desa);
+                // ✅ Operator Desa: Hanya lihat KADER di posyandunya
+                $query->where('role', 'kader')
+                    ->where('posyandu_id', $currentUser->posyandu_id);
                 break;
+
+            case 'ketua-kader':
+                $query->whereIn('role', ['operator-desa', 'kader', 'masyarakat'])
+                    ->where('posyandu_id', $currentUser->posyandu_id);
+                break;
+
             case 'admin-kecamatan':
-                $query->whereIn('role', ['ketua-kader', 'kader', 'masyarakat']);
+                $query->whereIn('role', ['ketua-kader', 'operator-desa', 'kader', 'masyarakat']);
                 break;
+
             case 'kabid':
-                $query->whereIn('role', ['admin-kecamatan', 'ketua-kader', 'kader', 'masyarakat']);
+                $query->whereIn('role', ['admin-kecamatan', 'ketua-kader', 'operator-desa', 'kader', 'masyarakat']);
+                break;
+
+            case 'ketua-posyandu':
+                $query->whereIn('role', ['kabid', 'admin-kecamatan', 'ketua-kader', 'operator-desa', 'kader', 'masyarakat']);
                 break;
         }
 
         // 2. Filter Wilayah (Multi-Tenancy)
-        if (in_array($currentUser->role, ['kader', 'ketua-kader'])) {
+        if (in_array($currentUser->role, ['kader'])) {
             $query->where('posyandu_id', $currentUser->posyandu_id);
         } elseif ($currentUser->role === 'admin-kecamatan') {
             $kecamatanName = explode('_', $currentUser->kecamatan)[1] ?? $currentUser->kecamatan;
@@ -94,15 +103,10 @@ class UserController extends Controller
                     });
             });
         } elseif ($currentUser->role === 'kabid') {
-            // ✅ TAMBAHKAN INI!
-            // Kabid bisa lihat semua user, ATAU filter berdasarkan bidang jika diperlukan
+            // Kabid filter berdasarkan kabupaten (opsional)
             // if ($currentUser->kabupaten) {
-            //     $query->where(function ($q) use ($currentUser) {
-            //         $q->where('kabupaten', $currentUser->kabupaten)
-            //             ->orWhereNull('kabupaten'); // User yang belum set kabupaten
-            //     });
+            //     $query->where('kabupaten', 'LIKE', "%{$currentUser->kabupaten}%");
             // }
-            // Jika bidang_id NULL, kabid bisa lihat SEMUA (tidak ada filter tambahan)
         }
 
         // 3. Search
@@ -120,31 +124,24 @@ class UserController extends Controller
             $query->where('role', $request->input('role'));
         }
 
-        // if ($currentUser->role === 'kabid') {
-        //     dd([
-        //         'current_user' => [
-        //             'name' => $currentUser->name,
-        //             'role' => $currentUser->role,
-        //             'bidang_id' => $currentUser->bidang_id,
-        //             'kabupaten' => $currentUser->kabupaten,
-        //         ],
-        //         'sql' => $query->toSql(),
-        //         'bindings' => $query->getBindings(),
-        //         'total_users' => User::count(),
-        //         'total_admin_kecamatan' => User::where('role', 'admin-kecamatan')->count(),
-        //         'query_count' => $query->count(),
-        //         'first_5_results' => $query->limit(5)->get(['id', 'name', 'role', 'bidang_id'])
-        //     ]);
-        // }
+        // 5. Filter Status (untuk Operator Desa)
+        if ($currentUser->role === 'operator-desa' && $request->filled('status')) {
+            if ($request->input('status') === 'active') {
+                $query->where('is_active', true);
+            } elseif ($request->input('status') === 'inactive') {
+                $query->where('is_active', false);
+            }
+        }
 
         $users = $query->paginate(10)->withQueryString();
+
         return view('admin.users.index', compact('users'));
     }
 
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Request $request)
     {
         $currentUser = Auth::user();
         $posyandus = Posyandu::orderBy('nama_posyandu')->get();
@@ -153,6 +150,7 @@ class UserController extends Controller
         $kabupatens = Kabupaten::orderBy('jenis')->orderBy('nama_kabupaten')->get();
         $kecamatans = collect();
 
+        // ✅ Filter posyandu berdasarkan role
         if ($currentUser->role === 'ketua-kader') {
             $posyandus = Posyandu::where('id', $currentUser->posyandu_id)->get();
         } elseif ($currentUser->role === 'operator-desa') {
@@ -160,15 +158,12 @@ class UserController extends Controller
                 ->where('kecamatan', $currentUser->kecamatan)
                 ->orderBy('nama_posyandu')->get();
         } elseif ($currentUser->role === 'admin-kecamatan') {
-            // Admin Kecamatan hanya lihat posyandu di kecamatannya
             $posyandus = Posyandu::where('kecamatan_id', $currentUser->kecamatan_id)
                 ->orderBy('nama_posyandu')->get();
         } elseif ($currentUser->role === 'kabid') {
-            // Kabid lihat semua posyandu di kabupatennya
             $posyandus = Posyandu::where('kabupaten_id', $currentUser->kabupaten_id)
                 ->orderBy('nama_posyandu')->get();
 
-            // Ambil kecamatan di kabupaten Kabid
             $kecamatans = Kecamatan::where('kabupaten_id', $currentUser->kabupaten_id)
                 ->orderBy('nama_kecamatan')->get();
         } elseif (in_array($currentUser->role, ['admin'])) {
@@ -180,7 +175,7 @@ class UserController extends Controller
         $kabupatenList = [];
         $kotaList = [];
 
-        if (in_array($currentUser->role, ['admin', 'kabid'])) {
+        if (in_array($currentUser->role, ['admin', 'kabid', 'ketua-posyandu'])) {
             $wilayahData = $this->fetchWilayahData(
                 'regencies/' . self::PROVINCE_ID . '.json',
                 'kabupatens_jateng'
@@ -195,46 +190,346 @@ class UserController extends Controller
             }
         }
 
-        // return view('admin.users.create', compact('posyandus', 'bidangs', 'kabupatenList', 'kotaList'));
-        return view('admin.users.create', compact('posyandus', 'bidangs', 'kabupatens', 'kecamatans', 'kabupatenList', 'kotaList'));
+        // ✅ Jika dari pilih-user, set default role ke 'masyarakat'
+        $defaultRole = null;
+        if ($request->get('source') === 'pilih-user') {
+            $defaultRole = 'masyarakat';
+        }
+
+        return view('admin.users.create', compact(
+            'posyandus',
+            'bidangs',
+            'kabupatens',
+            'kecamatans',
+            'kabupatenList',
+            'kotaList',
+            'defaultRole'
+        ));
     }
 
     /**
      * Store a newly created resource in storage.
      */
+    // public function store(Request $request)
+    // {
+    //     $currentUser = Auth::user();
+    //     $allowedRoles = [];
+
+    //     switch ($currentUser->role) {
+    //         case 'admin':
+    //             $allowedRoles = ['masyarakat', 'kader', 'ketua-kader', 'admin-kecamatan', 'kabid', 'admin'];
+    //             break;
+    //         case 'kabid':
+    //             $allowedRoles = ['admin-kecamatan', 'ketua-kader'];
+    //             break;
+    //         case 'admin-kecamatan':
+    //             $allowedRoles = ['ketua-kader'];
+    //             $request->merge(['role' => 'ketua-kader']);
+    //             break;
+    //         case 'operator-desa':
+    //             $allowedRoles = ['ketua-kader'];
+    //             $request->merge(['role' => 'ketua-kader']);
+    //             break;
+    //         case 'ketua-kader':
+    //             $allowedRoles = ['kader'];
+    //             $request->merge(['role' => 'kader']);
+    //             break;
+    //         case 'kader':
+    //             $allowedRoles = ['masyarakat'];
+    //             $request->merge(['role' => 'masyarakat']);
+    //             break;
+    //     }
+
+    //     // ✅ Base validation rules
+    //     $validationRules = [
+    //         'name' => ['required', 'string', 'max:255'],
+    //         'password' => ['required', 'confirmed', Password::defaults()],
+    //         'role' => ['required', Rule::in($allowedRoles)],
+    //         'alamat' => ['required', 'string'],
+    //         'no_telepon' => ['required', 'string', 'max:20', 'unique:users'],
+    //         'tempat_lahir' => ['required', 'string', 'max:255'],
+    //         'tanggal_lahir' => ['required', 'date'],
+    //         'jenis_kelamin' => ['required', 'string'],
+    //         'nik' => ['nullable', 'string', 'max:16', 'unique:users,nik'],
+    //     ];
+
+    //     // ✅ Validation untuk Admin Kecamatan
+    //     if ($request->role === 'admin-kecamatan') {
+    //         $validationRules['kecamatan'] = ['required', 'string'];
+    //         // Kabupaten diambil dari Kabid, tidak perlu validasi
+    //     }
+
+    //     if ($request->role === 'operator-desa') {
+    //         $validationRules['desa'] = ['required', 'string']; // Harus pilih desa
+    //     }
+
+    //     // ✅ Validation untuk Ketua Kader
+    //     if ($request->role === 'ketua-kader') {
+    //         $validationRules['posyandu_id'] = ['required', 'uuid', 'exists:posyandus,id'];
+    //     }
+
+    //     // ✅ Validation untuk Kader
+    //     if ($request->role === 'kader') {
+    //         $validationRules['bidang_id'] = ['required', 'uuid', 'exists:bidang_pengajuans,id'];
+    //         // Posyandu otomatis dari Ketua Kader yang buat
+    //     }
+
+    //     // ✅ Validation untuk Kabid
+    //     if ($request->role === 'kabid') {
+    //         $validationRules['jenis_wilayah'] = ['required', 'in:kabupaten,kota'];
+    //         $validationRules['kabupaten'] = ['required', 'string'];
+    //     }
+
+    //     $request->validate($validationRules);
+
+    //     // Tentukan apakah langsung terverifikasi
+    //     $isInstantVerified = in_array($request->role, ['admin', 'kabid', 'admin-kecamatan', 'operator-desa', 'ketua-kader']);
+
+    //     // Simpan password asli untuk notifikasi
+    //     $plainPassword = $request->password;
+
+    //     // ✅ LOGIKA PENENTUAN WILAYAH & POSYANDU
+    //     $kabupatenName = null;
+    //     $kecamatanName = null;
+    //     $jenisWilayah = null;
+    //     $posyanduId = null;
+
+    //     // 1. Jika membuat KABID baru (hanya Admin yang bisa)
+    //     if ($request->role === 'kabid' && $request->filled('kabupaten')) {
+    //         $kabupatenName = explode('_', $request->kabupaten)[1] ?? $request->kabupaten;
+    //         $jenisWilayah = $request->jenis_wilayah;
+    //     }
+
+    //     if ($request->role === 'admin-kecamatan' && $currentUser->role === 'operator-desa') {
+    //         $kabupatenName = $currentUser->kabupaten;
+    //         $kecamatanName = $currentUser->kecamatan;
+    //         $desaName = $currentUser->desa;
+    //         // Posyandu ID dari request
+    //     }
+    //     // 2. Jika KABID membuat Admin Kecamatan
+    //     if ($request->role === 'admin-kecamatan' && $currentUser->role === 'kabid') {
+    //         $kabupatenName = $currentUser->kabupaten; // Inherit kabupaten dari Kabid
+    //         $kecamatanName = explode('_', $request->kecamatan)[1] ?? $request->kecamatan;
+    //     }
+
+    //     // 3. Jika KABID atau ADMIN KECAMATAN membuat Ketua Kader
+    //     if ($request->role === 'ketua-kader') {
+    //         $posyanduId = $request->posyandu_id; // User pilih posyandu
+
+    //         // Ambil data posyandu untuk get kabupaten & kecamatan
+    //         $posyandu = \App\Models\Posyandu::find($posyanduId);
+    //         if ($posyandu) {
+    //             $kabupatenName = $posyandu->kabupaten;
+    //             $kecamatanName = $posyandu->kecamatan;
+    //         }
+    //     }
+
+    //     // 4. Jika KETUA KADER membuat Kader
+    //     if ($request->role === 'kader' && $currentUser->role === 'ketua-kader') {
+    //         // Otomatis inherit semua dari Ketua Kader
+    //         $posyanduId = $currentUser->posyandu_id;
+    //         $kabupatenName = $currentUser->kabupaten;
+    //         $kecamatanName = $currentUser->kecamatan;
+    //     }
+
+    //     // ✅ Buat user baru
+    //     $userData = [
+    //         'name' => $request->name,
+    //         'email' => $request->email,
+    //         'password' => Hash::make($plainPassword),
+    //         'role' => $request->role,
+    //         'posyandu_id' => $posyanduId,
+    //         'nik' => $request->filled('nik') ? $request->nik : null, // ✅ NULL jika kosong
+    //         'alamat' => $request->alamat,
+    //         'no_telepon' => $request->no_telepon,
+    //         'tempat_lahir' => $request->tempat_lahir,
+    //         'tanggal_lahir' => $request->tanggal_lahir,
+    //         'jenis_kelamin' => $request->jenis_kelamin,
+    //         'verified_at' => $isInstantVerified ? now() : null,
+    //         'verified_by' => $isInstantVerified ? $currentUser->id : null,
+    //         'bidang_id' => $request->role === 'kader' ? $request->bidang_id : null,
+    //         'kabupaten' => $kabupatenName,
+    //         'kecamatan' => $kecamatanName,
+    //         'jenis_wilayah' => $jenisWilayah,
+    //         'is_active' => true,
+    //     ];
+
+    //     $user = User::create($userData);
+
+    //     event(new Registered($user));
+
+    //     // Kirim notifikasi
+    //     if (in_array($request->role, ['kabid', 'admin-kecamatan', 'operator-desa', 'ketua-kader'])) {
+    //         $user->notify(new \App\Notifications\UserCreatedNotification($user->toArray(), $plainPassword, $currentUser->name));
+    //     }
+
+    //     // Generate pesan WhatsApp
+    //     if (in_array($request->role, ['kabid', 'admin-kecamatan', 'operator-desa', 'ketua-kader'])) {
+    //         $this->sendWhatsAppMessage($user, $plainPassword, $currentUser);
+    //     }
+
+    //     // Redirect berdasarkan source
+    //     if ($request->input('source') === 'posyandu_create') {
+    //         return redirect()->route('admin.posyandu.create')
+    //             ->with('success', 'User Ketua Kader berhasil dibuat! Silakan refresh halaman dan pilih dari dropdown.');
+    //     }
+
+    //     // Tambahkan info WhatsApp ke flash message
+    //     if (in_array($request->role, ['kabid', 'ketua-kader', 'admin-kecamatan'])) {
+    //         return redirect()->route('admin.users.index')
+    //             ->with('success', 'User baru berhasil ditambahkan.')
+    //             ->with('whatsapp_link', $this->generateWhatsAppLink($user, $plainPassword, $currentUser));
+    //     }
+
+    //     return redirect()->route('admin.users.index')->with('success', 'User baru berhasil ditambahkan.');
+    // }
+
     public function store(Request $request)
     {
         $currentUser = Auth::user();
-        $allowedRoles = [];
 
-        switch ($currentUser->role) {
-            case 'admin':
-                $allowedRoles = ['masyarakat', 'kader', 'ketua-kader', 'admin-kecamatan', 'kabid', 'admin'];
-                break;
-            case 'kabid':
-                $allowedRoles = ['admin-kecamatan', 'ketua-kader'];
-                break;
-            case 'admin-kecamatan':
-                $allowedRoles = ['ketua-kader'];
-                $request->merge(['role' => 'ketua-kader']);
-                break;
-            case 'operator-desa':
-                $allowedRoles = ['ketua-kader'];
-                $request->merge(['role' => 'ketua-kader']);
-                break;
-            case 'ketua-kader':
-                $allowedRoles = ['kader'];
-                $request->merge(['role' => 'kader']);
-                break;
-            case 'kader':
-                $allowedRoles = ['masyarakat'];
-                $request->merge(['role' => 'masyarakat']);
-                break;
+        // ✅ Tentukan role yang diperbolehkan berdasarkan role pembuat
+        $allowedRoles = $this->getAllowedRoles($currentUser->role);
+
+        // ✅ Auto-assign role untuk beberapa pembuat (SEBELUM validasi!)
+        $this->autoAssignRole($request, $currentUser->role);
+
+        // ✅ PASTIKAN role sudah ada sebelum validasi
+        $roleToValidate = $request->input('role');
+
+        if (empty($roleToValidate)) {
+            return redirect()->back()
+                ->withErrors(['role' => 'Role harus dipilih atau otomatis terisi.'])
+                ->withInput();
         }
 
-        // ✅ Base validation rules
-        $validationRules = [
+        // ✅ Validasi input
+        $validationRules = $this->buildValidationRules($roleToValidate, $allowedRoles, $currentUser);
+        $request->validate($validationRules);
+
+        // ✅ Simpan password asli untuk notifikasi
+        $plainPassword = $request->password;
+
+        // ✅ Tentukan data wilayah & posyandu
+        $locationData = $this->determineLocationData($request, $currentUser);
+
+        // ✅ Tentukan apakah langsung terverifikasi
+        $isInstantVerified = in_array($request->role, [
+            'admin',
+            'ketua-posyandu',
+            'kabid',
+            'admin-kecamatan',
+            'ketua-kader',
+            'operator-desa'
+        ]);
+
+        // ✅ Buat user baru
+        $userData = array_merge([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($plainPassword),
+            'role' => $request->role,
+            'nik' => $request->filled('nik') ? $request->nik : null,
+            'alamat' => $request->alamat,
+            'no_telepon' => $request->no_telepon,
+            'tempat_lahir' => $request->tempat_lahir,
+            'tanggal_lahir' => $request->tanggal_lahir,
+            'jenis_kelamin' => $request->jenis_kelamin,
+            'verified_at' => $isInstantVerified ? now() : null,
+            'verified_by' => $isInstantVerified ? $currentUser->id : null,
+            'is_active' => true,
+        ], $locationData);
+
+        $user = User::create($userData);
+
+        // ✅ Log ke User History
+        $this->logUserHistory($user, $currentUser, 'created', 'User baru dibuat');
+
+        // ✅ Event & Notifikasi
+        event(new Registered($user));
+
+        // Kirim notifikasi untuk role tertentu
+        if ($this->shouldSendNotification($request->role)) {
+            $user->notify(new \App\Notifications\UserCreatedNotification(
+                $user->toArray(),
+                $plainPassword,
+                $currentUser->name
+            ));
+
+            $this->sendWhatsAppMessage($user, $plainPassword, $currentUser);
+        }
+
+        // ✅ Handle redirect
+        return $this->handleRedirect($request, $user, $plainPassword, $currentUser);
+    }
+
+    private function getAllowedRoles(string $role): array
+    {
+        $rolesMap = [
+            'admin' => [
+                'ketua-posyandu',
+                'kabid',
+                'admin-kecamatan',
+                'ketua-kader',
+                'operator-desa',
+                'kader',
+                'masyarakat',
+                'admin'
+            ],
+            'ketua-posyandu' => [
+                'kabid',
+                'admin-kecamatan',
+                'ketua-kader',
+                'kader',
+                'masyarakat',
+            ],
+            'kabid' => [
+                'admin-kecamatan',
+                'ketua-kader',
+                'kader',
+            ],
+            'admin-kecamatan' => [
+                'ketua-kader',
+                'kader',
+            ],
+            'ketua-kader' => [
+                'operator-desa',
+                'kader',
+            ],
+            'operator-desa' => [],
+            'kader' => [
+                'masyarakat',
+            ],
+        ];
+
+        return $rolesMap[$role] ?? [];
+    }
+
+    private function autoAssignRole(Request $request, string $currentRole): void
+    {
+        $autoAssignMap = [
+            'kader' => 'masyarakat',
+        ];
+
+        if (isset($autoAssignMap[$currentRole]) && !$request->filled('role')) {
+            $request->merge(['role' => $autoAssignMap[$currentRole]]);
+        }
+    }
+
+    private function buildValidationRules(?string $role, array $allowedRoles, User $currentUser): array
+    {
+        if (empty($role)) {
+            return [
+                'role' => ['required', Rule::in($allowedRoles)],
+                'name' => ['required', 'string', 'max:255'],
+                'email' => ['nullable', 'email', 'unique:users,email'],
+                'password' => ['required', 'confirmed', Password::defaults()],
+            ];
+        }
+
+        $baseRules = [
             'name' => ['required', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'unique:users,email'],
             'password' => ['required', 'confirmed', Password::defaults()],
             'role' => ['required', Rule::in($allowedRoles)],
             'alamat' => ['required', 'string'],
@@ -245,135 +540,201 @@ class UserController extends Controller
             'nik' => ['nullable', 'string', 'max:16', 'unique:users,nik'],
         ];
 
-        // ✅ Validation untuk Admin Kecamatan
-        if ($request->role === 'admin-kecamatan') {
-            $validationRules['kecamatan'] = ['required', 'string'];
-            // Kabupaten diambil dari Kabid, tidak perlu validasi
-        }
-
-        if ($request->role === 'operator-desa') {
-            $validationRules['desa'] = ['required', 'string']; // Harus pilih desa
-        }
-
-        // ✅ Validation untuk Ketua Kader
-        if ($request->role === 'ketua-kader') {
-            $validationRules['posyandu_id'] = ['required', 'uuid', 'exists:posyandus,id'];
-        }
-
-        // ✅ Validation untuk Kader
-        if ($request->role === 'kader') {
-            $validationRules['bidang_id'] = ['required', 'uuid', 'exists:bidang_pengajuans,id'];
-            // Posyandu otomatis dari Ketua Kader yang buat
-        }
-
-        // ✅ Validation untuk Kabid
-        if ($request->role === 'kabid') {
-            $validationRules['jenis_wilayah'] = ['required', 'in:kabupaten,kota'];
-            $validationRules['kabupaten'] = ['required', 'string'];
-        }
-
-        $request->validate($validationRules);
-
-        // Tentukan apakah langsung terverifikasi
-        $isInstantVerified = in_array($request->role, ['admin', 'kabid', 'admin-kecamatan', 'operator-desa', 'ketua-kader']);
-
-        // Simpan password asli untuk notifikasi
-        $plainPassword = $request->password;
-
-        // ✅ LOGIKA PENENTUAN WILAYAH & POSYANDU
-        $kabupatenName = null;
-        $kecamatanName = null;
-        $jenisWilayah = null;
-        $posyanduId = null;
-
-        // 1. Jika membuat KABID baru (hanya Admin yang bisa)
-        if ($request->role === 'kabid' && $request->filled('kabupaten')) {
-            $kabupatenName = explode('_', $request->kabupaten)[1] ?? $request->kabupaten;
-            $jenisWilayah = $request->jenis_wilayah;
-        }
-
-        if ($request->role === 'admin-kecamatan' && $currentUser->role === 'operator-desa') {
-            $kabupatenName = $currentUser->kabupaten;
-            $kecamatanName = $currentUser->kecamatan;
-            $desaName = $currentUser->desa;
-            // Posyandu ID dari request
-        }
-        // 2. Jika KABID membuat Admin Kecamatan
-        if ($request->role === 'admin-kecamatan' && $currentUser->role === 'kabid') {
-            $kabupatenName = $currentUser->kabupaten; // Inherit kabupaten dari Kabid
-            $kecamatanName = explode('_', $request->kecamatan)[1] ?? $request->kecamatan;
-        }
-
-        // 3. Jika KABID atau ADMIN KECAMATAN membuat Ketua Kader
-        if ($request->role === 'ketua-kader') {
-            $posyanduId = $request->posyandu_id; // User pilih posyandu
-
-            // Ambil data posyandu untuk get kabupaten & kecamatan
-            $posyandu = \App\Models\Posyandu::find($posyanduId);
-            if ($posyandu) {
-                $kabupatenName = $posyandu->kabupaten;
-                $kecamatanName = $posyandu->kecamatan;
-            }
-        }
-
-        // 4. Jika KETUA KADER membuat Kader
-        if ($request->role === 'kader' && $currentUser->role === 'ketua-kader') {
-            // Otomatis inherit semua dari Ketua Kader
-            $posyanduId = $currentUser->posyandu_id;
-            $kabupatenName = $currentUser->kabupaten;
-            $kecamatanName = $currentUser->kecamatan;
-        }
-
-        // ✅ Buat user baru
-        $userData = [
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($plainPassword),
-            'role' => $request->role,
-            'posyandu_id' => $posyanduId,
-            'nik' => $request->filled('nik') ? $request->nik : null, // ✅ NULL jika kosong
-            'alamat' => $request->alamat,
-            'no_telepon' => $request->no_telepon,
-            'tempat_lahir' => $request->tempat_lahir,
-            'tanggal_lahir' => $request->tanggal_lahir,
-            'jenis_kelamin' => $request->jenis_kelamin,
-            'verified_at' => $isInstantVerified ? now() : null,
-            'verified_by' => $isInstantVerified ? $currentUser->id : null,
-            'bidang_id' => $request->role === 'kader' ? $request->bidang_id : null,
-            'kabupaten' => $kabupatenName,
-            'kecamatan' => $kecamatanName,
-            'jenis_wilayah' => $jenisWilayah,
-            'is_active' => true,
+        // Role-specific validations
+        $roleSpecificRules = [
+            'ketua-posyandu' => [
+                'jenis_wilayah' => ['required', 'in:kabupaten,kota'],
+                'kabupaten' => ['required', 'string'],
+            ],
+            'kabid' => [
+                'bidang_id' => ['required', 'uuid', 'exists:bidang_pengajuans,id'],
+                'kabupaten' => ['required', 'string'],
+            ],
+            'admin-kecamatan' => [
+                'kabupaten' => ['required', 'string'],
+                'kecamatan' => ['required', 'string'],
+            ],
+            'ketua-kader' => [
+                'posyandu_id' => ['required', 'uuid', 'exists:posyandus,id'],
+            ],
+            'operator-desa' => [
+                'posyandu_id' => ['required', 'uuid', 'exists:posyandus,id'],
+            ],
+            'kader' => [
+                'bidang_id' => ['required', 'uuid', 'exists:bidang_pengajuans,id'],
+                'posyandu_id' => ['nullable', 'uuid', 'exists:posyandus,id'],
+            ],
         ];
 
-        $user = User::create($userData);
-
-        event(new Registered($user));
-
-        // Kirim notifikasi
-        if (in_array($request->role, ['kabid', 'admin-kecamatan', 'operator-desa', 'ketua-kader'])) {
-            $user->notify(new \App\Notifications\UserCreatedNotification($user->toArray(), $plainPassword, $currentUser->name));
+        if (isset($roleSpecificRules[$role])) {
+            $baseRules = array_merge($baseRules, $roleSpecificRules[$role]);
         }
 
-        // Generate pesan WhatsApp
-        if (in_array($request->role, ['kabid', 'admin-kecamatan', 'operator-desa', 'ketua-kader'])) {
-            $this->sendWhatsAppMessage($user, $plainPassword, $currentUser);
+        return $baseRules;
+    }
+
+    private function determineLocationData(Request $request, User $currentUser): array
+    {
+        $data = [
+            'kabupaten' => null,
+            'kecamatan' => null,
+            'desa' => null,
+            'jenis_wilayah' => null,
+            'posyandu_id' => null,
+            'bidang_id' => null,
+        ];
+
+        switch ($request->role) {
+            case 'ketua-posyandu':
+                // ✅ Simpan string dari API: "3302_KABUPATEN BANYUMAS"
+                // Kita extract nama kabupaten saja
+                $kabupatenValue = $request->kabupaten; // Format: "3302_KABUPATEN BANYUMAS"
+                $kabupatenName = explode('_', $kabupatenValue)[1] ?? $kabupatenValue;
+
+                $data['kabupaten'] = $kabupatenName; // "KABUPATEN BANYUMAS"
+                $data['jenis_wilayah'] = $request->jenis_wilayah;
+                break;
+
+            case 'kabid':
+                // ✅ Pilih Bidang + Kabupaten (string dari API)
+                $data['bidang_id'] = $request->bidang_id;
+
+                $kabupatenValue = $request->kabupaten;
+                $kabupatenName = explode('_', $kabupatenValue)[1] ?? $kabupatenValue;
+
+                $data['kabupaten'] = $kabupatenName;
+                $data['jenis_wilayah'] = $request->jenis_wilayah ?? 'kabupaten';
+                break;
+
+            case 'admin-kecamatan':
+                // ✅ Pilih Kabupaten + Kecamatan (dari API)
+                $kabupatenValue = $request->kabupaten;
+                $kabupatenName = explode('_', $kabupatenValue)[1] ?? $kabupatenValue;
+
+                $kecamatanValue = $request->kecamatan;
+                $kecamatanName = explode('_', $kecamatanValue)[1] ?? $kecamatanValue;
+
+                $data['kabupaten'] = $kabupatenName;
+                $data['kecamatan'] = $kecamatanName;
+                $data['jenis_wilayah'] = $request->jenis_wilayah ?? 'kabupaten';
+                break;
+
+            case 'ketua-kader':
+                // ✅ Ambil dari Posyandu
+                $posyanduId = $request->posyandu_id;
+                $posyandu = Posyandu::find($posyanduId);
+
+                if ($posyandu) {
+                    $data['posyandu_id'] = $posyanduId;
+                    $data['kabupaten'] = $posyandu->kabupaten;
+                    $data['kecamatan'] = $posyandu->kecamatan;
+                    $data['desa'] = $posyandu->desa;
+                    $data['jenis_wilayah'] = $currentUser->jenis_wilayah ?? null;
+                }
+                break;
+
+            case 'operator-desa':
+                // ✅ Inherit dari Posyandu
+                $posyanduId = $request->posyandu_id;
+                $posyandu = Posyandu::find($posyanduId);
+
+                if ($posyandu) {
+                    $data['posyandu_id'] = $posyanduId;
+                    $data['kabupaten'] = $posyandu->kabupaten;
+                    $data['kecamatan'] = $posyandu->kecamatan;
+                    $data['desa'] = $posyandu->desa;
+                    $data['jenis_wilayah'] = $currentUser->jenis_wilayah ?? null;
+                }
+                break;
+
+            case 'kader':
+                // ✅ Pilih Bidang + Posyandu
+                $data['bidang_id'] = $request->bidang_id;
+
+                if ($currentUser->role === 'ketua-kader') {
+                    // Inherit dari ketua kader
+                    $data['posyandu_id'] = $currentUser->posyandu_id;
+                    $data['kabupaten'] = $currentUser->kabupaten;
+                    $data['kecamatan'] = $currentUser->kecamatan;
+                    $data['desa'] = $currentUser->desa;
+                    $data['jenis_wilayah'] = $currentUser->jenis_wilayah;
+                } else {
+                    // Pilih posyandu
+                    if ($request->filled('posyandu_id')) {
+                        $posyandu = Posyandu::find($request->posyandu_id);
+                        if ($posyandu) {
+                            $data['posyandu_id'] = $posyandu->id;
+                            $data['kabupaten'] = $posyandu->kabupaten;
+                            $data['kecamatan'] = $posyandu->kecamatan;
+                            $data['desa'] = $posyandu->desa;
+                            $data['jenis_wilayah'] = $currentUser->jenis_wilayah;
+                        }
+                    }
+                }
+                break;
+
+            case 'masyarakat':
+                // ✅ Inherit dari kader
+                if ($currentUser->role === 'kader') {
+                    $data['posyandu_id'] = $currentUser->posyandu_id;
+                    $data['kabupaten'] = $currentUser->kabupaten;
+                    $data['kecamatan'] = $currentUser->kecamatan;
+                    $data['desa'] = $currentUser->desa;
+                    $data['jenis_wilayah'] = $currentUser->jenis_wilayah;
+                }
+                break;
         }
 
-        // Redirect berdasarkan source
+        return $data;
+    }
+
+    private function shouldSendNotification(string $role): bool
+    {
+        return in_array($role, [
+            'ketua-posyandu',
+            'kabid',
+            'admin-kecamatan',
+            'ketua-kader',
+            'operator-desa'
+        ]);
+    }
+
+    private function logUserHistory(User $user, User $actionBy, string $actionType, string $description, array $oldData = null, array $newData = null): void
+    {
+        \App\Models\UserHistory::create([
+            'user_id' => $user->id,
+            'action_by' => $actionBy->id,
+            'action_type' => $actionType,
+            'description' => $description,
+            'old_data' => $oldData,
+            'new_data' => $newData,
+        ]);
+    }
+
+    private function handleRedirect(Request $request, User $user, string $plainPassword, User $currentUser)
+    {
+        // ✅ PRIORITAS 1: Redirect khusus dari halaman pilih-user
+        if ($request->input('source') === 'pilih-user') {
+            return redirect()->route('dashboard.partials.pilih-user')
+                ->with('success', 'User masyarakat berhasil dibuat! Silakan pilih dari daftar untuk membuat ajuan.');
+        }
+
+        // ✅ PRIORITAS 2: Redirect khusus dari halaman create posyandu
         if ($request->input('source') === 'posyandu_create') {
             return redirect()->route('admin.posyandu.create')
                 ->with('success', 'User Ketua Kader berhasil dibuat! Silakan refresh halaman dan pilih dari dropdown.');
         }
 
-        // Tambahkan info WhatsApp ke flash message
-        if (in_array($request->role, ['kabid', 'ketua-kader', 'admin-kecamatan'])) {
+        // ✅ PRIORITAS 3: Redirect dengan WhatsApp link untuk role tertentu
+        if ($this->shouldSendNotification($request->role)) {
             return redirect()->route('admin.users.index')
                 ->with('success', 'User baru berhasil ditambahkan.')
                 ->with('whatsapp_link', $this->generateWhatsAppLink($user, $plainPassword, $currentUser));
         }
 
-        return redirect()->route('admin.users.index')->with('success', 'User baru berhasil ditambahkan.');
+        // ✅ DEFAULT: Redirect ke user index
+        return redirect()->route('admin.users.index')
+            ->with('success', 'User baru berhasil ditambahkan.');
     }
 
     private function generateWhatsAppLink($user, $plainPassword, $createdBy)
@@ -647,6 +1008,15 @@ class UserController extends Controller
 
         $currentUser = Auth::user();
 
+        if ($currentUser->role !== 'operator-desa') {
+            return redirect()->back()->with('error', 'Unauthorized');
+        }
+
+        if ($user->role !== 'kader' || $user->posyandu_id !== $currentUser->posyandu_id) {
+            return redirect()->back()->with('error', 'Anda hanya bisa nonaktifkan kader di posyandu Anda');
+        }
+
+
         $user->update([
             'status' => 'inactive',
             'deactivated_at' => now(),
@@ -674,6 +1044,14 @@ class UserController extends Controller
     {
         $currentUser = Auth::user();
 
+        if ($currentUser->role !== 'operator-desa') {
+            return redirect()->back()->with('error', 'Unauthorized');
+        }
+
+        if ($user->role !== 'kader' || $user->posyandu_id !== $currentUser->posyandu_id) {
+            return redirect()->back()->with('error', 'Anda hanya bisa aktifkan kader di posyandu Anda');
+        }
+
         $user->update([
             'status' => 'active',
             'deactivated_at' => null,
@@ -692,6 +1070,39 @@ class UserController extends Controller
         ]);
 
         return redirect()->route('admin.users.show', $user)->with('success', 'User berhasil diaktifkan kembali.');
+    }
+
+    public function resetPasswordKader(Request $request, User $user)
+    {
+        $currentUser = Auth::user();
+
+        // Validasi: Hanya Operator Desa yang bisa
+        if ($currentUser->role !== 'operator-desa') {
+            return redirect()->back()->with('error', 'Unauthorized');
+        }
+
+        // Validasi: Hanya Kader di posyandu yang sama
+        if ($user->role !== 'kader' || $user->posyandu_id !== $currentUser->posyandu_id) {
+            return redirect()->back()->with('error', 'Anda hanya bisa reset password kader di posyandu Anda');
+        }
+
+        $request->validate([
+            'new_password' => ['required', 'confirmed', 'min:8'],
+        ]);
+
+        $user->update([
+            'password' => Hash::make($request->new_password),
+        ]);
+
+        // Log history
+        UserHistory::create([
+            'user_id' => $user->id,
+            'action_by' => $currentUser->id,
+            'action_type' => 'updated',
+            'description' => "Password direset oleh {$currentUser->name}",
+        ]);
+
+        return redirect()->back()->with('success', 'Password kader berhasil direset');
     }
 
     // ========================================
@@ -729,41 +1140,57 @@ class UserController extends Controller
     /**
      * Operator Desa - Deactivate kader
      */
-    public function deactivateKader(Request $request, User $kader)
+    public function deactivateKader(Request $request, User $user)
     {
-        if (Auth::user()->role !== 'operator-desa' || $kader->kecamatan !== Auth::user()->kecamatan) {
-            abort(403);
+        $currentUser = Auth::user();
+
+        if ($currentUser->role !== 'operator-desa') {
+            return redirect()->back()->with('error', 'Unauthorized');
         }
 
-        $request->validate(['reason' => 'required|string|max:500']);
+        if ($user->role !== 'kader' || $user->posyandu_id !== $currentUser->posyandu_id) {
+            return redirect()->back()->with('error', 'Anda hanya bisa nonaktifkan kader di posyandu Anda');
+        }
 
-        $kader->update([
+        $request->validate([
+            'reason' => ['required', 'string', 'max:500'],
+        ]);
+
+        $user->update([
             'is_active' => false,
             'deactivated_at' => now(),
-            'deactivated_by' => Auth::id(),
+            'deactivated_by' => $currentUser->id,
             'deactivation_reason' => $request->reason,
         ]);
 
         UserHistory::create([
-            'user_id' => $kader->id,
-            'action_by' => Auth::id(),
+            'user_id' => $user->id,
+            'action_by' => $currentUser->id,
             'action_type' => 'deactivated',
-            'description' => "Dinonaktifkan: {$request->reason}",
+            'description' => "User dinonaktifkan oleh {$currentUser->name}. Alasan: {$request->reason}",
+            'old_data' => json_encode(['is_active' => true]),
+            'new_data' => json_encode(['is_active' => false, 'reason' => $request->reason]),
         ]);
 
-        return back()->with('success', 'Kader berhasil dinonaktifkan.');
+        return redirect()->back()->with('success', 'Kader berhasil dinonaktifkan.');
     }
 
     /**
      * Operator Desa - Reactivate kader
      */
-    public function reactivateKader(User $kader)
+    public function reactivateKader(User $user)
     {
-        if (Auth::user()->role !== 'operator-desa' || $kader->kecamatan !== Auth::user()->kecamatan) {
-            abort(403);
+        $currentUser = Auth::user();
+
+        if ($currentUser->role !== 'operator-desa') {
+            return redirect()->back()->with('error', 'Unauthorized');
         }
 
-        $kader->update([
+        if ($user->role !== 'kader' || $user->posyandu_id !== $currentUser->posyandu_id) {
+            return redirect()->back()->with('error', 'Anda hanya bisa aktifkan kader di posyandu Anda');
+        }
+
+        $user->update([
             'is_active' => true,
             'deactivated_at' => null,
             'deactivated_by' => null,
@@ -771,13 +1198,15 @@ class UserController extends Controller
         ]);
 
         UserHistory::create([
-            'user_id' => $kader->id,
-            'action_by' => Auth::id(),
+            'user_id' => $user->id,
+            'action_by' => $currentUser->id,
             'action_type' => 'activated',
-            'description' => "Diaktifkan kembali oleh " . Auth::user()->name,
+            'description' => "User diaktifkan kembali oleh {$currentUser->name}",
+            'old_data' => json_encode(['is_active' => false]),
+            'new_data' => json_encode(['is_active' => true]),
         ]);
 
-        return back()->with('success', 'Kader berhasil diaktifkan kembali.');
+        return redirect()->back()->with('success', 'Kader berhasil diaktifkan kembali.');
     }
 
     // ========================================

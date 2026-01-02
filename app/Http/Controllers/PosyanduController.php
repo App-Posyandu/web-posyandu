@@ -190,60 +190,68 @@ class PosyanduController extends Controller
         }
 
         $createdKaders = [];
+        $defaultPassword = 'kader123';
 
         foreach ($bidangs as $index => $bidang) {
-            // Generate username unik
-            // Format: kader-{bidang_slug}-{posyandu_id_short}
+            // ✅ Generate email unik
+            // Format: kader.{bidang-slug}.{posyandu-slug}@posyandu.local
             $bidangSlug = Str::slug($bidang->nama_bidang);
+            $posyanduSlug = Str::slug($posyandu->nama_posyandu);
             $posyanduShort = substr($posyandu->id, 0, 8);
-            $username = "kader-{$bidangSlug}-{$posyanduShort}";
 
-            // Generate password default
-            $defaultPassword = 'kader123';
+            $email = "kader.{$bidangSlug}.{$posyanduShort}@posyandu.local";
 
-            // Buat akun kader
+            // ✅ Generate nomor telepon unik (fake tapi valid format)
+            // Format: 0812-XXXX-YYYY (X = posyandu_id prefix, Y = bidang index)
+            $phonePrefix = substr(str_replace('-', '', $posyandu->id), 0, 4);
+            $phoneSuffix = str_pad($index + 1, 4, '0', STR_PAD_LEFT);
+
+            // ✅ Buat akun kader dengan credentials lengkap
             $kader = User::create([
                 'name' => "Kader " . $bidang->nama_bidang . " - " . $posyandu->nama_posyandu,
-                'email' => null, // Email opsional
-                'no_telepon' => null, // Bisa diisi nanti
+                'email' => $email, // ✅ Email unik
                 'password' => Hash::make($defaultPassword),
                 'role' => 'kader',
                 'bidang_id' => $bidang->id,
                 'posyandu_id' => $posyandu->id,
                 'kabupaten' => $posyandu->kabupaten,
+                'kabupaten_id' => $posyandu->kabupaten_id,
                 'kecamatan' => $posyandu->kecamatan,
-                'verified_at' => now(), // Langsung terverifikasi
+                'kecamatan_id' => $posyandu->kecamatan_id,
+                'desa' => $posyandu->desa,
+                'verified_at' => now(),
                 'verified_by' => Auth::id(),
                 'is_active' => true,
-                'nik' => null, // Bisa diisi nanti
-                'alamat' => "Posyandu {$posyandu->nama_posyandu}",
+                'nik' => null, // Bisa diisi nanti oleh Ketua Kader
+                'alamat' => "Posyandu {$posyandu->nama_posyandu}, {$posyandu->desa}",
                 'tempat_lahir' => null,
                 'tanggal_lahir' => null,
                 'jenis_kelamin' => null,
             ]);
 
-            // Log untuk tracking
+            // ✅ Log untuk tracking
             UserHistory::create([
                 'user_id' => $kader->id,
                 'action_by' => Auth::id(),
                 'action_type' => 'created',
                 'description' => "Akun kader auto-generated untuk {$bidang->nama_bidang} di {$posyandu->nama_posyandu}",
-                'new_data' => [
-                    'username' => $username,
+                'new_data' => json_encode([
+                    'email' => $email,
                     'default_password' => $defaultPassword,
                     'bidang' => $bidang->nama_bidang,
                     'posyandu' => $posyandu->nama_posyandu,
-                ],
+                ]),
             ]);
 
             $createdKaders[] = [
                 'kader' => $kader,
-                'username' => $username,
+                'email' => $email,
                 'password' => $defaultPassword,
+                'bidang' => $bidang->nama_bidang,
             ];
         }
 
-        // Simpan info kader ke session untuk ditampilkan
+        // ✅ Simpan info kader ke session untuk ditampilkan di halaman success
         session()->flash('created_kaders', $createdKaders);
 
         return $createdKaders;

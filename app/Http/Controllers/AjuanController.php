@@ -19,7 +19,7 @@ use Illuminate\Support\Str;
 class AjuanController extends Controller
 {
     use AuthorizesRequests;
-    public function index(User $user, Request $request)
+    public function index()
     {
         return view('ajuan.index');
     }
@@ -66,10 +66,10 @@ class AjuanController extends Controller
     public function pilihUser(Request $request)
     {
         $user = Auth::user();
+
+        // ✅ Handle user yang sudah dipilih
         if ($request->has('user_id')) {
-
             $masyarakatId = $request->query('user_id');
-
             session(['ajuan_on_behalf_of_id' => $masyarakatId]);
 
             if ($user->role === 'kader' && $user->bidang_id) {
@@ -80,12 +80,21 @@ class AjuanController extends Controller
             }
         }
 
-        $query = User::where('role', 'masyarakat')
+        // ✅ Query dengan eager loading
+        $query = User::with(['posyandu']) // ← TAMBAHKAN INI!
+            ->where('role', 'masyarakat')
             ->whereNotNull('verified_at')
             ->orderBy('name');
 
+        // ✅ Filter berdasarkan role
         if (in_array($user->role, ['kader', 'ketua-kader'])) {
             $query->where('posyandu_id', $user->posyandu_id);
+        } elseif ($user->role === 'admin-kecamatan') {
+            // Admin kecamatan hanya lihat masyarakat di kecamatannya
+            $query->where('kecamatan_id', $user->kecamatan_id);
+        } elseif ($user->role === 'kabid') {
+            // Kabid hanya lihat masyarakat di kabupatennya
+            $query->where('kabupaten_id', $user->kabupaten_id);
         }
 
         $masyarakatUsers = $query->get();
@@ -195,7 +204,7 @@ class AjuanController extends Controller
         }
         $validationRules['agreement'] = ['required'];
 
-        $request->validate($validationRules)    ;
+        $request->validate($validationRules);
 
         $uploadedFiles = [];
         foreach (array_keys($ajuanData['administrasi_items_template']) as $key) {
@@ -361,9 +370,9 @@ class AjuanController extends Controller
         $allBidangs = BidangPengajuan::orderBy('nama_bidang')->get();
 
         return view('ajuan.edit', [
-            'ajuan' => $ajuan, 
-            'allBidangs' => $allBidangs, 
-            'templateData' => $templateData, 
+            'ajuan' => $ajuan,
+            'allBidangs' => $allBidangs,
+            'templateData' => $templateData,
         ]);
     }
 
@@ -465,8 +474,8 @@ class AjuanController extends Controller
 
     public function verifyAjuan(Request $request, Pengajuan $ajuan)
     {
-        $user = Auth::user(); 
-        $targetUser = $ajuan->user; 
+        $user = Auth::user();
+        $targetUser = $ajuan->user;
 
         $this->authorize('verify', $ajuan);
 

@@ -26,18 +26,6 @@ class PosyanduSeeder extends Seeder
                 'kecamatan' => 'Cimahi Utara',
                 'kabupaten' => 'Kota Cimahi',
             ],
-            [
-                'nama_posyandu' => 'Posyandu Mawar',
-                'desa' => 'Desa Mekarsari',
-                'kecamatan' => 'Cimahi Selatan',
-                'kabupaten' => 'Kota Cimahi',
-            ],
-            [
-                'nama_posyandu' => 'Posyandu Anggrek',
-                'desa' => 'Desa Cibereum',
-                'kecamatan' => 'Cimahi Tengah',
-                'kabupaten' => 'Kota Cimahi',
-            ],
         ];
 
         // 3. Loop dan gunakan Model::create()

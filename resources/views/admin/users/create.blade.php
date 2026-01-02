@@ -91,23 +91,38 @@
                             class="{{ in_array(auth()->user()->role, ['ketua-kader', 'admin-kecamatan', 'kader']) ? 'hidden' : '' }}">
                             <x-input-label for="role" :value="__('Role')" />
                             <select id="role" name="role"
-                                class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                                <option value="" disabled selected>Pilih Role</option>
+                                class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                                {{ isset($defaultRole) ? 'disabled' : '' }}>
+                                <option value="" disabled {{ !isset($defaultRole) ? 'selected' : '' }}>Pilih Role
+                                </option>
                                 @php $currentUserRole = auth()->user()->role; @endphp
 
                                 @if ($currentUserRole === 'admin')
-                                    <option value="ketua-posyandu">Ketua Posyandu</option>
-                                    <option value="kabid">Kabid</option>
-                                    <option value="admin-kecamatan">Admin Kecamatan</option>
-                                    <option value="ketua-kader">Ketua Kader</option>
-                                    <option value="operator-desa">Operator Desa</option>
-                                    <option value="kader">Kader</option>
-                                    <option value="masyarakat">Masyarakat</option>
+                                    <option value="ketua-posyandu"
+                                        {{ isset($defaultRole) && $defaultRole === 'ketua-posyandu' ? 'selected' : '' }}>
+                                        Ketua Posyandu</option>
+                                    <option value="kabid"
+                                        {{ isset($defaultRole) && $defaultRole === 'kabid' ? 'selected' : '' }}>Kabid
+                                    </option>
+                                    <option value="admin-kecamatan"
+                                        {{ isset($defaultRole) && $defaultRole === 'admin-kecamatan' ? 'selected' : '' }}>
+                                        Admin Kecamatan</option>
+                                    <option value="ketua-kader"
+                                        {{ isset($defaultRole) && $defaultRole === 'ketua-kader' ? 'selected' : '' }}>Ketua
+                                        Kader</option>
+                                    <option value="operator-desa"
+                                        {{ isset($defaultRole) && $defaultRole === 'operator-desa' ? 'selected' : '' }}>
+                                        Operator Desa</option>
+                                    <option value="kader"
+                                        {{ isset($defaultRole) && $defaultRole === 'kader' ? 'selected' : '' }}>Kader
+                                    </option>
+                                    <option value="masyarakat"
+                                        {{ isset($defaultRole) && $defaultRole === 'masyarakat' ? 'selected' : '' }}>
+                                        Masyarakat</option>
                                 @elseif ($currentUserRole === 'kabid')
                                     <option value="admin-kecamatan">Admin Kecamatan</option>
                                     <option value="ketua-kader">Ketua Kader</option>
                                 @elseif ($currentUserRole === 'admin-kecamatan')
-                                    {{-- NEW --}}
                                     <option value="ketua-kader" @selected(true)>Ketua Kader</option>
                                 @elseif ($currentUserRole === 'ketua-kader')
                                     <option value="kader" @selected(true)>Kader</option>
@@ -115,6 +130,17 @@
                                     <option value="masyarakat" @selected(true)>Masyarakat</option>
                                 @endif
                             </select>
+
+                            {{-- ✅ Hidden input jika role di-disable (dari pilih-user) --}}
+                            @if (isset($defaultRole))
+                                <input type="hidden" name="role" value="{{ $defaultRole }}">
+                                <p class="mt-1 text-xs text-gray-500">
+                                    <i class="bi bi-info-circle"></i>
+                                    Role otomatis diset sebagai <strong>Masyarakat</strong> karena Anda membuat user dari
+                                    halaman pilih masyarakat
+                                </p>
+                            @endif
+
                             <x-input-error :messages="$errors->get('role')" class="mt-2" />
                         </div>
 
@@ -137,8 +163,6 @@
 
                         {{-- KABUPATEN COMBOBOX (HANYA UI) --}}
                         <div id="kabupaten-field" style="display: none;" class="md:col-span-2">
-                            {{-- ... (Kode Combobox Kabupaten Anda yang lama) ... --}}
-                            {{-- Saya sederhanakan di sini agar tidak terlalu panjang, gunakan kode Anda yang lama --}}
                             <div x-data="kabupatenCombobox()" @click.away="open = false" x-init="$watch('selectedKabupaten', value => {
                                 document.getElementById('kabupaten-hidden').value = value;
                             })"
@@ -149,17 +173,17 @@
                                         :placeholder="getKabupatenName(selectedKabupaten) || 'Cari Kabupaten...'"
                                         class="block mt-1 w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                         autocomplete="off">
-                                    {{-- ... Icon Panah ... --}}
                                 </div>
                                 <div x-show="open"
                                     class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto"
                                     style="display: none;">
                                     <template
-                                        x-for="kab in kabupatens.filter(k => k.name.toLowerCase().includes(search.toLowerCase()))"
-                                        :key="kab.code">
-                                        <div @click="selectedKabupaten = `${kab.code}_${kab.name}`; search = ''; open = false"
+                                        x-for="kab in kabupatens.filter(k => (k.name || '').toLowerCase().includes(search.toLowerCase()))"
+                                        :key="kab.id || kab.code">
+                                        <div @click="selectKabupaten(kab)"
                                             class="px-4 py-2 cursor-pointer hover:bg-indigo-50"
-                                            x-text="getDisplayName(kab.name)"></div>
+                                            x-text="getDisplayName(kab.name)">
+                                        </div>
                                     </template>
                                 </div>
                             </div>
@@ -183,27 +207,30 @@
                                     class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto"
                                     style="display: none;">
                                     <template
-                                        x-for="kota in kotas.filter(k => k.name.toLowerCase().includes(search.toLowerCase()))"
-                                        :key="kota.code">
-                                        <div @click="selectedKota = `${kota.code}_${kota.name}`; search = ''; open = false"
-                                            class="px-4 py-2 cursor-pointer hover:bg-indigo-50"
-                                            x-text="getDisplayName(kota.name)"></div>
+                                        x-for="kota in kotas.filter(k => (k.name || '').toLowerCase().includes(search.toLowerCase()))"
+                                        :key="kota.id || kota.code">
+                                        <div @click="selectKota(kota)" class="px-4 py-2 cursor-pointer hover:bg-indigo-50"
+                                            x-text="getDisplayName(kota.name)">
+                                        </div>
                                     </template>
                                 </div>
                             </div>
                         </div>
 
-                        <div id="kecamatan-field" style="display: none;">
+                        <div id="kecamatan-field" style="display: none;" class="md:col-span-2">
                             <input type="hidden" name="kecamatan" id="kecamatan-hidden">
-                            <div x-data="kecamatanCombobox()" @click.away="open = false" class="relative">
+
+                            <div x-data="kecamatanCombobox()" @region-selected.window="fetchKecamatan($event.detail.code)"
+                                @click.away="open = false" class="relative">
+
                                 <x-input-label for="kecamatan" :value="__('Pilih Kecamatan')" />
+
                                 <div class="relative">
                                     <input type="text" x-model="search" @focus="open = true" @input="open = true"
                                         :placeholder="selectedKecamatanName || 'Cari Kecamatan...'"
                                         class="block mt-1 w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                         :disabled="loading" autocomplete="off">
 
-                                    <!-- Loading Indicator -->
                                     <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
                                         <svg x-show="loading" class="animate-spin h-5 w-5 text-indigo-500"
                                             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -219,24 +246,23 @@
                                 <div x-show="open && !loading"
                                     class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto"
                                     style="display: none;">
+
                                     <template
-                                        x-for="kec in kecamatanList.filter(k => k.name.toLowerCase().includes(search.toLowerCase()))"
-                                        :key="kec.code">
+                                        x-for="kec in kecamatanList.filter(k => (k.name || '').toLowerCase().includes(search.toLowerCase()))"
+                                        :key="kec.id || kec.code">
                                         <div @click="selectKecamatan(kec)"
                                             class="px-4 py-2 cursor-pointer hover:bg-indigo-50" x-text="kec.name"></div>
                                     </template>
+
                                     <div x-show="kecamatanList.length === 0" class="px-4 py-2 text-gray-500 text-sm">
-                                        Tidak ada data kecamatan
+                                        Tidak ada data kecamatan / Silakan pilih Kabupaten dulu
                                     </div>
                                 </div>
                             </div>
-                            <p class="mt-1 text-xs text-gray-500">
-                                Admin Kecamatan akan mengelola semua posyandu di kecamatan ini
-                            </p>
                         </div>
 
                         <!-- ✅ FIELD UNTUK KETUA KADER: Pilih Posyandu (dibuat oleh Kabid atau Admin Kecamatan) -->
-                        <div id="posyandu-field" style="display: none;">
+                        <div id="posyandu-field" style="display: none;" class="md:col-span-2">
                             <x-input-label for="posyandu_id" :value="__('Pilih Posyandu')" />
                             <select id="posyandu_id" name="posyandu_id"
                                 class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
@@ -253,7 +279,8 @@
                         </div>
 
                         <!-- ✅ FIELD UNTUK KADER: Pilih Bidang (posyandu otomatis dari Ketua Kader) -->
-                        <div id="bidang-field" style="display: none;">
+                        <div id="bidang-field" style="display: none;"
+                            class="{{ in_array(auth()->user()->role, ['admin']) ? 'md:col-span-2' : '' }}">
                             <x-input-label for="bidang_id" :value="__('Bidang Tugas')" />
                             <select id="bidang_id" name="bidang_id"
                                 class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
@@ -310,9 +337,11 @@
         <script>
             // ✅ PASTIKAN ALPINE INIT DULU
             document.addEventListener('alpine:init', () => {
-                console.log('Alpine initialized'); // ← Debug log
 
-                // Alpine.data untuk Kabupaten
+                // Helper function untuk mencari ID/Code yang valid
+                const getRegionCode = (region) => region.id || region.code;
+
+                // 1. KABUPATEN COMBOBOX
                 Alpine.data('kabupatenCombobox', () => ({
                     open: false,
                     search: '',
@@ -320,7 +349,17 @@
                     kabupatens: @json($kabupatenList ?? []),
 
                     init() {
-                        console.log('Kabupaten combobox init', this.selectedKabupaten); // ← Debug log
+                        // Debugging: Cek data pertama untuk memastikan struktur
+                        if (this.kabupatens.length > 0) {
+                            console.log('Sample Data Kabupaten:', this.kabupatens[0]);
+                        }
+
+                        if (this.selectedKabupaten) {
+                            let code = this.selectedKabupaten.split('_')[0];
+                            this.$dispatch('region-selected', {
+                                code: code
+                            });
+                        }
                     },
 
                     getKabupatenName(value) {
@@ -330,20 +369,32 @@
                     },
 
                     getDisplayName(name) {
-                        return name.replace('Kabupaten ', '');
+                        return name ? name.replace('Kabupaten ', '') : '';
+                    },
+
+                    selectKabupaten(kab) {
+                        const code = getRegionCode(kab); // Ambil ID atau Code
+
+                        this.selectedKabupaten = `${code}_${kab.name}`;
+                        this.search = '';
+                        this.open = false;
+
+                        document.getElementById('kabupaten-hidden').value = this.selectedKabupaten;
+
+                        // Dispatch code wilayah agar Kecamatan bisa fetch
+                        console.log('Dispatching Region Code:', code);
+                        this.$dispatch('region-selected', {
+                            code: code
+                        });
                     }
                 }));
 
-                // Alpine.data untuk Kota
+                // 2. KOTA COMBOBOX
                 Alpine.data('kotaCombobox', () => ({
                     open: false,
                     search: '',
-                    selectedKota: '{{ old('kabupaten') }}',
+                    selectedKota: '{{ old('kota') }}',
                     kotas: @json($kotaList ?? []),
-
-                    init() {
-                        console.log('Kota combobox init', this.selectedKota); // ← Debug log
-                    },
 
                     getKotaName(value) {
                         if (!value) return '';
@@ -352,52 +403,83 @@
                     },
 
                     getDisplayName(name) {
-                        return name.replace('Kota ', '');
+                        return name ? name.replace('Kota ', '') : '';
+                    },
+
+                    selectKota(kota) {
+                        const code = getRegionCode(kota);
+
+                        this.selectedKota = `${code}_${kota.name}`;
+                        this.search = '';
+                        this.open = false;
+
+                        document.getElementById('kabupaten-hidden').value = this.selectedKota;
+
+                        console.log('Dispatching Region Code:', code);
+                        this.$dispatch('region-selected', {
+                            code: code
+                        });
                     }
                 }));
 
+                // 3. KECAMATAN COMBOBOX
                 Alpine.data('kecamatanCombobox', () => ({
                     open: false,
                     search: '',
                     loading: false,
                     kecamatanList: [],
-                    selectedKecamatanValue: '', // Format: Code_Nama
-                    selectedKecamatanName: '', // Nama saja
+                    selectedKecamatanRaw: '{{ old('kecamatan') }}',
+                    selectedKecamatanName: '',
 
-                    async init() {
-                        // Ambil ID Kabupaten dari user yang login (KABID)
-                        // Format user->kabupaten di DB = "KABUPATEN BANYUMAS" (Nama saja, bukan Code_Nama)
-                        // TAPI API butuh CODE.
-                        // SOLUSI: Kita harus cari Code Kabupaten dulu berdasarkan Namanya dari list $kabupatenList
+                    init() {
+                        if (this.selectedKecamatanRaw) {
+                            this.selectedKecamatanName = this.selectedKecamatanRaw.split('_').slice(1).join(
+                                '_');
+                            document.getElementById('kecamatan-hidden').value = this.selectedKecamatanRaw;
+                        }
+                    },
 
-                        // 1. Dapatkan nama kabupaten Kabid
-                        const kabidKabupatenName = "{{ auth()->user()->kabupaten }}";
-                        const allKabupatens = @json($kabupatenList ?? []);
-                        const allKotas = @json($kotaList ?? []);
-                        const allRegions = [...allKabupatens, ...allKotas];
+                    async fetchKecamatan(parentId) {
+                        if (!parentId) return;
 
-                        // 2. Cari object kabupaten untuk dapat CODE-nya
-                        const foundRegion = allRegions.find(r => r.name.toUpperCase() ===
-                            kabidKabupatenName.toUpperCase());
+                        console.log('Fetching Kecamatan for Parent:', parentId);
+                        this.loading = true;
+                        this.kecamatanList = [];
+                        this.selectedKecamatanName = '';
+                        document.getElementById('kecamatan-hidden').value = '';
 
-                        if (foundRegion) {
-                            this.loading = true;
-                            try {
-                                const response = await fetch(
-                                    `{{ url('/api/wilayah/kecamatan') }}/${foundRegion.code}`);
-                                const data = await response.json();
-                                this.kecamatanList = data.data ?? [];
-                            } catch (e) {
-                                console.error('Gagal fetch kecamatan', e);
+                        try {
+                            // Fetch API
+                            const response = await fetch(`/api/wilayah/kecamatan/${parentId}`);
+                            const data = await response.json();
+
+                            // Normalisasi Data: Pastikan jadi Array
+                            let list = [];
+                            if (Array.isArray(data)) {
+                                list = data;
+                            } else if (data && Array.isArray(data.data)) {
+                                list = data.data;
                             }
+
+                            this.kecamatanList = list;
+                            console.log('Kecamatan Loaded:', this.kecamatanList);
+
+                        } catch (error) {
+                            console.error('Gagal mengambil data kecamatan:', error);
+                            this.kecamatanList = [];
+                        } finally {
                             this.loading = false;
                         }
                     },
 
                     selectKecamatan(kec) {
-                        this.selectedKecamatanValue = `${kec.code}_${kec.name}`;
+                        const code = getRegionCode(kec);
+
+                        // Format: Code_Nama
+                        const val = `${code}_${kec.name}`;
+                        document.getElementById('kecamatan-hidden').value = val;
+
                         this.selectedKecamatanName = kec.name;
-                        document.getElementById('kecamatan-hidden').value = this.selectedKecamatanValue;
                         this.search = '';
                         this.open = false;
                     }
@@ -417,52 +499,140 @@
                 const posyanduField = document.getElementById('posyandu-field');
                 const posyanduSelect = document.getElementById('posyandu_id');
 
+                const kabupatenSelect = document.getElementById('kabupaten_id');
+                const kecamatanSelect = document.getElementById('kecamatan_id');
+
+                // function toggleFields() {
+                //     bidangField.style.display = 'none';
+                //     bidangSelect.required = false;
+                //     bidangSelect.value = '';
+
+                //     jenisWilayahField.style.display = 'none';
+                //     jenisWilayahSelect.required = false;
+
+                //     kabupatenField.style.display = 'none';
+                //     kotaField.style.display = 'none';
+                //     kecamatanField.style.display = 'none';
+
+                //     posyanduField.style.display = 'none';
+                //     posyanduSelect.required = false;
+
+                //     if (roleSelect.value === 'kader') {
+                //         bidangField.style.display = 'block';
+                //         bidangSelect.required = true;
+                //     }
+
+                //     if (roleSelect.value === 'kabid') {
+                //         bidangField.style.display = 'block';
+                //         bidangSelect.required = true;
+                //     }
+
+                //     if (roleSelect.value === 'ketua-posyandu') {
+                //         jenisWilayahField.style.display = 'block';
+                //         jenisWilayahSelect.required = false;
+                //     }
+
+                //     // ✅ Jika role = ADMIN KECAMATAN (dibuat oleh Kabid)
+                //     if (roleSelect.value === 'admin-kecamatan') {
+                //         kecamatanField.style.display = 'block';
+                //         document.getElementById('kecamatan-hidden').required = true;
+                //     }
+
+                //     // ✅ Jika role = KETUA KADER (dibuat oleh Kabid atau Admin Kecamatan)
+                //     if (roleSelect.value === 'ketua-kader') {
+                //         posyanduField.style.display = 'block';
+                //         posyanduSelect.required = true;
+                //     }
+                // }
+
                 function toggleFields() {
-                    bidangField.style.display = 'none';
-                    bidangSelect.required = false;
-                    bidangSelect.value = '';
-
+                    // Hide all fields first
                     jenisWilayahField.style.display = 'none';
-                    jenisWilayahSelect.required = false;
-
                     kabupatenField.style.display = 'none';
                     kotaField.style.display = 'none';
                     kecamatanField.style.display = 'none';
-
                     posyanduField.style.display = 'none';
-                    posyanduSelect.required = false;
+                    bidangField.style.display = 'none';
 
-                    if (roleSelect.value === 'kader') {
-                        bidangField.style.display = 'block';
-                        bidangSelect.required = true;
+                    // Reset all required
+                    jenisWilayahSelect.required = false;
+                    // kabupaten akan di-handle oleh hidden input
+                    posyanduSelect.required = false;
+                    bidangSelect.required = false;
+
+                    const role = roleSelect.value;
+                    const currentUserRole = '{{ auth()->user()->role }}';
+
+                    // ✅ KETUA POSYANDU: Pilih Jenis Wilayah + Kabupaten/Kota
+                    if (role === 'ketua-posyandu') {
+                        jenisWilayahField.style.display = 'block';
+                        jenisWilayahSelect.required = true;
+                        // Kabupaten/Kota akan muncul setelah pilih jenis wilayah
                     }
 
-                    if (roleSelect.value === 'kabid') {
+                    // ✅ KABID: Pilih Bidang + Kabupaten
+                    if (role === 'kabid') {
+                        bidangField.style.display = 'block';
+                        bidangSelect.required = true;
+
+                        // Tampilkan pilihan jenis wilayah dulu
                         jenisWilayahField.style.display = 'block';
                         jenisWilayahSelect.required = true;
                     }
 
-                    // ✅ Jika role = ADMIN KECAMATAN (dibuat oleh Kabid)
-                    if (roleSelect.value === 'admin-kecamatan') {
-                        kecamatanField.style.display = 'block';
-                        document.getElementById('kecamatan-hidden').required = true;
+                    // ✅ ADMIN KECAMATAN: Pilih Kabupaten + Kecamatan (dari API)
+                    if (role === 'admin-kecamatan') {
+                        jenisWilayahField.style.display = 'block';
+                        jenisWilayahSelect.required = true;
                     }
 
-                    // ✅ Jika role = KETUA KADER (dibuat oleh Kabid atau Admin Kecamatan)
-                    if (roleSelect.value === 'ketua-kader') {
+                    // ✅ KETUA KADER: Pilih Posyandu
+                    if (role === 'ketua-kader') {
                         posyanduField.style.display = 'block';
                         posyanduSelect.required = true;
+                    }
+
+                    // ✅ OPERATOR DESA: Pilih Posyandu yang sama dengan Ketua Kader
+                    if (role === 'operator-desa') {
+                        posyanduField.style.display = 'block';
+                        posyanduSelect.required = true;
+
+                        // Jika dibuat oleh Ketua Kader, filter hanya posyandu ketua kader
+                        if (currentUserRole === 'ketua-kader') {
+                            const ketuaKaderPosyanduId = '{{ auth()->user()->posyandu_id }}';
+                            posyanduSelect.value = ketuaKaderPosyanduId;
+                            posyanduSelect.disabled = true;
+                        }
+                    }
+
+                    // ✅ KADER: Pilih Bidang + Posyandu (conditional)
+                    if (role === 'kader') {
+                        bidangField.style.display = 'block';
+                        bidangSelect.required = true;
+
+                        // Jika dibuat oleh Ketua Kader, posyandu auto-inherit
+                        if (currentUserRole !== 'ketua-kader') {
+                            posyanduField.style.display = 'block';
+                            posyanduSelect.required = true;
+                        }
                     }
                 }
 
                 function toggleWilayahField() {
                     kabupatenField.style.display = 'none';
                     kotaField.style.display = 'none';
+                    kecamatanField.style.display = 'none';
 
-                    if (jenisWilayahSelect.value === 'kabupaten') {
+                    const jenisWilayah = jenisWilayahSelect.value;
+
+                    if (jenisWilayah === 'kabupaten') {
                         kabupatenField.style.display = 'block';
-                    } else if (jenisWilayahSelect.value === 'kota') {
+                    } else if (jenisWilayah === 'kota') {
                         kotaField.style.display = 'block';
+                    }
+
+                    if (roleSelect.value === 'admin-kecamatan') {
+                        kecamatanField.style.display = 'block';
                     }
                 }
 

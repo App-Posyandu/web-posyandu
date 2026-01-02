@@ -140,10 +140,15 @@ Route::middleware('auth')->group(function () {
         Route::get('desa', [PosyanduController::class, 'getDesa'])->name('api.desa');
     });
 
-    Route::middleware(['auth'])->prefix('operator-desa')->name('operator-desa.')->group(function () {
-        Route::get('/kaders', [UserController::class, 'kaderIndex'])->name('kaders');
-        Route::post('/kaders/{kader}/deactivate', [UserController::class, 'deactivateKader'])->name('kaders.deactivate');
-        Route::post('/kaders/{kader}/reactivate', [UserController::class, 'reactivateKader'])->name('kaders.reactivate');
+    Route::middleware(['role:operator-desa'])->group(function () {
+        Route::patch('admin/users/{user}/reset-password', [UserController::class, 'resetPasswordKader'])
+            ->name('admin.users.reset-password');
+
+        Route::patch('admin/users/{user}/deactivate', [UserController::class, 'deactivateKader'])
+            ->name('admin.users.deactivate');
+
+        Route::patch('admin/users/{user}/reactivate', [UserController::class, 'reactivateKader'])
+            ->name('admin.users.reactivate');
     });
 
     Route::middleware(['auth'])->prefix('ketua-kader')->name('ketua-kader.')->group(function () {
@@ -152,7 +157,7 @@ Route::middleware('auth')->group(function () {
     });
 
     // ✅ ADMIN ROUTES
-    Route::middleware(['role:kabid,kader,admin,ketua-kader,admin-kecamatan'])->prefix('admin')->name('admin.')->group(function () {
+    Route::middleware(['role:kabid,kader,admin,ketua-kader,admin-kecamatan,operator-desa,ketua-posyandu'])->prefix('admin')->name('admin.')->group(function () {
         Route::get('admin/posyandu/clear-cache', [PosyanduController::class, 'clearWilayahCache'])
             ->middleware(['auth', 'admin'])
             ->name('admin.posyandu.clear-cache');
@@ -162,7 +167,7 @@ Route::middleware('auth')->group(function () {
     });
 
 
-    Route::middleware(['role:kabid,admin-kecamatan,ketua-kader'])->prefix('admin')->name('admin.')->group(function () {
+    Route::middleware(['role:kabid,admin-kecamatan,ketua-kader,ketua-posyandu,operator-desa'])->prefix('admin')->name('admin.')->group(function () {
         Route::resource('kecamatan', KecamatanController::class);
         Route::resource('posyandu', PosyanduController::class);
 

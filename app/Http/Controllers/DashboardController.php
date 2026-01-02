@@ -14,7 +14,7 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $alwaysVerifiedRoles = ['admin', 'kabid', 'admin-kecamatan', 'ketua-kader', 'masyarakat'];
+        $alwaysVerifiedRoles = ['admin', 'kabid', 'admin-kecamatan', 'ketua-kader', 'ketua-posyandu', 'operator-desa', 'masyarakat'];
         $isVerified = !is_null($user->verified_at) || in_array($user->role, $alwaysVerifiedRoles);
 
         $allBidangs = BidangPengajuan::orderBy('nama_bidang')->get();
@@ -35,46 +35,60 @@ class DashboardController extends Controller
             'trantibumlinmas' => asset('assets/image/icon/bidang/trantibumlinmas.svg'),
         ];
 
-        // ✅ REDIRECT MASYARAKAT KE PILIH LAYANAN
-        if ($user->role === 'masyarakat') {
-            session()->forget('ajuan_on_behalf_of_id');
-            return redirect()->route('dashboard.partials.pilih-layanan', compact('allBidangs', 'colors', 'icons'));
-        }
+        switch ($user->role) {
+            case 'masyarakat':
+                // Redirect ke pilih layanan
+                session()->forget('ajuan_on_behalf_of_id');
+                return redirect()->route('dashboard.partials.pilih-layanan', compact('allBidangs', 'colors', 'icons'));
+            case 'kader':
+                return redirect()->route('ajuan.index');
+            case 'operator-desa':
+                // Redirect langsung ke ajuan.index
+                return redirect()->route('admin.users.index');
+            case 'kabid':
+                return redirect()->route('ajuan.index');
+            case 'ketua-kader':
+            case 'admin-kecamatan':
+            case 'ketua-posyandu':
+            case 'admin':
+                // Tampilkan dashboard dengan chart
+                break;
 
-        // ✅ REDIRECT KADER LANGSUNG KE AJUAN.INDEX
-        if ($user->role === 'kader') {
-            return redirect()->route('ajuan.index');
-        }
-
-        if ($user->role === 'operator-desa') {
-            return redirect()->route('operator-desa.kaders');
+            default:
+                abort(403, 'Unauthorized');
         }
 
         // ✅ UNTUK KETUA KADER, ADMIN KECAMATAN, KABID, DAN ADMIN - TAMPILKAN DASHBOARD
         $ajuanQuery = Pengajuan::query();
         $query = Pengajuan::with(['user', 'bidang']);
+        $desasQuery = Pengajuan::with('user.posyandu');
+
+        $actualCountsQuery = Pengajuan::query()
+            ->join('bidang_pengajuans', 'pengajuans.bidang_id', '=', 'bidang_pengajuans.id')
+            ->join('users', 'pengajuans.user_id', '=', 'users.id')
+            ->select('bidang_pengajuans.nama_bidang', DB::raw('count(pengajuans.id) as total'));
 
         // ========================================
         // 🎯 FILTER BERDASARKAN ROLE (HIRARKI)
         // ========================================
         switch ($user->role) {
-            case 'ketua-kader':
-                // Semua pengajuan di posyandu-nya
-                $ajuanQuery->whereHas('user', function ($q) use ($user) {
-                    $q->where('posyandu_id', $user->posyandu_id);
-                });
-                $query->whereHas('user', function ($q) use ($user) {
-                    $q->where('posyandu_id', $user->posyandu_id);
-                });
-                break;
+            // case 'ketua-kader':
+            //     // Semua pengajuan di posyandu-nya
+            //     $ajuanQuery->whereHas('user', function ($q) use ($user) {
+            //         $q->where('posyandu_id', $user->posyandu_id);
+            //     });
+            //     $query->whereHas('user', function ($q) use ($user) {
+            //         $q->where('posyandu_id', $user->posyandu_id);
+            //     });
+            //     break;
 
             case 'admin-kecamatan':
-                // ✅ Semua pengajuan di kecamatannya
                 if ($user->kecamatan) {
-                    $ajuanQuery->whereHas('user', function ($q) use ($user) {
+                    $query->whereHas('user', function ($q) use ($user) {
                         $q->where('kecamatan', 'LIKE', '%' . $user->kecamatan . '%');
                     });
-                    $query->whereHas('user', function ($q) use ($user) {
+                    $actualCountsQuery->where('users.kecamatan', 'LIKE', '%' . $user->kecamatan . '%');
+                    $desasQuery->whereHas('user', function ($q) use ($user) {
                         $q->where('kecamatan', 'LIKE', '%' . $user->kecamatan . '%');
                     });
                 }
@@ -83,12 +97,42 @@ class DashboardController extends Controller
             case 'kabid':
                 // ✅ Semua pengajuan di kabupatennya
                 if ($user->kabupaten) {
-                    $ajuanQuery->whereHas('user', function ($q) use ($user) {
-                        $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%');
-                    });
+                    // Filter Tabel
                     $query->whereHas('user', function ($q) use ($user) {
                         $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%');
                     });
+                    // Filter Chart
+                    $actualCountsQuery->where('users.kabupaten', 'LIKE', '%' . $user->kabupaten . '%');
+                    // Filter Dropdown Desa
+                    $desasQuery->whereHas('user', function ($q) use ($user) {
+                        $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%');
+                    });
+                }
+                // Jika Kabid punya spesifik bidang (misal Kabid Kesehatan)
+                if ($user->bidang_id) {
+                    $query->where('bidang_id', $user->bidang_id);
+                    $actualCountsQuery->where('pengajuans.bidang_id', $user->bidang_id);
+                }
+                break;
+
+            case 'ketua-kader':
+            case 'operator-desa':
+            case 'ketua-posyandu':
+                if ($user->posyandu_id) {
+                    $query->whereHas('user', function ($q) use ($user) {
+                        $q->where('posyandu_id', $user->posyandu_id);
+                    });
+                    $actualCountsQuery->where('users.posyandu_id', $user->posyandu_id);
+                    $desasQuery->whereHas('user', function ($q) use ($user) {
+                        $q->where('posyandu_id', $user->posyandu_id);
+                    });
+                } else {
+                    // Fallback jika tidak punya posyandu_id (misal berdasarkan wilayah user)
+                    if ($user->desa) {
+                        $query->whereHas('user', fn($q) => $q->where('desa', $user->desa));
+                        $actualCountsQuery->where('users.desa', $user->desa);
+                        $desasQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
+                    }
                 }
                 break;
 
@@ -100,7 +144,6 @@ class DashboardController extends Controller
         // Filter Search
         if ($request->has('search') && $request->input('search') != '') {
             $searchTerm = $request->input('search');
-
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('deskripsi_pengajuan', 'like', '%' . $searchTerm . '%')
                     ->orWhere('status_pengajuan', 'like', '%' . $searchTerm . '%')
@@ -126,44 +169,48 @@ class DashboardController extends Controller
 
         if ($isVerified) {
             // ✅ Hitung jumlah pengajuan per bidang DENGAN FILTER ROLE
-            $actualCountsQuery = Pengajuan::query()
-                ->join('bidang_pengajuans', 'pengajuans.bidang_id', '=', 'bidang_pengajuans.id')
-                ->join('users', 'pengajuans.user_id', '=', 'users.id')
-                ->select('bidang_pengajuans.nama_bidang', DB::raw('count(pengajuans.id) as total'));
-
-            // ✅ Terapkan filter yang sama seperti di atas
-            switch ($user->role) {
-                case 'ketua-kader':
-                    $actualCountsQuery->where('users.posyandu_id', $user->posyandu_id);
-                    break;
-
-                case 'admin-kecamatan':
-                    if ($user->kecamatan) {
-                        $actualCountsQuery->where('users.kecamatan', 'LIKE', '%' . $user->kecamatan . '%');
-                    }
-                    break;
-
-                case 'kabid':
-                    if ($user->kabupaten) {
-                        $actualCountsQuery->where('users.kabupaten', 'LIKE', '%' . $user->kabupaten . '%');
-                    }
-                    break;
-
-                case 'admin':
-                    // Tidak ada filter
-                    break;
-            }
-
+            // $actualCountsQuery = Pengajuan::query()
+            //     ->join('bidang_pengajuans', 'pengajuans.bidang_id', '=', 'bidang_pengajuans.id')
+            //     ->join('users', 'pengajuans.user_id', '=', 'users.id')
+            //     ->select('bidang_pengajuans.nama_bidang', DB::raw('count(pengajuans.id) as total'));
             $actualCountsQuery->groupBy('bidang_pengajuans.nama_bidang');
             $actualCounts = $actualCountsQuery->pluck('total', 'nama_bidang');
-
             $ajuanCounts = $baseCounts->merge($actualCounts);
 
-            if ($ajuanCounts->isEmpty()) {
-                $ajuanCounts = $allBidangNames->mapWithKeys(function ($nama) {
-                    return [$nama => 0];
-                });
-            }
+
+            // ✅ Terapkan filter yang sama seperti di atas
+            // switch ($user->role) {
+            //     case 'ketua-kader':
+            //         $actualCountsQuery->where('users.posyandu_id', $user->posyandu_id);
+            //         break;
+
+            //     case 'admin-kecamatan':
+            //         if ($user->kecamatan) {
+            //             $actualCountsQuery->where('users.kecamatan', 'LIKE', '%' . $user->kecamatan . '%');
+            //         }
+            //         break;
+
+            //     case 'kabid':
+            //         if ($user->kabupaten) {
+            //             $actualCountsQuery->where('users.kabupaten', 'LIKE', '%' . $user->kabupaten . '%');
+            //         }
+            //         break;
+
+            //     case 'admin':
+            //         // Tidak ada filter
+            //         break;
+            // }
+
+            // $actualCountsQuery->groupBy('bidang_pengajuans.nama_bidang');
+            // $actualCounts = $actualCountsQuery->pluck('total', 'nama_bidang');
+
+            // $ajuanCounts = $baseCounts->merge($actualCounts);
+
+            // if ($ajuanCounts->isEmpty()) {
+            //     $ajuanCounts = $allBidangNames->mapWithKeys(function ($nama) {
+            //         return [$nama => 0];
+            //     });
+            // }
 
             // Ambil data pengajuan untuk tabel
             $semuaAjuan = $query->latest()->paginate(5)->withQueryString();
@@ -173,34 +220,33 @@ class DashboardController extends Controller
         }
 
         // Detect current user role
-        $currentUser = Auth::user();
+        // $currentUser = Auth::user();
 
-        // ✅ Ambil daftar desa berdasarkan role
-        $desasQuery = Pengajuan::with('user.posyandu');
+        // // ✅ Ambil daftar desa berdasarkan role
 
-        switch ($user->role) {
-            case 'ketua-kader':
-                $desasQuery->whereHas('user', function ($q) use ($user) {
-                    $q->where('posyandu_id', $user->posyandu_id);
-                });
-                break;
+        // switch ($user->role) {
+        //     case 'ketua-kader':
+        //         $desasQuery->whereHas('user', function ($q) use ($user) {
+        //             $q->where('posyandu_id', $user->posyandu_id);
+        //         });
+        //         break;
 
-            case 'admin-kecamatan':
-                if ($user->kecamatan) {
-                    $desasQuery->whereHas('user', function ($q) use ($user) {
-                        $q->where('kecamatan', 'LIKE', '%' . $user->kecamatan . '%');
-                    });
-                }
-                break;
+        //     case 'admin-kecamatan':
+        //         if ($user->kecamatan) {
+        //             $desasQuery->whereHas('user', function ($q) use ($user) {
+        //                 $q->where('kecamatan', 'LIKE', '%' . $user->kecamatan . '%');
+        //             });
+        //         }
+        //         break;
 
-            case 'kabid':
-                if ($user->kabupaten) {
-                    $desasQuery->whereHas('user', function ($q) use ($user) {
-                        $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%');
-                    });
-                }
-                break;
-        }
+        //     case 'kabid':
+        //         if ($user->kabupaten) {
+        //             $desasQuery->whereHas('user', function ($q) use ($user) {
+        //                 $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%');
+        //             });
+        //         }
+        //         break;
+        // }
 
         $desas = $desasQuery->get()
             ->map(fn($p) => optional($p->user->posyandu)->desa)
@@ -208,6 +254,8 @@ class DashboardController extends Controller
             ->unique()
             ->sort()
             ->values();
+
+        $currentUser = Auth::user();
 
         return view('dashboard', compact(
             'ajuanCounts',

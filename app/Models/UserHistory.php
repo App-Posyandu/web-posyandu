@@ -22,6 +22,11 @@ class UserHistory extends Model
         'new_data',
     ];
 
+    protected $casts = [
+        'new_data' => 'array',
+        'old_data' => 'array',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');

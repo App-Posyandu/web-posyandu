@@ -60,6 +60,21 @@
             </div>
         @endif
 
+        @if (auth()->user()->role === 'operator-desa')
+            <div class="bg-pink-50 border-l-4 border-pink-500 p-4 rounded-lg mb-6">
+                <div class="flex items-start">
+                    <i class="bi bi-info-circle-fill text-pink-500 mr-2 mt-0.5"></i>
+                    <div>
+                        <p class="text-sm font-medium text-gray-900">Kelola Kader di Posyandu Anda</p>
+                        <p class="text-xs text-gray-600 mt-1">
+                            Anda dapat melihat, reset password, dan mengaktifkan/menonaktifkan kader di
+                            <strong>{{ auth()->user()->posyandu->nama_posyandu ?? 'posyandu Anda' }}</strong>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         {{-- HEADER / FILTER --}}
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <h2 class="text-xl md:text-2xl font-bold text-gray-800">List Pengguna</h2>
@@ -115,6 +130,21 @@
                         </div>
                     </div>
 
+                    {{-- Filter Status (khusus Operator Desa) --}}
+                    @if (auth()->user()->role === 'operator-desa')
+                        <div class="w-full sm:w-48">
+                            <select name="status"
+                                class="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
+                                onchange="this.form.submit()">
+                                <option value="">Semua Status</option>
+                                <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Aktif
+                                </option>
+                                <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>
+                                    Nonaktif</option>
+                            </select>
+                        </div>
+                    @endif
+
                     @if ($search || $role)
                         <button wire:click="resetFilters" type="button"
                             class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors duration-150">
@@ -154,9 +184,11 @@
                             & NIK</th>
                         <th class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wide">Role
                         </th>
-                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wide">Status
+                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wide">
+                            Status
                         </th>
-                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wide">Action
+                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wide">
+                            Action
                         </th>
                     </tr>
                 </thead>
@@ -262,6 +294,50 @@
                                                 </button>
                                             </form>
                                         @endif
+                                    @endif
+
+                                    {{-- UNTUK OPERATOR DESA: Kelola Kader --}}
+                                    @if (auth()->user()->role === 'operator-desa')
+                                        <div class="flex justify-between">
+                                            {{-- Detail --}}
+                                            {{-- <a href="{{ route('admin.users.show', $user) }}"
+                                                class="px-3 py-1 bg-blue-500 text-white rounded-md text-xs hover:bg-blue-600">
+                                                <i class="bi bi-eye"></i> Detail
+                                            </a> --}}
+
+                                            {{-- Reset Password --}}
+                                            <button type="button"
+                                                onclick="openResetPasswordModal('{{ $user->id }}', '{{ $user->name }}')"
+                                                class="px-3 py-1 bg-yellow-500 text-white rounded-md text-xs hover:bg-yellow-600">
+                                                <i class="bi bi-key"></i> Reset
+                                            </button>
+
+                                            {{-- Activate/Deactivate --}}
+                                            @if ($user->is_active)
+                                                <button type="button"
+                                                    onclick="openDeactivateModal('{{ $user->id }}', '{{ $user->name }}')"
+                                                    class="px-3 py-1 bg-red-500 text-white rounded-md text-xs hover:bg-red-600">
+                                                    <i class="bi bi-x-circle"></i> Nonaktifkan
+                                                </button>
+                                            @else
+                                                <form action="{{ route('admin.users.reactivate', $user) }}"
+                                                    method="POST" class="inline">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <button type="submit"
+                                                        onclick="return confirm('Aktifkan kembali {{ $user->name }}?')"
+                                                        class="px-3 py-1 bg-green-500 text-white rounded-md text-xs hover:bg-green-600">
+                                                        <i class="bi bi-check-circle"></i> Aktifkan
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        </div>
+                                    @else
+                                        {{-- Action buttons untuk role lain (admin, ketua-kader, dll) --}}
+                                        {{-- <a href="{{ route('admin.users.show', $user) }}"
+                                            class="px-3 py-1 bg-blue-500 text-white rounded-md text-xs hover:bg-blue-600">
+                                            <i class="bi bi-eye"></i> Detail
+                                        </a> --}}
                                     @endif
                                 </div>
                             </td>
@@ -432,9 +508,120 @@
             @endforelse
         </div>
 
+        {{-- Modal Reset Password --}}
+        <div id="resetPasswordModal"
+            class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                <div class="mt-3">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Reset Password Kader</h3>
+                    <p class="text-sm text-gray-600 mb-4">Reset password untuk: <strong id="resetUserName"></strong>
+                    </p>
+
+                    <form id="resetPasswordForm" method="POST">
+                        @csrf
+                        @method('PATCH')
+
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Password Baru</label>
+                            <input type="password" name="new_password" required minlength="8"
+                                class="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500">
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Konfirmasi Password</label>
+                            <input type="password" name="new_password_confirmation" required minlength="8"
+                                class="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500">
+                        </div>
+
+                        <div class="flex gap-2">
+                            <button type="submit"
+                                class="flex-1 px-4 py-2 bg-pink-500 text-white rounded-md hover:bg-pink-600">
+                                Reset Password
+                            </button>
+                            <button type="button" onclick="closeResetPasswordModal()"
+                                class="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">
+                                Batal
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {{-- Modal Deactivate --}}
+        <div id="deactivateModal"
+            class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                <div class="mt-3">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Nonaktifkan Kader</h3>
+                    <p class="text-sm text-gray-600 mb-4">Nonaktifkan: <strong id="deactivateUserName"></strong></p>
+
+                    <form id="deactivateForm" method="POST">
+                        @csrf
+                        @method('PATCH')
+
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Alasan <span
+                                    class="text-red-500">*</span></label>
+                            <textarea name="reason" required rows="3" placeholder="Masukkan alasan menonaktifkan kader ini..."
+                                class="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"></textarea>
+                        </div>
+
+                        <div class="flex gap-2">
+                            <button type="submit"
+                                class="flex-1 px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">
+                                Nonaktifkan
+                            </button>
+                            <button type="button" onclick="closeDeactivateModal()"
+                                class="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">
+                                Batal
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         {{-- PAGINATION --}}
         <div class="mt-6">
             {{ $users->links() }}
         </div>
+
+        <script>
+            function openResetPasswordModal(userId, userName) {
+                document.getElementById('resetUserName').textContent = userName;
+                document.getElementById('resetPasswordForm').action = `/admin/users/${userId}/reset-password`;
+                document.getElementById('resetPasswordModal').classList.remove('hidden');
+            }
+
+            function closeResetPasswordModal() {
+                document.getElementById('resetPasswordModal').classList.add('hidden');
+                document.getElementById('resetPasswordForm').reset();
+            }
+
+            function openDeactivateModal(userId, userName) {
+                document.getElementById('deactivateUserName').textContent = userName;
+                document.getElementById('deactivateForm').action = `/admin/users/${userId}/deactivate`;
+                document.getElementById('deactivateModal').classList.remove('hidden');
+            }
+
+            function closeDeactivateModal() {
+                document.getElementById('deactivateModal').classList.add('hidden');
+                document.getElementById('deactivateForm').reset();
+            }
+
+            // Close modal when clicking outside
+            window.onclick = function(event) {
+                const resetModal = document.getElementById('resetPasswordModal');
+                const deactivateModal = document.getElementById('deactivateModal');
+
+                if (event.target == resetModal) {
+                    closeResetPasswordModal();
+                }
+                if (event.target == deactivateModal) {
+                    closeDeactivateModal();
+                }
+            }
+        </script>
     </div>
 </div>
