@@ -1,5 +1,6 @@
 @section('content')
-    <div class="flex flex-col gap-4 md:gap-6 px-4 sm:px-6 lg:px-8 w-full mx-auto">
+    <div x-data="dashboardFilter" x-init="init()"
+        class="flex flex-col gap-4 md:gap-6 px-4 sm:px-6 lg:px-8 w-full mx-auto">
         @if (!$isVerified)
             <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-3 md:p-4 rounded-lg" role="alert">
                 <div class="flex">
@@ -13,84 +14,207 @@
             </div>
         @endif
 
-        <!-- Dashboard Cards Section -->
-        <div class="bg-white overflow-hidden shadow-xl rounded-lg md:rounded-2xl p-4 md:p-6 lg:p-8 w-full">
-            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6">Dashboard Ajuan Pelayanan</h2>
-
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-                <!-- Cards Grid -->
-                <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-                    @php
-                        $bidangColors = [
-                            'Bidang Perumahan Rakyat' => 'bg-blue-500',
-                            'Bidang Pendidikan' => 'bg-orange-500',
-                            'Bidang Kesehatan' => 'bg-pink-500',
-                            'Bidang Sosial' => 'bg-rose-500',
-                            'Bidang Pekerjaan Umum' => 'bg-green-500',
-                            'Bidang Trantibumlinmas' => 'bg-yellow-500',
-                        ];
-                    @endphp
-                    @foreach ($ajuanCounts as $bidang => $total)
-                        <div
-                            class="{{ $bidangColors[$bidang] ?? 'bg-gray-500' }} text-white p-3 md:p-4 lg:py-4 lg:px-8 rounded-lg shadow-md flex items-center gap-3 md:gap-4">
-                            <span class="text-4xl md:text-5xl lg:text-6xl font-bold">{{ $total }}</span>
-                            <div class="flex flex-col gap-1 md:gap-2">
-                                <img src="{{ $icons[\Illuminate\Support\Str::slug(str_replace('Bidang ', '', $bidang))] ?? asset('assets/image/icon/bidang/default.svg') }}"
-                                    alt="{{ $bidang }} icon" class="w-6 h-6 md:w-8 md:h-8 mx-2 md:mx-3">
-                                <span
-                                    class="ml-2 md:ml-3 text-xs md:text-sm lg:text-base font-semibold leading-tight">{{ $bidang }}</span>
-                            </div>
-                        </div>
-                    @endforeach
+        {{-- ✅ YEAR FILTER SECTION --}}
+        <div class="bg-white overflow-hidden shadow-xl rounded-lg md:rounded-2xl p-4 md:p-6 w-full">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                {{-- Info Current Year --}}
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center w-12 h-12 bg-indigo-100 rounded-lg">
+                        <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                            </path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-600">Periode Data</h3>
+                        <p class="text-lg font-bold text-gray-800">
+                            Tahun {{ $selectedYear }}
+                            @if ($selectedYear == $currentYear)
+                                <span class="ml-2 px-2 py-1 text-xs font-semibold text-green-700 bg-green-100 rounded-full">
+                                    Tahun Berjalan
+                                </span>
+                            @else
+                                <span class="ml-2 px-2 py-1 text-xs font-semibold text-gray-600 bg-gray-100 rounded-full">
+                                    Data Historis
+                                </span>
+                            @endif
+                        </p>
+                    </div>
                 </div>
 
-                <!-- Pie Chart -->
-                <div class="bg-white p-3 md:p-4 rounded-lg" x-data="pieChartData" x-init="drawChart()">
-                    <canvas x-ref="pieChart"></canvas>
+                {{-- Year Selector --}}
+                <div class="flex items-center gap-3">
+                    <label for="yearFilter" class="text-sm font-medium text-gray-700 whitespace-nowrap">
+                        Pilih Tahun:
+                    </label>
+                    <form method="GET" action="{{ route('dashboard') }}" id="yearFilterForm" class="flex gap-2">
+                        {{-- Preserve existing filters --}}
+                        @if (request('search'))
+                            <input type="hidden" name="search" value="{{ request('search') }}">
+                        @endif
+                        @if (request('status'))
+                            <input type="hidden" name="status" value="{{ request('status') }}">
+                        @endif
+
+                        <select name="year" id="yearFilter" onchange="this.form.submit()"
+                            class="block w-full md:w-auto px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                            @foreach ($availableYears as $year)
+                                <option value="{{ $year }}" {{ $selectedYear == $year ? 'selected' : '' }}>
+                                    {{ $year }}
+                                    @if ($year == $currentYear)
+                                        (Tahun Ini)
+                                    @endif
+                                </option>
+                            @endforeach
+                        </select>
+
+                        {{-- Reset Button (jika bukan tahun berjalan) --}}
+                        @if ($selectedYear != $currentYear)
+                            <a href="{{ route('dashboard') }}"
+                                class="inline-flex items-center px-4 py-2 bg-gray-500 text-white text-sm rounded-lg hover:bg-gray-600 transition">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                                    </path>
+                                </svg>
+                                Reset
+                            </a>
+                        @endif
+                    </form>
+                </div>
+            </div>
+
+            {{-- Statistics Summary --}}
+            <div x-show="!loading && isVerified" class="mt-4 pt-4 border-t border-gray-200">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-indigo-600" x-text="statistics.total"></p>
+                        <p class="text-xs text-gray-600">Total Pengajuan</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-green-600" x-text="statistics.disetujui"></p>
+                        <p class="text-xs text-gray-600">Disetujui</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-yellow-600" x-text="statistics.diproses"></p>
+                        <p class="text-xs text-gray-600">Diproses</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-red-600" x-text="statistics.ditolak"></p>
+                        <p class="text-xs text-gray-600">Ditolak</p>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Loading Indicator --}}
+            <div x-show="loading" class="mt-4 pt-4 border-t border-gray-200 text-center">
+                <div class="inline-flex items-center gap-2 text-indigo-600">
+                    <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                            stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                        </path>
+                    </svg>
+                    <span class="text-sm">Memuat data...</span>
                 </div>
             </div>
         </div>
 
-        <!-- List Pengajuan Section -->
+        {{-- Info Message (Data Historis) --}}
+        <div x-show="selectedYear != currentYear" class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg" x-transition>
+            <div class="flex">
+                <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                        clip-rule="evenodd">
+                    </path>
+                </svg>
+                <div class="ml-3">
+                    <p class="text-sm text-blue-700">
+                        Anda sedang melihat data tahun <strong x-text="selectedYear"></strong> (data historis).
+                        <button @click="resetToCurrentYear()" class="font-semibold underline hover:text-blue-800">
+                            Kembali ke tahun <span x-text="currentYear"></span>
+                        </button>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Cards Section -->
+        @if (auth()->user()->role !== 'kabid')
+            <div class="bg-white overflow-hidden shadow-xl rounded-lg md:rounded-2xl p-4 md:p-6 lg:p-8 w-full">
+                <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6">Dashboard Ajuan Pelayanan</h2>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+                    <!-- Cards Grid -->
+                    <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                        @php
+                            $bidangColors = [
+                                'Bidang Perumahan Rakyat' => 'bg-blue-500',
+                                'Bidang Pendidikan' => 'bg-orange-500',
+                                'Bidang Kesehatan' => 'bg-pink-500',
+                                'Bidang Sosial' => 'bg-rose-500',
+                                'Bidang Pekerjaan Umum' => 'bg-green-500',
+                                'Bidang Trantibumlinmas' => 'bg-yellow-500',
+                            ];
+                        @endphp
+                        @foreach ($ajuanCounts as $bidang => $total)
+                            <div
+                                class="{{ $bidangColors[$bidang] ?? 'bg-gray-500' }} text-white p-3 md:p-4 lg:py-4 lg:px-8 rounded-lg shadow-md flex items-center gap-3 md:gap-4">
+                                <span class="text-4xl md:text-5xl lg:text-6xl font-bold">{{ $total }}</span>
+                                <div class="flex flex-col gap-1 md:gap-2">
+                                    <img src="{{ $icons[\Illuminate\Support\Str::slug(str_replace('Bidang ', '', $bidang))] ?? asset('assets/image/icon/bidang/default.svg') }}"
+                                        alt="{{ $bidang }} icon" class="w-6 h-6 md:w-8 md:h-8 mx-2 md:mx-3">
+                                    <span
+                                        class="ml-2 md:ml-3 text-xs md:text-sm lg:text-base font-semibold leading-tight">{{ $bidang }}</span>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    <!-- Pie Chart -->
+                    <div class="bg-white p-3 md:p-4 rounded-lg" x-data="pieChartData" x-init="drawChart()">
+                        <canvas x-ref="pieChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        {{-- List Pengajuan Section --}}
         <div class="w-full">
             <div class="bg-white overflow-hidden shadow-xl rounded-lg md:rounded-2xl p-4 md:p-6 lg:p-8">
-
-                <!-- Header with Search and Export -->
+                {{-- Header with Search and Export --}}
                 <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-4 md:mb-6">
                     <h2 class="text-xl md:text-2xl font-bold text-gray-800">List Pengajuan</h2>
 
                     <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 md:gap-3 w-full md:w-auto">
-                        <form action="{{ route('ajuan.index') }}" method="GET"
-                            class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
+                        {{-- Filter Status --}}
+                        <select x-model="filterStatus" @change="loadDashboardData()"
+                            class="border-gray-300 rounded-md shadow-sm text-sm w-full sm:w-auto px-3 py-2">
+                            <option value="">Semua Status</option>
+                            <option value="Diproses">Diproses</option>
+                            <option value="Disetujui">Disetujui</option>
+                            <option value="Ditolak">Ditolak</option>
+                        </select>
 
-                            <!-- Filter Status -->
-                            <select name="status" onchange="this.form.submit()"
-                                class="border-gray-300 rounded-md shadow-sm text-sm w-full sm:w-auto px-3 py-2">
-                                <option value="">Semua Status</option>
-                                <option value="Diproses" @selected(request('status') == 'Diproses')>Diproses</option>
-                                <option value="Disetujui" @selected(request('status') == 'Disetujui')>Disetujui</option>
-                                <option value="Ditolak" @selected(request('status') == 'Ditolak')>Ditolak</option>
-                            </select>
+                        {{-- Search Input --}}
+                        <div class="relative w-full sm:w-auto">
+                            <input type="text" x-model="searchQuery" @input.debounce.500ms="loadDashboardData()"
+                                placeholder="Cari berdasarkan nama..."
+                                class="w-full sm:w-64 pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm focus:ring-pink-500 focus:border-pink-500">
+                            <i class="bi bi-search absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400"></i>
+                        </div>
 
-                            <!-- Search Input -->
-                            <div class="relative w-full sm:w-auto">
-                                <input type="text" name="search" placeholder="Cari berdasarkan nama..."
-                                    value="{{ request('search') }}"
-                                    class="w-full sm:w-64 pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm focus:ring-pink-500 focus:border-pink-500">
-                                <button type="submit" class="absolute inset-y-0 right-0 flex items-center pr-3">
-                                    <i class="bi bi-search text-gray-400"></i>
-                                </button>
-                            </div>
+                        {{-- Reset Link --}}
+                        <button x-show="searchQuery || filterStatus" @click="resetFilters()"
+                            class="text-sm text-center sm:text-left text-gray-600 hover:text-gray-900 py-2 sm:py-0">
+                            Reset
+                        </button>
 
-                            <!-- Reset Link -->
-                            @if (request('search') || request('status'))
-                                <a href="{{ route('dashboard') }}"
-                                    class="text-sm text-center sm:text-left text-gray-600 hover:text-gray-900 py-2 sm:py-0">Reset</a>
-                            @endif
-                        </form>
-
-                        <!-- Export Button -->
-                        <button id="exportExcelBtn"
+                        {{-- Export Button --}}
+                        <button @click="exportData()"
                             class="flex items-center justify-center px-4 py-2 bg-green-500 text-white text-sm md:text-base rounded-md hover:bg-green-600 whitespace-nowrap">
                             <i class="bi bi-file-earmark-excel-fill mr-2"></i>
                             <span class="hidden sm:inline">Export to Excel</span>
@@ -99,24 +223,342 @@
                     </div>
                 </div>
 
-                <!-- Table -->
+                {{-- Table --}}
                 <div class="overflow-x-auto -mx-4 md:mx-0">
                     <div class="inline-block min-w-full align-middle">
-                        @include('ajuan.table', ['semuaAjuan' => $semuaAjuan])
+                        {{-- Loading State --}}
+                        <div x-show="loading" class="text-center py-12">
+                            <div class="inline-flex items-center gap-2 text-gray-600">
+                                <svg class="animate-spin h-8 w-8" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10"
+                                        stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor"
+                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                    </path>
+                                </svg>
+                                <span>Memuat data...</span>
+                            </div>
+                        </div>
+
+                        {{-- Table Content --}}
+                        <div x-show="!loading" x-html="tableHtml"></div>
                     </div>
                 </div>
 
-                <!-- Pagination -->
+                {{-- Pagination --}}
                 <div class="mt-4 flex justify-between items-center text-xs md:text-sm text-gray-600">
-                    {{ $semuaAjuan->links() }}
+                    <div x-html="paginationHtml"></div>
                 </div>
-
             </div>
         </div>
     </div>
 
+    @php
+        $chartData = $ajuanCounts
+            ->map(function ($total, $nama) use ($icons) {
+                $colorMap = [
+                    'Bidang Perumahan Rakyat' => 'bg-blue-500',
+                    'Bidang Pendidikan' => 'bg-orange-500',
+                    'Bidang Kesehatan' => 'bg-pink-500',
+                    'Bidang Sosial' => 'bg-rose-500',
+                    'Bidang Pekerjaan Umum' => 'bg-green-500',
+                    'Bidang Trantibumlinmas' => 'bg-yellow-500',
+                ];
+
+                // Buat slug untuk icon
+                $slug = \Illuminate\Support\Str::slug(str_replace('Bidang ', '', $nama));
+                $icon = $icons[$slug] ?? asset('assets/image/icon/bidang/default.svg');
+
+                return [
+                    'name' => $nama,
+                    'total' => $total,
+                    'color' => $colorMap[$nama] ?? 'bg-gray-500',
+                    'icon' => $icon,
+                ];
+            })
+            ->values();
+    @endphp
+
     <script>
         document.addEventListener('alpine:init', () => {
+            Alpine.data('dashboardFilter', () => ({
+                // State
+                currentYear: {{ $currentYear }},
+                selectedYear: {{ $selectedYear }},
+                availableYears: @json($availableYears),
+                searchQuery: '',
+                filterStatus: '',
+                loading: false,
+                isVerified: {{ $isVerified ? 'true' : 'false' }},
+
+                // Data
+                bidangData: @json($chartData),
+
+                statistics: {
+                    total: {{ $ajuanCounts->sum() }},
+                    disetujui: {{ $semuaAjuan->where('status_pengajuan', 'Disetujui')->count() }},
+                    diproses: {{ $semuaAjuan->where('status_pengajuan', 'Diproses')->count() }},
+                    ditolak: {{ $semuaAjuan->where('status_pengajuan', 'Ditolak')->count() }},
+                },
+
+                tableHtml: '',
+                paginationHtml: '',
+                chart: null,
+
+                // Methods
+                init() {
+                    this.drawChart();
+                    this.loadDashboardData();
+                },
+
+                async loadDashboardData() {
+                    if (!this.isVerified) return;
+
+                    this.loading = true;
+
+                    try {
+                        const params = new URLSearchParams({
+                            year: this.selectedYear,
+                            search: this.searchQuery,
+                            status: this.filterStatus,
+                            ajax: '1'
+                        });
+
+                        const response = await fetch(`{{ route('dashboard') }}?${params}`);
+                        const data = await response.json();
+
+                        // Update bidang data
+                        this.bidangData = data.bidangData;
+                        this.statistics = data.statistics;
+                        this.tableHtml = data.tableHtml;
+                        this.paginationHtml = data.paginationHtml;
+
+                        // Update chart
+                        this.updateChart();
+
+                    } catch (error) {
+                        console.error('Error loading dashboard data:', error);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                resetToCurrentYear() {
+                    this.selectedYear = this.currentYear;
+                    this.loadDashboardData();
+                },
+
+                resetFilters() {
+                    this.searchQuery = '';
+                    this.filterStatus = '';
+                    this.loadDashboardData();
+                },
+
+                drawChart() {
+                    if (typeof Chart === 'undefined') {
+                        setTimeout(() => this.drawChart(), 100);
+                        return;
+                    }
+
+                    const ctx = this.$refs.pieChart;
+                    if (!ctx) return;
+
+                    if (this.chart) {
+                        this.chart.destroy();
+                    }
+
+                    this.updateChart();
+                },
+
+                updateChart() {
+                    const ctx = this.$refs.pieChart;
+                    if (!ctx) return;
+
+                    if (this.chart) {
+                        this.chart.destroy();
+                    }
+
+                    const filteredData = this.bidangData.filter(item => item.total > 0);
+                    const labels = filteredData.length > 0 ?
+                        filteredData.map(item => item.name.replace('Bidang ', '')) : ['Tidak Ada Data'];
+                    const data = filteredData.length > 0 ?
+                        filteredData.map(item => item.total) : [1];
+
+                    const bidangColors = {
+                        'Perumahan Rakyat': 'rgb(59, 130, 246)',
+                        'Pendidikan': 'rgb(251, 146, 60)',
+                        'Kesehatan': 'rgb(236, 72, 153)',
+                        'Sosial': 'rgb(251, 113, 133)',
+                        'Pekerjaan Umum': 'rgb(34, 197, 94)',
+                        'Trantibumlinmas': 'rgb(234, 179, 8)'
+                    };
+
+                    const colors = labels.map(label => bidangColors[label] || 'rgb(209, 213, 219)');
+
+                    this.chart = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                data: data,
+                                backgroundColor: colors,
+                                borderWidth: 2,
+                                borderColor: '#fff',
+                                hoverOffset: 10
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 15,
+                                        font: {
+                                            size: 11
+                                        },
+                                        boxWidth: 12,
+                                        usePointStyle: true
+                                    }
+                                }
+                            }
+                        }
+                    });
+                },
+
+                exportData() {
+                    const userRole = "{{ auth()->user()->role }}";
+                    const userDesa = "{{ auth()->user()?->posyandu?->desa ?? '' }}";
+                    const bidangKabid = "{{ auth()->user()?->bidang?->nama_bidang ?? '' }}";
+                    const kabupatenKabid = "{{ auth()->user()->kabupaten ?? '' }}";
+
+                    // ✅ KABID: Show modal untuk pilih desa
+                    if (userRole === 'kabid') {
+                        this.showKabidExportModal();
+                        return;
+                    }
+
+                    // ✅ KETUA KADER: Langsung export (sudah ada bidang & desa)
+                    if (userRole === 'ketua-kader') {
+                        // Export dengan bidang & desa dari user
+                        window.location.href =
+                            `/admin/export-all-bidang-desa?year=${this.selectedYear}&kabupaten=${encodeURIComponent(kabupatenKabid)}`;
+                        return;
+                    }
+
+                    // ✅ ROLE LAIN: Export dengan tahun yang dipilih
+                    window.location.href = `/admin/export-all-bidang-desa?year=${this.selectedYear}`;
+                },
+
+                // ✅ METHOD BARU: Modal khusus untuk Kabid
+                showKabidExportModal() {
+                    const bidangKabid = "{{ auth()->user()->bidang?->nama_bidang ?? '' }}";
+                    console.log('Bidang Kabid:', bidangKabid);
+                    const kabupatenKabid = "{{ auth()->user()->kabupaten ?? '' }}";
+                    const desas = @json($desas ?? []);
+
+                    Swal.fire({
+                        title: '<h2 class="text-lg md:text-xl font-bold text-gray-800 mb-2">Export Data Pengajuan</h2>',
+                        html: `
+            <div class="space-y-6">
+                <!-- Info Bidang -->
+                <div class="bg-pink-50 border-l-4 border-pink-500 p-4 rounded-md">
+                    <div class="flex items-start">
+                        <i class="bi bi-info-circle-fill text-pink-500 mr-2 mt-0.5"></i>
+                        <div class="text-left">
+                            <p class="text-sm font-medium text-gray-900">Bidang Anda</p>
+                            <p class="text-xs text-gray-600 mt-1">
+                                Export data untuk bidang: <strong>${bidangKabid}</strong>
+                            </p>
+                            <p class="text-xs text-gray-600">
+                                Wilayah: <strong>${kabupatenKabid}</strong>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pilih Desa -->
+                <div class="text-left">
+                    <label class="block text-start font-semibold mb-2 text-gray-700">Pilih Desa:</label>
+                    <select id="kabidDesaSelect" class="w-full border border-gray-300 rounded-md p-3 focus:ring-2 focus:ring-pink-500 focus:border-pink-500">
+                        <option value="" disabled selected>Pilih Desa</option>
+                        <option value="all" class="font-bold">📊 Semua Desa di ${kabupatenKabid}</option>
+                        <optgroup label="Desa Spesifik:">
+                            ${desas.map(d => `<option value="${d}">${d}</option>`).join('')}
+                        </optgroup>
+                    </select>
+                    <p class="text-xs text-gray-500 mt-2">
+                        <i class="bi bi-lightbulb"></i>
+                        Pilih "Semua Desa" untuk export seluruh data di ${kabupatenKabid}
+                    </p>
+                </div>
+
+                <!-- Buttons -->
+                <div class="flex justify-between gap-4 mt-6">
+                    <button id="cancelKabidExport"
+                        class="bg-gray-500 text-white hover:bg-gray-600 font-medium rounded-md py-3 px-6 w-1/2 shadow transition-colors">
+                        Batal
+                    </button>
+                    <button id="confirmKabidExport"
+                        class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-md py-3 px-6 w-1/2 shadow transition-colors">
+                        <i class="bi bi-file-earmark-excel mr-2"></i>
+                        Export Data
+                    </button>
+                </div>
+            </div>
+        `,
+                        showConfirmButton: false,
+                        showCancelButton: false,
+                        width: 600,
+                        background: '#f9fafb',
+                        customClass: {
+                            popup: 'rounded-md md:rounded-2xl shadow-2xl p-6'
+                        }
+                    });
+
+                    // Event listeners
+                    const handleKabidExport = (e) => {
+                        if (e.target.id === 'cancelKabidExport') {
+                            Swal.close();
+                            document.removeEventListener('click', handleKabidExport);
+                        }
+
+                        if (e.target.id === 'confirmKabidExport') {
+                            const desaSelect = document.getElementById('kabidDesaSelect');
+                            const selectedDesa = desaSelect?.value;
+
+                            if (!selectedDesa) {
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: 'Desa Belum Dipilih!',
+                                    text: 'Silakan pilih desa terlebih dahulu.',
+                                    confirmButtonColor: '#f87171'
+                                });
+                                return;
+                            }
+
+                            // ✅ Export dengan parameter yang benar
+                            const selectedYear = this.selectedYear;
+
+                            if (selectedDesa === 'all') {
+                                // Export semua desa di kabupatennya untuk bidangnya
+                                window.location.href =
+                                    `/admin/export/${encodeURIComponent(bidangKabid)}`;
+                            } else {
+                                // Export desa tertentu untuk bidangnya
+                                window.location.href =
+                                    `/admin/export/${encodeURIComponent(bidangKabid)}/${encodeURIComponent(selectedDesa)}`;
+                            }
+
+                            Swal.close();
+                            document.removeEventListener('click', handleKabidExport);
+                        }
+                    };
+
+                    document.addEventListener('click', handleKabidExport);
+                }
+            }));
             Alpine.data('pieChartData', () => ({
                 chart: null,
 
@@ -242,25 +684,47 @@
 
         const userRole = "{{ Auth::user()->role }}";
         const userDesa = "{{ Auth::user()?->posyandu?->desa ?? '' }}";
+        const bidangKabid = "{{ Auth::user()?->bidang?->nama_bidang ?? '' }}"; // ✅ Fixed: nama_bidang bukan name
 
         document.getElementById('exportExcelBtn').addEventListener('click', function() {
-            let bidangSelectHTML = `
-        <div class="flex flex-col justify-start">
-            <label class="block text-start font-semibold mb-1 text-gray-700">Pilih Bidang:</label>
-            <select id="selectBidang" class="w-full border rounded-md p-2" required>
-                <option value="" disabled selected>Pilih Bidang</option>
-                <option value="all">Semua Bidang</option>
-                <option value="Bidang Perumahan Rakyat">Bidang Perumahan Rakyat</option>
-                <option value="Bidang Pendidikan">Bidang Pendidikan</option>
-                <option value="Bidang Kesehatan">Bidang Kesehatan</option>
-                <option value="Bidang Sosial">Bidang Sosial</option>
-                <option value="Bidang Pekerjaan Umum">Bidang Pekerjaan Umum</option>
-                <option value="Bidang Trantibumlinmas">Bidang Trantibumlinmas</option>
-            </select>
-        </div>
-    `;
+            // ✅ KABID: Tidak perlu pilih bidang (sudah ada di profil)
+            let bidangSelectHTML = "";
+
+            if (userRole !== 'kabid') {
+                bidangSelectHTML = `
+            <div class="flex flex-col justify-start">
+                <label class="block text-start font-semibold mb-1 text-gray-700">Pilih Bidang:</label>
+                <select id="selectBidang" class="w-full border rounded-md p-2" required>
+                    <option value="" disabled selected>Pilih Bidang</option>
+                    <option value="all">Semua Bidang</option>
+                    <option value="Bidang Perumahan Rakyat">Bidang Perumahan Rakyat</option>
+                    <option value="Bidang Pendidikan">Bidang Pendidikan</option>
+                    <option value="Bidang Kesehatan">Bidang Kesehatan</option>
+                    <option value="Bidang Sosial">Bidang Sosial</option>
+                    <option value="Bidang Pekerjaan Umum">Bidang Pekerjaan Umum</option>
+                    <option value="Bidang Trantibumlinmas">Bidang Trantibumlinmas</option>
+                </select>
+            </div>
+        `;
+            } else {
+                // ✅ KABID: Tampilkan info bidang yang sudah ditetapkan
+                bidangSelectHTML = `
+            <div class="bg-pink-50 border-l-4 border-pink-500 p-4 rounded-md">
+                <div class="flex items-start">
+                    <i class="bi bi-info-circle-fill text-pink-500 mr-2 mt-0.5"></i>
+                    <div>
+                        <p class="text-sm font-medium text-gray-900">Bidang Anda</p>
+                        <p class="text-xs text-gray-600 mt-1">
+                            Export data untuk bidang: <strong>${bidangKabid}</strong>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        `;
+            }
 
             let desaSelectHTML = "";
+
             @if (Auth::user()->role === 'kabid')
                 const desas = @json($desas);
 
@@ -274,7 +738,7 @@
                     <input
                         type="text"
                         id="desaSearch"
-                        placeholder="Cari desa..."
+                        placeholder="Cari desa atau pilih 'Semua Desa'..."
                         class="block w-full border border-gray-300 rounded-md p-2"
                         autocomplete="off"
                     >
@@ -297,7 +761,7 @@
             @endif
 
             Swal.fire({
-                title: '<h2 class="text-lg md:text-xl font-bold text-gray-800 mb-2">Pilih Bidang & Desa untuk Di-Export</h2>',
+                title: '<h2 class="text-lg md:text-xl font-bold text-gray-800 mb-2">Export Data Pengajuan</h2>',
                 html: `
             <div class="space-y-8">
                 ${bidangSelectHTML}
@@ -324,7 +788,9 @@
                 didOpen: () => {
                     // Initialize dropdown desa dengan vanilla JS
                     @if (Auth::user()->role === 'kabid')
-                        const desas = @json($desas);
+                        const desas = ['all', ...
+                            @json($desas)
+                        ]; // ✅ Tambahkan opsi 'all'
                         const searchInput = document.getElementById('desaSearch');
                         const dropdownList = document.getElementById('desaDropdownList');
                         const desaOptions = document.getElementById('desaOptions');
@@ -343,17 +809,22 @@
                                 return;
                             }
 
-                            desaOptions.innerHTML = filtered.map(desa =>
-                                `<div class="desa-option px-4 py-2 cursor-pointer hover:bg-indigo-50" data-value="${desa}">
-                            ${desa}
-                        </div>`
-                            ).join('');
+                            desaOptions.innerHTML = filtered.map(desa => {
+                                const displayText = desa === 'all' ?
+                                    '<strong>Semua Desa</strong>' :
+                                    desa;
+
+                                return `<div class="desa-option px-4 py-2 cursor-pointer hover:bg-indigo-50 ${desa === 'all' ? 'bg-indigo-50 border-b-2 border-indigo-200' : ''}" data-value="${desa}">
+                            ${displayText}
+                        </div>`;
+                            }).join('');
 
                             // Event listener untuk setiap option
                             document.querySelectorAll('.desa-option').forEach(option => {
                                 option.addEventListener('click', function() {
                                     const value = this.getAttribute('data-value');
-                                    searchInput.value = value;
+                                    searchInput.value = value === 'all' ? 'Semua Desa' :
+                                        value;
                                     desaValue.value = value;
                                     dropdownList.classList.add('hidden');
                                 });
@@ -399,15 +870,28 @@
                 }
 
                 if (e.target.id === 'confirmExportBtn') {
-                    let bidang = document.getElementById('selectBidang').value;
+                    let bidang = null;
                     let desa = null;
 
-                    if (userRole === 'ketua-kader') {
+                    // ✅ HANDLE BIDANG
+                    if (userRole === 'kabid') {
+                        // Kabid: Gunakan bidang dari profil
+                        bidang = bidangKabid;
+                    } else if (userRole === 'ketua-kader') {
+                        // Ketua Kader: Bisa pilih bidang dari dropdown
+                        bidang = document.getElementById('selectBidang')?.value;
                         desa = userDesa;
-                    } else if (userRole === 'kabid') {
+                    } else {
+                        // Role lain: Pilih dari dropdown
+                        bidang = document.getElementById('selectBidang')?.value;
+                    }
+
+                    // ✅ HANDLE DESA
+                    if (userRole === 'kabid') {
                         desa = document.getElementById('desaValue')?.value || '';
                     }
 
+                    // ✅ VALIDASI
                     if (!bidang) {
                         Swal.fire({
                             icon: 'warning',
@@ -438,39 +922,32 @@
         });
 
         function exportData(bidang, desa) {
+            const selectedYear = '{{ $selectedYear }}';
+
             if (userRole === 'ketua-kader') {
-                const url = `/admin/export/${encodeURIComponent(bidang)}/${userDesa}`;
+                // Ketua Kader: Export bidang tertentu di desanya
+                const url = `/admin/export/${encodeURIComponent(bidang)}/${userDesa}?year=${selectedYear}`;
                 window.location.href = url;
-            } else if (bidang === 'all' && userRole === 'kabid') {
-                window.location.href = `/admin/export-all/${desa}`;
+            } else if (userRole === "kabid") {
+                // ✅ KABID: Export bidangnya di desa tertentu atau semua desa
+                if (desa === 'all') {
+                    // Export semua desa untuk bidangnya
+                    window.location.href =
+                        `/admin/export-all-bidang-desa?year=${selectedYear}&bidang=${encodeURIComponent(bidang)}`;
+                } else {
+                    // Export desa tertentu untuk bidangnya
+                    const url =
+                        `/admin/export/${encodeURIComponent(bidang)}/${encodeURIComponent(desa)}?year=${selectedYear}`;
+                    window.location.href = url;
+                }
+            } else if (bidang === 'all' && userRole === 'ketua-posyandu') {
+                // Ketua Posyandu: Export semua bidang
+                window.location.href = `/admin/export-all/${desa}?year=${selectedYear}`;
             } else {
-                const url = `/admin/export/${encodeURIComponent(bidang)}/${encodeURIComponent(desa)}`;
+                // Role lain: Export bidang tertentu di desa tertentu
+                const url = `/admin/export/${encodeURIComponent(bidang)}/${encodeURIComponent(desa)}?year=${selectedYear}`;
                 window.location.href = url;
             }
         }
-    </script>
-    <script>
-        document.addEventListener("alpine:init", () => {
-            Alpine.data("desaDropdown", () => ({
-                open: false,
-                search: "",
-                selected: "",
-                desas: @json($desas), // ← dari database
-
-                filteredDesa() {
-                    if (this.search === "") return this.desas;
-                    return this.desas.filter(d =>
-                        d.toLowerCase().includes(this.search.toLowerCase())
-                    );
-                },
-
-                selectDesa(desa) {
-                    this.selected = desa;
-                    this.search = desa;
-                    this.open = false;
-                    document.getElementById("desaValue").value = desa;
-                },
-            }));
-        });
     </script>
 @endsection

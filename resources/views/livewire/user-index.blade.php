@@ -96,6 +96,11 @@
                             <option value="admin-kecamatan">Admin Kecamatan</option>
                             <option value="operator-desa">Operator Desa</option>
                             <option value="kabid">Kabid</option>
+                        @elseif ($currentUser->role === 'admin-kabupaten')
+                            <option value="">Semua Role</option>
+                            <option value="kabid">Kabid</option>
+                            <option value="admin-kecamatan">Admin Kecamatan</option>
+                            <option value="ketua-kader">Ketua Kader</option>
                         @elseif ($currentUser->role === 'kabid')
                             <option value="">Semua Role</option>
                             <option value="admin-kecamatan">Admin Kecamatan</option>
@@ -332,12 +337,41 @@
                                                 </form>
                                             @endif
                                         </div>
-                                    @else
-                                        {{-- Action buttons untuk role lain (admin, ketua-kader, dll) --}}
-                                        {{-- <a href="{{ route('admin.users.show', $user) }}"
-                                            class="px-3 py-1 bg-blue-500 text-white rounded-md text-xs hover:bg-blue-600">
-                                            <i class="bi bi-eye"></i> Detail
-                                        </a> --}}
+                                    @elseif(auth()->user()->role === 'admin-kabupaten')
+                                        <div class="flex justify-between">
+                                            {{-- Detail --}}
+                                            {{-- <a href="{{ route('admin.users.show', $user) }}"
+                                                class="px-3 py-1 bg-blue-500 text-white rounded-md text-xs hover:bg-blue-600">
+                                                <i class="bi bi-eye"></i> Detail
+                                            </a> --}}
+
+                                            {{-- Reset Password --}}
+                                            <button type="button"
+                                                onclick="openResetPasswordModalKabid('{{ $user->id }}', '{{ $user->name }}')"
+                                                class="px-3 py-1 bg-yellow-500 text-white rounded-md text-xs hover:bg-yellow-600">
+                                                <i class="bi bi-key"></i> Reset
+                                            </button>
+
+                                            {{-- Activate/Deactivate --}}
+                                            @if ($user->is_active)
+                                                <button type="button"
+                                                    onclick="openDeactivateModalKabid('{{ $user->id }}', '{{ $user->name }}')"
+                                                    class="px-3 py-1 bg-red-500 text-white rounded-md text-xs hover:bg-red-600">
+                                                    <i class="bi bi-x-circle"></i> Nonaktifkan
+                                                </button>
+                                            @else
+                                                <form action="{{ route('admin.users.reactivate-kabid', $user) }}"
+                                                    method="POST" class="inline">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <button type="submit"
+                                                        onclick="return confirm('Aktifkan kembali {{ $user->name }}?')"
+                                                        class="px-3 py-1 bg-green-500 text-white rounded-md text-xs hover:bg-green-600">
+                                                        <i class="bi bi-check-circle"></i> Aktifkan
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        </div>
                                     @endif
                                 </div>
                             </td>
@@ -582,6 +616,80 @@
             </div>
         </div>
 
+        {{-- Modal Reset Password --}}
+        <div id="resetPasswordModalKabid"
+            class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                <div class="mt-3">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Reset Password</h3>
+                    <p class="text-sm text-gray-600 mb-4">Reset password untuk: <strong id="resetUserNameKabid"></strong>
+                    </p>
+
+                    <form id="resetPasswordFormKabid" method="POST">
+                        @csrf
+                        @method('PATCH')
+
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Password Baru</label>
+                            <input type="password" name="new_password" required minlength="8"
+                                class="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500">
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Konfirmasi Password</label>
+                            <input type="password" name="new_password_confirmation" required minlength="8"
+                                class="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500">
+                        </div>
+
+                        <div class="flex gap-2">
+                            <button type="submit"
+                                class="flex-1 px-4 py-2 bg-pink-500 text-white rounded-md hover:bg-pink-600">
+                                Reset Password
+                            </button>
+                            <button type="button" onclick="closeResetPasswordModalKabid()"
+                                class="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">
+                                Batal
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {{-- Modal Deactivate --}}
+        <div id="deactivateModalKabid"
+            class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                <div class="mt-3">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Nonaktifkan Kader</h3>
+                    <p class="text-sm text-gray-600 mb-4">Nonaktifkan: <strong id="deactivateUserNameKabid"></strong></p>
+
+                    <form id="deactivateFormKabid" method="POST">
+                        @csrf
+                        @method('PATCH')
+
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Alasan <span
+                                    class="text-red-500">*</span></label>
+                            <textarea name="reason" required rows="3" placeholder="Masukkan alasan menonaktifkan kader ini..."
+                                class="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"></textarea>
+                        </div>
+
+                        <div class="flex gap-2">
+                            <button type="submit"
+                                class="flex-1 px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">
+                                Nonaktifkan
+                            </button>
+                            <button type="button" onclick="closeDeactivateModalKabid()"
+                                class="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">
+                                Batal
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         {{-- PAGINATION --}}
         <div class="mt-6">
             {{ $users->links() }}
@@ -620,6 +728,42 @@
                 }
                 if (event.target == deactivateModal) {
                     closeDeactivateModal();
+                }
+            }
+        </script>
+        <script>
+            function openResetPasswordModalKabid(userId, userName) {
+                document.getElementById('resetUserNameKabid').textContent = userName;
+                document.getElementById('resetPasswordFormKabid').action = `/users/${userId}/reset-password-kabid`;
+                document.getElementById('resetPasswordModalKabid').classList.remove('hidden');
+            }
+
+            function closeResetPasswordModalKabid() {
+                document.getElementById('resetPasswordModalKabid').classList.add('hidden');
+                document.getElementById('resetPasswordFormKabid').reset();
+            }
+
+            function openDeactivateModalKabid(userId, userName) {
+                document.getElementById('deactivateUserNameKabid').textContent = userName;
+                document.getElementById('deactivateFormKabid').action = `/users/${userId}/deactivate-kabid`;
+                document.getElementById('deactivateModalKabid').classList.remove('hidden');
+            }
+
+            function closeDeactivateModalKabid() {
+                document.getElementById('deactivateModalKabid').classList.add('hidden');
+                document.getElementById('deactivateFormKabid').reset();
+            }
+
+            // Close modal when clicking outside
+            window.onclick = function(event) {
+                const resetModal = document.getElementById('resetPasswordModalKabid');
+                const deactivateModal = document.getElementById('deactivateModalKabid');
+
+                if (event.target == resetModal) {
+                    closeResetPasswordModalKabid();
+                }
+                if (event.target == deactivateModal) {
+                    closeDeactivateModalKabid();
                 }
             }
         </script>

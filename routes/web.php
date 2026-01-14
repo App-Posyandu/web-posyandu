@@ -16,9 +16,150 @@ use App\Models\Kecamatan;
 use App\Models\Posyandu;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\File;
 
 Route::get('/', function () {
     return redirect()->route('login');
+});
+
+Route::get('/cetak-laporan-teknologi', function () {
+    // 1. Definisi Deskripsi & Kategori (Database Kecil)
+    // Kita map package ke deskripsi bahasa Indonesia agar laporan terlihat profesional
+    $libraryMap = [
+        // Backend (Composer)
+        'laravel/framework' => 'Core Framework utama aplikasi.',
+        'livewire/livewire' => 'Framework full-stack untuk antarmuka dinamis.',
+        'maatwebsite/excel' => 'Fitur Export dan Import data Excel.',
+        'phpoffice/phpspreadsheet' => 'Engine pengolah spreadsheet (Excel).',
+        'barryvdh/laravel-dompdf' => 'Library untuk mencetak laporan PDF.',
+        'dompdf/dompdf' => 'Converter HTML ke PDF.',
+        'laravel/socialite' => 'Autentikasi login pihak ketiga (Google/Sosmed).',
+        'sweetalert2/laravel' => 'Notifikasi popup interaktif (Server side).',
+        'blade-ui-kit/blade-icons' => 'Komponen ikon untuk Blade template.',
+        'mckenziearts/blade-untitledui-icons' => 'Set ikon tambahan untuk UI.',
+
+        // Frontend (NPM)
+        'tailwindcss' => 'Framework CSS Utility-first untuk styling tampilan.',
+        'chart.js' => 'Library untuk visualisasi grafik data.',
+        'chartjs-plugin-datalabels' => 'Plugin label data untuk grafik.',
+        'alpinejs' => 'Interaktivitas ringan JavaScript (Dropdown, Modal).',
+        'axios' => 'HTTP Client untuk request API.',
+        'sweetalert2' => 'Notifikasi popup cantik (Client side).',
+        'bootstrap-icons' => 'Set ikon vektor standar.',
+    ];
+
+    // 2. Baca File Composer.json
+    $composerPath = base_path('composer.json');
+    $composerData = json_decode(File::get($composerPath), true);
+    $composerPackages = $composerData['require'] ?? [];
+
+    // 3. Baca File Package.json
+    $npmPath = base_path('package.json');
+    $npmData = json_decode(File::get($npmPath), true);
+    // Gabung dependencies dan devDependencies (karena Tailwind sering di dev)
+    $npmPackages = array_merge(
+        $npmData['dependencies'] ?? [],
+        $npmData['devDependencies'] ?? []
+    );
+
+    // 4. Filter: Hanya ambil yang ada di daftar $libraryMap (Yang penting saja)
+    $laporan = [
+        'backend' => [],
+        'frontend' => []
+    ];
+
+    foreach ($composerPackages as $name => $version) {
+        if (isset($libraryMap[$name])) {
+            $laporan['backend'][] = [
+                'name' => $name,
+                'version' => $version,
+                'desc' => $libraryMap[$name]
+            ];
+        }
+    }
+
+    foreach ($npmPackages as $name => $version) {
+        if (isset($libraryMap[$name])) {
+            $laporan['frontend'][] = [
+                'name' => $name,
+                'version' => $version,
+                'desc' => $libraryMap[$name]
+            ];
+        }
+    }
+
+    // 5. Generate PDF menggunakan Blade View on-the-fly
+    $html = '
+    <html>
+    <head>
+        <style>
+            body { font-family: sans-serif; color: #333; }
+            h1 { text-align: center; color: #2d3748; }
+            h3 { border-bottom: 2px solid #4a5568; padding-bottom: 5px; margin-top: 30px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+            th { background-color: #f7fafc; }
+            .badge { background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; font-family: monospace; }
+        </style>
+    </head>
+    <body>
+        <h1>Laporan Teknologi Aplikasi Posyandu</h1>
+        <p>Berikut adalah daftar pustaka (library) dan teknologi utama yang digunakan untuk membangun fitur aplikasi ini.</p>
+
+        <h3>A. Backend & Framework (PHP/Laravel)</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nama Package</th>
+                    <th>Versi</th>
+                    <th>Fungsi Utama</th>
+                </tr>
+            </thead>
+            <tbody>';
+
+    foreach ($laporan['backend'] as $item) {
+        $html .= '<tr>
+            <td><strong>' . $item['name'] . '</strong></td>
+            <td><span class="badge">' . $item['version'] . '</span></td>
+            <td>' . $item['desc'] . '</td>
+        </tr>';
+    }
+
+    $html .= '</tbody>
+        </table>
+
+        <h3>B. Frontend & UI (Node.js)</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nama Package</th>
+                    <th>Versi</th>
+                    <th>Fungsi Utama</th>
+                </tr>
+            </thead>
+            <tbody>';
+
+    foreach ($laporan['frontend'] as $item) {
+        $html .= '<tr>
+            <td><strong>' . $item['name'] . '</strong></td>
+            <td><span class="badge">' . $item['version'] . '</span></td>
+            <td>' . $item['desc'] . '</td>
+        </tr>';
+    }
+
+    $html .= '</tbody>
+        </table>
+
+        <br><br>
+        <p style="text-align: right; font-size: 0.9em; color: #777;">
+            <em>Generated automatically by System on ' . date('d F Y') . '</em>
+        </p>
+    </body>
+    </html>';
+
+    // Load HTML ke DomPDF
+    $pdf = Pdf::loadHTML($html);
+    return $pdf->stream('Laporan-Teknologi-Posyandu.pdf');
 });
 
 Route::prefix('api/wilayah')->group(function () {
@@ -156,8 +297,15 @@ Route::middleware('auth')->group(function () {
         Route::post('/takeover/{kader}/reset', [UserController::class, 'takeoverResetPassword'])->name('takeover.reset');
     });
 
+    // // Admin Kabupaten routes
+    Route::middleware(['auth', 'role:admin-kabupaten'])->group(function () {
+        Route::patch('/users/{user}/reset-password-kabid', [UserController::class, 'resetPasswordKabid']);
+        Route::patch('/users/{user}/deactivate-kabid', [UserController::class, 'deactivateUserKabid']);
+        Route::patch('/users/{user}/reactivate-kabid', [UserController::class, 'reactivateUserKabid'])->name('admin.users.reactivate-kabid');
+    });
+
     // ✅ ADMIN ROUTES
-    Route::middleware(['role:kabid,kader,admin,ketua-kader,admin-kecamatan,operator-desa,ketua-posyandu'])->prefix('admin')->name('admin.')->group(function () {
+    Route::middleware(['role:kabid,kader,admin,ketua-kader,admin-kecamatan,admin-kabupaten,operator-desa,ketua-posyandu'])->prefix('admin')->name('admin.')->group(function () {
         Route::get('admin/posyandu/clear-cache', [PosyanduController::class, 'clearWilayahCache'])
             ->middleware(['auth', 'admin'])
             ->name('admin.posyandu.clear-cache');
@@ -205,6 +353,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/export-all/{desa}', [LaporanController::class, 'exportExcelAll'])->name('laporan.exportExcelAll');
         Route::get('/export/{bidang}/{desa}', [LaporanController::class, 'exportExcelBidang'])->name('laporan.exportExcelBidang');
         Route::get('/export-all-bidang-desa', [LaporanController::class, 'exportExcelAllBidangDanDesa'])->name('laporan.exportExcelAllBidangDanDesa');
+        Route::get('/export/{bidang}', [LaporanController::class, 'exportBidangAllDesa'])->name('laporan.exportBidangAllDesa');
     });
 });
 

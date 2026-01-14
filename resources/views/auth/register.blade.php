@@ -269,7 +269,7 @@
                 <x-input-error :messages="$errors->get('kk')" class="mt-2" />
             </div> --}}
 
-            <div class="md:col-span-2">
+            {{-- <div class="md:col-span-2">
                 <x-input-label class="text-sm md:text-lg" for="role" :value="__('Role')" />
                 <select id="role" name="role"
                     class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
@@ -279,7 +279,7 @@
                     <option value="kader" @selected(old('role') == 'kader')>Kader</option>
                 </select>
                 <x-input-error :messages="$errors->get('role')" class="mt-2" />
-            </div>
+            </div> --}}
 
             {{-- ✅ DROPDOWN BIDANG (HANYA MUNCUL JIKA ROLE = KADER) --}}
             <div id="bidang-field" style="display: none;" class="md:col-span-2">

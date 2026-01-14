@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\BukuSaku;
 use App\Models\Pengajuan;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -18,7 +19,8 @@ class DatabaseSeeder extends Seeder
             PosyanduSeeder::class,
             BidangSeeder::class,
             UserSeeder::class,
-            // PengajuanSeeder::class,
+            PengajuanSeeder::class,
         ]);
+        BukuSaku::factory(5)->create();
     }
 }

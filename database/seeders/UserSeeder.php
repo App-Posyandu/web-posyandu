@@ -44,6 +44,6 @@ class UserSeeder extends Seeder
         ]);
 
         // 5. Factory Anda juga harus sudah diperbarui
-        User::factory(15)->create();
+        User::factory(5)->create();
     }
 }

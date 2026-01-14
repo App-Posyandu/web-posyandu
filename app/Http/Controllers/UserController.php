@@ -85,8 +85,15 @@ class UserController extends Controller
                 $query->whereIn('role', ['admin-kecamatan', 'ketua-kader', 'operator-desa', 'kader', 'masyarakat']);
                 break;
 
-            case 'ketua-posyandu':
+            case 'admin-kabupaten':
                 $query->whereIn('role', ['kabid', 'admin-kecamatan', 'ketua-kader', 'operator-desa', 'kader', 'masyarakat']);
+                if ($currentUser->kabupaten) {
+                    $query->where('kabupaten', 'LIKE', "%{$currentUser->kabupaten}%");
+                }
+                break;
+
+            case 'ketua-posyandu':
+                $query->whereIn('role', ['admin-kabupaten', 'kabid', 'admin-kecamatan', 'ketua-kader', 'operator-desa', 'kader', 'masyarakat']);
                 break;
         }
 
@@ -154,8 +161,8 @@ class UserController extends Controller
         if ($currentUser->role === 'ketua-kader') {
             $posyandus = Posyandu::where('id', $currentUser->posyandu_id)->get();
         } elseif ($currentUser->role === 'operator-desa') {
-            $posyandus = Posyandu::where('desa', $currentUser->desa)
-                ->where('kecamatan', $currentUser->kecamatan)
+            $posyandus = Posyandu::where('desa', $currentUser->posyandu->desa)
+                ->where('kecamatan', $currentUser->posyandu->kecamatan)
                 ->orderBy('nama_posyandu')->get();
         } elseif ($currentUser->role === 'admin-kecamatan') {
             $posyandus = Posyandu::where('kecamatan_id', $currentUser->kecamatan_id)
@@ -480,6 +487,14 @@ class UserController extends Controller
                 'kabid',
                 'admin-kecamatan',
                 'ketua-kader',
+                'kader',
+                'masyarakat',
+            ],
+            'admin-kabupaten' => [
+                'kabid',
+                'admin-kecamatan',
+                'ketua-kader',
+                'operator-desa',
                 'kader',
                 'masyarakat',
             ],
@@ -1105,6 +1120,38 @@ class UserController extends Controller
         return redirect()->back()->with('success', 'Password kader berhasil direset');
     }
 
+    public function resetPasswordKabid(Request $request, User $user)
+    {
+        $currentUser = Auth::user();
+
+        if ($currentUser->role !== 'admin-kabupaten') {
+            return redirect()->back()->with('error', 'Unauthorized');
+        }
+
+        if (
+            !in_array($user->role, ['kabid', 'ketua-kader']) ||
+            $user->kabupaten !== $currentUser->kabupaten
+        ) {
+            return redirect()->back()->with('error', 'Anda hanya bisa reset password user di kabupaten Anda');
+        }
+
+        $request->validate([
+            'new_password' => ['required', 'confirmed', 'min:8'],
+        ]);
+
+        $user->update([
+            'password' => Hash::make($request->new_password),
+        ]);
+
+        UserHistory::create([
+            'user_id' => $user->id,
+            'action_by' => $currentUser->id,
+            'action_type' => 'updated',
+            'description' => "Password direset oleh {$currentUser->name}",
+        ]);
+
+        return redirect()->back()->with('success', 'Password berhasil direset');
+    }
     // ========================================
     // OPERATOR DESA: Manage Kaders
     // ========================================

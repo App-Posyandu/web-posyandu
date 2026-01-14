@@ -88,7 +88,7 @@
 
                         {{-- Role --}}
                         <div
-                            class="{{ in_array(auth()->user()->role, ['ketua-kader', 'admin-kecamatan', 'kader']) ? 'hidden' : '' }}">
+                            class="{{ in_array(auth()->user()->role, ['ketua-kader', 'admin-kecamatan', 'operator-desa', 'kader']) ? 'hidden' : '' }}">
                             <x-input-label for="role" :value="__('Role')" />
                             <select id="role" name="role"
                                 class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
@@ -119,12 +119,18 @@
                                     <option value="masyarakat"
                                         {{ isset($defaultRole) && $defaultRole === 'masyarakat' ? 'selected' : '' }}>
                                         Masyarakat</option>
+                                @elseif ($currentUserRole === 'admin-kabupaten')
+                                    <option value="kabid">Kabid</option>
+                                    <option value="admin-kecamatan">Admin Kecamatan</option>
+                                    <option value="ketua-kader">Ketua Kader</option>
                                 @elseif ($currentUserRole === 'kabid')
                                     <option value="admin-kecamatan">Admin Kecamatan</option>
                                     <option value="ketua-kader">Ketua Kader</option>
                                 @elseif ($currentUserRole === 'admin-kecamatan')
                                     <option value="ketua-kader" @selected(true)>Ketua Kader</option>
                                 @elseif ($currentUserRole === 'ketua-kader')
+                                    <option value="kader" @selected(true)>Kader</option>
+                                @elseif ($currentUserRole === 'operator-desa')
                                     <option value="kader" @selected(true)>Kader</option>
                                 @elseif ($currentUserRole === 'kader')
                                     <option value="masyarakat" @selected(true)>Masyarakat</option>
@@ -280,7 +286,7 @@
 
                         <!-- ✅ FIELD UNTUK KADER: Pilih Bidang (posyandu otomatis dari Ketua Kader) -->
                         <div id="bidang-field" style="display: none;"
-                            class="{{ in_array(auth()->user()->role, ['admin']) ? 'md:col-span-2' : '' }}">
+                            class="{{ in_array(auth()->user()->role, ['admin', 'operator-desa', 'ketua-kader']) ? 'md:col-span-2' : '' }}">
                             <x-input-label for="bidang_id" :value="__('Bidang Tugas')" />
                             <select id="bidang_id" name="bidang_id"
                                 class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">

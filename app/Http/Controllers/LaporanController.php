@@ -15,7 +15,7 @@ class LaporanController extends Controller
     //export data pengajuan ke excel
     public function exportExcelAll($desa)
     {
-    // Export semua bidang tapi difilter berdasarkan desa
+        // Export semua bidang tapi difilter berdasarkan desa
         return Excel::download(new UsersExport('all', $desa), 'Laporan_Data_Pengajuan_Recap_All_' . strtoupper($desa) . '.xlsx');
     }
     //export dari semmua data bidang dan semua data desa
@@ -29,5 +29,9 @@ class LaporanController extends Controller
     {
         // Export berdasarkan bidang tertentu dan desa
         return Excel::download(new UsersExport($bidang, $desa), 'Laporan_Data_Pengajuan_Recap_' . strtoupper($bidang) . '_' . strtoupper($desa) . '.xlsx');
+    }
+    public function exportBidangAllDesa($bidang)
+    {
+        return Excel::download(new UsersExport($bidang, 'all'), 'Laporan_Data_Pengajuan_Recap_' . strtoupper($bidang) . '_AllDesa' . '.xlsx');
     }
 }

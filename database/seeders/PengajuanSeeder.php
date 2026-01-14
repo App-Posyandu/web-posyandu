@@ -7,6 +7,7 @@ use App\Models\Pengajuan;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class PengajuanSeeder extends Seeder
 {
@@ -15,18 +16,21 @@ class PengajuanSeeder extends Seeder
      */
     public function run(): void
     {
+        // 1. Bersihkan tabel pengajuans dulu biar bersih
         Schema::disableForeignKeyConstraints();
         Pengajuan::truncate();
         Schema::enableForeignKeyConstraints();
 
+        // 2. Cek kelengkapan data master
         $users = User::all();
         $bidangs = BidangPengajuan::all();
 
         if ($users->isEmpty() || $bidangs->isEmpty()) {
-            $this->command->info('Tabel users atau bidang_pengajuans kosong, PengajuanSeeder dilewati.');
+            $this->command->info('❌ GAGAL: Tabel users atau bidang_pengajuans kosong. Jalankan UserSeeder & BidangSeeder dulu.');
             return;
         }
 
+        // 3. Template Data Formulir (Sesuai request kamu)
         $formTemplates = [
             'pendidikan' => [
                 'formulir_items' => [
@@ -107,31 +111,60 @@ class PengajuanSeeder extends Seeder
             ],
         ];
 
-        foreach (range(1, 20) as $index) {
+        // 4. Generate 20 Data Dummy
+        foreach (range(1, 5) as $index) {
             $user = $users->random();
             $bidang = $bidangs->random();
 
-            $template = $formTemplates[$bidang->slug] ?? null;
-            if (!$template) continue;
+            // LOGIKA PINTAR: Mencari template yang cocok berdasarkan nama bidang
+            // Jika bidang "Kesehatan Ibu & Anak", kita cari kata "kesehatan" di key array
+            $selectedKey = null;
+            $slugBidang = Str::slug($bidang->nama_bidang ?? $bidang->name ?? ''); // Handle beda nama kolom
 
-            $checklistData = collect($template['formulir_items'])->random(rand(1, count($template['formulir_items'])))->values()->all();
+            foreach ($formTemplates as $key => $value) {
+                if (str_contains($slugBidang, $key)) {
+                    $selectedKey = $key;
+                    break;
+                }
+            }
+
+            // Fallback: Jika tidak ada yg cocok, ambil random biar seeder gak error
+            $template = $selectedKey ? $formTemplates[$selectedKey] : $formTemplates[array_rand($formTemplates)];
+
+            // Ambil item formulir secara acak
+            $checklistData = collect($template['formulir_items'])
+                ->random(rand(1, count($template['formulir_items'])))
+                ->values()
+                ->all();
 
             if (in_array('Lainnya...', $checklistData)) {
                 $checklistData[] = 'Lainnya: ' . fake()->sentence(3);
             }
 
+            // Generate path file dummy untuk administrasi
             $dokumenData = [];
             foreach (array_keys($template['administrasi_items']) as $key) {
                 $dokumenData[$key] = 'dokumen/' . fake()->word() . '.pdf';
             }
 
+            // 5. Simpan ke Database
             Pengajuan::create([
                 'user_id' => $user->id,
                 'bidang_id' => $bidang->id,
-                'status' => fake()->randomElement(['Diproses', 'Disetujui', 'Ditolak']),
-                'deskripsi_pengajuan' => fake()->sentence(),
+
+                // [FIX] Menggunakan 'status_pengajuan' bukan 'status'
+                'status_pengajuan' => fake()->randomElement(['Diproses', 'Disetujui', 'Ditolak']),
+
+                'deskripsi_pengajuan' => fake()->sentence(10),
+
+                // Data JSON
                 'formulir_items' => $checklistData,
                 'administrasi_items' => $dokumenData,
+
+                // Tambahan Default Value agar tidak error NOT NULL
+                'sudah_verifikasi' => fake()->boolean(),
+                'kunjungan_lapangan' => fake()->boolean(),
+                'ttd_kader' => fake()->boolean(),
             ]);
         }
     }

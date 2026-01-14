@@ -34,7 +34,14 @@
                     <x-slot name="content">
                         <x-dropdown-link :href="route('dashboard')">{{ __('Beranda') }}</x-dropdown-link>
 
-                        @if (in_array(auth()->user()->role, ['admin', 'kader', 'kabid', 'admin-kecamatan', 'ketua-kader']))
+                        @if (in_array(auth()->user()->role, [
+                                'admin',
+                                'kader',
+                                'admin-kabupaten',
+                                'admin-kecamatan',
+                                'ketua-kader',
+                                'operator-desa',
+                            ]))
                             <x-dropdown-link :href="route('admin.users.index')">{{ __('Users') }}</x-dropdown-link>
                         @endif
 
@@ -46,7 +53,7 @@
                             </x-dropdown-link>
                         @endif
 
-                        @if (in_array(auth()->user()->role, ['admin', 'kabid']))
+                        @if (in_array(auth()->user()->role, ['admin', 'kabid', 'ketua-posyandu', 'admin-kabupaten']))
                             <x-dropdown-link :href="route('admin.posyandu.index')">{{ __('Posyandu') }}</x-dropdown-link>
                             <x-dropdown-link :href="route('admin.kecamatan.index')">{{ __('Kecamatan') }}</x-dropdown-link>
                         @endif
@@ -115,7 +122,14 @@
                     <i class="bi bi-house-door mr-2"></i> Beranda
                 </a>
 
-                @if (in_array(auth()->user()->role, ['admin', 'kader', 'kabid', 'ketua-kader']))
+                @if (in_array(auth()->user()->role, [
+                        'admin',
+                        'kader',
+                        'admin-kabupaten',
+                        'ketua-kader',
+                        'admin-kecamatan',
+                        'operator-desa',
+                    ]))
                     <a href="{{ route('admin.users.index') }}"
                         class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-pink-500 transition duration-150 ease-in-out">
                         <i class="bi bi-people mr-2"></i> Users
@@ -135,6 +149,15 @@
                         class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-pink-500 transition duration-150 ease-in-out">
                         <i class="bi bi-building mr-2"></i> Posyandu
                     </a>
+                @endif
+
+                @if (in_array(auth()->user()->role, ['admin', 'kabid', 'ketua-posyandu', 'admin-kabupaten']))
+                    <a href="{{ route('admin.posyandu.index') }}"
+                        class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-pink-500 transition duration-150 ease-in-out"><i
+                            class="bi bi-building mr-2"></i> Posyandu</a>
+                    <a href="{{ route('admin.kecamatan.index') }}"
+                        class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-pink-500 transition duration-150 ease-in-out"><i
+                            class="bi bi-building mr-2"></i> Kecamatan</a>
                 @endif
 
                 <a href="{{ route('buku_saku.index') }}"

@@ -5,15 +5,43 @@
         <form method="POST" action="{{ route('ajuan.store.administrasi') }}" enctype="multipart/form-data"
             id="form-administrasi">
             @csrf
-            <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">Administrasi Ajuan</h2>
+            <h2 class="text-2xl font-bold text-center text-gray-800 mb-2">Administrasi Ajuan</h2>
+
+            {{-- ✅ Info Banner --}}
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 rounded-lg">
+                <div class="flex items-start">
+                    <svg class="w-5 h-5 text-blue-500 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    <div>
+                        <p class="text-sm font-semibold text-blue-800 mb-1">Ketentuan Upload Dokumen:</p>
+                        <ul class="text-xs text-blue-700 space-y-1">
+                            <li>• Format file: <strong>JPG, JPEG, PNG</strong></li>
+                            <li>• Ukuran maksimal: <strong>2 MB (2048 KB)</strong></li>
+                            <li>• Pastikan dokumen terlihat jelas dan tidak buram</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6 items-start" x-data="{
                 ktp_mode: '{{ $userKtp ? 'claimed' : 'upload' }}',
                 ktp_preview: '{{ $userKtp ?? '' }}',
                 ktp_filename: '{{ $userKtp ? 'KTP Terdaftar' : 'Pilih file' }}',
+                ktp_size: 0,
                 kk_mode: '{{ $userKk ? 'claimed' : 'upload' }}',
                 kk_preview: '{{ $userKk ?? '' }}',
-                kk_filename: '{{ $userKk ? 'KK Terdaftar' : 'Pilih file' }}'
+                kk_filename: '{{ $userKk ? 'KK Terdaftar' : 'Pilih file' }}',
+                kk_size: 0,
+                formatSize(bytes) {
+                    if (bytes === 0) return '0 Bytes';
+                    const k = 1024;
+                    const sizes = ['Bytes', 'KB', 'MB'];
+                    const i = Math.floor(Math.log(bytes) / Math.log(k));
+                    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+                }
             }">
                 <input type="hidden" name="ktp_mode" accept="image/*,application/pdf" x-bind:value="ktp_mode">
                 <input type="hidden" name="kk_mode" accept="image/*,application/pdf" x-bind:value="kk_mode">
@@ -21,22 +49,40 @@
                 @foreach ($items as $key => $label)
                     @if ($key === 'ktp')
                         <div>
-                            <label for="ktp"
-                                class="block font-medium text-base md:text-lg text-gray-700 mb-1">{{ $label }}<span class="text-red-600">*</span></label>
+                            <label for="ktp" class="block font-medium text-base md:text-lg text-gray-700 mb-1">
+                                {{ $label }}<span class="text-red-600">*</span>
+                            </label>
+                            <p class="text-xs text-gray-500 mb-2">
+                                <i class="fa-solid fa-info-circle text-blue-500"></i>
+                                Format: JPG/JPEG/PNG • Max: 2 MB
+                            </p>
                             <div class="relative">
                                 <div
                                     class="w-full flex items-center px-3 py-2 bg-white text-gray-500 rounded-md shadow-sm border border-gray-300">
-                                    <span x-text="ktp_filename" class="truncate"></span>
+                                    <span x-text="ktp_filename" class="truncate flex-1"></span>
+                                    <span x-show="ktp_size > 0" x-text="'(' + formatSize(ktp_size) + ')'"
+                                        class="text-xs ml-2"></span>
                                 </div>
                                 <label for="ktp"
                                     class="absolute inset-y-0 right-0 flex items-center px-4 bg-pink-500 text-white rounded-r-md cursor-pointer hover:bg-pink-600">
                                     <x-untitledui-upload class="w-5 h-5" />
                                 </label>
                                 <input id="ktp" class="hidden" type="file" name="ktp"
-                                    accept="image/*,application/pdf"
-                                    @change="ktp_mode = 'upload';
-                                           ktp_filename = $event.target.files[0].name;
-                                           ktp_preview = URL.createObjectURL($event.target.files[0])">
+                                    accept="image/jpeg,image/jpg,image/png"
+                                    @change="
+                                        const file = $event.target.files[0];
+                                        if (file) {
+                                            if (file.size > 2048000) {
+                                                alert('⚠️ Ukuran file terlalu besar! Maksimal 2 MB.');
+                                                $event.target.value = '';
+                                                return;
+                                            }
+                                            ktp_mode = 'upload';
+                                            ktp_filename = file.name;
+                                            ktp_size = file.size;
+                                            ktp_preview = URL.createObjectURL(file);
+                                        }
+                                    ">
                             </div>
 
                             <!-- Preview Box dengan Icon -->
@@ -54,7 +100,7 @@
 
                             @if ($userKtp)
                                 <button type="button"
-                                    @click="ktp_mode = 'claimed'; ktp_filename = 'KTP Terdaftar'; ktp_preview = '{{ $userKtp }}'"
+                                    @click="ktp_mode = 'claimed'; ktp_filename = 'KTP Terdaftar'; ktp_preview = '{{ $userKtp }}'; ktp_size = 0"
                                     class="mt-2 text-base text-green-600 underline hover:text-green-700 transition transform duration-300"
                                     :class="{ 'font-bold text-lg': ktp_mode == 'claimed' }">
                                     <i class="fa-solid fa-check-circle"></i> Gunakan KTP Terdaftar
@@ -64,22 +110,40 @@
                         </div>
                     @elseif ($key === 'kk')
                         <div>
-                            <label for="kk"
-                                class="block font-medium text-base md:text-lg text-gray-700 mb-1">{{ $label }}<span class="text-red-600">*</span></label>
+                            <label for="kk" class="block font-medium text-base md:text-lg text-gray-700 mb-1">
+                                {{ $label }}<span class="text-red-600">*</span>
+                            </label>
+                            <p class="text-xs text-gray-500 mb-2">
+                                <i class="fa-solid fa-info-circle text-blue-500"></i>
+                                Format: JPG/JPEG/PNG • Max: 2 MB
+                            </p>
                             <div class="relative">
                                 <div
                                     class="w-full flex items-center px-3 py-2 bg-white text-gray-500 rounded-md shadow-sm border border-gray-300">
-                                    <span x-text="kk_filename" class="truncate"></span>
+                                    <span x-text="kk_filename" class="truncate flex-1"></span>
+                                    <span x-show="kk_size > 0" x-text="'(' + formatSize(kk_size) + ')'"
+                                        class="text-xs ml-2"></span>
                                 </div>
                                 <label for="kk"
                                     class="absolute inset-y-0 right-0 flex items-center px-4 bg-pink-500 text-white rounded-r-md cursor-pointer hover:bg-pink-600">
                                     <x-untitledui-upload class="w-5 h-5" />
                                 </label>
                                 <input id="kk" class="hidden" type="file" name="kk"
-                                    accept="image/*,application/pdf"
-                                    @change="kk_mode = 'upload';
-                                           kk_filename = $event.target.files[0].name;
-                                           kk_preview = URL.createObjectURL($event.target.files[0])">
+                                    accept="image/jpeg,image/jpg,image/png"
+                                    @change="
+                                        const file = $event.target.files[0];
+                                        if (file) {
+                                            if (file.size > 2048000) {
+                                                alert('⚠️ Ukuran file terlalu besar! Maksimal 2 MB.');
+                                                $event.target.value = '';
+                                                return;
+                                            }
+                                            kk_mode = 'upload';
+                                            kk_filename = file.name;
+                                            kk_size = file.size;
+                                            kk_preview = URL.createObjectURL(file);
+                                        }
+                                    ">
                             </div>
 
                             <!-- Preview Box dengan Icon -->
@@ -97,7 +161,7 @@
 
                             @if ($userKk)
                                 <button type="button"
-                                    @click="kk_mode = 'claimed'; kk_filename = 'KK Terdaftar'; kk_preview = '{{ $userKk }}'"
+                                    @click="kk_mode = 'claimed'; kk_filename = 'KK Terdaftar'; kk_preview = '{{ $userKk }}'; kk_size = 0"
                                     class="mt-2 text-base text-green-600 underline hover:text-green-700 transition transform duration-300"
                                     :class="{ 'font-bold text-lg': kk_mode == 'claimed' }">
                                     <i class="fa-solid fa-check-circle"></i> Gunakan KK Terdaftar
@@ -106,23 +170,41 @@
                             <x-input-error :messages="$errors->get('kk')" class="mt-2" />
                         </div>
                     @else
-                        <div x-data="{ fileName: '', filePreview: '' }" class="flex flex-col h-full">
+                        <div x-data="{ fileName: '', filePreview: '', fileSize: 0 }" class="flex flex-col h-full">
                             <label for="{{ $key }}"
-                                class="block font-medium text-sm md:text-lg text-gray-700 mb-1 h-full">{{ $label }}<span class="text-red-600">*</span></label>
+                                class="block font-medium text-sm md:text-lg text-gray-700 mb-1 h-full">
+                                {{ $label }}<span class="text-red-600">*</span>
+                            </label>
+                            <p class="text-xs text-gray-500 mb-2">
+                                <i class="fa-solid fa-info-circle text-blue-500"></i>
+                                Format: JPG/JPEG/PNG • Max: 2 MB
+                            </p>
                             <div class="relative">
                                 <div
                                     class="w-full flex items-center px-3 py-2 bg-white text-gray-500 rounded-md shadow-sm border border-gray-300">
-                                    <span x-text="fileName || 'Pilih file'" class="truncate"></span>
+                                    <span x-text="fileName || 'Pilih file'" class="truncate flex-1"></span>
+                                    <span x-show="fileSize > 0" x-text="'(' + (fileSize / 1024).toFixed(0) + ' KB)'"
+                                        class="text-xs ml-2"></span>
                                 </div>
                                 <label for="{{ $key }}"
                                     class="absolute inset-y-0 right-0 flex items-center px-4 bg-pink-500 text-white rounded-r-md cursor-pointer hover:bg-pink-600">
                                     <x-untitledui-upload class="w-5 h-5" />
                                 </label>
-                                <input id="{{ $key }}" class="hidden" type="file" name="{{ $key }}"
-                                    accept="image/*"
-                                    @change="fileName = $event.target.files[0] ? $event.target.files[0].name : '';
-                            filePreview = $event.target.files[0] ? URL.createObjectURL($event.target.files[0]) : ''" />
-
+                                <input id="{{ $key }}" class="hidden" type="file"
+                                    name="{{ $key }}" accept="image/jpeg,image/jpg,image/png"
+                                    @change="
+                                        const file = $event.target.files[0];
+                                        if (file) {
+                                            if (file.size > 2048000) {
+                                                alert('⚠️ Ukuran file terlalu besar! Maksimal 2 MB.');
+                                                $event.target.value = '';
+                                                return;
+                                            }
+                                            fileName = file.name;
+                                            fileSize = file.size;
+                                            filePreview = URL.createObjectURL(file);
+                                        }
+                                    " />
                             </div>
 
                             <div x-show="filePreview" x-transition class="mt-3 relative">
@@ -148,8 +230,7 @@
                     <input type="checkbox" name="agreement" required
                         class="rounded border-gray-300 text-pink-600 shadow-sm focus:ring-pink-500">
                     <span class="ms-2 text-base md:text-lg text-gray-600">Dengan ini saya ajukan formulir permohonan ini
-                        dengan data
-                        sebenar-benarnya.</span>
+                        dengan data sebenar-benarnya.</span>
                 </label>
             </div>
 

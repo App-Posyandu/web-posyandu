@@ -49,7 +49,6 @@ class RegisteredUserController extends Controller
             'bidang_id' => ['nullable', 'string'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'role' => ['required', 'in:masyarakat,kader'],
             // 'ktp' => ['nullable', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:2048'],
             // 'kk' => ['nullable', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:2048'],
             'no_telepon' => ['required', 'string', 'max:20', 'unique:users'],
@@ -109,7 +108,6 @@ class RegisteredUserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'no_telepon' => $request->no_telepon,
-            'role' => $request->role,
             // 'ktp' => $ktpBase64,
             // 'kk' => $kkBase64,
             'posyandu_id' => $posyanduId,
@@ -117,9 +115,9 @@ class RegisteredUserController extends Controller
             'verified_by' => null,
         ];
 
-        if ($request->role === 'kader' && $request->filled('bidang_id')) {
-            $userData['bidang_id'] = $request->bidang_id;
-        }
+        // if ($request->role === 'kader' && $request->filled('bidang_id')) {
+        //     $userData['bidang_id'] = $request->bidang_id;
+        // }
 
         $user = User::create($userData);
 

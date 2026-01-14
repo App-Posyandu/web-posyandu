@@ -46,15 +46,26 @@
                 @endif
             </div>
 
-            {{-- Action Button (Mobile Full Width) --}}
-            @if (auth()->user()->role === 'kader')
+            {{-- ✅ Action Button - Conditional Logic --}}
+            @if (auth()->user()->role === 'kader' || auth()->user()->role === 'masyarakat')
                 <div class="w-full sm:w-auto">
-                    <a href="{{ route('dashboard.partials.pilih-user') }}"
-                        class="w-full sm:w-auto flex items-center justify-center px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600 transition-colors duration-150">
-                        <i class="bi bi-plus-circle-fill mr-2"></i>
-                        <span class="hidden sm:inline">Tambah Ajuan</span>
-                        <span class="sm:hidden">Buat Ajuan Baru</span>
-                    </a>
+                    @if (auth()->user()->role === 'masyarakat')
+                        {{-- Masyarakat: Langsung ke pilih bidang --}}
+                        <a href="{{ route('dashboard.partials.pilih-layanan') }}"
+                            class="w-full sm:w-auto flex items-center justify-center px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600 transition-colors duration-150">
+                            <i class="bi bi-plus-circle-fill mr-2"></i>
+                            <span class="hidden sm:inline">Tambah Ajuan</span>
+                            <span class="sm:hidden">Buat Ajuan Baru</span>
+                        </a>
+                    @else
+                        {{-- Kader: Pilih user dulu --}}
+                        <a href="{{ route('dashboard.partials.pilih-user') }}"
+                            class="w-full sm:w-auto flex items-center justify-center px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600 transition-colors duration-150">
+                            <i class="bi bi-plus-circle-fill mr-2"></i>
+                            <span class="hidden sm:inline">Tambah Ajuan</span>
+                            <span class="sm:hidden">Buat Ajuan Baru</span>
+                        </a>
+                    @endif
                 </div>
             @endif
         </div>
@@ -109,7 +120,8 @@
                 <div class="flex items-start">
                     <i class="bi bi-info-circle-fill text-pink-500 mr-2 mt-0.5 flex-shrink-0"></i>
                     <p class="text-sm text-gray-700">
-                        Anda mengelola pengajuan di <strong>{{ auth()->user()->kabupaten }}</strong> untuk <strong>{{ auth()->user()->bidang->nama_bidang }}</strong>
+                        Anda mengelola pengajuan di <strong>{{ auth()->user()->kabupaten }}</strong> untuk
+                        <strong>{{ auth()->user()->bidang->nama_bidang }}</strong>
                     </p>
                 </div>
             </div>
