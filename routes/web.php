@@ -14,6 +14,7 @@ use App\Http\Controllers\UserController;
 use App\Models\Kabupaten;
 use App\Models\Kecamatan;
 use App\Models\Posyandu;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\File;
@@ -232,6 +233,59 @@ Route::prefix('api/db')->group(function () {
         ]);
     })->name('api.db.posyandu.by-kabupaten');
 });
+// ✅ TAMBAHKAN DI web.php
+
+// Get RW/RT mapping dari posyandu spesifik
+Route::get('/api/posyandu/{posyandu}/rw-rt', function (Posyandu $posyandu) {
+    if (!$posyandu->rw_list || count($posyandu->rw_list) === 0) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Posyandu ini belum memiliki mapping RW/RT. Hubungi Operator Desa untuk setup.',
+            'data' => [
+                'rw_list' => [],
+                'rt_mapping' => [],
+                'total_rw' => 0,
+                'total_rt' => 0,
+            ]
+        ]);
+    }
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Data RW/RT berhasil dimuat',
+        'data' => [
+            'rw_list' => $posyandu->rw_list,
+            'rt_mapping' => $posyandu->rt_mapping,
+            'total_rw' => $posyandu->getTotalRw(),
+            'total_rt' => $posyandu->getTotalRt(),
+        ]
+    ]);
+})->name('api.posyandu.rw-rt');
+
+// ✅ UPDATE route api.posyandu.by-wilayah untuk include rw_list & rt_mapping
+Route::get('/api/wilayah/posyandu', function (Request $request) {
+    $request->validate([
+        'kabupaten' => 'required|string',
+        'kecamatan' => 'required|string',
+        'desa' => 'required|string',
+    ]);
+
+    $kabupatenName = $request->query('kabupaten');
+    $kecamatanName = $request->query('kecamatan');
+    $desaName = $request->query('desa');
+    $search = $request->query('search', '');
+
+    $posyandus = Posyandu::where('kabupaten', $kabupatenName)
+        ->where('kecamatan', $kecamatanName)
+        ->where('desa', $desaName)
+        ->when($search, function ($query, $search) {
+            return $query->where('nama_posyandu', 'like', "%{$search}%");
+        })
+        ->orderBy('nama_posyandu')
+        ->get(['id', 'nama_posyandu', 'rw_list', 'rt_mapping']); // ✅ Include rw_list & rt_mapping
+
+    return response()->json($posyandus);
+})->name('api.posyandu.by-wilayah');
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -265,6 +319,34 @@ Route::middleware('auth')->group(function () {
     Route::get('/ajuan/get-items/{slug}', [AjuanController::class, 'getItemsAjax'])
         ->name('ajuan.get-items')
         ->middleware(['auth', 'verified']);
+
+    Route::post('/ajuan/{ajuan}/request-revision', [AjuanController::class, 'requestRevision'])
+        ->name('ajuan.request-revision');
+
+    // === ROUTES UNTUK KETUA POSYANDU ===
+    Route::middleware('role:ketua-posyandu')->group(function () {
+        Route::post('/ajuan/{ajuan}/submit-to-pemdes', [AjuanController::class, 'submitToPemdes'])
+            ->name('ajuan.submit-to-pemdes');
+    });
+
+    // === ROUTES UNTUK KADES ===
+    Route::middleware('role:kades,ketua-kader')->group(function () {
+        Route::post('/ajuan/{ajuan}/kades-approval', [AjuanController::class, 'kadesApproval'])
+            ->name('ajuan.kades-approval');
+    });
+
+    // === ROUTES UNTUK ADMIN DESA (Operator) ===
+    Route::middleware('role:operator-desa,admin,ketua-posyandu')->group(function () {
+        Route::get('/posyandu/{posyandu}/edit-rw-rt', [PosyanduController::class, 'editRwRt'])
+            ->name('admin.posyandu.edit-rw-rt');
+        Route::put('/posyandu/{posyandu}/update-rw-rt', [PosyanduController::class, 'updateRwRt'])
+            ->name('admin.posyandu.update-rw-rt');
+        Route::get('/posyandu/{posyandu}/manage-rw-rt', [PosyanduController::class, 'manageRwRt'])
+            ->name('admin.posyandu.manage-rw-rt');
+
+        Route::post('/posyandu/{posyandu}/save-rw-rt', [PosyanduController::class, 'saveRwRt'])
+            ->name('admin.posyandu.save-rw-rt');
+    });
 
     // ✅ BUKU SAKU
     Route::resource('buku_saku', BukuSakuController::class);
@@ -315,7 +397,7 @@ Route::middleware('auth')->group(function () {
     });
 
 
-    Route::middleware(['role:kabid,admin-kecamatan,ketua-kader,ketua-posyandu,operator-desa'])->prefix('admin')->name('admin.')->group(function () {
+    Route::middleware(['role:kabid,admin-kecamatan,ketua-kader,ketua-posyandu,operator-desa,admin-kabupaten'])->prefix('admin')->name('admin.')->group(function () {
         Route::resource('kecamatan', KecamatanController::class);
         Route::resource('posyandu', PosyanduController::class);
 

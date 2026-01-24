@@ -21,6 +21,8 @@ return new class extends Migration
                 ->nullable();
             $table->foreignUuid('kecamatan_id')
                 ->nullable();
+            $table->json('rw_list')->nullable()->comment('List RW yang dilayani posyandu (max 15)');
+            $table->json('rt_mapping')->nullable()->comment('Mapping RT ke RW dalam format {"RW01": ["RT001", "RT002"]}');
             $table->timestamps();
         });
     }

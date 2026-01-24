@@ -8,6 +8,23 @@
             <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Pembuatan Akun</h2>
         @endif
 
+        @if ($errors->any())
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                <strong>Validation Errors:</strong>
+                <ul class="list-disc list-inside">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        @if (session('error'))
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                {{ session('error') }}
+            </div>
+        @endif
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
 
             {{-- <div>
@@ -296,6 +313,59 @@
                 <p class="mt-1 text-xs text-gray-500">Kader hanya bisa mengelola 1 bidang.</p>
                 <x-input-error :messages="$errors->get('bidang_id')" class="mt-2" />
             </div>
+            {{-- ✅ TAMBAHKAN SETELAH DROPDOWN POSYANDU, SEBELUM PASSWORD --}}
+
+            {{-- RW Dropdown (Dynamic based on Posyandu) --}}
+            <div x-show="selectedPosyandu" x-transition class="md:col-span-2">
+                <x-input-label for="rw" :value="__('RW (Rukun Warga)')" />
+                <span class="text-red-600">*</span>
+                <select id="rw" name="rw" required
+                    class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                    x-model="selectedRw" @change="fetchRtList()">
+                    <option value="" disabled selected>Pilih RW</option>
+                    <template x-for="rw in availableRw" :key="rw">
+                        <option :value="rw" x-text="rw"></option>
+                    </template>
+                </select>
+                <p class="text-xs text-gray-500 mt-1">
+                    <i class="bi bi-info-circle text-blue-500"></i>
+                    Pilih RW sesuai domisili Anda (RW yang dilayani posyandu ini)
+                </p>
+                <x-input-error :messages="$errors->get('rw')" class="mt-2" />
+            </div>
+
+            {{-- RT Dropdown (Dynamic based on RW) --}}
+            <div x-show="selectedRw" x-transition class="md:col-span-2">
+                <x-input-label for="rt" :value="__('RT (Rukun Tetangga)')" />
+                <span class="text-gray-500 text-sm">(Opsional)</span>
+                <select id="rt" name="rt"
+                    class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                    x-model="selectedRt">
+                    <option value="">-- Tidak ada/Tidak tahu --</option>
+                    <template x-for="rt in availableRt" :key="rt">
+                        <option :value="rt" x-text="rt"></option>
+                    </template>
+                </select>
+                <p class="text-xs text-gray-500 mt-1">
+                    <i class="bi bi-info-circle text-blue-500"></i>
+                    Pilih RT jika tahu (RT yang dilayani di RW Anda)
+                </p>
+                <x-input-error :messages="$errors->get('rt')" class="mt-2" />
+            </div>
+
+            {{-- ✅ INFO TAMBAHAN jika posyandu belum setup RW/RT --}}
+            <div x-show="selectedPosyandu && availableRw.length === 0" x-transition class="md:col-span-2">
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+                    <div class="flex">
+                        <i class="bi bi-exclamation-triangle text-yellow-400 mr-3"></i>
+                        <div class="text-sm text-yellow-700">
+                            <p class="font-semibold">Posyandu belum setup RW/RT</p>
+                            <p class="mt-1">Posyandu yang Anda pilih belum memiliki mapping RW/RT. Silakan hubungi
+                                Operator Desa atau pilih posyandu lain.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <div class="md:col-span-2">
                 <x-input-label class="text-sm md:text-lg" for="password" :value="__('Password')" />
@@ -332,10 +402,14 @@
                 kecamatanList: [],
                 desaList: [],
                 posyanduList: [],
+                availableRw: [], // ✅ BARU
+                availableRt: [], // ✅ BARU
                 selectedKabupaten: '',
                 selectedKecamatan: '',
                 selectedDesa: '',
                 selectedPosyandu: '',
+                selectedRw: '', // ✅ BARU
+                selectedRt: '', // ✅ BARU
                 selectedRole: '{{ old('role') }}',
                 loadingKecamatan: false,
                 loadingDesa: false,
@@ -373,9 +447,13 @@
                     this.selectedKecamatan = '';
                     this.selectedDesa = '';
                     this.selectedPosyandu = '';
+                    this.selectedRw = ''; // ✅ RESET
+                    this.selectedRt = ''; // ✅ RESET
                     this.kecamatanList = [];
                     this.desaList = [];
                     this.posyanduList = [];
+                    this.availableRw = []; // ✅ RESET
+                    this.availableRt = []; // ✅ RESET
                     this.fetchKecamatan(kab.code);
                 },
 
@@ -383,24 +461,41 @@
                     this.selectedKecamatan = `${kec.code}_${kec.name}`;
                     this.selectedDesa = '';
                     this.selectedPosyandu = '';
+                    this.selectedRw = ''; // ✅ RESET
+                    this.selectedRt = ''; // ✅ RESET
                     this.desaList = [];
                     this.posyanduList = [];
+                    this.availableRw = []; // ✅ RESET
+                    this.availableRt = []; // ✅ RESET
                     this.fetchDesa(kec.code);
                 },
 
                 selectDesa(desa) {
                     this.selectedDesa = `${desa.code}_${desa.name}`;
                     this.selectedPosyandu = '';
+                    this.selectedRw = ''; // ✅ RESET
+                    this.selectedRt = ''; // ✅ RESET
                     this.posyanduList = [];
+                    this.availableRw = []; // ✅ RESET
+                    this.availableRt = []; // ✅ RESET
                     this.fetchPosyandu();
                 },
 
                 selectPosyandu(posyandu) {
                     this.selectedPosyandu = posyandu.id;
+                    this.selectedRw = '';
+                    this.selectedRt = '';
+                    this.fetchRwList(posyandu.id); // ✅ FETCH RW SETELAH PILIH POSYANDU
                 },
 
                 createNewPosyandu(name) {
                     this.selectedPosyandu = name;
+                    // ✅ Posyandu baru belum punya mapping RW/RT
+                    this.availableRw = [];
+                    this.availableRt = [];
+                    alert(
+                        '⚠️ Posyandu baru belum memiliki mapping RW/RT. Admin akan setup setelah Anda mendaftar.'
+                    );
                 },
 
                 async fetchKecamatan() {
@@ -430,7 +525,6 @@
                         const kecId = this.selectedKecamatan.split('_')[0];
                         const response = await fetch(`{{ url('/api/wilayah/desa') }}/${kecId}`);
                         const data = await response.json();
-                        console.log('Desa response:', data);
                         this.desaList = Array.isArray(data) ? data : (data.data ?? []);
                     }
                     this.loadingDesa = false;
@@ -450,7 +544,6 @@
 
                         const response = await fetch(url);
                         const data = await response.json();
-                        console.log(response)
                         this.posyanduList = Array.isArray(data) ? data : [];
                     } catch (error) {
                         console.error('Error loading posyandu:', error);
@@ -458,25 +551,70 @@
                     } finally {
                         this.loadingPosyandu = false;
                     }
+                },
+                // ✅ Fetch RW yang dilayani posyandu
+                async fetchRwList(posyanduId = null) {
+                    const id = posyanduId || this.selectedPosyandu;
+                    if (!id) return;
+
+                    try {
+                        const posyandu = this.posyanduList.find(p => p.id === id);
+
+                        // ✅ Ambil dari data posyandu (sudah include rw_list & rt_mapping)
+                        if (posyandu && posyandu.rw_list && Array.isArray(posyandu.rw_list)) {
+                            this.availableRw = posyandu.rw_list;
+                        } else {
+                            // ✅ Fetch dari API jika belum ada
+                            const response = await fetch(`/api/posyandu/${id}/rw-rt`);
+                            const data = await response.json();
+
+                            if (data.success) {
+                                this.availableRw = data.data.rw_list || [];
+                            } else {
+                                this.availableRw = [];
+                            }
+                        }
+
+                        this.selectedRw = '';
+                        this.availableRt = [];
+                    } catch (error) {
+                        console.error('Error loading RW:', error);
+                        this.availableRw = [];
+                    }
+                },
+
+                // ✅ Fetch RT untuk RW yang dipilih
+                async fetchRtList() {
+                    if (!this.selectedRw || !this.selectedPosyandu) return;
+
+                    try {
+                        const posyandu = this.posyanduList.find(p => p.id === this
+                        .selectedPosyandu);
+
+                        // ✅ Ambil dari rt_mapping
+                        if (posyandu && posyandu.rt_mapping && posyandu.rt_mapping[this
+                            .selectedRw]) {
+                            this.availableRt = posyandu.rt_mapping[this.selectedRw];
+                        } else {
+                            // ✅ Fetch dari API
+                            const response = await fetch(
+                                `/api/posyandu/${this.selectedPosyandu}/rw-rt`);
+                            const data = await response.json();
+
+                            if (data.success && data.data.rt_mapping) {
+                                this.availableRt = data.data.rt_mapping[this.selectedRw] || [];
+                            } else {
+                                this.availableRt = [];
+                            }
+                        }
+
+                        this.selectedRt = '';
+                    } catch (error) {
+                        console.error('Error loading RT:', error);
+                        this.availableRt = [];
+                    }
                 }
             }));
-            const roleSelect = document.getElementById('role');
-            const bidangField = document.getElementById('bidang-field');
-            const bidangSelect = document.getElementById('bidang_id');
-
-            function toggleBidangField() {
-                if (roleSelect.value === 'kader') {
-                    bidangField.style.display = 'block';
-                    bidangSelect.required = true;
-                } else {
-                    bidangField.style.display = 'none';
-                    bidangSelect.required = false;
-                    bidangSelect.value = '';
-                }
-            }
-
-            roleSelect.addEventListener('change', toggleBidangField);
-            toggleBidangField();
         });
     </script>
 </x-guest-layout>

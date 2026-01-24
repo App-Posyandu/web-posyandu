@@ -5,10 +5,6 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Cetak Pengajuan - SAPA POSYANDU</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
-        integrity="sha512-KP4tN0s8M1j4XXW0d7xFt9U3QkH8sy0sYwr3HPt1iQrXrRjPOON8p6HQSGCt8yX6Vft0LO0iJ2OKgKBl4d8KQ=="
-        crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/js/all.min.js"></script>
     <style>
         /* ========== RESET & BASE STYLING ========== */
         * {
@@ -64,7 +60,6 @@
             width: 70%;
         }
 
-
         .logo-group {
             display: flex;
             justify-content: flex-start;
@@ -114,9 +109,7 @@
             justify-content: center;
             align-items: center;
             padding: 12px 56px;
-            /* height: 72%; */
         }
-
 
         .container {
             background-color: #ffffff;
@@ -144,6 +137,7 @@
 
         .info-section table tr td {
             width: 50%;
+            padding: 4px 0;
         }
 
         .info-section h3 {
@@ -170,19 +164,19 @@
             font-size: 16px;
             font-weight: 600;
             color: #111827;
-            margin-bottom: -24px;
+            margin-bottom: 8px;
+            margin-top: 24px;
         }
 
-        //Table Content
         .table-content {
             width: 100%;
-            margin: 40px 0;
+            margin: 16px 0;
             border-collapse: collapse;
         }
 
         .table-content td {
             vertical-align: middle;
-            padding: 2px 0;
+            padding: 4px 0;
         }
 
         .table-content td.cell-left {
@@ -199,13 +193,13 @@
         }
 
         .img-check {
-            height: 24px;
-            width: 24px;
+            height: 20px;
+            width: 20px;
         }
 
         .signature-table {
             width: 100%;
-            margin-top: 40px;
+            margin-top: 32px;
             border-collapse: collapse;
             text-align: center;
         }
@@ -219,25 +213,53 @@
 
         .signature-content td img.check {
             display: inline-block;
-            height: 96px;
-            width: 96px;
+            height: 80px;
+            width: 80px;
         }
 
         .persyaratan-administrasi {
             width: 100%;
-            margin: 40px 0;
+            margin: 16px 0;
             border-collapse: collapse;
         }
 
         .persyaratan-administrasi td {
             vertical-align: middle;
-            padding: 2px 0;
-            width: 50%;
+            padding: 4px 0;
         }
 
+        .date-approval {
+            text-align: right;
+            margin-top: 24px;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #374151;
+        }
 
+        .date-approval p {
+            margin: 4px 0;
+        }
 
-        /* ========== FOOTER (STAYS AT BOTTOM USING FLEX) ========== */
+        .section-divider {
+            border-top: 2px solid #e5e7eb;
+            margin: 24px 0;
+        }
+
+        .description-box {
+            margin: 16px 0;
+            padding: 12px;
+            background-color: #f9fafb;
+            border-left: 4px solid #6366f1;
+            border-radius: 4px;
+        }
+
+        .description-box p {
+            font-size: 14px;
+            color: #4b5563;
+            line-height: 1.6;
+        }
+
+        /* ========== FOOTER ========== */
         footer {
             background-color: #ffffff;
             border-top: 1px solid #e5e7eb;
@@ -328,66 +350,86 @@
     <main>
         <div class="container">
             <div class="info-section">
+                {{-- Informasi Pemohon --}}
                 <table>
                     <tr>
                         <td>
-                            <h3>Nama </h3>
+                            <h3>Nama Pemohon</h3>
                         </td>
                         <td>: {{ $ajuan->user->name }}</td>
                     </tr>
                     <tr>
                         <td>
-                            <h3>Alamat </h3>
+                            <h3>Alamat</h3>
                         </td>
                         <td>: {{ $ajuan->user->alamat }}</td>
                     </tr>
                     <tr>
                         <td>
-                            <h3>No Hp </h3>
+                            <h3>No Hp</h3>
                         </td>
-                        <td>: {{ $ajuan->user->no_telepon ?? '082134532110' }}</td>
+                        <td>: {{ $ajuan->user->no_telepon ?? '-' }}</td>
                     </tr>
                     <tr>
                         <td>
-                            <h3>Nama Posyandu </h3>
+                            <h3>Nama Posyandu</h3>
                         </td>
                         <td>: {{ $ajuan->user?->posyandu?->nama_posyandu ?? 'Nama Posyandu' }}</td>
                     </tr>
                     <tr>
                         <td>
-                            <h3>Desa/Kelurahan </h3>
+                            <h3>RW / RT</h3>
+                        </td>
+                        <td>: RW {{ $ajuan->user?->rw ?? '-' }} / RT {{ $ajuan->user?->rt ?? '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <h3>Desa/Kelurahan</h3>
                         </td>
                         <td>: {{ $ajuan->user?->posyandu?->desa ?? 'Desa' }}</td>
                     </tr>
                     <tr>
                         <td>
-                            <h3>Kecamatan </h3>
+                            <h3>Kecamatan</h3>
                         </td>
                         <td>: {{ $ajuan->user?->posyandu?->kecamatan ?? 'Kecamatan' }}</td>
                     </tr>
                 </table>
-                {{-- table content yang diajukan --}}
-                <h4 class="sub-title">Detail permohonan dipilih</h4>
+
+                <div class="section-divider"></div>
+
+                {{-- Deskripsi Permohonan --}}
+                @if ($ajuan->deskripsi_pengajuan)
+                    <h4 class="sub-title">Deskripsi Permohonan</h4>
+                    <div class="description-box">
+                        <p>{{ $ajuan->deskripsi_pengajuan }}</p>
+                    </div>
+                @endif
+
+                {{-- Detail Permohonan yang Dipilih --}}
+                <h4 class="sub-title">Detail Permohonan Dipilih</h4>
                 <table class="table-content">
                     @forelse ($ajuan->formulir_items as $item)
                         <tr>
                             <td class="cell-left">{{ $item }}</td>
                             <td>
                                 @if ($checkBase64)
-                                    <img src="{{ $checkBase64 }}" alt="Logo Check" class="img-check">
+                                    <img src="{{ $checkBase64 }}" alt="Checked" class="img-check">
                                 @endif
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td>Tidak ada permohonan yang dipilih</td>
+                            <td colspan="2">Tidak ada permohonan yang dipilih</td>
                         </tr>
                     @endforelse
                 </table>
 
-                {{-- Persyatan Administrasi --}}
-                <h4 class="sub-title">Detail Permohonan yang Diajukan</h4>
-                <table class="persyaratan-administrasi table-content">
+                <div class="section-divider"></div>
+
+                {{-- Verifikasi Permohonan --}}
+                <h4 class="sub-title">Verifikasi Permohonan</h4>
+                <table class="table-content">
                     @forelse ($ajuan->formulir_items ?? [] as $item)
                         <tr>
                             <td class="cell-left">{{ $item }}</td>
@@ -408,18 +450,19 @@
 
                                 @if ($ajuan->sudah_verifikasi && in_array($item, $verifiedItems))
                                     @if ($checkBase64)
-                                        <img src="{{ $checkBase64 }}" alt="Logo Check" class="img-check">
+                                        <img src="{{ $checkBase64 }}" alt="Verified" class="img-check">
                                     @endif
                                 @endif
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td>Tidak ada permohonan yang dipilih</td>
+                            <td colspan="2">Tidak ada permohonan yang dipilih</td>
                         </tr>
                     @endforelse
                 </table>
 
+                {{-- Dokumen Administrasi --}}
                 <h4 class="sub-title">Dokumen Administrasi</h4>
                 <table class="table-content">
                     @forelse ($ajuan->administrasi_items ?? [] as $key => $path)
@@ -443,42 +486,68 @@
                             <td>
                                 @if ($ajuan->sudah_verifikasi && array_key_exists($key, $verifiedDocs))
                                     @if ($checkBase64)
-                                        <img src="{{ $checkBase64 }}" alt="Logo Check" class="img-check">
+                                        <img src="{{ $checkBase64 }}" alt="Verified" class="img-check">
                                     @endif
                                 @endif
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td>Tidak ada dokumen yang diunggah</td>
+                            <td colspan="2">Tidak ada dokumen yang diunggah</td>
                         </tr>
                     @endforelse
                 </table>
 
+                {{-- Tindak Lanjut --}}
+                @if ($ajuan->tindak_lanjut)
+                    <div class="section-divider"></div>
+                    <h4 class="sub-title">Tindak Lanjut Rekomendasi</h4>
+                    <div class="description-box">
+                        <p>{{ $ajuan->tindak_lanjut }}</p>
+                    </div>
+                @endif
+
+                {{-- Tanggal Permohonan & Persetujuan --}}
+                <div class="date-approval">
+                    <p><strong>Kota Kebumen, </strong>
+                        {{ \Carbon\Carbon::parse($ajuan->tanggal_permohonan ?? $ajuan->created_at)->format('d F Y') }}
+                    </p>
+                    @if ($ajuan->approved_by_ketua_at)
+                        <p><strong>Tanggal Persetujuan Ketua: </strong>
+                            {{ \Carbon\Carbon::parse($ajuan->approved_by_ketua_at)->format('d F Y') }}
+                        </p>
+                    @endif
+                    @if ($ajuan->approved_by_kades_at)
+                        <p><strong>Tanggal Persetujuan Kades: </strong>
+                            {{ \Carbon\Carbon::parse($ajuan->approved_by_kades_at)->format('d F Y') }}
+                        </p>
+                    @endif
+                </div>
+
                 {{-- Tanda Tangan --}}
                 <table class="signature-table">
                     <tr class="signature-content">
-                        <td>Pengurus/Kader Posyandu</td>
+                        <td>Ketua Posyandu</td>
                         <td>Pemohon Layanan</td>
                     </tr>
                     <tr class="signature-content">
                         <td>
-                            @if ($ajuan->ttd_kader)
+                            @if ($ajuan->approved_by_ketua)
                                 @if ($checkBase64)
-                                    <img src="{{ $checkBase64 }}" alt="Logo Check" class="check">
+                                    <img src="{{ $checkBase64 }}" alt="Approved" class="check">
                                 @endif
                             @endif
                         </td>
                         <td>
                             @if ($checkBase64)
-                                <img src="{{ $checkBase64 }}" alt="Logo Check" class="check">
+                                <img src="{{ $checkBase64 }}" alt="Signed" class="check">
                             @endif
                         </td>
                     </tr>
                     <tr class="signature-content">
                         <td>
-                            @if ($ajuan->ttd_kader)
-                                {{ $ajuan->latestHistory?->diubahOleh?->name ?? 'Kader' }}
+                            @if ($ajuan->approved_by_ketua)
+                                {{ $ajuan->ketuaPosyandu?->name ?? 'Ketua Posyandu' }}
                             @else
                                 (...........................)
                             @endif
@@ -486,6 +555,27 @@
                         <td>{{ $ajuan->user->name }}</td>
                     </tr>
                 </table>
+
+                {{-- Tanda Tangan Kades (jika sudah disetujui) --}}
+                @if ($ajuan->approved_by_kades)
+                    <table class="signature-table" style="margin-top: 16px;">
+                        <tr class="signature-content">
+                            <td colspan="2">Kepala Desa</td>
+                        </tr>
+                        <tr class="signature-content">
+                            <td colspan="2">
+                                @if ($checkBase64)
+                                    <img src="{{ $checkBase64 }}" alt="Approved by Kades" class="check">
+                                @endif
+                            </td>
+                        </tr>
+                        <tr class="signature-content">
+                            <td colspan="2">
+                                {{ $ajuan->kades?->name ?? 'Kepala Desa' }}
+                            </td>
+                        </tr>
+                    </table>
+                @endif
             </div>
         </div>
     </main>

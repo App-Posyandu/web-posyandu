@@ -292,7 +292,11 @@
                     diproses: {{ $myStats['diproses'] }},
                     ditolak: {{ $myStats['ditolak'] }},
                 },
-
+                paginationInfo: {
+                    from: 0,
+                    to: 0,
+                    total: 0
+                },
                 tableHtml: '',
                 paginationHtml: '',
                 chart: null,
@@ -324,6 +328,8 @@
                         this.tableHtml = data.tableHtml;
                         this.paginationHtml = data.paginationHtml;
 
+                        this.paginationInfo = data.paginationInfo;
+
                         // Update chart
                         this.updateChart();
 
@@ -333,6 +339,17 @@
                         this.loading = false;
                     }
                 },
+
+                handlePagination(event) {
+                    if (event.target.tagName === 'A' || event.target.closest('a')) {
+                        event.preventDefault();
+                        const link = event.target.tagName === 'A' ? event.target : event.target.closest(
+                            'a');
+                        const url = new URL(link.href);
+                        const page = url.searchParams.get('page') || 1;
+                        this.loadDashboardData(page);
+                    }
+                }
 
                 resetToCurrentYear() {
                     this.selectedYear = this.currentYear;

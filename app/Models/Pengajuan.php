@@ -25,7 +25,19 @@ class Pengajuan extends Model
         'kunjungan_lapangan',
         'verified_formulir_items',
         'verified_administrasi_items',
-        'ttd_kader'
+        'ttd_kader',
+        'tanggal_permohonan',        // ← BARU
+        'tindak_lanjut',             // ← BARU
+        'approved_by_ketua',         // ← BARU
+        'approved_by_ketua_id',      // ← BARU
+        'approved_by_ketua_at',      // ← BARU
+        'approved_by_kades',         // ← BARU
+        'approved_by_kades_id',      // ← BARU
+        'approved_by_kades_at',      // ← BARU
+        'foto_kunjungan',            // ← BARU
+        'revision_requested_at',     // ← BARU
+        'revision_count',            // ← BARU
+        'auto_rejected',
     ];
 
     protected $casts = [
@@ -35,7 +47,49 @@ class Pengajuan extends Model
         'kunjungan_lapangan' => 'boolean',
         'verified_formulir_items',
         'verified_administrasi_items',
+        'ttd_kader' => 'boolean',
+        'foto_kunjungan' => 'array',           // ← BARU
+        'approved_by_ketua' => 'boolean',      // ← BARU
+        'approved_by_kades' => 'boolean',      // ← BARU
+        'tanggal_permohonan' => 'datetime',    // ← BARU
+        'approved_by_ketua_at' => 'datetime',  // ← BARU
+        'approved_by_kades_at' => 'datetime',  // ← BARU
+        'revision_requested_at' => 'datetime',
     ];
+
+    public function ketuaPosyandu()
+    {
+        return $this->belongsTo(User::class, 'approved_by_ketua_id');
+    }
+
+
+    public function kades()
+    {
+        return $this->belongsTo(User::class, 'approved_by_kades_id');
+    }
+
+    public function isRevisionExpired()
+    {
+        if (!$this->revision_requested_at) return false;
+
+        $workDays = $this->calculateWorkDays($this->revision_requested_at, now());
+        return $workDays > 5;
+    }
+
+    private function calculateWorkDays($start, $end)
+    {
+        $workDays = 0;
+        $current = $start->copy();
+
+        while ($current->lte($end)) {
+            if ($current->isWeekday()) {
+                $workDays++;
+            }
+            $current->addDay();
+        }
+
+        return $workDays;
+    }
 
     public function user()
     {
