@@ -241,12 +241,33 @@
                         </div>
 
                         {{-- Table Content --}}
-                        <div x-show="!loading" x-html="tableHtml"></div>
+                        <div x-show="!loading" x-html="tableHtml" @click="handlePagination($event)"></div>
                     </div>
                 </div>
 
                 {{-- Pagination --}}
-                <div class="mt-4 flex justify-between items-center text-xs md:text-sm text-gray-600">
+                <div class="mt-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs md:text-sm text-gray-600"
+                    @click="handlePagination($event)">
+
+                    {{-- Info (Kiri) --}}
+                    <div x-show="!loading" class="text-gray-600">
+                        <template x-if="paginationInfo.total > 0">
+                            <span>
+                                Showing
+                                <span class="font-medium" x-text="paginationInfo.from"></span>
+                                to
+                                <span class="font-medium" x-text="paginationInfo.to"></span>
+                                of
+                                <span class="font-medium" x-text="paginationInfo.total"></span>
+                                results
+                            </span>
+                        </template>
+                        <template x-if="paginationInfo.total === 0">
+                            <span>Tidak ada data</span>
+                        </template>
+                    </div>
+
+                    {{-- Pagination Links (Kanan) --}}
                     <div x-html="paginationHtml"></div>
                 </div>
             </div>
@@ -301,6 +322,12 @@
                     ditolak: {{ $semuaAjuan->where('status_pengajuan', 'Ditolak')->count() }},
                 },
 
+                paginationInfo: {
+                    from: 0,
+                    to: 0,
+                    total: 0
+                },
+
                 tableHtml: '',
                 paginationHtml: '',
                 chart: null,
@@ -311,7 +338,7 @@
                     this.loadDashboardData();
                 },
 
-                async loadDashboardData() {
+                async loadDashboardData(page = 1) {
                     if (!this.isVerified) return;
 
                     this.loading = true;
@@ -321,7 +348,8 @@
                             year: this.selectedYear,
                             search: this.searchQuery,
                             status: this.filterStatus,
-                            ajax: '1'
+                            ajax: '1',
+                            page: page
                         });
 
                         const response = await fetch(`{{ route('dashboard') }}?${params}`);
@@ -332,6 +360,8 @@
                         this.statistics = data.statistics;
                         this.tableHtml = data.tableHtml;
                         this.paginationHtml = data.paginationHtml;
+
+                        this.paginationInfo = data.paginationInfo;
 
                         // Update chart
                         this.updateChart();
@@ -449,6 +479,23 @@
 
                     // ✅ ROLE LAIN: Export dengan tahun yang dipilih
                     window.location.href = `/admin/export-all-bidang-desa?year=${this.selectedYear}`;
+                },
+
+                handlePagination(event) {
+                    // Cegah link default
+                    if (event.target.tagName === 'A' || event.target.closest('a')) {
+                        event.preventDefault();
+
+                        const link = event.target.tagName === 'A' ? event.target : event.target.closest(
+                            'a');
+                        const url = new URL(link.href);
+
+                        // Ambil page number dari URL
+                        const page = url.searchParams.get('page') || 1;
+
+                        // Load data dengan page number
+                        this.loadDashboardData(page);
+                    }
                 },
 
                 // ✅ METHOD BARU: Modal khusus untuk Kabid

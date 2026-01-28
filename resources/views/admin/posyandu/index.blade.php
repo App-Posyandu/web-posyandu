@@ -43,7 +43,7 @@
                                                             </code>
                                                         </div>
                                                         <div class="flex items-center gap-2">
-                                                            <span class="text-gray-600 w-32">🔐 Password:</span>
+                                                            <span class="text-gray-600 w-32">🔑 Password:</span>
                                                             <code
                                                                 class="bg-white px-2 py-1 rounded border text-red-600 font-bold">
                                                                 {{ $kaderInfo['password'] }}
@@ -103,94 +103,164 @@
                         </div>
                     </div>
                 </div>
+                @push('scripts')
+                    <script>
+                        // Copy credentials untuk satu kader
+                        function copyKaderCredentials(index) {
+                            const kaders = @json(session('created_kaders'));
+                            const kader = kaders[index];
 
-                <script>
-                    // Copy credentials untuk satu kader
-                    function copyKaderCredentials(index) {
-                        const kaders = @json(session('created_kaders'));
-                        const kader = kaders[index];
-
-                        const text = `Kader ${kader.bidang}
+                            const text = `Kader ${kader.bidang}
 Email: ${kader.email}
-No Telepon: ${kader.no_telepon}
 Password: ${kader.password}`;
 
-                        navigator.clipboard.writeText(text).then(() => {
-                            alert('Credentials berhasil disalin!');
-                        });
-                    }
+                            navigator.clipboard.writeText(text).then(() => {
+                                alert('✅ Credentials berhasil disalin!');
+                            }).catch(() => {
+                                alert('❌ Gagal menyalin. Silakan copy manual.');
+                            });
+                        }
 
-                    // Print semua credentials
-                    function printKaderCredentials() {
-                        const kaders = @json(session('created_kaders'));
-                        let content = '<html><head><title>Kader Credentials</title>';
-                        content +=
-                            '<style>body{font-family:Arial;padding:20px;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:8px;text-align:left;}th{background:#4a5568;color:white;}</style>';
-                        content += '</head><body>';
-                        content += '<h2>🏥 Credentials Kader Auto-Generated</h2>';
-                        content += '<p><strong>Tanggal:</strong> ' + new Date().toLocaleString('id-ID') + '</p>';
-                        content +=
-                            '<table><thead><tr><th>No</th><th>Bidang</th><th>Email</th><th>No Telepon</th><th>Password</th></tr></thead><tbody>';
+                        // Print semua credentials
+                        function printKaderCredentials() {
+                            const kaders = @json(session('created_kaders'));
 
-                        kaders.forEach((kader, i) => {
-                            content += `<tr>
-                <td>${i + 1}</td>
-                <td>${kader.bidang}</td>
-                <td>${kader.email}</td>
-                <td>${kader.no_telepon}</td>
-                <td><strong>${kader.password}</strong></td>
-            </tr>`;
-                        });
+                            let content = '<html><head><title>Credentials Kader Auto-Generated</title>';
+                            content += '<style>';
+                            content += 'body { font-family: Arial, sans-serif; padding: 30px; }';
+                            content += 'h2 { color: #1f2937; border-bottom: 3px solid #ec4899; padding-bottom: 10px; }';
+                            content += 'table { width: 100%; border-collapse: collapse; margin-top: 20px; }';
+                            content += 'th, td { border: 1px solid #d1d5db; padding: 12px; text-align: left; }';
+                            content += 'th { background-color: #4a5568; color: white; font-weight: bold; }';
+                            content += 'tr:nth-child(even) { background-color: #f9fafb; }';
+                            content += '.password { font-weight: bold; color: #dc2626; font-family: monospace; }';
+                            content +=
+                                '.footer { margin-top: 30px; padding: 15px; background-color: #fef3c7; border-left: 4px solid #f59e0b; }';
+                            content += '</style>';
+                            content += '</head><body>';
 
-                        content += '</tbody></table>';
-                        content += '<p style="margin-top:20px;"><strong>⚠️ PENTING:</strong> Simpan dokumen ini dengan aman!</p>';
-                        content += '</body></html>';
+                            content += '<h2>🏥 Credentials Kader Auto-Generated</h2>';
+                            content += '<p><strong>📅 Tanggal:</strong> ' + new Date().toLocaleString('id-ID') + '</p>';
 
-                        const printWindow = window.open('', '_blank');
-                        printWindow.document.write(content);
-                        printWindow.document.close();
-                        printWindow.print();
-                    }
+                            content += '<table>';
+                            content += '<thead><tr>';
+                            content += '<th>No</th>';
+                            content += '<th>Bidang</th>';
+                            content += '<th>Email</th>';
+                            content += '<th>Password</th>';
+                            content += '</tr></thead>';
+                            content += '<tbody>';
 
-                    // Download as TXT
-                    function downloadKaderCredentials() {
-                        const kaders = @json(session('created_kaders'));
-                        let content = '=== CREDENTIALS KADER AUTO-GENERATED ===\n';
-                        content += 'Tanggal: ' + new Date().toLocaleString('id-ID') + '\n\n';
+                            kaders.forEach((kader, i) => {
+                                content += '<tr>';
+                                content += '<td>' + (i + 1) + '</td>';
+                                content += '<td>' + kader.bidang + '</td>';
+                                content += '<td>' + kader.email + '</td>';
+                                content += '<td class="password">' + kader.password + '</td>';
+                                content += '</tr>';
+                            });
 
-                        kaders.forEach((kader, i) => {
-                            content += `${i + 1}. Kader ${kader.bidang}\n`;
-                            content += `   Email: ${kader.email}\n`;
-                            content += `   No Telepon: ${kader.no_telepon}\n`;
-                            content += `   Password: ${kader.password}\n\n`;
-                        });
+                            content += '</tbody></table>';
 
-                        content += '⚠️ PENTING: Simpan file ini dengan aman!\n';
-                        content += 'Password default: kader123\n';
+                            content += '<div class="footer">';
+                            content += '<p><strong>⚠️ PENTING:</strong></p>';
+                            content += '<ul>';
+                            content += '<li>Simpan dokumen ini dengan aman!</li>';
+                            content += '<li>Password default: <strong>kader123</strong></li>';
+                            content += '<li>Kader dapat login menggunakan <strong>email</strong> atau <strong>nomor telepon</strong></li>';
+                            content +=
+                                '<li>Ketua Kader wajib meminta kader untuk <strong>mengganti password</strong> setelah login pertama</li>';
+                            content += '</ul>';
+                            content += '</div>';
 
-                        const blob = new Blob([content], {
-                            type: 'text/plain'
-                        });
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = 'kader_credentials_' + Date.now() + '.txt';
-                        a.click();
-                        window.URL.revokeObjectURL(url);
-                    }
-                </script>
+                            content += '</body></html>';
+
+                            const printWindow = window.open('', '_blank');
+                            printWindow.document.write(content);
+                            printWindow.document.close();
+                            printWindow.print();
+                        }
+
+                        // Download as TXT
+                        function downloadKaderCredentials() {
+                            const kaders = @json(session('created_kaders'));
+
+                            let content = '==============================================\n';
+                            content += '   CREDENTIALS KADER AUTO-GENERATED\n';
+                            content += '==============================================\n\n';
+                            content += 'Tanggal: ' + new Date().toLocaleString('id-ID') + '\n';
+                            content += '----------------------------------------------\n\n';
+
+                            kaders.forEach((kader, i) => {
+                                content += (i + 1) + '. Kader ' + kader.bidang + '\n';
+                                content += '   Email    : ' + kader.email + '\n';
+                                content += '   Password : ' + kader.password + '\n';
+                                content += '----------------------------------------------\n';
+                            });
+
+                            content += '\n';
+                            content += '⚠️ PENTING:\n';
+                            content += '- Simpan file ini dengan aman!\n';
+                            content += '- Password default: kader123\n';
+                            content += '- Kader dapat login menggunakan email atau nomor telepon\n';
+                            content += '- Ketua Kader wajib meminta kader untuk mengganti password\n';
+                            content += '\n';
+                            content += '==============================================\n';
+
+                            const blob = new Blob([content], {
+                                type: 'text/plain;charset=utf-8'
+                            });
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'kader_credentials_' + Date.now() + '.txt';
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            window.URL.revokeObjectURL(url);
+                        }
+                    </script>
+                @endpush
             @endif
             <div class="p-6 text-gray-900">
 
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold text-gray-800">List Posyandu</h2>
-                    <a href="{{ route('admin.posyandu.create') }}"
-                        class="px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600">
-                        Tambah Posyandu
-                    </a>
+
+                    {{-- ✅ Hanya tampilkan tombol tambah untuk role tertentu --}}
+                    @if (in_array(auth()->user()->role, ['admin', 'ketua-posyandu', 'kabid', 'admin-kecamatan', 'admin-kabupaten']))
+                        <a href="{{ route('admin.posyandu.create') }}"
+                            class="px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600">
+                            Tambah Posyandu
+                        </a>
+                    @else
+                        <div class="text-sm text-gray-500">
+                            <i class="bi bi-info-circle mr-1"></i>
+                            Anda mengelola: <strong>{{ auth()->user()->posyandu->nama_posyandu ?? '-' }}</strong>
+                        </div>
+                    @endif
                 </div>
 
                 @include('components.all-notifications')
+
+                {{-- ✅ Info untuk Operator Desa --}}
+                @if (auth()->user()->role === 'operator-desa')
+                    <div class="mb-6 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                        <div class="flex items-start">
+                            <i class="bi bi-info-circle-fill text-blue-500 mr-3 mt-0.5"></i>
+                            <div class="text-sm text-blue-700">
+                                <p class="font-semibold mb-1">ℹ️ Informasi untuk Operator Desa</p>
+                                <ul class="list-disc list-inside space-y-1 ml-2">
+                                    <li>Anda hanya dapat melihat dan mengelola <strong>1 posyandu</strong> yang ditugaskan
+                                        kepada Anda</li>
+                                    <li>Anda bertanggung jawab untuk setup <strong>RW/RT</strong> yang dilayani posyandu
+                                    </li>
+                                    <li>Setelah setup RW/RT, user dapat memilih RW/RT saat registrasi</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                @endif
 
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
@@ -201,10 +271,8 @@ Password: ${kader.password}`;
                                 </th>
                                 <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Ketua Kader
                                 </th>
-                                <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Desa/Kelurahan
-                                </th>
-                                <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Kecamatan</th>
-                                <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Kabupaten</th>
+                                <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Wilayah</th>
+                                <th class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase">RW/RT</th>
                                 <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Action</th>
                             </tr>
                         </thead>
@@ -212,6 +280,8 @@ Password: ${kader.password}`;
                             @forelse ($posyandus as $posyandu)
                                 @php
                                     $ketuaKader = $posyandu->users->firstWhere('role', 'ketua-kader');
+                                    $totalRw = $posyandu->getAvailableRwList();
+                                    $totalRt = $posyandu->getTotalRtCount();
                                 @endphp
                                 <tr>
                                     <td class="px-6 py-4">{{ $loop->iteration + $posyandus->firstItem() - 1 }}</td>
@@ -219,25 +289,107 @@ Password: ${kader.password}`;
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                                         {{ $ketuaKader?->name ?? 'Belum Ditentukan' }}
                                     </td>
-                                    <td>{{ $posyandu->desa ?? '' }}</td>
-                                    <td>{{ $posyandu->kecamatan ?? '' }}</td>
-                                    <td>{{ $posyandu->kabupaten ?? '' }}</td>
+                                    <td class="px-6 py-4 text-sm">
+                                        <div class="text-gray-700">{{ $posyandu->desa ?? '' }}</div>
+                                        <div class="text-gray-500">{{ $posyandu->kecamatan ?? '' }}</div>
+                                        <div class="text-gray-400 text-xs">{{ $posyandu->kabupaten ?? '' }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        @if ($totalRw > 0 || $totalRt > 0)
+                                            <div class="flex flex-col gap-1">
+                                                <span
+                                                    class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800">
+                                                    {{ $totalRw }} RW
+                                                </span>
+                                                <span
+                                                    class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                                                    {{ $totalRt }} RT
+                                                </span>
+                                            </div>
+                                        @else
+                                            <span class="text-xs text-gray-400 italic">Belum diatur</span>
+                                        @endif
+                                    </td>
 
-                                    <td class="px-6 py-4 flex space-x-2">
-                                        <a href="{{ route('admin.posyandu.edit', $posyandu) }}"
-                                            class="flex items-center justify-center w-24 px-3 py-1 bg-yellow-500 text-white rounded-md text-xs hover:bg-yellow-600">Ubah</a>
-                                        <form action="{{ route('admin.posyandu.destroy', $posyandu) }}" method="POST"
-                                            onsubmit="return confirm('Yakin hapus?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit"
-                                                class="flex items-center justify-center w-24 px-3 py-1 bg-red-500 text-white rounded-md text-xs hover:bg-red-600">Hapus</button>
-                                        </form>
+                                    <td class="px-6 py-4">
+                                        <div class="flex flex-col gap-2">
+                                            @php
+                                                $currentUser = auth()->user();
+                                                $canEdit = in_array($currentUser->role, [
+                                                    'admin',
+                                                    'ketua-posyandu',
+                                                    'kabid',
+                                                    'admin-kecamatan',
+                                                    'admin-kabupaten',
+                                                ]);
+                                                $canDelete = in_array($currentUser->role, [
+                                                    'admin',
+                                                    'ketua-posyandu',
+                                                    'kabid',
+                                                    'admin-kecamatan',
+                                                    'admin-kabupaten',
+                                                ]);
+                                                $canManageRwRt = in_array($currentUser->role, [
+                                                    'admin',
+                                                    'ketua-posyandu',
+                                                    'operator-desa',
+                                                    'kabid',
+                                                    'admin-kecamatan',
+                                                    'admin-kabupaten',
+                                                ]);
+
+                                                // ✅ Validasi tambahan untuk operator-desa & ketua-kader
+                                                if (
+                                                    $currentUser->role === 'operator-desa' ||
+                                                    $currentUser->role === 'ketua-kader'
+                                                ) {
+                                                    $canManageRwRt = $posyandu->id === $currentUser->posyandu_id;
+                                                }
+                                            @endphp
+
+                                            @if ($canEdit || $canDelete)
+                                                <div class="flex gap-2">
+                                                    @if ($canEdit)
+                                                        <a href="{{ route('admin.posyandu.edit', $posyandu) }}"
+                                                            class="w-full flex items-center justify-center px-2 py-1 bg-yellow-500 text-white rounded-md text-xs hover:bg-yellow-600">
+                                                            Ubah
+                                                        </a>
+                                                    @endif
+
+                                                    @if ($canDelete)
+                                                        <form action="{{ route('admin.posyandu.destroy', $posyandu) }}"
+                                                            class="w-full" method="POST"
+                                                            onsubmit="return confirm('Yakin hapus?');">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit"
+                                                                class="w-full flex items-center justify-center px-2 py-1 bg-red-500 text-white rounded-md text-xs hover:bg-red-600">
+                                                                Hapus
+                                                            </button>
+                                                        </form>
+                                                    @endif
+                                                </div>
+                                            @endif
+
+                                            {{-- ✅ Tombol Kelola RW/RT (semua role yang berwenang) --}}
+                                            @if ($canManageRwRt)
+                                                <a href="{{ route('admin.posyandu.manage-rw-rt', $posyandu) }}"
+                                                    class="flex items-center justify-center px-2 py-1 bg-blue-500 text-white rounded-md text-xs hover:bg-blue-600">
+                                                    <i class="bi bi-diagram-3 mr-1"></i>
+                                                    Kelola RW/RT
+                                                </a>
+                                            @endif
+
+                                            @if (!$canEdit && !$canDelete && !$canManageRwRt)
+                                                <span class="text-xs text-gray-400 italic">Tidak ada aksi</span>
+                                            @endif
+                                        </div>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">Tidak ada data Posyandu.
+                                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">Tidak ada data
+                                        Posyandu.
                                     </td>
                                 </tr>
                             @endforelse

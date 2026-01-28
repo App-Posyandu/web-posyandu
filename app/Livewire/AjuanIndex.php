@@ -2,10 +2,10 @@
 
 namespace App\Livewire;
 
-use App\Models\Pengajuan;
-use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Models\Pengajuan;
+use Illuminate\Support\Facades\Auth;
 
 class AjuanIndex extends Component
 {
@@ -13,18 +13,20 @@ class AjuanIndex extends Component
 
     public $status = '';
     public $search = '';
+    public $statusFilter = '';
 
     protected $queryString = [
         'status' => ['except' => ''],
         'search' => ['except' => ''],
+        'statusFilter' => ['except' => '']
     ];
 
-    public function updatingStatus()
+    public function updatingSearch()
     {
         $this->resetPage();
     }
 
-    public function updatingSearch()
+    public function updatingStatusFilter()
     {
         $this->resetPage();
     }
@@ -33,149 +35,186 @@ class AjuanIndex extends Component
     {
         $this->status = '';
         $this->search = '';
+        $this->statusFilter = '';
         $this->resetPage();
     }
 
     public function render()
     {
         $user = Auth::user();
-        $alwaysVerifiedRoles = ['admin','kader', 'kabid', 'admin-kecamatan', 'ketua-kader', 'masyarakat'];
+        $alwaysVerifiedRoles = [
+            'admin',
+            'kabid',
+            'admin-kabupaten',
+            'admin-kecamatan',
+            'ketua-kader',
+            'kades',
+            'ketua-posyandu',
+            'operator-desa',
+            'masyarakat'
+        ];
         $isVerified = in_array($user->role, $alwaysVerifiedRoles) || !is_null($user->verified_at);
 
-        $query = Pengajuan::with(['user.posyandu', 'bidang', 'histories']);
+        // Build query based on role
+        $query = Pengajuan::with(['user.posyandu', 'bidang', 'histories' => function ($q) {
+            // ✅ Eager load semua history untuk cek revisi
+            $q->whereIn('status', ['Revisi Diminta', 'Direvisi & Diajukan Kembali'])
+                ->orderBy('created_at', 'desc');
+        }]);
 
-        // ========================================
-        // 🎯 FILTER BERDASARKAN ROLE (HIERARKI)
-        // ========================================
+        // Filter by role
         switch ($user->role) {
             case 'masyarakat':
-                // Masyarakat: Hanya lihat pengajuan miliknya sendiri
                 $query->where('user_id', $user->id);
                 break;
 
             case 'kader':
-                // Kader: Lihat pengajuan di bidangnya di posyandunya
                 if ($user->bidang_id && $user->posyandu_id) {
                     $query->where('bidang_id', $user->bidang_id)
                         ->whereHas('user', function ($q) use ($user) {
                             $q->where('posyandu_id', $user->posyandu_id);
-                        });
+                        })
+                        // ✅ Kader hanya lihat pengajuan yang statusnya "Diproses"
+                        ->where('status_pengajuan', 'Diproses');
                 } else {
-                    // Jika kader belum punya bidang/posyandu, return empty
                     $query->whereRaw('1 = 0');
                 }
                 break;
 
             case 'operator-desa':
-                // Operator Desa: Sama seperti ketua kader (lihat semua di posyandunya)
                 if ($user->posyandu_id) {
                     $query->whereHas('user', function ($q) use ($user) {
                         $q->where('posyandu_id', $user->posyandu_id);
                     });
-                } else {
-                    $query->whereRaw('1 = 0');
-                }
-                break;
-
-            case 'ketua-kader':
-                // Ketua Kader: Lihat semua pengajuan di posyandunya (semua bidang)
-                if ($user->posyandu_id) {
-                    $query->whereHas('user', function ($q) use ($user) {
-                        $q->where('posyandu_id', $user->posyandu_id);
-                    });
-                } else {
-                    $query->whereRaw('1 = 0');
-                }
-                break;
-
-            case 'admin-kecamatan':
-                // Admin Kecamatan: Lihat semua pengajuan di kecamatannya
-                if ($user->kecamatan) {
-                    $query->whereHas('user', function ($q) use ($user) {
-                        // Gunakan LIKE untuk mencocokkan kecamatan
-                        $q->where('kecamatan', 'LIKE', '%' . $user->kecamatan . '%');
-                    });
-                } else {
-                    $query->whereRaw('1 = 0');
-                }
-                break;
-
-            case 'kabid':
-                // Kabid: Lihat pengajuan di kabupatennya, tapi hanya 1 bidang
-                if ($user->kabupaten && $user->bidang_id) {
-                    $query->where('bidang_id', $user->bidang_id)
-                        ->whereHas('user', function ($q) use ($user) {
-                            $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%');
-                        });
                 } else {
                     $query->whereRaw('1 = 0');
                 }
                 break;
 
             case 'ketua-posyandu':
-                // Ketua Posyandu: Lihat semua pengajuan di kabupaten/kota-nya (semua bidang)
+                if ($user->posyandu_id) {
+                    $query->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id))
+                        ->where(function ($q) {
+                            // Yang sudah kunjungan tapi belum diapprove ketua
+                            $q->where(function ($subQ) {
+                                $subQ->where('kunjungan_lapangan', true)
+                                    ->where('approved_by_ketua', false)
+                                    ->where('status_pengajuan', 'Diproses');
+                            })
+                                // Atau yang sudah disetujui ketua (status "Sesuai")
+                                ->orWhere('status_pengajuan', 'Sesuai');
+                        });
+                } elseif ($user->desa) {
+                    $query->whereHas('user', fn($q) => $q->where('desa', $user->desa))
+                        ->where(function ($q) {
+                            $q->where(function ($subQ) {
+                                $subQ->where('kunjungan_lapangan', true)
+                                    ->where('approved_by_ketua', false)
+                                    ->where('status_pengajuan', 'Diproses');
+                            })
+                                ->orWhere('status_pengajuan', 'Sesuai');
+                        });
+                }
+                break;
+            case 'ketua-kader':
+            case 'kades':
+                if ($user->posyandu_id) {
+                    $query->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id))
+                        ->where('status_pengajuan', 'Diajukan ke Desa');
+                } elseif ($user->desa) {
+                    $query->whereHas('user', fn($q) => $q->where('desa', $user->desa))
+                        ->where('status_pengajuan', 'Diajukan ke Desa');
+                }
+                break;
+
+            case 'admin-kecamatan':
+                if ($user->kecamatan) {
+                    $query->whereHas('user', fn($q) => $q->where('kecamatan', 'LIKE', '%' . $user->kecamatan . '%'));
+                }
+                break;
+
+            case 'kabid':
                 if ($user->kabupaten) {
-                    $query->whereHas('user', function ($q) use ($user) {
-                        $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%');
-                    });
-                } else {
-                    $query->whereRaw('1 = 0');
+                    $query->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%'));
+                }
+                if ($user->bidang_id) {
+                    $query->where('bidang_id', $user->bidang_id);
+                }
+                break;
+
+            case 'admin-kabupaten':
+                if ($user->kabupaten) {
+                    $query->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%'));
                 }
                 break;
 
             case 'admin':
-                // Admin: Lihat semua tanpa filter
-                break;
-
-            default:
-                // Role tidak dikenali, return empty
-                $query->whereRaw('1 = 0');
+                // Admin sees all
                 break;
         }
 
-        // ========================================
-        // 🔍 FILTER STATUS
-        // ========================================
         if (!empty($this->status)) {
             $query->where('status_pengajuan', $this->status);
         }
 
-        // ========================================
-        // 🔍 FILTER SEARCH
-        // ========================================
-        if (!empty($this->search)) {
-            $searchTerm = '%' . strtolower($this->search) . '%';
-
-            $query->where(function ($q) use ($searchTerm) {
-                $q->whereHas('user', function ($userQuery) use ($searchTerm) {
-                    $userQuery->whereRaw('LOWER(name) LIKE ?', [$searchTerm]);
-                })
-                    ->orWhereRaw('LOWER(deskripsi_pengajuan) LIKE ?', [$searchTerm])
-                    ->orWhereRaw('LOWER(status_pengajuan) LIKE ?', [$searchTerm])
-                    ->orWhereHas('bidang', function ($bidangQuery) use ($searchTerm) {
-                        $bidangQuery->whereRaw('LOWER(nama_bidang) LIKE ?', [$searchTerm]);
-                    });
+        // Apply search filter
+        if ($this->search) {
+            $query->where(function ($q) {
+                $q->where('deskripsi_pengajuan', 'like', '%' . $this->search . '%')
+                    ->orWhere('status_pengajuan', 'like', '%' . $this->search . '%')
+                    ->orWhereHas('user', fn($userQuery) =>
+                    $userQuery->where('name', 'like', '%' . $this->search . '%'))
+                    ->orWhereHas('bidang', fn($bidangQuery) =>
+                    $bidangQuery->where('nama_bidang', 'like', '%' . $this->search . '%'));
             });
         }
 
-        // ========================================
-        // 📊 AMBIL DATA & PAGINATION
-        // ========================================
-        $semuaAjuan = $query->latest()->paginate(10)->withQueryString();
+        // Apply status filter
+        if ($this->statusFilter) {
+            $query->where('status_pengajuan', $this->statusFilter);
+        }
 
-        // ========================================
-        // 📈 STATISTIK UNTUK HEADER (OPTIONAL)
-        // ========================================
-        $totalDiproses = (clone $query)->where('status_pengajuan', 'Diproses')->count();
-        $totalDisetujui = (clone $query)->where('status_pengajuan', 'Disetujui')->count();
-        $totalDitolak = (clone $query)->where('status_pengajuan', 'Ditolak')->count();
+        $semuaAjuan = $query->latest()->paginate(10);
 
-        return view('livewire.ajuan-index', compact(
-            'semuaAjuan',
-            'isVerified',
-            'totalDiproses',
-            'totalDisetujui',
-            'totalDitolak'
-        ));
+        // ✅ Tambahkan computed attributes untuk setiap pengajuan
+        $semuaAjuan->getCollection()->transform(function ($ajuan) {
+            // Ambil history "Revisi Diminta" terakhir
+            $latestRevisionRequest = $ajuan->histories
+                ->where('status', 'Revisi Diminta')
+                ->first(); // Sudah sorted by created_at desc
+
+            // Ambil history "Direvisi & Diajukan Kembali" terakhir
+            // ✅ TIDAK perlu cek action_by_role karena statusnya sudah spesifik
+            $latestRevisionSubmit = $ajuan->histories
+                ->where('status', 'Direvisi & Diajukan Kembali')
+                ->first();
+
+            // Logic: Sudah direvisi jika ada submit revision SETELAH request revision terakhir
+            if ($latestRevisionRequest && $latestRevisionSubmit) {
+                // ✅ Parse ke Carbon jika masih string
+                $requestDate = $latestRevisionRequest->created_at instanceof \Carbon\Carbon
+                    ? $latestRevisionRequest->created_at
+                    : \Carbon\Carbon::parse($latestRevisionRequest->created_at);
+
+                $submitDate = $latestRevisionSubmit->created_at instanceof \Carbon\Carbon
+                    ? $latestRevisionSubmit->created_at
+                    : \Carbon\Carbon::parse($latestRevisionSubmit->created_at);
+
+                $ajuan->has_been_revised_by_user = $submitDate->greaterThan($requestDate);
+            } else {
+                $ajuan->has_been_revised_by_user = false;
+            }
+
+            // Logic: Menunggu revisi jika ada request tapi belum ada submit setelahnya
+            $ajuan->is_waiting_revision = $latestRevisionRequest && !$ajuan->has_been_revised_by_user;
+
+            return $ajuan;
+        });
+
+        return view('livewire.ajuan-index', [
+            'semuaAjuan' => $semuaAjuan,
+            'isVerified' => $isVerified,
+            'status' => $this->status
+        ]);
     }
 }

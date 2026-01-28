@@ -1,6 +1,22 @@
 @extends('dashboard.layouts.dashboard')
 @section('title', 'Add Users')
 @section('content')
+    @if ($errors->any())
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            <strong>Validation Errors:</strong>
+            <ul class="list-disc list-inside">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    @if (session('error'))
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {{ session('error') }}
+        </div>
+    @endif
     <div class="w-full mx-auto sm:px-6 lg:px-8">
         <div class="bg-white shadow-sm sm:rounded-lg">
             <div class="p-8 text-gray-900">
@@ -107,6 +123,9 @@
                                     <option value="admin-kecamatan"
                                         {{ isset($defaultRole) && $defaultRole === 'admin-kecamatan' ? 'selected' : '' }}>
                                         Admin Kecamatan</option>
+                                    <option value="kades"
+                                        {{ isset($defaultRole) && $defaultRole === 'kades' ? 'selected' : '' }}>Kades
+                                    </option>
                                     <option value="ketua-kader"
                                         {{ isset($defaultRole) && $defaultRole === 'ketua-kader' ? 'selected' : '' }}>Ketua
                                         Kader</option>
@@ -121,6 +140,11 @@
                                         Masyarakat</option>
                                 @elseif ($currentUserRole === 'admin-kabupaten')
                                     <option value="kabid">Kabid</option>
+                                    <option value="admin-kecamatan">Admin Kecamatan</option>
+                                    <option value="admin-kecamatan">Kades</option>
+                                    <option value="ketua-kader">Ketua Kader</option>
+                                @elseif ($currentUserRole === 'kades')
+                                    <option value="admin-kecamatan">Kabid</option>
                                     <option value="admin-kecamatan">Admin Kecamatan</option>
                                     <option value="ketua-kader">Ketua Kader</option>
                                 @elseif ($currentUserRole === 'kabid')
@@ -300,6 +324,43 @@
                             <p class="mt-1 text-xs text-gray-500">
                                 Kader akan bekerja di bidang ini pada posyandu Anda
                             </p>
+                        </div>
+
+                        {{-- ✅ TAMBAHKAN SETELAH DROPDOWN POSYANDU/BIDANG, SEBELUM PASSWORD --}}
+                        {{-- HANYA UNTUK ROLE MASYARAKAT --}}
+
+                        <div id="rw-rt-fields" style="display: none;" class="md:col-span-2 space-y-4">
+                            {{-- RW Dropdown --}}
+                            <div>
+                                <x-input-label for="rw" :value="__('RW (Rukun Warga)')" />
+                                <span class="text-red-600">*</span>
+                                <select id="rw" name="rw"
+                                    class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                    <option value="" disabled selected>Pilih RW</option>
+                                    {{-- Will be populated by JavaScript --}}
+                                </select>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    <i class="bi bi-info-circle text-blue-500"></i>
+                                    RW sesuai domisili user (Format: RW01, RW02, dst)
+                                </p>
+                                <x-input-error :messages="$errors->get('rw')" class="mt-2" />
+                            </div>
+
+                            {{-- RT Dropdown --}}
+                            <div>
+                                <x-input-label for="rt" :value="__('RT (Rukun Tetangga)')" />
+                                <span class="text-gray-500 text-sm">(Opsional)</span>
+                                <select id="rt" name="rt"
+                                    class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                    <option value="">-- Tidak ada/Tidak tahu --</option>
+                                    {{-- Will be populated by JavaScript --}}
+                                </select>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    <i class="bi bi-info-circle text-blue-500"></i>
+                                    RT jika diketahui (Format: RT001, RT002, dst)
+                                </p>
+                                <x-input-error :messages="$errors->get('rt')" class="mt-2" />
+                            </div>
                         </div>
 
                         <div>
@@ -492,6 +553,97 @@
                 }));
             });
 
+            document.addEventListener('DOMContentLoaded', function() {
+                const roleSelect = document.getElementById('role');
+                const rwRtFields = document.getElementById('rw-rt-fields');
+                const posyanduSelect = document.getElementById('posyandu_id');
+                const rwSelect = document.getElementById('rw');
+                const rtSelect = document.getElementById('rt');
+
+                // ✅ Toggle RW/RT fields ketika role = masyarakat
+                function toggleRwRtFields() {
+                    if (roleSelect.value === 'masyarakat') {
+                        rwRtFields.style.display = 'block';
+                        rwSelect.required = true;
+                    } else {
+                        rwRtFields.style.display = 'none';
+                        rwSelect.required = false;
+                        rtSelect.value = '';
+                        rwSelect.value = '';
+                    }
+                }
+
+                // ✅ Fetch RW/RT ketika posyandu dipilih (untuk role masyarakat)
+                async function fetchRwRtOptions() {
+                    if (roleSelect.value !== 'masyarakat' || !posyanduSelect.value) {
+                        return;
+                    }
+
+                    try {
+                        // Fetch data posyandu
+                        const response = await fetch(`/api/posyandu/${posyanduSelect.value}/rw-rt`);
+                        const data = await response.json();
+
+                        // Populate RW dropdown
+                        rwSelect.innerHTML = '<option value="" disabled selected>Pilih RW</option>';
+                        if (data.rw_list && data.rw_list.length > 0) {
+                            data.rw_list.forEach(rw => {
+                                const option = document.createElement('option');
+                                option.value = rw;
+                                option.textContent = rw;
+                                rwSelect.appendChild(option);
+                            });
+                        } else {
+                            // Fallback: Generate RW01-RW15
+                            for (let i = 1; i <= 15; i++) {
+                                const rw = `RW${String(i).padStart(2, '0')}`;
+                                const option = document.createElement('option');
+                                option.value = rw;
+                                option.textContent = rw;
+                                rwSelect.appendChild(option);
+                            }
+                        }
+
+                        // Store rt_mapping for later use
+                        window.rtMapping = data.rt_mapping || {};
+
+                    } catch (error) {
+                        console.error('Error fetching RW/RT:', error);
+                    }
+                }
+
+                // ✅ Populate RT ketika RW dipilih
+                rwSelect.addEventListener('change', function() {
+                    const selectedRw = this.value;
+                    rtSelect.innerHTML = '<option value="">-- Tidak ada/Tidak tahu --</option>';
+
+                    if (window.rtMapping && window.rtMapping[selectedRw]) {
+                        window.rtMapping[selectedRw].forEach(rt => {
+                            const option = document.createElement('option');
+                            option.value = rt;
+                            option.textContent = rt;
+                            rtSelect.appendChild(option);
+                        });
+                    } else {
+                        // Fallback: Generate RT001-RT053
+                        for (let i = 1; i <= 53; i++) {
+                            const rt = `RT${String(i).padStart(3, '0')}`;
+                            const option = document.createElement('option');
+                            option.value = rt;
+                            option.textContent = rt;
+                            rtSelect.appendChild(option);
+                        }
+                    }
+                });
+
+                // Event listeners
+                roleSelect.addEventListener('change', toggleRwRtFields);
+                posyanduSelect.addEventListener('change', fetchRwRtOptions);
+
+                // Initial check
+                toggleRwRtFields();
+            });
+
             // ✅ TOGGLE FIELDS SETELAH DOM READY
             document.addEventListener('DOMContentLoaded', function() {
                 const roleSelect = document.getElementById('role');
@@ -507,49 +659,6 @@
 
                 const kabupatenSelect = document.getElementById('kabupaten_id');
                 const kecamatanSelect = document.getElementById('kecamatan_id');
-
-                // function toggleFields() {
-                //     bidangField.style.display = 'none';
-                //     bidangSelect.required = false;
-                //     bidangSelect.value = '';
-
-                //     jenisWilayahField.style.display = 'none';
-                //     jenisWilayahSelect.required = false;
-
-                //     kabupatenField.style.display = 'none';
-                //     kotaField.style.display = 'none';
-                //     kecamatanField.style.display = 'none';
-
-                //     posyanduField.style.display = 'none';
-                //     posyanduSelect.required = false;
-
-                //     if (roleSelect.value === 'kader') {
-                //         bidangField.style.display = 'block';
-                //         bidangSelect.required = true;
-                //     }
-
-                //     if (roleSelect.value === 'kabid') {
-                //         bidangField.style.display = 'block';
-                //         bidangSelect.required = true;
-                //     }
-
-                //     if (roleSelect.value === 'ketua-posyandu') {
-                //         jenisWilayahField.style.display = 'block';
-                //         jenisWilayahSelect.required = false;
-                //     }
-
-                //     // ✅ Jika role = ADMIN KECAMATAN (dibuat oleh Kabid)
-                //     if (roleSelect.value === 'admin-kecamatan') {
-                //         kecamatanField.style.display = 'block';
-                //         document.getElementById('kecamatan-hidden').required = true;
-                //     }
-
-                //     // ✅ Jika role = KETUA KADER (dibuat oleh Kabid atau Admin Kecamatan)
-                //     if (roleSelect.value === 'ketua-kader') {
-                //         posyanduField.style.display = 'block';
-                //         posyanduSelect.required = true;
-                //     }
-                // }
 
                 function toggleFields() {
                     // Hide all fields first
@@ -616,8 +725,18 @@
                         bidangField.style.display = 'block';
                         bidangSelect.required = true;
 
+                        // ✅ OPERATOR DESA: Posyandu auto-inherit, hanya tampilkan Bidang
+                        if (currentUserRole === 'operator-desa') {
+                            posyanduField.style.display = 'none'; // Hide karena auto-inherit
+                            posyanduSelect.required = false;
+                        }
                         // Jika dibuat oleh Ketua Kader, posyandu auto-inherit
-                        if (currentUserRole !== 'ketua-kader') {
+                        else if (currentUserRole === 'ketua-kader') {
+                            posyanduField.style.display = 'none';
+                            posyanduSelect.required = false;
+                        }
+                        // Role lain (Admin, dll) harus pilih posyandu
+                        else {
                             posyanduField.style.display = 'block';
                             posyanduSelect.required = true;
                         }

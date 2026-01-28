@@ -32,6 +32,30 @@ class AjuanController extends Controller
         return Auth::id();
     }
 
+    public function requestRevision(Request $request, Pengajuan $ajuan)
+    {
+        $request->validate([
+            'catatan' => 'required|string|max:500'
+        ]);
+
+        $ajuan->update([
+            'status_pengajuan' => 'Diproses',
+            'revision_requested_at' => now(),
+            'revision_count' => $ajuan->revision_count + 1,
+        ]);
+
+        History::create([
+            'pengajuan_id' => $ajuan->id,
+            'status' => 'Revisi Diminta',
+            'catatan' => $request->catatan,
+            'diubah_oleh' => Auth::id(),
+            'action_by_role' => Auth::user()->role,
+            'created_at' => now(),
+        ]);
+
+        return redirect()->back()->with('success', 'Revisi berhasil diminta. User memiliki 5 hari kerja untuk merevisi.');
+    }
+
     public function pilihLayanan(Request $request)
     {
         $user = Auth::user();
@@ -152,6 +176,8 @@ class AjuanController extends Controller
         session()->put('ajuan_data.administrasi_items_template', $templateData['administrasi_items']);
         session()->put('ajuan_data.selected_formulir_items', $permohonanItems);
         session()->put('ajuan_data.deskripsi_pengajuan', $request->input('deskripsi_pengajuan'));
+        session()->put('ajuan_data.tanggal_permohonan', now());
+        session()->put('ajuan_data.tindak_lanjut', $request->input('deskripsi_pengajuan')); // Sama dengan deskripsi
 
         if ($request->has('lainnya_text') && !empty($request->input('lainnya_text'))) {
             session()->put('ajuan_data.lainnya_text', $request->input('lainnya_text'));
@@ -233,6 +259,8 @@ class AjuanController extends Controller
             'formulir_items' => $finalChecklistData,
             'administrasi_items' => $uploadedFiles,
             'deskripsi_pengajuan' => $ajuanData['deskripsi_pengajuan'] ?? 'Tidak ada deskripsi.',
+            'tanggal_permohonan' => now(), // ← TAMBAHKAN INI
+            'tindak_lanjut' => $ajuanData['deskripsi_pengajuan'],
         ]);
 
         History::create([
@@ -349,6 +377,47 @@ class AjuanController extends Controller
         if (!Gate::forUser(Auth::user())->check('viewAjuan', $ajuan)) {
             abort(403, 'Anda tidak memiliki akses untuk melihat pengajuan ini.');
         }
+
+        // ✅ AUTO-REJECT jika expired (sama seperti di edit)
+        if ($ajuan->revision_requested_at && $ajuan->status_pengajuan === 'Diproses') {
+            $debugMode = config('revision.debug_mode', false);
+            $debugMinutes = config('revision.deadline.debug_minutes');
+            $productionDays = config('revision.deadline.days', 5);
+
+            if ($debugMode && $debugMinutes) {
+                $revisionDeadline = \Carbon\Carbon::parse($ajuan->revision_requested_at)->addMinutes($debugMinutes);
+            } else {
+                $revisionDeadline = \Carbon\Carbon::parse($ajuan->revision_requested_at)->addDays($productionDays);
+            }
+
+            $hasBeenRevised = $ajuan->histories()
+                ->where('status', 'Direvisi & Diajukan Kembali')
+                ->where('action_by_role', 'masyarakat')
+                ->where('created_at', '>', $ajuan->revision_requested_at)
+                ->exists();
+
+            if (!$hasBeenRevised && now()->greaterThan($revisionDeadline)) {
+                $ajuan->update([
+                    'status_pengajuan' => 'Ditolak',
+                    'sudah_verifikasi' => false,
+                    'kunjungan_lapangan' => false,
+                    'approved_by_ketua' => false,
+                ]);
+
+                History::create([
+                    'pengajuan_id' => $ajuan->id,
+                    'status' => 'Ditolak - Masa Revisi Habis',
+                    'catatan' => 'Pengajuan otomatis ditolak karena tidak direvisi dalam waktu yang ditentukan.',
+                    'diubah_oleh' => null,
+                    'action_by_role' => 'system',
+                    'created_at' => now(),
+                ]);
+
+                // Reload data setelah update
+                $ajuan->refresh();
+            }
+        }
+
         $ajuan->load(['user', 'bidang', 'histories']);
         $templateData = $this->getBidangData($ajuan->bidang->slug);
         if (!$templateData) {
@@ -362,11 +431,69 @@ class AjuanController extends Controller
 
     public function edit(Pengajuan $ajuan)
     {
+        // ✅ Cek apakah user berhak mengedit
+        if (Auth::user()->id !== $ajuan->user_id) {
+            abort(403, 'Anda tidak memiliki akses untuk mengedit pengajuan ini.');
+        }
+
+        // ✅ Cek apakah pengajuan masih bisa diedit
+        if (!in_array($ajuan->status_pengajuan, ['Diproses', 'Ditolak'])) {
+            return redirect()->route('ajuan.show', $ajuan)
+                ->with('error', 'Pengajuan ini tidak dapat diedit karena statusnya: ' . $ajuan->status_pengajuan);
+        }
+
+        // ✅✅ AUTO-REJECT jika masa revisi sudah expired
+        if ($ajuan->revision_requested_at) {
+            $debugMode = config('revision.debug_mode', false);
+            $debugMinutes = config('revision.deadline.debug_minutes');
+            $productionDays = config('revision.deadline.days', 5);
+
+            if ($debugMode && $debugMinutes) {
+                $revisionDeadline = \Carbon\Carbon::parse($ajuan->revision_requested_at)->addMinutes($debugMinutes);
+            } else {
+                $revisionDeadline = \Carbon\Carbon::parse($ajuan->revision_requested_at)->addDays($productionDays);
+            }
+
+            $hasBeenRevised = $ajuan->histories()
+                ->where('status', 'Direvisi & Diajukan Kembali')
+                ->where('action_by_role', 'masyarakat')
+                ->where('created_at', '>', $ajuan->revision_requested_at)
+                ->exists();
+
+            if (!$hasBeenRevised && now()->greaterThan($revisionDeadline)) {
+                $ajuan->update([
+                    'status_pengajuan' => 'Ditolak',
+                    'sudah_verifikasi' => false,
+                    'kunjungan_lapangan' => false,
+                    'approved_by_ketua' => false,
+                ]);
+
+                History::create([
+                    'pengajuan_id' => $ajuan->id,
+                    'status' => 'Ditolak - Masa Revisi Habis',
+                    'catatan' => 'Pengajuan otomatis ditolak karena tidak direvisi dalam waktu yang ditentukan.',
+                    'diubah_oleh' => null,
+                    'action_by_role' => 'system',
+                    'created_at' => now(),
+                ]);
+
+                return redirect()->route('ajuan.show', $ajuan)
+                    ->with('error', 'Pengajuan ini sudah ditolak karena masa revisi telah berakhir pada ' . $revisionDeadline->format('d F Y, H:i') . ' WIB.');
+            }
+        }
+
+        // ✅ Load relasi yang diperlukan
+        $ajuan->load(['bidang', 'histories' => function ($query) {
+            $query->orderBy('created_at', 'desc');
+        }]);
+
+        // ✅ Ambil template data berdasarkan bidang pengajuan
         $templateData = $this->getBidangData($ajuan->bidang->slug);
         if (!$templateData) {
             abort(404, 'Definisi formulir untuk bidang ini tidak ditemukan.');
         }
 
+        // ✅ Ambil semua bidang (untuk future enhancement jika diperlukan)
         $allBidangs = BidangPengajuan::orderBy('nama_bidang')->get();
 
         return view('ajuan.edit', [
@@ -380,46 +507,112 @@ class AjuanController extends Controller
     {
         $user = Auth::user();
 
+        // ✅ Cek apakah user berhak mengupdate
+        if ($user->id !== $ajuan->user_id) {
+            abort(403, 'Anda tidak memiliki akses untuk mengedit pengajuan ini.');
+        }
+
+        // ✅ Cek apakah masa revisi sudah expired
+        if ($ajuan->revision_requested_at) {
+            $revisionDeadline = \Carbon\Carbon::parse($ajuan->revision_requested_at)->addWeekdays(5);
+            if (now()->greaterThan($revisionDeadline)) {
+                return redirect()->route('ajuan.show', $ajuan)
+                    ->with('error', 'Masa revisi telah berakhir. Pengajuan ini tidak dapat diedit lagi.');
+            }
+        }
+
+        // ✅ Validasi input
         $request->validate([
             'deskripsi_pengajuan' => 'required|string|min:10',
+            'permohonan_items' => 'required|array|min:1',
+            'permohonan_items.*' => 'string',
+            'lainnya_text' => 'nullable|string|max:500',
+        ], [
+            'deskripsi_pengajuan.required' => 'Deskripsi pengajuan wajib diisi.',
+            'deskripsi_pengajuan.min' => 'Deskripsi pengajuan minimal 10 karakter.',
+            'permohonan_items.required' => 'Pilih minimal 1 item permohonan.',
+            'permohonan_items.min' => 'Pilih minimal 1 item permohonan.',
         ]);
 
         $ajuan->load('bidang');
 
+        // ✅ Proses item permohonan dengan "Lainnya"
         $finalChecklistData = $request->input('permohonan_items', []);
-        if (in_array('Lainnya...', $finalChecklistData) && $request->filled(key: 'lainnya_text')) {
-            $finalChecklistData = array_map(fn($item) => $item === 'Lainnya...' ? 'Lainnya: ' . $request->lainnya_text : $item, $finalChecklistData);
+        if (in_array('Lainnya...', $finalChecklistData) && $request->filled('lainnya_text')) {
+            $finalChecklistData = array_map(
+                fn($item) => $item === 'Lainnya...' ? 'Lainnya: ' . $request->lainnya_text : $item,
+                $finalChecklistData
+            );
         }
 
-        $dokumenData = $ajuan->administrasi_items;
+        // ✅ Ambil data dokumen yang sudah ada
+        $dokumenData = $ajuan->administrasi_items ?? [];
 
-        $administrasiItemsTemplate = $ajuan->administrasi_items ?? [];
+        // ✅ Ambil template administrasi untuk validasi
+        $templateData = $this->getBidangData($ajuan->bidang->slug);
+        if (!$templateData) {
+            return redirect()->back()->with('error', 'Template bidang tidak ditemukan.');
+        }
+
+        $administrasiItemsTemplate = $templateData['administrasi_items'] ?? [];
+
+        // ✅ Validasi file yang di-upload (jika ada)
+        $validationRules = [];
+        foreach (array_keys($administrasiItemsTemplate) as $key) {
+            // File bersifat opsional saat update (kecuali belum pernah diupload)
+            if (!isset($dokumenData[$key])) {
+                // Jika dokumen belum ada, wajib upload (kecuali KTP/KK/BPJS yang opsional)
+                if (in_array($key, ['ktp', 'kk', 'kartu_bpjs'])) {
+                    $validationRules[$key] = ['nullable', 'file', 'mimes:jpg,jpeg,png', 'max:2048'];
+                } else {
+                    $validationRules[$key] = ['required', 'file', 'mimes:jpg,jpeg,png', 'max:2048'];
+                }
+            } else {
+                // Jika dokumen sudah ada, upload baru bersifat opsional
+                $validationRules[$key] = ['nullable', 'file', 'mimes:jpg,jpeg,png', 'max:2048'];
+            }
+        }
+
+        $request->validate($validationRules);
+
+        // ✅ Update dokumen jika ada file baru yang diupload
         foreach (array_keys($administrasiItemsTemplate) as $key) {
             if ($request->hasFile($key)) {
-                if (isset($dokumenData[$key])) {
+                // Hapus file lama jika ada dan bukan base64
+                if (isset($dokumenData[$key]) && !Str::startsWith($dokumenData[$key], 'data:')) {
                     Storage::disk('public')->delete($dokumenData[$key]);
                 }
+
+                // Upload file baru
                 $path = $request->file($key)->store('ajuan_dokumen', 'public');
                 $dokumenData[$key] = $path;
             }
         }
 
+        // ✅ Update pengajuan
         $ajuan->update([
             'deskripsi_pengajuan' => $request->deskripsi_pengajuan,
             'formulir_items' => $finalChecklistData,
             'administrasi_items' => $dokumenData,
             'status_pengajuan' => 'Diproses',
+            // 'revision_requested_at' => null, // Reset revision request
+            'sudah_verifikasi' => false, // Reset verifikasi
+            'kunjungan_lapangan' => false, // Reset kunjungan
+            'approved_by_ketua' => false, // Reset approval
         ]);
 
+        // ✅ Tambah history
         History::create([
             'pengajuan_id' => $ajuan->id,
             'status' => 'Direvisi & Diajukan Kembali',
-            'catatan' => 'Pengguna telah memperbarui pengajuan.',
+            'catatan' => 'Pengguna telah memperbarui pengajuan sesuai permintaan revisi.',
             'diubah_oleh' => $user->id,
+            'action_by_role' => 'masyarakat',
             'created_at' => now(),
         ]);
 
-        return redirect()->route('ajuan.show', $ajuan)->with('success', 'Pengajuan berhasil diperbarui dan diajukan kembali.');
+        return redirect()->route('ajuan.show', $ajuan)
+            ->with('success', 'Pengajuan berhasil diperbarui dan diajukan kembali. Menunggu verifikasi ulang dari kader.');
     }
 
     public function downloadDokumen(Pengajuan $ajuan, $key)
@@ -483,146 +676,290 @@ class AjuanController extends Controller
         $statusHistory = '';
         $catatanHistory = $request->catatan;
 
-        if ($step == 1) {
+        // ===============================================
+        // == KADER: STEP 1 & 2
+        // ===============================================
+        if ($user->role === 'kader') {
 
-            if ($request->input('tolak_langsung') === 'Ditolak') {
-                $request->validate(
-                    ['catatan' => 'required'],
-                    ['catatan.required' => 'Catatan wajib diisi jika menolak.']
-                );
+            // ===============================================
+            // == STEP 1: Verifikasi Dokumen
+            // ===============================================
+            if ($step == 1) {
+                $keputusan = $request->input('keputusan');
 
-                $statusDitolak = 'Ditolak';
-                $catatanDitolak = $request->catatan;
-                $ajuan->update([
-                    'status_pengajuan' => $statusDitolak,
-                    'sudah_verifikasi' => true,
-                    'kunjungan_lapangan' => false,
-                    'ttd_kader' => false,
-                    'verified_formulir_items' => [],
-                    'verified_administrasi_items' => [],
+                // Validasi keputusan
+                $request->validate([
+                    'keputusan' => 'required|in:lanjut,revisi,tolak',
                 ]);
+
+                // Validasi catatan: required jika revisi atau tolak
+                if (in_array($keputusan, ['revisi', 'tolak'])) {
+                    $request->validate([
+                        'catatan' => 'required|string|min:10',
+                    ], [
+                        'catatan.required' => 'Catatan wajib diisi jika memilih revisi atau tolak.',
+                        'catatan.min' => 'Catatan minimal 10 karakter.',
+                    ]);
+                }
+
+                // === TOLAK ===
+                if ($keputusan === 'tolak') {
+                    $ajuan->update([
+                        'status_pengajuan' => 'Ditolak',
+                        'sudah_verifikasi' => false,
+                        'kunjungan_lapangan' => false,
+                        'approved_by_ketua' => false,
+                        'verified_formulir_items' => [],
+                        'verified_administrasi_items' => [],
+                    ]);
+
+                    History::create([
+                        'pengajuan_id' => $ajuan->id,
+                        'status' => 'Ditolak - Posyandu Salah',
+                        'catatan' => $request->catatan,
+                        'diubah_oleh' => $user->id,
+                        'action_by_role' => 'kader',
+                        'created_at' => now(),
+                    ]);
+
+                    $targetUser->notify(new PengajuanStatusUpdated($ajuan, 'Ditolak', $request->catatan));
+
+                    return redirect()->route('ajuan.index')->with('success', 'Pengajuan telah ditolak karena posyandu tidak sesuai.');
+                }
+
+                // === REVISI ===
+                if ($keputusan === 'revisi') {
+                    $ajuan->update([
+                        'status_pengajuan' => 'Diproses',
+                        'revision_requested_at' => now(),
+                        'revision_count' => $ajuan->revision_count + 1,
+                    ]);
+
+                    History::create([
+                        'pengajuan_id' => $ajuan->id,
+                        'status' => 'Revisi Diminta',
+                        'catatan' => $request->catatan,
+                        'diubah_oleh' => $user->id,
+                        'action_by_role' => 'kader',
+                        'created_at' => now(),
+                    ]);
+
+                    $targetUser->notify(new PengajuanStatusUpdated($ajuan, 'Revisi Diminta', $request->catatan));
+
+                    return redirect()->route('ajuan.index')->with('success', 'Revisi berhasil diminta. User memiliki 5 hari kerja untuk merevisi.');
+                }
+
+                // === LANJUT KE KUNJUNGAN ===
+                if ($keputusan === 'lanjut') {
+                    $submittedItems = $ajuan->formulir_items ?? [];
+                    $submittedDocs = $ajuan->administrasi_items ?? [];
+
+                    $request->validate([
+                        'verified_formulir_items' => ['required', 'array', 'size:' . count($submittedItems)],
+                        'verified_administrasi_items' => ['required', 'array', 'size:' . count($submittedDocs)],
+                    ], [
+                        'verified_formulir_items.size' => 'Semua item permohonan harus dicentang untuk lanjut.',
+                        'verified_administrasi_items.size' => 'Semua dokumen administrasi harus dicentang untuk lanjut.',
+                    ]);
+
+                    $ajuan->update([
+                        'status_pengajuan' => 'Diproses',
+                        'sudah_verifikasi' => true,
+                        'kunjungan_lapangan' => false,
+                        'approved_by_ketua' => false,
+                        'verified_formulir_items' => $request->input('verified_formulir_items'),
+                        'verified_administrasi_items' => $request->input('verified_administrasi_items'),
+                    ]);
+
+                    $statusHistory = 'Menunggu Kunjungan';
+                    $catatanHistory = $request->catatan ?? 'Dokumen terverifikasi. Menunggu jadwal kunjungan lapangan.';
+
+                    History::create([
+                        'pengajuan_id' => $ajuan->id,
+                        'status' => $statusHistory,
+                        'catatan' => $catatanHistory,
+                        'diubah_oleh' => $user->id,
+                        'action_by_role' => 'kader',
+                        'created_at' => now()
+                    ]);
+
+                    $targetUser->notify(new PengajuanStatusUpdated($ajuan, $statusHistory, $catatanHistory));
+
+                    return redirect()->route('ajuan.index')->with('success', 'Verifikasi dokumen berhasil. Silakan lakukan kunjungan lapangan.');
+                }
+            }
+
+            // ===============================================
+            // == STEP 2: Kunjungan Lapangan
+            // ===============================================
+            if ($step == 2) {
+                $request->validate([
+                    'catatan_kunjungan' => 'required|string|min:10',
+                    'foto_kunjungan.*' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+                ], [
+                    'catatan_kunjungan.required' => 'Catatan kunjungan wajib diisi.',
+                    'catatan_kunjungan.min' => 'Catatan minimal 10 karakter.',
+                    'foto_kunjungan.*.image' => 'File harus berupa gambar.',
+                    'foto_kunjungan.*.max' => 'Ukuran foto maksimal 2MB.',
+                ]);
+
+                // Upload foto jika ada
+                $fotoKunjungan = $ajuan->foto_kunjungan ?? [];
+                if ($request->hasFile('foto_kunjungan')) {
+                    foreach ($request->file('foto_kunjungan') as $foto) {
+                        $path = $foto->store('foto_kunjungan', 'public');
+                        $fotoKunjungan[] = $path;
+                    }
+                }
+
+                $ajuan->update([
+                    'kunjungan_lapangan' => true,
+                    'status_pengajuan' => 'Diproses',
+                    'foto_kunjungan' => $fotoKunjungan,
+                ]);
+
+                $statusHistory = 'Kunjungan Selesai';
+                $catatanHistory = $request->catatan_kunjungan;
 
                 History::create([
                     'pengajuan_id' => $ajuan->id,
-                    'status' => $statusDitolak,
-                    'catatan' => $catatanDitolak,
+                    'status' => $statusHistory,
+                    'catatan' => $catatanHistory,
                     'diubah_oleh' => $user->id,
+                    'action_by_role' => 'kader',
                     'created_at' => now(),
                 ]);
 
-                $targetUser->notify(new PengajuanStatusUpdated($ajuan, $statusDitolak, $catatanDitolak));
+                $targetUser->notify(new PengajuanStatusUpdated($ajuan, $statusHistory, $catatanHistory));
 
-                return redirect()->route('ajuan.index')->with('success', 'Pengajuan telah ditolak.');
+                return redirect()->route('ajuan.index')->with('success', 'Kunjungan lapangan berhasil dikonfirmasi. Menunggu persetujuan Ketua Posyandu.');
             }
-
-            // --- Jika Kader mengklik "Setujui Verifikasi" ---
-            $submittedItems = $ajuan->formulir_items ?? [];
-            $submittedDocs = $ajuan->administrasi_items ?? [];
-
-            $request->validate([
-                'verified_formulir_items' => ['required', 'array', 'size:' . count($submittedItems)],
-                'verified_administrasi_items' => ['required', 'array', 'size:' . count($submittedDocs)],
-            ], [
-                'verified_formulir_items.size' => 'Semua item permohonan harus dicentang untuk lanjut.',
-                'verified_administrasi_items.size' => 'Semua dokumen administrasi harus dicentang untuk lanjut.',
-            ]);
-
-            // Update: Tahap 1 selesai, kunjungan_lapangan masih false
-            $ajuan->update([
-                'status_pengajuan' => 'Diproses',
-                'sudah_verifikasi' => true, // ✅ Tahap 1 selesai
-                'kunjungan_lapangan' => false, // ❌ Belum kunjungan
-                'ttd_kader' => false, // Belum TTD final
-                'verified_formulir_items' => $request->input('verified_formulir_items'),
-                'verified_administrasi_items' => $request->input('verified_administrasi_items'),
-            ]);
-
-            $statusHistory = 'Menunggu Kunjungan';
-            $catatanHistory = 'Dokumen terverifikasi. Menunggu jadwal kunjungan lapangan.';
-
-            History::create([
-                'pengajuan_id' => $ajuan->id,
-                'status' => $statusHistory,
-                'catatan' => $catatanHistory,
-                'diubah_oleh' => $user->id,
-                'created_at' => now()
-            ]);
-
-            $targetUser->notify(new PengajuanStatusUpdated($ajuan, $statusHistory, $catatanHistory));
-
-            return redirect()->route('ajuan.index')->with('success', 'Verifikasi dokumen berhasil. Silakan lakukan kunjungan lapangan.');
         }
 
         // ===============================================
-        // == ALUR 2: TAHAP 2 (Konfirmasi Kunjungan)
+        // == KETUA POSYANDU: STEP 3
         // ===============================================
-        elseif ($step == 2) {
-            $request->validate([
-                'konfirmasi_kunjungan' => ['required', 'accepted'],
-                'catatan_kunjungan' => ['nullable', 'string', 'max:500'],
-            ], [
-                'konfirmasi_kunjungan.accepted' => 'Anda harus mengonfirmasi bahwa kunjungan telah dilakukan.',
-            ]);
+        if ($user->role === 'ketua-posyandu') {
+            if ($step == 3) {
+                $request->validate([
+                    'keputusan' => 'required|in:setuju,tolak',
+                    'tindak_lanjut' => 'nullable|string',
+                    'catatan' => 'nullable|string|required_if:keputusan,tolak',
+                ], [
+                    'keputusan.required' => 'Keputusan harus dipilih.',
+                    'catatan.required_if' => 'Catatan wajib diisi jika menolak.',
+                ]);
 
-            // Update: Kunjungan sudah dilakukan
-            $ajuan->update([
-                'kunjungan_lapangan' => true, // ✅ Kunjungan selesai
-                'status_pengajuan' => 'Diproses', // Status tetap Diproses
-            ]);
+                if ($request->keputusan === 'setuju') {
+                    $ajuan->update([
+                        'status_pengajuan' => 'Sesuai',
+                        'approved_by_ketua' => true,
+                        'approved_by_ketua_id' => $user->id,
+                        'approved_by_ketua_at' => now(),
+                        'tindak_lanjut' => $request->tindak_lanjut ?? $ajuan->deskripsi_pengajuan,
+                    ]);
 
-            $statusHistory = 'Kunjungan Selesai';
-            $catatanHistory = $request->catatan_kunjungan ?? 'Kunjungan lapangan telah dilaksanakan.';
+                    $statusHistory = 'Disetujui Ketua Posyandu';
+                    $catatanHistory = $request->catatan ?? 'Pengajuan disetujui dan siap diajukan ke Pemdes.';
+                } else {
+                    $ajuan->update([
+                        'status_pengajuan' => 'Ditolak',
+                    ]);
 
-            History::create([
-                'pengajuan_id' => $ajuan->id,
-                'status' => $statusHistory,
-                'catatan' => $catatanHistory,
-                'diubah_oleh' => $user->id,
-                'created_at' => now(),
-            ]);
+                    $statusHistory = 'Ditolak Ketua Posyandu';
+                    $catatanHistory = $request->catatan;
+                }
 
-            $targetUser->notify(new PengajuanStatusUpdated($ajuan, $statusHistory, $catatanHistory));
+                History::create([
+                    'pengajuan_id' => $ajuan->id,
+                    'status' => $statusHistory,
+                    'catatan' => $catatanHistory,
+                    'diubah_oleh' => $user->id,
+                    'action_by_role' => 'ketua-posyandu',
+                    'created_at' => now(),
+                ]);
 
-            return redirect()->route('ajuan.index')->with('success', 'Kunjungan lapangan berhasil dikonfirmasi. Silakan buat keputusan akhir.');
-        }
+                $targetUser->notify(new PengajuanStatusUpdated($ajuan, $statusHistory, $catatanHistory));
 
-        // ===============================================
-        // == ALUR 3: TAHAP 3 (Keputusan Akhir)
-        // ===============================================
-        elseif ($step == 3) {
-            $request->validate([
-                'status' => ['required', 'in:Disetujui,Ditolak'],
-                'catatan' => ['nullable', 'string', 'required_if:status,Ditolak'],
-                'ttd_kader' => ['required', 'accepted'],
-            ], [
-                'ttd_kader.accepted' => 'Anda harus menyetujui keputusan akhir ini.',
-            ]);
-
-            $statusAkhir = $request->status; // 'Disetujui' atau 'Ditolak'
-            $catatanHistory = $request->catatan ?? "Pengajuan $statusAkhir setelah kunjungan lapangan.";
-
-            $ajuan->update([
-                'status_pengajuan' => $statusAkhir,
-                'ttd_kader' => true, // ✅ Kader sudah TTD
-            ]);
-
-            History::create([
-                'pengajuan_id' => $ajuan->id,
-                'status' => $statusAkhir,
-                'catatan' => $catatanHistory,
-                'diubah_oleh' => $user->id,
-                'created_at' => now(),
-            ]);
-
-            $targetUser->notify(new PengajuanStatusUpdated($ajuan, $statusAkhir, $catatanHistory));
-
-            return redirect()->route('ajuan.index')->with('success', 'Keputusan akhir berhasil disimpan.');
+                return redirect()->route('ajuan.index')->with('success', 'Keputusan berhasil disimpan.');
+            }
         }
 
         // Fallback
-        return redirect()->back()->with('error', 'Terjadi kesalahan.');
+        return redirect()->back()->with('error', 'Terjadi kesalahan pada proses verifikasi.');
     }
 
+    public function submitToPemdes(Pengajuan $ajuan)
+    {
+        $user = Auth::user();
+
+        if ($user->role !== 'ketua-posyandu') {
+            abort(403);
+        }
+
+        if ($ajuan->status_pengajuan !== 'Sesuai') {
+            return redirect()->back()->with('error', 'Pengajuan belum siap dikirim ke Pemdes.');
+        }
+
+        $ajuan->update([
+            'status_pengajuan' => 'Diajukan ke Desa',
+        ]);
+
+        History::create([
+            'pengajuan_id' => $ajuan->id,
+            'status' => 'Diajukan ke Pemdes',
+            'catatan' => 'Pengajuan diteruskan ke Kepala Desa untuk persetujuan akhir.',
+            'diubah_oleh' => $user->id,
+            'action_by_role' => 'ketua-posyandu',
+            'created_at' => now(),
+        ]);
+
+        return redirect()->route('ajuan.index')->with('success', 'Pengajuan berhasil dikirim ke Pemdes.');
+    }
+
+    public function kadesApproval(Request $request, Pengajuan $ajuan)
+    {
+        $user = Auth::user();
+
+        if ($user->role !== 'kades') {
+            abort(403);
+        }
+
+        $request->validate([
+            'keputusan' => 'required|in:setuju,tolak',
+            'catatan' => 'nullable|string|required_if:keputusan,tolak',
+        ], [
+            'catatan.required_if' => 'Catatan wajib diisi jika menolak.',
+        ]);
+
+        if ($request->keputusan === 'setuju') {
+            $ajuan->update([
+                'status_pengajuan' => 'Disetujui',
+                'approved_by_kades' => true,
+                'approved_by_kades_id' => $user->id,
+                'approved_by_kades_at' => now(),
+            ]);
+
+            $status = 'Disetujui Kades';
+        } else {
+            $ajuan->update([
+                'status_pengajuan' => 'Ditolak',
+            ]);
+
+            $status = 'Ditolak Kades';
+        }
+
+        History::create([
+            'pengajuan_id' => $ajuan->id,
+            'status' => $status,
+            'catatan' => $request->catatan ?? '-',
+            'diubah_oleh' => $user->id,
+            'action_by_role' => 'kades',
+            'created_at' => now(),
+        ]);
+
+        return redirect()->route('ajuan.index')->with('success', 'Keputusan berhasil disimpan.');
+    }
     //cetak detail ajuan
     public function cetak($id)
     {

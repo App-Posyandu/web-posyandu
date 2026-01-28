@@ -37,6 +37,9 @@ class User extends Authenticatable
         'kecamatan_id',
         'jenis_wilayah',
 
+        'rt',
+        'rw',
+
         'nik',
         'alamat',
         'no_telepon',
@@ -52,6 +55,14 @@ class User extends Authenticatable
         'deactivated_by',
         'deactivation_reason',
     ];
+
+    public function validatePosyanduRw()
+    {
+        if ($this->posyandu && $this->rw) {
+            return $this->posyandu->isRwAllowed($this->rw);
+        }
+        return true;
+    }
 
     public function pengajuans()
     {

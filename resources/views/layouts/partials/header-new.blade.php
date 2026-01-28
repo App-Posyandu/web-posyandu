@@ -53,7 +53,7 @@
                             </x-dropdown-link>
                         @endif
 
-                        @if (in_array(auth()->user()->role, ['admin', 'kabid', 'ketua-posyandu', 'admin-kabupaten']))
+                        @if (in_array(auth()->user()->role, ['admin', 'kabid', 'ketua-posyandu', 'admin-kabupaten', 'operator-desa']))
                             <x-dropdown-link :href="route('admin.posyandu.index')">{{ __('Posyandu') }}</x-dropdown-link>
                             <x-dropdown-link :href="route('admin.kecamatan.index')">{{ __('Kecamatan') }}</x-dropdown-link>
                         @endif
@@ -144,7 +144,7 @@
                     </a>
                 @endif
 
-                @if (auth()->user()->role === 'kabid')
+                @if (in_array(auth()->user()->role, ['admin', 'kabid', 'ketua-posyandu', 'admin-kabupaten', 'operator-desa']))
                     <a href="{{ route('admin.posyandu.index') }}"
                         class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-pink-500 transition duration-150 ease-in-out">
                         <i class="bi bi-building mr-2"></i> Posyandu

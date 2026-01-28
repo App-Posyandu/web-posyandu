@@ -20,16 +20,19 @@ return new class extends Migration
             $table->string('no_telepon', 20)->unique()->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->enum('role', ['masyarakat', 'kader', 'operator-desa', 'ketua-kader', 'admin-kecamatan', 'kabid', 'admin-kabupaten', 'ketua-posyandu', 'admin'])->default('masyarakat');
+            $table->enum('role', ['masyarakat', 'kader', 'operator-desa', 'ketua-kader', 'kades', 'admin-kecamatan', 'kabid', 'admin-kabupaten', 'ketua-posyandu', 'admin'])->default('masyarakat');
             $table->string('kabupaten')->nullable();
             $table->string('kecamatan')->nullable();
+
+            $table->string('rw', 10)->nullable()->comment('RW pemohon (max 15)');
+            $table->string('rt', 10)->nullable()->comment('RT pemohon (max 53)');
 
             $table->enum('jenis_wilayah', ['kabupaten', 'kota'])->nullable();
 
             $table->foreignUuid('kabupaten_id')
                 ->nullable();
 
-            $table->foreignUuid('kecamatan_id')
+        $table->foreignUuid('kecamatan_id')
                 ->nullable();
 
             // Kolom Tambahan dari Form Registrasi

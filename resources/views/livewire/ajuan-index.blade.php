@@ -31,18 +31,113 @@
         @endif
 
         {{-- Header Section --}}
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <div class="w-full flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
             {{-- Title --}}
             <div class="w-full sm:w-auto">
-                @if (auth()->user()->role === 'kader' && auth()->user()->bidang)
-                    <h2 class="text-xl sm:text-2xl font-bold text-gray-800">
-                        List Pengajuan
-                        <span class="block sm:inline text-pink-600 mt-1 sm:mt-0">
-                            {{ auth()->user()->bidang->nama_bidang }}
-                        </span>
-                    </h2>
-                @else
-                    <h2 class="text-xl sm:text-2xl font-bold text-gray-800">List Pengajuan</h2>
+                <div>
+                    @if (auth()->user()->role === 'kader' && auth()->user()->bidang)
+                        <h2 class="text-xl sm:text-2xl font-bold text-gray-800">
+                            List Pengajuan
+                            <span class="block sm:inline text-pink-600 mt-1 sm:mt-0">
+                                {{ auth()->user()->bidang->nama_bidang }}
+                            </span>
+                        </h2>
+                    @else
+                        <h2 class="text-xl sm:text-2xl font-bold text-gray-800">List Pengajuan</h2>
+                    @endif
+                    @if (auth()->user()->role === 'ketua-posyandu')
+                        <p class="text-sm text-gray-500 mt-1">
+                            Menampilkan pengajuan yang memerlukan persetujuan Anda
+                        @elseif(auth()->user()->role === 'kades')
+                            Menampilkan pengajuan yang diajukan ke Desa
+                        @elseif(auth()->user()->role === 'kader')
+                            Menampilkan pengajuan yang perlu diverifikasi
+                        @else
+                            Total: {{ $semuaAjuan->total() }} pengajuan
+                    @endif
+                </div>
+                <div>
+                    @if ($isVerified && in_array(auth()->user()->role, ['masyarakat', 'admin', 'ketua-kader', 'operator-desa']))
+                        <a href="{{ route('dashboard.partials.pilih-layanan') }}"
+                            class="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition">
+                            <i class="bi bi-plus-circle-fill mr-2"></i>
+                            Buat Pengajuan
+                        </a>
+                    @endif
+                </div>
+                {{-- ✅ INFO BANNER BERDASARKAN ROLE --}}
+                @if (auth()->user()->role === 'ketua-posyandu')
+                    <div class="w-full bg-blue-50 border-l-4 border-blue-500 p-4 rounded-md">
+                        <div class="flex items-start">
+                            <i class="bi bi-info-circle-fill text-blue-500 mr-3 mt-0.5"></i>
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-blue-900">Filter Otomatis Aktif</p>
+                                <p class="text-xs text-blue-700 mt-1">
+                                    Anda hanya melihat pengajuan yang:
+                                </p>
+                                <ul class="text-xs text-blue-700 mt-2 space-y-1 list-disc list-inside">
+                                    <li>Sudah menyelesaikan kunjungan lapangan (Tahap 3)</li>
+                                    <li>Memerlukan persetujuan dari Ketua Posyandu</li>
+                                    <li>Atau pengajuan yang sudah disetujui (status "Sesuai")</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                @elseif(auth()->user()->role === 'kades')
+                    <div class="w-full bg-purple-50 border-l-4 border-purple-500 p-4 rounded-md">
+                        <div class="flex items-start">
+                            <i class="bi bi-info-circle-fill text-purple-500 mr-3 mt-0.5"></i>
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-purple-900">Filter Otomatis Aktif</p>
+                                <p class="text-xs text-purple-700 mt-1">
+                                    Anda hanya melihat pengajuan yang sudah diajukan ke Desa dan memerlukan persetujuan
+                                    akhir dari Kepala Desa
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                @elseif(auth()->user()->role === 'kader')
+                    <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-md">
+                        <div class="flex items-start">
+                            <i class="bi bi-info-circle-fill text-yellow-500 mr-3 mt-0.5"></i>
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-yellow-900">Filter Otomatis Aktif</p>
+                                <p class="text-xs text-yellow-700 mt-1">
+                                    Anda hanya melihat pengajuan dengan status "Diproses" yang memerlukan verifikasi
+                                    atau kunjungan lapangan
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+                {{-- Progress Legend untuk Ketua Posyandu & Kades --}}
+                @if (in_array(auth()->user()->role, ['ketua-posyandu', 'kades', 'admin', 'ketua-kader']))
+                    <div class="mt-4 pt-4 border-t border-gray-200">
+                        <p class="text-xs font-semibold text-gray-700 mb-2">Legenda Progress:</p>
+                        <div class="flex flex-wrap gap-4 text-xs">
+                            <div class="flex items-center gap-2">
+                                <span
+                                    class="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center text-white">
+                                    <i class="bi bi-check-lg text-xs"></i>
+                                </span>
+                                <span class="text-gray-600">Tahap Selesai</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span
+                                    class="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center text-white">
+                                    <i class="bi bi-hourglass-split text-xs"></i>
+                                </span>
+                                <span class="text-gray-600">Sedang Proses</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span
+                                    class="w-5 h-5 rounded-full bg-gray-300 flex items-center justify-center text-gray-500">
+                                    <i class="bi bi-lock-fill text-xs"></i>
+                                </span>
+                                <span class="text-gray-600">Belum Dimulai</span>
+                            </div>
+                        </div>
+                    </div>
                 @endif
             </div>
 
@@ -167,8 +262,8 @@
         {{-- Loading Indicator --}}
         <div wire:loading class="mb-4">
             <div class="flex items-center justify-center p-4 bg-gray-50 rounded-lg">
-                <svg class="animate-spin h-5 w-5 text-pink-500 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none"
-                    viewBox="0 0 24 24">
+                <svg class="animate-spin h-5 w-5 text-pink-500 mr-3" xmlns="http://www.w3.org/2000/svg"
+                    fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
                         stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor"

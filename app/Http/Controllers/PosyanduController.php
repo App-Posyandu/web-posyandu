@@ -44,8 +44,26 @@ class PosyanduController extends Controller
 
     public function index(Request $request)
     {
+        $currentUser = Auth::user();
         $query = Posyandu::with('users')->latest();
 
+        // ✅ Filter berdasarkan role
+        if ($currentUser->role === 'operator-desa') {
+            // Operator Desa: hanya lihat posyandu miliknya sendiri
+            $query->where('id', $currentUser->posyandu_id);
+        } elseif ($currentUser->role === 'ketua-kader') {
+            // Ketua Kader: hanya lihat posyandu miliknya sendiri
+            $query->where('id', $currentUser->posyandu_id);
+        } elseif ($currentUser->role === 'admin-kecamatan') {
+            // Admin Kecamatan: lihat semua posyandu di kecamatannya
+            $query->where('kecamatan_id', $currentUser->kecamatan_id);
+        } elseif ($currentUser->role === 'kabid') {
+            // Kabid: lihat semua posyandu di kabupatennya
+            $query->where('kabupaten_id', $currentUser->kabupaten_id);
+        }
+        // Admin & Ketua Posyandu: lihat semua
+
+        // Search
         if ($request->filled('search')) {
             $query->where('nama_posyandu', 'like', '%' . $request->search . '%')
                 ->orWhere('desa', 'like', '%' . $request->search . '%')
@@ -56,6 +74,7 @@ class PosyanduController extends Controller
                         ->where('role', 'ketua-kader');
                 });
         }
+
         $posyandus = $query->paginate(10)->withQueryString();
 
         return view('admin.posyandu.index', compact('posyandus'));
@@ -244,7 +263,6 @@ class PosyanduController extends Controller
             ]);
 
             $createdKaders[] = [
-                'kader' => $kader,
                 'email' => $email,
                 'password' => $defaultPassword,
                 'bidang' => $bidang->nama_bidang,
@@ -255,6 +273,207 @@ class PosyanduController extends Controller
         session()->flash('created_kaders', $createdKaders);
 
         return $createdKaders;
+    }
+
+    public function editRwRt(Posyandu $posyandu)
+    {
+        return view('admin.posyandu.edit-rw-rt', compact('posyandu'));
+    }
+
+    public function updateRwRt(Request $request, Posyandu $posyandu)
+    {
+        $request->validate([
+            'rw_list' => 'required|array|max:15',
+            'rw_list.*' => 'required|string|regex:/^RW\d{2}$/',
+            'rt_mapping' => 'required|array',
+            'rt_mapping.*' => 'array', // Each RW should map to array of RTs
+            'rt_mapping.*.*' => 'required|string|regex:/^RT\d{3}$/',
+        ], [
+            'rw_list.max' => 'Maksimal 15 RW per posyandu',
+            'rw_list.*.regex' => 'Format RW harus: RW01, RW02, dst',
+            'rt_mapping.*.*.regex' => 'Format RT harus: RT001, RT002, dst',
+        ]);
+
+        // ✅ Validasi total RT tidak lebih dari 53
+        $totalRt = 0;
+        foreach ($request->rt_mapping as $rw => $rtList) {
+            $totalRt += count($rtList);
+        }
+
+        if ($totalRt > 53) {
+            return redirect()->back()
+                ->withErrors(['rt_mapping' => 'Total RT tidak boleh lebih dari 53 (saat ini: ' . $totalRt . ')'])
+                ->withInput();
+        }
+
+        // ✅ Validasi setiap RW dalam rt_mapping harus ada di rw_list
+        foreach (array_keys($request->rt_mapping) as $rw) {
+            if (!in_array($rw, $request->rw_list)) {
+                return redirect()->back()
+                    ->withErrors(['rt_mapping' => "RW {$rw} tidak ada dalam daftar RW yang aktif"])
+                    ->withInput();
+            }
+        }
+
+        // ✅ Update posyandu
+        $posyandu->update([
+            'rw_list' => $request->rw_list,
+            'rt_mapping' => $request->rt_mapping,
+        ]);
+
+        // ✅ Log perubahan
+        UserHistory::create([
+            'user_id' => Auth::id(),
+            'action_by' => Auth::id(),
+            'action_type' => 'updated',
+            'description' => "Mapping RW/RT posyandu {$posyandu->nama_posyandu} diperbarui. Total RW: " . count($request->rw_list) . ", Total RT: {$totalRt}",
+            'new_data' => json_encode([
+                'rw_list' => $request->rw_list,
+                'total_rt' => $totalRt,
+            ]),
+        ]);
+
+        return redirect()->route('admin.posyandu.index')
+            ->with('success', 'Mapping RW/RT berhasil diperbarui.');
+    }
+
+    /**
+     * ✅ Tampilkan form untuk manage RW/RT mapping
+     */
+    public function manageRwRt(Posyandu $posyandu)
+    {
+        $user = Auth::user();
+
+        // ✅ Validasi akses yang lebih ketat
+        if ($user->role === 'operator-desa') {
+            // Operator Desa hanya bisa kelola posyandu miliknya sendiri
+            if ($posyandu->id !== $user->posyandu_id) {
+                abort(403, 'Anda hanya bisa mengelola RW/RT di posyandu Anda sendiri.');
+            }
+        } elseif ($user->role === 'ketua-kader') {
+            // Ketua Kader hanya bisa kelola posyandu miliknya sendiri
+            if ($posyandu->id !== $user->posyandu_id) {
+                abort(403, 'Anda hanya bisa mengelola RW/RT di posyandu Anda sendiri.');
+            }
+        } elseif ($user->role === 'admin-kecamatan') {
+            // Admin Kecamatan hanya bisa kelola posyandu di kecamatannya
+            if ($posyandu->kecamatan_id !== $user->kecamatan_id) {
+                abort(403, 'Anda hanya bisa mengelola posyandu di kecamatan Anda.');
+            }
+        } elseif ($user->role === 'kabid') {
+            // Kabid hanya bisa kelola posyandu di kabupatennya
+            if ($posyandu->kabupaten_id !== $user->kabupaten_id) {
+                abort(403, 'Anda hanya bisa mengelola posyandu di kabupaten Anda.');
+            }
+        }
+        // Admin & Ketua Posyandu bisa kelola semua
+
+        return view('admin.posyandu.manage-rw-rt', compact('posyandu'));
+    }
+
+    /**
+     * ✅ Simpan RW/RT mapping (simplified - hanya pilih dari fixed options)
+     */
+    public function saveRwRt(Request $request, Posyandu $posyandu)
+    {
+        $user = Auth::user();
+
+        // ✅ Validasi akses yang lebih ketat (sama seperti manageRwRt)
+        if ($user->role === 'operator-desa') {
+            if ($posyandu->id !== $user->posyandu_id) {
+                abort(403, 'Unauthorized - Anda hanya bisa mengelola posyandu Anda sendiri.');
+            }
+        } elseif ($user->role === 'ketua-kader') {
+            if ($posyandu->id !== $user->posyandu_id) {
+                abort(403, 'Unauthorized - Anda hanya bisa mengelola posyandu Anda sendiri.');
+            }
+        } elseif ($user->role === 'admin-kecamatan') {
+            if ($posyandu->kecamatan_id !== $user->kecamatan_id) {
+                abort(403, 'Unauthorized - Anda hanya bisa mengelola posyandu di kecamatan Anda.');
+            }
+        } elseif ($user->role === 'kabid') {
+            if ($posyandu->kabupaten_id !== $user->kabupaten_id) {
+                abort(403, 'Unauthorized - Anda hanya bisa mengelola posyandu di kabupaten Anda.');
+            }
+        }
+
+        // ✅ Validasi dengan cara yang lebih sederhana
+        $request->validate([
+            'rw_list' => 'required|array|min:1',
+            'rw_list.*' => 'required|string',
+            'rt_mapping' => 'required|array',
+            'rt_mapping.*' => 'array',
+            'rt_mapping.*.*' => 'required|string',
+        ], [
+            'rw_list.required' => 'Minimal pilih 1 RW',
+            'rw_list.min' => 'Minimal pilih 1 RW',
+            'rt_mapping.required' => 'Setiap RW harus memiliki minimal 1 RT',
+        ]);
+
+        // ✅ Validasi manual untuk format RW (RW01-RW15)
+        foreach ($request->rw_list as $rw) {
+            if (!preg_match('/^RW(0[1-9]|1[0-5])$/', $rw)) {
+                return redirect()->back()
+                    ->withErrors(['rw_list' => "Format RW tidak valid: {$rw}. Harus RW01-RW15"])
+                    ->withInput();
+            }
+        }
+
+        // ✅ Validasi manual untuk format RT (RT001-RT053)
+        foreach ($request->rt_mapping as $rw => $rtList) {
+            if (!is_array($rtList) || empty($rtList)) {
+                return redirect()->back()
+                    ->withErrors(['rt_mapping' => "RW {$rw} harus memiliki minimal 1 RT"])
+                    ->withInput();
+            }
+
+            foreach ($rtList as $rt) {
+                if (!preg_match('/^RT(0[0-4][0-9]|05[0-3])$/', $rt)) {
+                    return redirect()->back()
+                        ->withErrors(['rt_mapping' => "Format RT tidak valid: {$rt}. Harus RT001-RT053"])
+                        ->withInput();
+                }
+            }
+        }
+
+        // ✅ Validasi: Setiap RW yang dipilih harus ada di rt_mapping
+        foreach ($request->rw_list as $rw) {
+            if (!isset($request->rt_mapping[$rw]) || empty($request->rt_mapping[$rw])) {
+                return redirect()->back()
+                    ->withErrors(['rt_mapping' => "RW {$rw} harus memiliki minimal 1 RT"])
+                    ->withInput();
+            }
+        }
+
+        // ✅ Hitung total RT untuk info
+        $totalRt = 0;
+        foreach ($request->rt_mapping as $rtList) {
+            if (is_array($rtList)) {
+                $totalRt += count($rtList);
+            }
+        }
+
+        // ✅ Update posyandu
+        $posyandu->update([
+            'rw_list' => $request->rw_list,
+            'rt_mapping' => $request->rt_mapping,
+        ]);
+
+        // ✅ Log perubahan
+        UserHistory::create([
+            'user_id' => $user->id,
+            'action_by' => $user->id,
+            'action_type' => 'updated',
+            'description' => "Mapping RW/RT posyandu {$posyandu->nama_posyandu} diperbarui. Total RW: " . count($request->rw_list) . ", Total RT: {$totalRt}",
+            'new_data' => json_encode([
+                'rw_list' => $request->rw_list,
+                'total_rw' => count($request->rw_list),
+                'total_rt' => $totalRt,
+            ]),
+        ]);
+
+        return redirect()->route('admin.posyandu.index')
+            ->with('success', "Mapping RW/RT berhasil disimpan. Posyandu melayani " . count($request->rw_list) . " RW dengan total {$totalRt} RT.");
     }
 
     public function import(Request $request)

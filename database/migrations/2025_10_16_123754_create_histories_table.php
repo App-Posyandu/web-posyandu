@@ -17,6 +17,12 @@ return new class extends Migration
             $table->string('status');
             $table->text('catatan')->nullable();
             $table->foreignUuid('diubah_oleh')->nullable()->constrained('users', 'id')->nullOnDelete();
+            $table->enum('action_by_role', [
+                'kader',
+                'ketua-posyandu',
+                'kades',
+                'system'
+            ])->nullable()->comment('Role yang melakukan aksi');
             $table->timestamp('created_at');
         });
     }
