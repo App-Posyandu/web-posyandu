@@ -891,10 +891,41 @@ class UserController extends Controller
 
     public function importProcess(Request $request)
     {
-        $request->validate([
-            'file' => 'required|mimes:xlsx,xls,csv',
-        ]);
-        return back()->with('success', 'Import berhasil diproses.');
+        try {
+            $request->validate([
+                'file' => 'required|mimes:xlsx,xls,csv',
+            ]);
+
+            $currentUser = Auth::user();
+            $file = $request->file('file');
+            $countBefore = User::count();
+
+            // Import users dari Excel dengan passing user yang melakukan import
+            Excel::import(new UsersImport(null, $currentUser), $file);
+
+            $countAfter = User::count();
+            $imported = $countAfter - $countBefore;
+
+            $message = $imported > 0
+                ? "Berhasil import {$imported} user ke database"
+                : "Import selesai. Data mungkin sudah ada atau tidak valid.";
+
+            Log::info('User Import Success', [
+                'importing_user_id' => $currentUser->id,
+                'importing_user_role' => $currentUser->role,
+                'total_imported' => $imported
+            ]);
+
+            return back()->with('success', $message)->with('imported', $imported);
+        } catch (\Exception $e) {
+            Log::error('Import Users Error', [
+                'error' => $e->getMessage(),
+                'file' => $request->file('file') ? $request->file('file')->getClientOriginalName() : 'unknown',
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return back()->withErrors(['error' => 'Terjadi kesalahan saat import: ' . $e->getMessage()]);
+        }
     }
 
 
@@ -949,19 +980,65 @@ class UserController extends Controller
     public function exportTemplate()
     {
         try {
-            // Ambil semua posyandu yang terdaftar
-            $posyandus = Posyandu::select('desa', 'kecamatan', 'kabupaten')
-                ->orderBy('kecamatan')
-                ->orderBy('desa')
-                ->get();
+            $currentUser = Auth::user();
 
-            Log::info('Export User Template', ['total_posyandu' => $posyandus->count()]);
+            // Filter posyandu berdasarkan role user yang login
+            $query = Posyandu::select('id', 'nama_posyandu', 'desa', 'kecamatan', 'kabupaten');
+
+            switch ($currentUser->role) {
+                case 'ketua-kader':
+                    // Ketua-kader hanya lihat posyandu yang dia pegang
+                    $query->where('id', $currentUser->posyandu_id);
+                    $roleToCreate = 'operator-desa';
+                    break;
+
+                case 'operator-desa':
+                    // Operator-desa hanya lihat posyandu di desa yang sama
+                    $posyandus = $currentUser->posyandu;
+                    $query->where('desa', $posyandus->desa)
+                        ->where('kecamatan', $posyandus->kecamatan);
+                    $roleToCreate = 'kader';
+                    break;
+
+                case 'admin-kecamatan':
+                    // Admin-kecamatan lihat semua posyandu di kecamatan
+                    $query->where('kecamatan_id', $currentUser->kecamatan_id);
+                    $roleToCreate = 'ketua-kader';
+                    break;
+
+                case 'kabid':
+                    // Kabid lihat semua posyandu di kabupaten
+                    $query->where('kabupaten_id', $currentUser->kabupaten_id);
+                    $roleToCreate = 'admin-kecamatan';
+                    break;
+
+                case 'admin-kabupaten':
+                    // Admin-kabupaten lihat semua posyandu di seluruh kabupaten
+                    if ($currentUser->kabupaten) {
+                        $query->where('kabupaten', 'LIKE', "%{$currentUser->kabupaten}%");
+                    }
+                    $roleToCreate = 'kabid';
+                    break;
+
+                default:
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Role tidak memiliki akses untuk import user.'
+                    ], 403);
+            }
+
+            $posyandus = $query->orderBy('kecamatan')->orderBy('desa')->get();
+
+            Log::info('Export User Template', [
+                'current_user_role' => $currentUser->role,
+                'total_posyandu' => $posyandus->count(),
+                'role_to_create' => $roleToCreate
+            ]);
 
             if ($posyandus->isEmpty()) {
-                // Fallback jika tidak ada posyandu
                 return response()->json([
                     'success' => false,
-                    'message' => 'Belum ada data posyandu terdaftar. Silakan tambahkan posyandu terlebih dahulu.'
+                    'message' => 'Belum ada data posyandu untuk role Anda.'
                 ], 404);
             }
 
@@ -969,19 +1046,34 @@ class UserController extends Controller
 
             // Loop setiap posyandu untuk generate baris
             foreach ($posyandus as $posyandu) {
-                $dataRows[] = [
-                    'desa' => $this->cleanDesaName($posyandu->desa),
-                    'kecamatan' => $this->cleanKecamatanName($posyandu->kecamatan),
-                    'kabupaten' => strtoupper($posyandu->kabupaten)
-                ];
+                // Untuk operator-desa: generate 6 baris per posyandu (1 per bidang SPM)
+                if ($roleToCreate === 'kader') {
+                    // Ambil 6 bidang (jumlah bidang SPM)
+                    $bidangs = BidangPengajuan::all()->take(6);
+                    
+                    foreach ($bidangs as $bidang) {
+                        $dataRows[] = [
+                            'desa' => $this->cleanDesaName($posyandu->desa),
+                            'kecamatan' => $this->cleanKecamatanName($posyandu->kecamatan),
+                            'kabupaten' => strtoupper($posyandu->kabupaten)
+                        ];
+                    }
+                } else {
+                    // Untuk role lain: 1 baris per posyandu
+                    $dataRows[] = [
+                        'desa' => $this->cleanDesaName($posyandu->desa),
+                        'kecamatan' => $this->cleanKecamatanName($posyandu->kecamatan),
+                        'kabupaten' => strtoupper($posyandu->kabupaten)
+                    ];
+                }
             }
 
-            Log::info('Total Rows Generated', ['count' => count($dataRows)]);
+            Log::info('Total Rows Generated', ['count' => count($dataRows), 'role_to_create' => $roleToCreate]);
 
-            $filename = 'Template_User_Ketua_Kader_' . date('Y-m-d_His') . '.xlsx';
+            $filename = 'Template_User_' . str_replace('-', '_', $roleToCreate) . '_' . date('Y-m-d_His') . '.xlsx';
 
             return Excel::download(
-                new UsersTemplateExport($dataRows),
+                new UsersTemplateExport($dataRows, $roleToCreate),
                 $filename
             );
         } catch (\Exception $e) {
@@ -1002,6 +1094,11 @@ class UserController extends Controller
      */
     private function cleanDesaName($name)
     {
+        // Handle null atau tipe yang bukan string
+        if (!is_string($name)) {
+            return '';
+        }
+        
         $cleaned = str_ireplace(['DESA ', 'KELURAHAN '], '', $name);
         return strtoupper(trim($cleaned));
     }
@@ -1011,6 +1108,11 @@ class UserController extends Controller
      */
     private function cleanKecamatanName($name)
     {
+        // Handle null atau tipe yang bukan string
+        if (!is_string($name)) {
+            return '';
+        }
+        
         $cleaned = str_ireplace('KECAMATAN ', '', $name);
         return strtoupper(trim($cleaned));
     }
