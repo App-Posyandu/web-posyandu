@@ -784,14 +784,26 @@ class UserController extends Controller
         try {
             $request->validate([
                 'file' => 'required|mimes:xlsx,xls,csv',
+                'role' => 'nullable|string'
             ]);
 
             $currentUser = Auth::user();
+            $allowedRoles = $this->getAllowedRoleTargets($currentUser->role);
+
+            if (empty($allowedRoles)) {
+                return back()->withErrors(['error' => 'Role Anda tidak memiliki akses untuk import user.']);
+            }
+
+            $requestedRole = $request->input('role');
+            $roleToCreate = in_array($requestedRole, $allowedRoles, true)
+                ? $requestedRole
+                : $allowedRoles[0];
+
             $file = $request->file('file');
             $countBefore = User::count();
 
             // Import users dari Excel dengan passing user yang melakukan import
-            Excel::import(new UsersImport(null, $currentUser), $file);
+            Excel::import(new UsersImport($roleToCreate, $currentUser), $file);
 
             $countAfter = User::count();
             $imported = $countAfter - $countBefore;
@@ -803,6 +815,7 @@ class UserController extends Controller
             Log::info('User Import Success', [
                 'importing_user_id' => $currentUser->id,
                 'importing_user_role' => $currentUser->role,
+                'role_to_create' => $roleToCreate,
                 'total_imported' => $imported
             ]);
 
@@ -850,11 +863,27 @@ class UserController extends Controller
     public function importExcel(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls'
+            'file' => 'required|file|mimes:xlsx,xls',
+            'role' => 'nullable|string'
         ]);
 
+        $currentUser = Auth::user();
+        $allowedRoles = $this->getAllowedRoleTargets($currentUser->role);
+
+        if (empty($allowedRoles)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Role Anda tidak memiliki akses untuk import user.'
+            ], 403);
+        }
+
+        $requestedRole = $request->input('role');
+        $roleToCreate = in_array($requestedRole, $allowedRoles, true)
+            ? $requestedRole
+            : $allowedRoles[0];
+
         try {
-            Excel::import(new UsersImport, $request->file('file'));
+            Excel::import(new UsersImport($roleToCreate, $currentUser), $request->file('file'));
 
             return response()->json([
                 'success' => true,
@@ -872,14 +901,31 @@ class UserController extends Controller
         try {
             $currentUser = Auth::user();
 
+            $allowedRoles = $this->getAllowedRoleTargets($currentUser->role);
+            if (empty($allowedRoles)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Role tidak memiliki akses untuk import user.'
+                ], 403);
+            }
+
+            $requestedRole = request('role');
+            $roleToCreate = in_array($requestedRole, $allowedRoles, true)
+                ? $requestedRole
+                : $allowedRoles[0];
+
             // Filter posyandu berdasarkan role user yang login
             $query = Posyandu::select('id', 'nama_posyandu', 'desa', 'kecamatan', 'kabupaten');
 
             switch ($currentUser->role) {
+                case 'kader':
+                    // Kader hanya lihat posyandu yang dia pegang
+                    $query->where('id', $currentUser->posyandu_id);
+                    break;
+
                 case 'ketua-kader':
                     // Ketua-kader hanya lihat posyandu yang dia pegang
                     $query->where('id', $currentUser->posyandu_id);
-                    $roleToCreate = 'operator-desa';
                     break;
 
                 case 'operator-desa':
@@ -887,19 +933,16 @@ class UserController extends Controller
                     $posyandus = $currentUser->posyandu;
                     $query->where('desa', $posyandus->desa)
                         ->where('kecamatan', $posyandus->kecamatan);
-                    $roleToCreate = 'kader';
                     break;
 
                 case 'admin-kecamatan':
                     // Admin-kecamatan lihat semua posyandu di kecamatan
                     $query->where('kecamatan_id', $currentUser->kecamatan_id);
-                    $roleToCreate = 'ketua-kader';
                     break;
 
                 case 'kabid':
                     // Kabid lihat semua posyandu di kabupaten
                     $query->where('kabupaten_id', $currentUser->kabupaten_id);
-                    $roleToCreate = 'admin-kecamatan';
                     break;
 
                 case 'admin-kabupaten':
@@ -907,7 +950,10 @@ class UserController extends Controller
                     if ($currentUser->kabupaten) {
                         $query->where('kabupaten', 'LIKE', "%{$currentUser->kabupaten}%");
                     }
-                    $roleToCreate = 'kabid';
+                    break;
+
+                case 'admin':
+                    // Admin bisa lihat semua posyandu
                     break;
 
                 default:
@@ -1005,6 +1051,23 @@ class UserController extends Controller
         
         $cleaned = str_ireplace('KECAMATAN ', '', $name);
         return strtoupper(trim($cleaned));
+    }
+
+    /**
+     * Helper: Role target yang boleh dibuat berdasarkan role user
+     */
+    private function getAllowedRoleTargets(string $role): array
+    {
+        $roleMap = [
+            'kader' => ['masyarakat'],
+            'ketua-kader' => ['kader'],
+            'operator-desa' => ['ketua-kader'],
+            'admin-kecamatan' => ['operator-desa'],
+            'admin-kabupaten' => ['ketua-kader', 'kabid', 'admin-kecamatan'],
+            'admin' => ['masyarakat', 'kader', 'ketua-kader', 'operator-desa', 'admin-kecamatan', 'kabid', 'admin-kabupaten'],
+        ];
+
+        return $roleMap[$role] ?? [];
     }
 
     public function deactivate(Request $request, User $user)

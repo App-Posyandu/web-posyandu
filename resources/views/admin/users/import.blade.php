@@ -7,14 +7,29 @@
 
     @php
         $currentUser = Auth::user();
-        $roleMap = [
-            'ketua-kader' => 'Operator Desa',
-            'operator-desa' => 'Kader',
-            'admin-kecamatan' => 'Ketua Kader',
-            'kabid' => 'Admin Kecamatan',
-            'admin-kabupaten' => 'Kabid'
+        $roleTargets = [
+            'kader' => ['masyarakat'],
+            'ketua-kader' => ['kader'],
+            'operator-desa' => ['ketua-kader'],
+            'admin-kecamatan' => ['operator-desa'],
+            'admin-kabupaten' => ['ketua-kader', 'kabid', 'admin-kecamatan'],
+            'admin' => ['masyarakat', 'kader', 'ketua-kader', 'operator-desa', 'admin-kecamatan', 'kabid', 'admin-kabupaten']
         ];
-        $roleToCreate = $roleMap[$currentUser->role] ?? 'User';
+        $roleLabels = [
+            'masyarakat' => 'Masyarakat',
+            'kader' => 'Kader',
+            'ketua-kader' => 'Ketua Kader',
+            'operator-desa' => 'Operator Desa',
+            'admin-kecamatan' => 'Admin Kecamatan',
+            'kabid' => 'Kabid',
+            'admin-kabupaten' => 'Admin Kabupaten'
+        ];
+        $allowedRoles = $roleTargets[$currentUser->role] ?? [];
+        $requestedRole = request('role');
+        $roleToCreateKey = in_array($requestedRole, $allowedRoles, true)
+            ? $requestedRole
+            : ($allowedRoles[0] ?? 'user');
+        $roleToCreate = $roleLabels[$roleToCreateKey] ?? 'User';
     @endphp
 
     <!-- Info Card -->
@@ -54,6 +69,7 @@
 
     <form action="{{ route('admin.users.import.process') }}" method="POST" enctype="multipart/form-data">
         @csrf
+        <input type="hidden" name="role" value="{{ $roleToCreateKey }}">
         
         <div class="mb-4">
             <label class="block font-semibold mb-2">Upload File Excel:</label>
@@ -82,7 +98,7 @@
                 Import Data
             </button>
 
-            <a href="{{ route('admin.users.export.template') }}"
+            <a href="{{ route('admin.users.export.template', ['role' => $roleToCreateKey]) }}"
                target="_blank"
                class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
                 Download Template [{{ $roleToCreate }}]

@@ -4,7 +4,6 @@ namespace App\Imports;
 
 use App\Models\User;
 use App\Models\Posyandu;
-use App\Models\BidangPengajuan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -29,6 +28,7 @@ class UsersImport implements ToModel, WithHeadingRow
         // Tentukan posyandu yang diizinkan berdasarkan role
         if ($this->importingUser) {
             $this->setAllowedPosyandus();
+            $this->validateRoleTarget();
         }
 
         Log::info('UsersImport Initialized', [
@@ -39,6 +39,41 @@ class UsersImport implements ToModel, WithHeadingRow
     }
 
     /**
+     * Validasi role target sesuai role user yang melakukan import
+     */
+    private function validateRoleTarget(): void
+    {
+        $allowedRoles = $this->getAllowedRoleTargets($this->importingUser->role);
+
+        if (!in_array($this->roleToCreate, $allowedRoles, true)) {
+            Log::error('Role target tidak diizinkan untuk import', [
+                'importing_user_role' => $this->importingUser->role,
+                'role_to_create' => $this->roleToCreate,
+                'allowed_roles' => $allowedRoles
+            ]);
+
+            throw new \RuntimeException('Role target tidak diizinkan untuk import user.');
+        }
+    }
+
+    /**
+     * Role target yang boleh dibuat berdasarkan role user
+     */
+    private function getAllowedRoleTargets(string $role): array
+    {
+        $roleMap = [
+            'kader' => ['masyarakat'],
+            'ketua-kader' => ['kader'],
+            'operator-desa' => ['ketua-kader'],
+            'admin-kecamatan' => ['operator-desa'],
+            'admin-kabupaten' => ['ketua-kader', 'kabid', 'admin-kecamatan'],
+            'admin' => ['masyarakat', 'kader', 'ketua-kader', 'operator-desa', 'admin-kecamatan', 'kabid', 'admin-kabupaten'],
+        ];
+
+        return $roleMap[$role] ?? [];
+    }
+
+    /**
      * Tentukan posyandu mana saja yang diizinkan berdasarkan role user yang melakukan import
      */
     private function setAllowedPosyandus()
@@ -46,10 +81,16 @@ class UsersImport implements ToModel, WithHeadingRow
         $currentUserRole = $this->importingUser->role;
 
         switch ($currentUserRole) {
+            case 'kader':
+                // Kader hanya bisa import ke posyandu yang dia pegang
+                $this->allowedPosyanduIds = [$this->importingUser->posyandu_id];
+                $this->roleToCreate = $this->roleToCreate ?? 'masyarakat';
+                break;
+
             case 'ketua-kader':
                 // Ketua-kader hanya bisa import ke posyandu yang dia pegang
                 $this->allowedPosyanduIds = [$this->importingUser->posyandu_id];
-                $this->roleToCreate = $this->roleToCreate ?? 'operator-desa';
+                $this->roleToCreate = $this->roleToCreate ?? 'kader';
                 break;
 
             case 'operator-desa':
@@ -60,7 +101,7 @@ class UsersImport implements ToModel, WithHeadingRow
                     ->where('kecamatan', $kecamatan)
                     ->pluck('id')
                     ->toArray();
-                $this->roleToCreate = $this->roleToCreate ?? 'kader';
+                $this->roleToCreate = $this->roleToCreate ?? 'ketua-kader';
                 break;
 
             case 'admin-kecamatan':
@@ -68,7 +109,7 @@ class UsersImport implements ToModel, WithHeadingRow
                 $this->allowedPosyanduIds = Posyandu::where('kecamatan_id', $this->importingUser->kecamatan_id)
                     ->pluck('id')
                     ->toArray();
-                $this->roleToCreate = $this->roleToCreate ?? 'ketua-kader';
+                $this->roleToCreate = $this->roleToCreate ?? 'operator-desa';
                 break;
 
             case 'kabid':
@@ -80,9 +121,17 @@ class UsersImport implements ToModel, WithHeadingRow
                 break;
 
             case 'admin-kabupaten':
-                // Admin-kabupaten bisa import ke semua posyandu
+                // Admin-kabupaten bisa import ke semua posyandu di kabupaten
+                $this->allowedPosyanduIds = Posyandu::where('kabupaten_id', $this->importingUser->kabupaten_id)
+                    ->pluck('id')
+                    ->toArray();
+                $this->roleToCreate = $this->roleToCreate ?? 'ketua-kader';
+                break;
+
+            case 'admin':
+                // Admin bisa import ke semua posyandu
                 $this->allowedPosyanduIds = Posyandu::pluck('id')->toArray();
-                $this->roleToCreate = $this->roleToCreate ?? 'kabid';
+                $this->roleToCreate = $this->roleToCreate ?? 'ketua-kader';
                 break;
 
             default:

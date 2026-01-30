@@ -132,13 +132,15 @@ class UsersTemplateExport implements FromArray, WithHeadings, WithEvents, WithDr
 
                 // Map role ke display name
                 $roleDisplayMap = [
+                    'masyarakat' => 'MASYARAKAT',
                     'operator-desa' => 'OPERATOR DESA',
                     'kader' => 'KADER',
                     'ketua-kader' => 'KETUA KADER',
                     'admin-kecamatan' => 'ADMIN KECAMATAN',
-                    'kabid' => 'KABID'
+                    'kabid' => 'KABID',
+                    'admin-kabupaten' => 'ADMIN KABUPATEN'
                 ];
-                $roleDisplay = $roleDisplayMap[$this->roleToCreate] ?? strtoupper(str_replace('-', ' ', $this->roleToCreate));
+                $roleDisplay = $roleDisplayMap[$this->roleToCreate] ?? 'USER';
 
                 // JUDUL UTAMA - Baris 2
                 $sheet->mergeCells('A2:F2');
