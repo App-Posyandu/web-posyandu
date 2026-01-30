@@ -16,54 +16,6 @@
                                 :value="old('nama_posyandu')" required />
                             <x-input-error :messages="$errors->get('nama_posyandu')" class="mt-2" />
                         </div>
-
-                        {{-- Combobox Ketua Kader --}}
-                        {{-- <div x-data="ketuaCombobox()" @click.away="open = false" class="relative">
-                            <div class="flex justify-between items-center">
-                                <x-input-label for="ketua_kader_id" :value="__('Pilih Ketua Kader (Opsional)')" />
-                                <a href="{{ route('admin.users.create', ['source' => 'posyandu_create']) }}"
-                                    class="text-sm text-pink-600 hover:underline">
-                                    + Buat User Baru
-                                </a>
-                            </div>
-
-                            <input type="hidden" name="ketua_kader_id" :value="selected">
-
-                            <div class="relative">
-                                <input type="text" x-model="search" @focus="open = true" @input="open = true"
-                                    :placeholder="getSelectedName() || 'Cari Ketua Kader...'"
-                                    class="block mt-1 w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                    autocomplete="off">
-
-                                <button type="button" @click="open = !open"
-                                    class="absolute inset-y-0 right-0 flex items-center px-3">
-                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M19 9l-7 7-7-7"></path>
-                                    </svg>
-                                </button>
-                            </div>
-
-                            <div x-show="open" x-transition
-                                class="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-
-                                <template x-for="user in filteredUsers()" :key="user.id">
-                                    <div @click="selectUser(user)" class="px-4 py-2 cursor-pointer hover:bg-indigo-50"
-                                        :class="{ 'bg-indigo-100': selected == user.id }">
-                                        <span x-text="`${user.name} (${user.email})`"></span>
-                                    </div>
-                                </template>
-
-                                <div x-show="filteredUsers().length === 0" class="px-4 py-2 text-gray-500 text-sm">
-                                    Tidak ada hasil
-                                </div>
-                            </div>
-
-                            <x-input-error :messages="$errors->get('ketua_kader_id')" class="mt-2" />
-                        </div> --}}
-
-                        {{-- Combobox Kabupaten --}}
                         @if (auth()->user()->role === 'kabid' && auth()->user()->kabupaten)
                             <div>
                                 <x-input-label for="kabupaten" :value="__('Kabupaten')" />

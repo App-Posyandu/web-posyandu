@@ -769,14 +769,96 @@
             });
             // Replace bagian script import di create.blade.php (user) dengan ini:
 
+            const currentUserRole = @json(auth()->user()->role);
+            const roleTargets = {
+                'kader': ['masyarakat'],
+                'ketua-kader': ['kader'],
+                'operator-desa': ['ketua-kader'],
+                'admin-kecamatan': ['operator-desa'],
+                'admin-kabupaten': ['ketua-kader', 'kabid', 'admin-kecamatan'],
+                'admin': ['masyarakat', 'kader', 'ketua-kader', 'operator-desa', 'admin-kecamatan', 'kabid', 'admin-kabupaten']
+            };
+            const roleLabels = {
+                'masyarakat': 'Masyarakat',
+                'kader': 'Kader',
+                'ketua-kader': 'Ketua Kader',
+                'operator-desa': 'Operator Desa',
+                'admin-kecamatan': 'Admin Kecamatan',
+                'kabid': 'Kabid',
+                'admin-kabupaten': 'Admin Kabupaten'
+            };
+            let selectedRoleToCreate = null;
+
             document.getElementById('importBtn').addEventListener('click', function() {
+                const allowedRoles = roleTargets[currentUserRole] || [];
+
+                if (allowedRoles.length === 0) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Tidak Ada Akses',
+                        text: 'Role Anda tidak memiliki akses untuk import user.',
+                        confirmButtonColor: '#f87171'
+                    });
+                    return;
+                }
+
+                if (allowedRoles.length > 1) {
+                    showRoleSelection(allowedRoles);
+                    return;
+                }
+
+                selectedRoleToCreate = allowedRoles[0];
                 showMainMenu();
             });
+
+            /**
+             * STEP 0: Pilih Role Target (jika lebih dari 1)
+             */
+            function showRoleSelection(roles) {
+                const rolesHtml = roles.map(role => {
+                    const label = roleLabels[role] || role;
+                    return `
+                        <button type="button" class="role-option w-full text-left px-4 py-3 rounded-lg border border-gray-200 hover:border-indigo-400 hover:bg-indigo-50 transition" data-role="${role}">
+                            <div class="font-semibold text-gray-800">${label}</div>
+                            <div class="text-xs text-gray-500">Role target: ${label}</div>
+                        </button>
+                    `;
+                }).join('');
+
+                Swal.fire({
+                    title: '<h2 class="text-xl font-bold text-gray-800 mb-2">Pilih Role User</h2>',
+                    html: `
+                        <div class="space-y-2">${rolesHtml}</div>
+                        <div class="pt-4">
+                            <button id="cancelRoleSelect" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">Batal</button>
+                        </div>
+                    `,
+                    showConfirmButton: false,
+                    showCancelButton: false,
+                    width: 520,
+                    background: '#f9fafb',
+                    customClass: {
+                        popup: 'rounded-2xl shadow-2xl p-6'
+                    },
+                    didOpen: () => {
+                        document.querySelectorAll('.role-option').forEach(btn => {
+                            btn.addEventListener('click', () => {
+                                selectedRoleToCreate = btn.getAttribute('data-role');
+                                showMainMenu();
+                            });
+                        });
+                        document.getElementById('cancelRoleSelect').addEventListener('click', () => {
+                            Swal.close();
+                        });
+                    }
+                });
+            }
 
             /**
              * STEP 1: Menu Utama - Pilih Import atau Download Template
              */
             function showMainMenu() {
+                const roleLabel = roleLabels[selectedRoleToCreate] || 'User';
                 let menuHTML = `
         <div class="space-y-6 text-center">
             <p class="text-gray-600 mb-6">Pilih aksi yang ingin dilakukan:</p>
@@ -824,7 +906,7 @@
     `;
 
                 Swal.fire({
-                    title: '<h2 class="text-2xl font-bold text-gray-800 mb-2">Import User Ketua Kader</h2>',
+                    title: `<h2 class="text-2xl font-bold text-gray-800 mb-2">Import User ${roleLabel}</h2>`,
                     html: menuHTML,
                     showConfirmButton: false,
                     showCancelButton: false,
@@ -935,6 +1017,9 @@
 
                             let formData = new FormData();
                             formData.append('file', file);
+                            if (selectedRoleToCreate) {
+                                formData.append('role', selectedRoleToCreate);
+                            }
 
                             fetch("{{ route('admin.users.import') }}", {
                                     method: "POST",
@@ -989,22 +1074,27 @@
                 });
 
                 // Trigger download
-                const url = "{{ route('admin.users.export.template') }}";
+                const roleParam = selectedRoleToCreate ? `?role=${encodeURIComponent(selectedRoleToCreate)}` : '';
+                const url = "{{ route('admin.users.export.template') }}" + roleParam;
                 window.location.href = url;
 
                 // Show success message
                 setTimeout(() => {
+                    const roleLabel = roleLabels[selectedRoleToCreate] || 'User';
+                    const rowInfo = selectedRoleToCreate === 'kader'
+                        ? 'Jumlah baris = 6 per Posyandu'
+                        : 'Jumlah baris = Jumlah Posyandu terdaftar';
                     Swal.fire({
                         icon: 'success',
                         title: 'Template Sedang Diunduh',
                         html: `
-                <p class="text-gray-700">Template User Ketua Kader sedang diunduh.</p>
+                <p class="text-gray-700">Template User ${roleLabel} sedang diunduh.</p>
                 <br>
                 <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded text-left">
                     <p class="text-sm text-blue-700">
                         <strong>📋 Informasi Template:</strong>
                         <br>• Kolom DESA, KECAMATAN, KABUPATEN sudah terisi otomatis
-                        <br>• Jumlah baris = Jumlah Posyandu terdaftar
+                        <br>• ${rowInfo}
                         <br>• <strong>Anda hanya perlu isi NAMA dan NOMOR TELEPON</strong>
                         <br>• Password default: <code class="bg-white px-2 py-1 rounded">password123</code>
                     </p>
