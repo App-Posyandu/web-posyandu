@@ -400,8 +400,8 @@
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                             @foreach ($ajuan->foto_kunjungan as $foto)
                                 <div class="relative group cursor-pointer"
-                                    @click="showModal=true; fileUrl='{{ Illuminate\Support\Facades\Storage::url($foto) }}'; fileType='image';">
-                                    <img src="{{ Illuminate\Support\Facades\Storage::url($foto) }}" alt="Foto Kunjungan"
+                                    @click="showModal=true; fileUrl='{{ route('ajuan.foto-kunjungan', ['ajuan' => $ajuan, 'index' => $loop->index]) }}'; fileType='image';">
+                                    <img src="{{ route('ajuan.foto-kunjungan', ['ajuan' => $ajuan, 'index' => $loop->index]) }}" alt="Foto Kunjungan"
                                         class="w-full h-32 object-cover rounded-lg border shadow-sm hover:scale-105 transition">
                                     <div
                                         class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition rounded-lg flex items-center justify-center">
@@ -522,6 +522,12 @@
                         </button>
 
                         <div x-show="step1Open" x-transition style="display: none;">
+                            @php
+                                $step1History = $ajuan->histories
+                                    ->where('status', 'Menunggu Kunjungan')
+                                    ->sortByDesc('created_at')
+                                    ->first();
+                            @endphp
                             <div class="px-6 py-4 border-t">
                                 <form method="POST" action="{{ route('ajuan.verify', $ajuan) }}"
                                     id="form-ajuan-verify">
@@ -598,7 +604,7 @@
                                             class="block w-full border-gray-300 rounded-md shadow-sm"
                                             {{ $ajuan->sudah_verifikasi ? 'disabled' : '' }}>
                                             <option value="">Pilih Keputusan</option>
-                                            <option value="lanjut">Lanjut ke Kunjungan Lapangan</option>
+                                            <option value="lanjut" @selected($ajuan->sudah_verifikasi)>Lanjut ke Kunjungan Lapangan</option>
                                             <option value="revisi">Minta Revisi</option>
                                             <option value="tolak">Tolak (Posyandu Salah)</option>
                                         </select>
@@ -609,7 +615,7 @@
                                             class="block font-medium text-sm text-gray-700 mb-2">Catatan</label>
                                         <textarea id="catatan_step1" name="catatan" rows="3" {{ $ajuan->sudah_verifikasi ? 'disabled' : '' }}
                                             class="block w-full border-gray-300 rounded-md shadow-sm"
-                                            placeholder="Berikan catatan jika ada revisi atau penolakan..."></textarea>
+                                            placeholder="Berikan catatan jika ada revisi atau penolakan...">{{ $step1History?->catatan }}</textarea>
                                         @error('catatan')
                                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                         @enderror
@@ -832,14 +838,14 @@
                         </div>
 
                         <div class="mb-6">
-                            <label class="block font-medium text-sm text-gray-700 mb-2">Tindak Lanjut Rekomendasi</label>
+                            <label class="block font-medium text-sm text-gray-700 mb-2">Tindak Lanjut Rekomendasi (Wajib)</label>
                             <textarea name="tindak_lanjut" id="tindaklanjut_kades" rows="4"
                                 class="block w-full border-gray-300 rounded-md shadow-sm"
                                 placeholder="Deskripsikan tindak lanjut yang perlu dilakukan..."></textarea>
                         </div>
 
                         <div class="mb-6">
-                            <label class="block font-medium text-sm text-gray-700 mb-2">Catatan</label>
+                            <label class="block font-medium text-sm text-gray-700 mb-2">Catatan (Opsional)</label>
                             <textarea name="catatan" id="catatan_kades" rows="4"
                                 class="block w-full border-gray-300 rounded-md shadow-sm"></textarea>
                         </div>
@@ -955,34 +961,6 @@
                 if (btnKunjungan && formKunjungan) {
                     btnKunjungan.addEventListener('click', function(e) {
                         e.preventDefault();
-
-                        const keputusan = document.getElementById('keputusan_step1').value;
-                        const catatan = document.getElementById('catatan_step1').value;
-
-                        // Validasi keputusan harus dipilih
-                        if (!keputusan) {
-                            Swal.fire({
-                                icon: 'warning',
-                                title: 'Perhatian!',
-                                text: 'Silakan pilih keputusan terlebih dahulu.',
-                                confirmButtonColor: '#dc2626'
-                            });
-                            return;
-                        }
-
-                        // Validasi catatan untuk revisi dan tolak
-                        if ((keputusan === 'revisi' || keputusan === 'tidak-ditindaklanjuti' || keputusan ===
-                                'tidak-diajukan') && !catatan.trim()) {
-                            Swal.fire({
-                                icon: 'warning',
-                                title: 'Catatan Diperlukan!',
-                                text: 'Silakan berikan catatan untuk keputusan ' + (keputusan ===
-                                    'revisi' ? 'revisi' : keputusan === 'tidak-ditindaklanjuti' ?
-                                    'tidak-ditindaklanjuti' : 'tidak-diajukan') + '.',
-                                confirmButtonColor: '#dc2626'
-                            });
-                            return;
-                        }
 
                         const catatanKunjungan = formKunjungan.querySelector(
                             'textarea[name="catatan_kunjungan"]');
@@ -1135,7 +1113,7 @@
                             text: text,
                             icon: icon,
                             showCancelButton: true,
-                            confirmButtonColor: keputusan === 'tolak' ? '#dc2626' : '#16a34a',
+                            confirmButtonColor: '#16a34a',
                             cancelButtonColor: '#6b7280',
                             confirmButtonText: confirmButtonText,
                             cancelButtonText: 'Batal',
@@ -1194,7 +1172,7 @@
                             return;
                         }
 
-                        if (!catatan) {
+/*                         if (!catatan) {
                             Swal.fire({
                                 icon: 'warning',
                                 title: 'Perhatian!',
@@ -1202,7 +1180,7 @@
                                 confirmButtonColor: '#dc2626'
                             });
                             return;
-                        }
+                        } */
 
                         // Validasi catatan untuk revisi dan tolak
                         if ((keputusan === 'revisi' || keputusan === 'tidak-ditindaklanjuti' || keputusan ===

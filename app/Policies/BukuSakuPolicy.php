@@ -29,7 +29,7 @@ class BukuSakuPolicy
      */
     public function create(User $user): bool
     {
-        return $user->role === 'kabid' || $user->role === 'admin';
+        return in_array($user->role, ['kabid', 'admin', 'ketua-posyandu']);
     }
 
     /**
@@ -37,7 +37,7 @@ class BukuSakuPolicy
      */
     public function update(User $user, BukuSaku $bukuSaku): bool
     {
-        return $user->role === 'kabid' || $user->role === 'admin';
+        return in_array($user->role, ['kabid', 'admin', 'ketua-posyandu']);
     }
 
     /**
@@ -45,7 +45,7 @@ class BukuSakuPolicy
      */
     public function delete(User $user, BukuSaku $bukuSaku): bool
     {
-        return $user->role === 'kabid' || $user->role === 'admin';
+        return in_array($user->role, ['kabid', 'admin', 'ketua-posyandu']);
     }
 
     /**

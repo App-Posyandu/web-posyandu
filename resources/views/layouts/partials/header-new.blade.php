@@ -41,7 +41,6 @@
                                 'admin',
                                 'kader',
                                 'admin-kabupaten',
-                                'admin-kecamatan',
                                 'ketua-kader',
                                 'operator-desa',
                             ]))

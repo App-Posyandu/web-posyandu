@@ -1073,10 +1073,10 @@ class UserController extends Controller
         $roleMap = [
             'kader' => ['masyarakat'],
             'ketua-kader' => ['kader'],
-            'operator-desa' => ['ketua-kader'],
-            'admin-kecamatan' => ['operator-desa'],
-            'admin-kabupaten' => ['ketua-kader', 'kabid', 'admin-kecamatan'],
-            'admin' => ['masyarakat', 'kader', 'ketua-kader', 'operator-desa', 'admin-kecamatan', 'kabid', 'admin-kabupaten'],
+            'operator-desa' => ['ketua-kader', 'kader'],
+            'admin-kecamatan' => [],
+            'admin-kabupaten' => ['ketua-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'operator-desa'],
+            'admin' => ['admin-kabupaten', 'ketua-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'ketua-kader', 'operator-desa', 'kader', 'masyarakat'],
         ];
 
         return $roleMap[$role] ?? [];

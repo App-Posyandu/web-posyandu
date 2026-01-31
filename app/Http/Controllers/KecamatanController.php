@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Kabupaten;
 use App\Models\Kecamatan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -35,12 +36,14 @@ class KecamatanController extends Controller
 
     public function index(Request $request)
     {
-        $query = Kecamatan::latest();
+        $query = Kecamatan::with('kabupaten')->latest();
 
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where('nama_kecamatan', 'like', "%$search%")
-                  ->orWhere('kabupaten', 'like', "%$search%");
+                  ->orWhereHas('kabupaten', function($q) use ($search) {
+                      $q->where('nama_kabupaten', 'like', "%$search%");
+                  });
         }
 
         $kecamatans = $query->paginate(10)->withQueryString();
@@ -66,13 +69,31 @@ class KecamatanController extends Controller
             'kecamatan' => 'required|string',
         ]);
 
-        // Ambil nama bersih dari format "ID_NAMA"
-        $kabupatenName = explode('_', $request->kabupaten)[1] ?? $request->kabupaten;
+        // Ambil nama dari format "ID_NAMA"
+        $kabupatenFull = explode('_', $request->kabupaten)[1] ?? $request->kabupaten;
         $kecamatanName = explode('_', $request->kecamatan)[1] ?? $request->kecamatan;
 
-        // Cek duplikasi
+        // Parse jenis dan nama kabupaten (misal: "Kabupaten Banyumas" atau "Kota Semarang")
+        $jenis = 'kabupaten'; // default
+        $namaKabupaten = $kabupatenFull;
+        
+        if (stripos($kabupatenFull, 'Kabupaten ') === 0) {
+            $jenis = 'kabupaten';
+            $namaKabupaten = trim(substr($kabupatenFull, 10)); // Remove "Kabupaten "
+        } elseif (stripos($kabupatenFull, 'Kota ') === 0) {
+            $jenis = 'kota';
+            $namaKabupaten = trim(substr($kabupatenFull, 5)); // Remove "Kota "
+        }
+
+        // Cari atau buat record Kabupaten
+        $kabupaten = Kabupaten::firstOrCreate(
+            ['nama_kabupaten' => $namaKabupaten, 'jenis' => $jenis],
+            ['nama_kabupaten' => $namaKabupaten, 'jenis' => $jenis]
+        );
+
+        // Cek duplikasi berdasarkan kabupaten_id (UUID) dan nama_kecamatan
         $exists = Kecamatan::where('nama_kecamatan', $kecamatanName)
-                           ->where('kabupaten', $kabupatenName)
+                           ->where('kabupaten_id', $kabupaten->id)
                            ->exists();
 
         if ($exists) {
@@ -80,7 +101,7 @@ class KecamatanController extends Controller
         }
 
         Kecamatan::create([
-            'kabupaten' => $kabupatenName,
+            'kabupaten_id' => $kabupaten->id, // UUID dari model Kabupaten
             'nama_kecamatan' => $kecamatanName,
         ]);
 
@@ -105,11 +126,30 @@ class KecamatanController extends Controller
             'kecamatan' => 'required|string',
         ]);
 
-        $kabupatenName = explode('_', $request->kabupaten)[1] ?? $request->kabupaten;
+        // Ambil nama dari format "ID_NAMA"
+        $kabupatenFull = explode('_', $request->kabupaten)[1] ?? $request->kabupaten;
         $kecamatanName = explode('_', $request->kecamatan)[1] ?? $request->kecamatan;
 
+        // Parse jenis dan nama kabupaten
+        $jenis = 'kabupaten';
+        $namaKabupaten = $kabupatenFull;
+        
+        if (stripos($kabupatenFull, 'Kabupaten ') === 0) {
+            $jenis = 'kabupaten';
+            $namaKabupaten = trim(substr($kabupatenFull, 10));
+        } elseif (stripos($kabupatenFull, 'Kota ') === 0) {
+            $jenis = 'kota';
+            $namaKabupaten = trim(substr($kabupatenFull, 5));
+        }
+
+        // Cari atau buat record Kabupaten
+        $kabupaten = Kabupaten::firstOrCreate(
+            ['nama_kabupaten' => $namaKabupaten, 'jenis' => $jenis],
+            ['nama_kabupaten' => $namaKabupaten, 'jenis' => $jenis]
+        );
+
         $kecamatan->update([
-            'kabupaten' => $kabupatenName,
+            'kabupaten_id' => $kabupaten->id, // UUID dari model Kabupaten
             'nama_kecamatan' => $kecamatanName,
         ]);
 
