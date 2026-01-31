@@ -33,155 +33,139 @@
                             $isExpired = now()->greaterThan($revisionDeadline);
                         @endphp
 
-                        @if ($isExpired)
-                            <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
-                                <div class="flex">
-                                    <div class="flex-shrink-0">
-                                        <i class="bi bi-exclamation-triangle-fill text-red-500 text-lg"></i>
-                                    </div>
-                                    <div class="ml-3">
-                                        <h3 class="text-sm font-semibold text-red-800">Masa Revisi Telah Berakhir</h3>
-                                        <p class="text-sm text-red-700 mt-1">
-                                            Batas waktu revisi telah habis pada
-                                            {{ $revisionDeadline->format('d F Y, H:i') }} WIB.
-                                            @if ($enableAutoReject)
-                                                Pengajuan ini akan otomatis ditolak.
-                                            @else
-                                                Namun fitur auto-reject saat ini <strong>nonaktif</strong>, sehingga
-                                                pengajuan tidak akan ditolak secara otomatis.
-                                            @endif
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        @else
-                            {{-- Countdown Realtime --}}
-                            <div class="bg-orange-50 border-l-4 border-orange-500 p-4 mb-6" x-data="{
-                                deadline: new Date('{{ $revisionDeadline->toIso8601String() }}').getTime(),
-                                now: Date.now(),
-                                days: 0,
-                                hours: 0,
-                                minutes: 0,
-                                seconds: 0,
-                                expired: false,
-                                rejecting: false,
-                                debugMode: {{ $debugMode ? 'true' : 'false' }},
-                                enableAutoReject: {{ $enableAutoReject ? 'true' : 'false' }},
-                                updateCountdown() {
-                                    this.now = Date.now();
-                                    const distance = this.deadline - this.now;
+                        {{-- ✅ FIX: Countdown SELALU tampil sampai habis, pesan dan behavior beda berdasarkan enableAutoReject --}}
+                        {{-- Countdown Realtime --}}
+                        <div class="bg-orange-50 border-l-4 border-orange-500 p-4 mb-6" x-data="{
+                            deadline: new Date('{{ $revisionDeadline->toIso8601String() }}').getTime(),
+                            now: Date.now(),
+                            days: 0,
+                            hours: 0,
+                            minutes: 0,
+                            seconds: 0,
+                            expired: false,
+                            rejecting: false,
+                            debugMode: {{ $debugMode ? 'true' : 'false' }},
+                            enableAutoReject: {{ $enableAutoReject ? 'true' : 'false' }},
+                            updateCountdown() {
+                                this.now = Date.now();
+                                const distance = this.deadline - this.now;
 
-                                    if (distance < 0 && !this.expired) {
-                                        this.expired = true;
-                                        this.handleExpired();
-                                        return;
-                                    }
-
-                                    this.days = Math.floor(distance / (1000 * 60 * 60 * 24));
-                                    this.hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                                    this.minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                                    this.seconds = Math.floor((distance % (1000 * 60)) / 1000);
-                                },
-                                handleExpired() {
-                                    if (this.rejecting) return;
-                                    this.rejecting = true;
-
-                                    if (this.enableAutoReject) {
-                                        // ✅ Auto-reject aktif: tunjuk pesan dan redirect ke show() untuk trigger server-side reject
-                                        Swal.fire({
-                                            icon: 'error',
-                                            title: 'Waktu Revisi Habis!',
-                                            html: 'Masa revisi telah berakhir.<br>Pengajuan akan otomatis ditolak.',
-                                            allowOutsideClick: false,
-                                            showConfirmButton: false,
-                                            timer: 3000,
-                                            timerProgressBar: true,
-                                            didOpen: () => {
-                                                Swal.showLoading();
-                                            }
-                                        }).then(() => {
-                                            window.location.href = '{{ route('ajuan.show', $ajuan) }}';
-                                        });
-                                    } else {
-                                        // ✅ Auto-reject nonaktif: tunjuk info saja, tidak redirect atau reject
-                                        Swal.fire({
-                                            icon: 'info',
-                                            title: 'Waktu Revisi Habis',
-                                            html: 'Masa revisi telah berakhir.<br><small class=\'text-gray-500\'>Fitur auto-reject saat ini nonaktif, pengajuan tidak
-                                            akan ditolak secara otomatis. < /small>',
-                                            confirmButtonText: 'Mengerti',
-                                            confirmButtonColor: '#6b7280'
-                                        });
-                                    }
+                                if (distance < 0 && !this.expired) {
+                                    this.expired = true;
+                                    this.handleExpired();
+                                    return;
                                 }
-                            }"
-                                x-init="updateCountdown();
-                                const interval = setInterval(() => {
-                                    updateCountdown();
-                                    if (expired) {
-                                        clearInterval(interval);
-                                    }
-                                }, 1000);">
-                                <div class="flex">
-                                    <div class="flex-shrink-0">
-                                        <i class="bi bi-clock-fill text-orange-500 text-lg"></i>
-                                    </div>
-                                    <div class="ml-3 flex-1">
-                                        {{-- Debug Mode Indicator --}}
-                                        @if ($debugMode && $debugMinutes)
-                                            <div
-                                                class="mb-2 bg-yellow-100 border border-yellow-300 rounded px-3 py-1 text-xs text-yellow-800">
-                                                🐛 <strong>DEBUG MODE:</strong> Deadline {{ $debugMinutes }} menit
-                                            </div>
-                                        @endif
 
-                                        <p class="text-sm font-semibold text-orange-800">
-                                            Revisi Diminta ({{ $ajuan->revision_count }}x)
+                                this.days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                                this.hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                                this.minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                                this.seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                            },
+                            handleExpired() {
+                                if (this.rejecting) return;
+                                this.rejecting = true;
+
+                                if (this.enableAutoReject) {
+                                    // ✅ Auto-reject AKTIF: redirect ke show() untuk trigger server-side reject
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Waktu Revisi Habis!',
+                                        html: 'Masa revisi telah berakhir.<br>Pengajuan akan otomatis ditolak.',
+                                        allowOutsideClick: false,
+                                        showConfirmButton: false,
+                                        timer: 3000,
+                                        timerProgressBar: true,
+                                        didOpen: () => {
+                                            Swal.showLoading();
+                                        }
+                                    }).then(() => {
+                                        window.location.href = '{{ route('ajuan.show', $ajuan) }}';
+                                    });
+                                } else {
+                                    // ✅ Auto-reject NONAKTIF: cuma info, gak diapa-apain
+                                    // Countdown tetap jalan sampai habis, tapi tidak trigger reject
+                                }
+                            }
+                        }"
+                            x-init="updateCountdown();
+                            const interval = setInterval(() => {
+                                updateCountdown();
+                                if (expired) {
+                                    clearInterval(interval);
+                                }
+                            }, 1000);">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-clock-fill text-orange-500 text-lg"></i>
+                                </div>
+                                <div class="ml-3 flex-1">
+                                    {{-- Debug Mode Indicator --}}
+                                    @if ($debugMode && $debugMinutes)
+                                        <div
+                                            class="mb-2 bg-yellow-100 border border-yellow-300 rounded px-3 py-1 text-xs text-yellow-800">
+                                            🐛 <strong>DEBUG MODE:</strong> Deadline {{ $debugMinutes }} menit
+                                        </div>
+                                    @endif
+
+                                    <p class="text-sm font-semibold text-orange-800">
+                                        Revisi Diminta ({{ $ajuan->revision_count }}x)
+                                    </p>
+
+                                    <div x-show="!expired">
+                                        <p class="text-sm text-orange-700 mt-2">
+                                            Sisa waktu untuk merevisi:
                                         </p>
 
-                                        <div x-show="!expired">
-                                            <p class="text-sm text-orange-700 mt-2">
-                                                Sisa waktu untuk merevisi:
-                                            </p>
-
-                                            {{-- Countdown Display --}}
-                                            <div class="mt-3 flex flex-wrap gap-2">
-                                                <div
-                                                    class="bg-white rounded-lg px-3 py-2 border border-orange-200 min-w-[70px] text-center">
-                                                    <div class="text-2xl font-bold text-orange-600" x-text="days"></div>
-                                                    <div class="text-xs text-gray-600">Hari</div>
-                                                </div>
-                                                <div
-                                                    class="bg-white rounded-lg px-3 py-2 border border-orange-200 min-w-[70px] text-center">
-                                                    <div class="text-2xl font-bold text-orange-600" x-text="hours"></div>
-                                                    <div class="text-xs text-gray-600">Jam</div>
-                                                </div>
-                                                <div
-                                                    class="bg-white rounded-lg px-3 py-2 border border-orange-200 min-w-[70px] text-center">
-                                                    <div class="text-2xl font-bold text-orange-600" x-text="minutes"></div>
-                                                    <div class="text-xs text-gray-600">Menit</div>
-                                                </div>
-                                                <div
-                                                    class="bg-white rounded-lg px-3 py-2 border border-orange-200 min-w-[70px] text-center">
-                                                    <div class="text-2xl font-bold text-orange-600" x-text="seconds"></div>
-                                                    <div class="text-xs text-gray-600">Detik</div>
-                                                </div>
+                                        {{-- Countdown Display --}}
+                                        <div class="mt-3 flex flex-wrap gap-2">
+                                            <div
+                                                class="bg-white rounded-lg px-3 py-2 border border-orange-200 min-w-[70px] text-center">
+                                                <div class="text-2xl font-bold text-orange-600" x-text="days"></div>
+                                                <div class="text-xs text-gray-600">Hari</div>
                                             </div>
-
-                                            <p class="text-xs text-orange-600 mt-3">
-                                                <i class="bi bi-calendar-check"></i>
-                                                Batas waktu: {{ $revisionDeadline->format('d F Y, H:i') }} WIB
-                                            </p>
+                                            <div
+                                                class="bg-white rounded-lg px-3 py-2 border border-orange-200 min-w-[70px] text-center">
+                                                <div class="text-2xl font-bold text-orange-600" x-text="hours"></div>
+                                                <div class="text-xs text-gray-600">Jam</div>
+                                            </div>
+                                            <div
+                                                class="bg-white rounded-lg px-3 py-2 border border-orange-200 min-w-[70px] text-center">
+                                                <div class="text-2xl font-bold text-orange-600" x-text="minutes"></div>
+                                                <div class="text-xs text-gray-600">Menit</div>
+                                            </div>
+                                            <div
+                                                class="bg-white rounded-lg px-3 py-2 border border-orange-200 min-w-[70px] text-center">
+                                                <div class="text-2xl font-bold text-orange-600" x-text="seconds"></div>
+                                                <div class="text-xs text-gray-600">Detik</div>
+                                            </div>
                                         </div>
 
-                                        <div x-show="expired && !rejecting" class="text-red-600 mt-2">
-                                            <p class="text-sm font-semibold">⚠️ Waktu revisi telah habis!</p>
-                                            <p class="text-xs mt-1">Mengalihkan ke halaman detail...</p>
-                                        </div>
+                                        <p class="text-xs text-orange-600 mt-3">
+                                            <i class="bi bi-calendar-check"></i>
+                                            Batas waktu: {{ $revisionDeadline->format('d F Y, H:i') }} WIB
+                                        </p>
+                                    </div>
+
+                                    {{-- ✅ Pesan setelah expired - berbeda based on enableAutoReject --}}
+                                    <div x-show="expired && !rejecting">
+                                        <template x-if="enableAutoReject">
+                                            <div class="text-red-600 mt-2">
+                                                <p class="text-sm font-semibold">⚠️ Waktu revisi telah habis!</p>
+                                                <p class="text-xs mt-1">Pengajuan akan otomatis ditolak...</p>
+                                            </div>
+                                        </template>
+                                        <template x-if="!enableAutoReject">
+                                            <div class="text-gray-600 mt-2 bg-gray-50 p-3 rounded border border-gray-200">
+                                                <p class="text-sm font-semibold">⏱️ Waktu revisi telah habis</p>
+                                                <p class="text-xs mt-1">Fitur auto-reject saat ini
+                                                    <strong>nonaktif</strong>, pengajuan tidak akan ditolak secara otomatis.
+                                                </p>
+                                            </div>
+                                        </template>
                                     </div>
                                 </div>
                             </div>
-                        @endif
+                        </div>
                     @elseif ($ajuan->revision_count > 0)
                         {{-- Badge revisi tanpa countdown --}}
                         <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-6">

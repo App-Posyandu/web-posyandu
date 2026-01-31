@@ -109,7 +109,7 @@ class BukuSakuController extends Controller
 
         $bukuSaku->update($data);
 
-        return redirect()->route('admin.bukuSaku.index')->with('success', 'Buku Saku berhasil diperbarui.');
+        return redirect()->route('buku_saku.index')->with('success', 'Buku Saku berhasil diperbarui.');
     }
 
     /**

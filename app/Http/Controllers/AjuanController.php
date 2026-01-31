@@ -39,10 +39,16 @@ class AjuanController extends Controller
 
         // ✅ GET dari SystemSetting
         $autoRejectDays = SystemSetting::get('auto_reject_days', 5);
+        $maxRevisionCount = SystemSetting::get('max_revision_count', 3);
 
         $request->validate([
             'catatan' => 'required|string|max:500'
         ]);
+
+        // ✅ FIX: Cek apakah sudah melebihi max revision count
+        if ($ajuan->revision_count >= $maxRevisionCount) {
+            return redirect()->back()->with('error', "Revisi tidak dapat diminta lagi. Pengajuan sudah mencapai batas maksimal revisi ({$maxRevisionCount}x).");
+        }
 
         $ajuan->update([
             'status_pengajuan' => 'Diproses',
@@ -653,7 +659,7 @@ class AjuanController extends Controller
             'formulir_items' => $finalChecklistData,
             'administrasi_items' => $dokumenData,
             'status_pengajuan' => 'Diproses',
-            // 'revision_requested_at' => null, // Reset revision request
+            'revision_requested_at' => null, // ✅ FIX: Reset agar countdown hilang setelah submit revisi
             'sudah_verifikasi' => false, // Reset verifikasi
             'kunjungan_lapangan' => false, // Reset kunjungan
             'approved_by_ketua' => false, // Reset approval
@@ -787,6 +793,12 @@ class AjuanController extends Controller
 
                 // === REVISI ===
                 if ($keputusan === 'revisi') {
+                    // ✅ FIX: Cek apakah sudah melebihi max revision count
+                    $maxRevisionCount = SystemSetting::get('max_revision_count', 3);
+                    if ($ajuan->revision_count >= $maxRevisionCount) {
+                        return redirect()->back()->with('error', "Revisi tidak dapat diminta lagi. Pengajuan sudah mencapai batas maksimal revisi ({$maxRevisionCount}x).");
+                    }
+
                     $ajuan->update([
                         'status_pengajuan' => 'Diproses',
                         'revision_requested_at' => now(),
@@ -983,8 +995,8 @@ class AjuanController extends Controller
 
         $request->validate([
             'keputusan' => 'required|in:diajukan,tidak-diajukan',
-            'tindak_lanjut' => 'nullable|string',
-            'catatan' => 'nullable|string|min:15|required_if:keputusan,tidak-diajukan',
+            'tindak_lanjut' => 'nullable|string|min:15',
+            'catatan' => 'nullable|string|required_if:keputusan,tidak-diajukan',
         ], [
             'catatan.required_if' => 'Catatan wajib diisi jika menolak.',
         ]);
