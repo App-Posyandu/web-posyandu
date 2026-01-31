@@ -32,7 +32,10 @@
                         </button>
                     </x-slot>
                     <x-slot name="content">
-                        <x-dropdown-link :href="route('dashboard')">{{ __('Beranda') }}</x-dropdown-link>
+                        <x-dropdown-link :href="route('dashboard')">
+                            <i class="bi bi-house-door mr-2"></i>
+                            {{ __('Beranda') }}
+                        </x-dropdown-link>
 
                         @if (in_array(auth()->user()->role, [
                                 'admin',
@@ -42,30 +45,65 @@
                                 'ketua-kader',
                                 'operator-desa',
                             ]))
-                            <x-dropdown-link :href="route('admin.users.index')">{{ __('Users') }}</x-dropdown-link>
+                            <x-dropdown-link :href="route('admin.users.index')">
+                                <i class="bi bi-people mr-2"></i>
+                                {{ __('Users') }}
+                            </x-dropdown-link>
                         @endif
 
                         {{-- Menu untuk Ketua Kader --}}
                         @if (auth()->user()->role === 'ketua-kader')
                             <x-dropdown-link :href="route('ketua-kader.takeover')"
                                 class="{{ request()->routeIs('ketua-kader.takeover*') ? 'active' : '' }}">
+                                <i class="bi bi-key-fill mr-2"></i>
                                 {{ __('Ambil Alih Kader') }}
                             </x-dropdown-link>
                         @endif
 
                         @if (in_array(auth()->user()->role, ['admin', 'kabid', 'ketua-posyandu', 'admin-kabupaten', 'operator-desa']))
-                            <x-dropdown-link :href="route('admin.posyandu.index')">{{ __('Posyandu') }}</x-dropdown-link>
-                            <x-dropdown-link :href="route('admin.kecamatan.index')">{{ __('Kecamatan') }}</x-dropdown-link>
+                            <x-dropdown-link :href="route('admin.posyandu.index')">
+                                <i class="bi bi-building mr-2"></i>
+                                {{ __('Posyandu') }}
+                            </x-dropdown-link>
+                            <x-dropdown-link :href="route('admin.kecamatan.index')">
+                                <i class="bi bi-geo-alt mr-2"></i>
+                                {{ __('Kecamatan') }}
+                            </x-dropdown-link>
                         @endif
 
-                        <x-dropdown-link :href="route('buku_saku.index')">{{ __('Dokumen') }}</x-dropdown-link>
-                        <x-dropdown-link :href="route('ajuan.index')">{{ __('Lihat Pengajuan') }}</x-dropdown-link>
-                        <x-dropdown-link :href="route('profile.edit')">{{ __('Profile') }}</x-dropdown-link>
+                        <x-dropdown-link :href="route('buku_saku.index')">
+                            <i class="bi bi-file-earmark-text mr-2"></i>
+                            {{ __('Dokumen') }}
+                        </x-dropdown-link>
+
+                        <x-dropdown-link :href="route('ajuan.index')">
+                            <i class="bi bi-clipboard-check mr-2"></i>
+                            {{ __('Lihat Pengajuan') }}
+                        </x-dropdown-link>
+
+                        {{-- ✅ MENU SETTINGS (Only for admin-kabupaten) --}}
+                        @if (in_array(auth()->user()->role, ['admin', 'admin-kabupaten', 'admin-kecamatan', 'operator-desa']))
+                            <div class="border-t border-gray-100 my-1"></div>
+                            <x-dropdown-link :href="route('admin.settings.index')"
+                                class="{{ request()->routeIs('admin.settings.*') ? 'bg-pink-50 text-pink-600' : '' }}">
+                                <i class="bi bi-gear-fill mr-2"></i>
+                                {{ __('Pengaturan Sistem') }}
+                            </x-dropdown-link>
+                        @endif
+
+                        <div class="border-t border-gray-100 my-1"></div>
+
+                        <x-dropdown-link :href="route('profile.edit')">
+                            <i class="bi bi-person-circle mr-2"></i>
+                            {{ __('Profile') }}
+                        </x-dropdown-link>
 
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <x-dropdown-link :href="route('logout')"
-                                onclick="event.preventDefault(); this.closest('form').submit();">
+                                onclick="event.preventDefault(); this.closest('form').submit();"
+                                class="text-red-600 hover:text-red-800 hover:bg-red-50">
+                                <i class="bi bi-box-arrow-right mr-2"></i>
                                 {{ __('Log Out') }}
                             </x-dropdown-link>
                         </form>
@@ -135,12 +173,12 @@
                         <i class="bi bi-people mr-2"></i> Users
                     </a>
                 @endif
+
                 {{-- Menu untuk Ketua Kader --}}
                 @if (auth()->user()->role === 'ketua-kader')
                     <a href="{{ route('ketua-kader.takeover') }}"
-                        class="{{ request()->routeIs('ketua-kader.takeover*') ? 'active' : '' }} block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-pink-500 transition duration-150 ease-in-out">
-                        <i class="bi bi-key-fill"></i>
-                        <span>Ambil Alih Kader</span>
+                        class="{{ request()->routeIs('ketua-kader.takeover*') ? 'border-pink-500 bg-pink-50' : 'border-transparent' }} block pl-3 pr-4 py-2 border-l-4 text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-pink-500 transition duration-150 ease-in-out">
+                        <i class="bi bi-key-fill mr-2"></i> Ambil Alih Kader
                     </a>
                 @endif
 
@@ -149,15 +187,10 @@
                         class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-pink-500 transition duration-150 ease-in-out">
                         <i class="bi bi-building mr-2"></i> Posyandu
                     </a>
-                @endif
-
-                @if (in_array(auth()->user()->role, ['admin', 'kabid', 'ketua-posyandu', 'admin-kabupaten']))
-                    <a href="{{ route('admin.posyandu.index') }}"
-                        class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-pink-500 transition duration-150 ease-in-out"><i
-                            class="bi bi-building mr-2"></i> Posyandu</a>
                     <a href="{{ route('admin.kecamatan.index') }}"
-                        class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-pink-500 transition duration-150 ease-in-out"><i
-                            class="bi bi-building mr-2"></i> Kecamatan</a>
+                        class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-pink-500 transition duration-150 ease-in-out">
+                        <i class="bi bi-geo-alt mr-2"></i> Kecamatan
+                    </a>
                 @endif
 
                 <a href="{{ route('buku_saku.index') }}"
@@ -169,6 +202,16 @@
                     class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-pink-500 transition duration-150 ease-in-out">
                     <i class="bi bi-clipboard-check mr-2"></i> Lihat Pengajuan
                 </a>
+
+                {{-- ✅ MENU SETTINGS MOBILE (Only for admin-kabupaten) --}}
+                @if (in_array(auth()->user()->role, ['admin', 'admin-kabupaten', 'admin-kecamatan', 'operator-desa']))
+                    <div class="border-t border-gray-200 my-2"></div>
+                    <a href="{{ route('admin.settings.index') }}"
+                        class="{{ request()->routeIs('admin.settings.*') ? 'border-pink-500 bg-pink-50 text-pink-600' : 'border-transparent text-gray-600' }} block pl-3 pr-4 py-2 border-l-4 text-base font-medium hover:text-gray-800 hover:bg-gray-50 hover:border-pink-500 transition duration-150 ease-in-out">
+                        <i class="bi bi-gear-fill mr-2"></i> Pengaturan Sistem
+                    </a>
+                    <div class="border-t border-gray-200 my-2"></div>
+                @endif
 
                 <a href="{{ route('profile.edit') }}"
                     class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-pink-500 transition duration-150 ease-in-out">

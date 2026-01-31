@@ -165,6 +165,7 @@ class PengajuanSeeder extends Seeder
                 'sudah_verifikasi' => fake()->boolean(),
                 'kunjungan_lapangan' => fake()->boolean(),
                 'ttd_kader' => fake()->boolean(),
+                'tracking_code' => 'PGJ-' . now()->format('Ym') . '-' . str_pad($index, 5, '0', STR_PAD_LEFT),
             ]);
         }
     }

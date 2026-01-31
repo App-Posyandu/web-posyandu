@@ -33,6 +33,7 @@ class User extends Authenticatable
         'kk',
         'kabupaten',
         'kecamatan',
+        'desa',
         'kabupaten_id',
         'kecamatan_id',
         'jenis_wilayah',

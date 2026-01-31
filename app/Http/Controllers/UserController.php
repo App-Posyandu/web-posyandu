@@ -93,14 +93,17 @@ class UserController extends Controller
                 break;
 
             case 'admin-kabupaten':
-                $query->whereIn('role', ['kabid', 'admin-kecamatan', 'ketua-kader', 'operator-desa', 'kader', 'masyarakat']);
+                $query->whereIn('role', ['kabid', 'ketua-posyandu', 'admin-kabupaten', 'admin-kecamatan', 'operator-desa', 'kades']);
                 if ($currentUser->kabupaten) {
                     $query->where('kabupaten', 'LIKE', "%{$currentUser->kabupaten}%");
                 }
                 break;
-
             case 'ketua-posyandu':
-                $query->whereIn('role', ['admin-kabupaten', 'kabid', 'admin-kecamatan', 'ketua-kader', 'operator-desa', 'kader', 'masyarakat']);
+                $query->whereIn('role', ['kabid', 'admin-kecamatan', 'operator-desa']);
+                break;
+            case 'admin':
+                // Admin bisa lihat semua role
+                // Tidak perlu filter role
                 break;
         }
 
@@ -189,7 +192,7 @@ class UserController extends Controller
         $kabupatenList = [];
         $kotaList = [];
 
-        if (in_array($currentUser->role, ['admin', 'kabid', 'ketua-posyandu'])) {
+        if (in_array($currentUser->role, ['admin', 'kabid', 'ketua-posyandu', 'admin-kabupaten', 'operator-desa', 'admin-kecamatan'])) {
             $wilayahData = $this->fetchWilayahData(
                 'regencies/' . self::PROVINCE_ID . '.json',
                 'kabupatens_jateng'
@@ -335,6 +338,7 @@ class UserController extends Controller
     {
         $rolesMap = [
             'admin' => [
+                'admin-kabupaten',
                 'ketua-posyandu',
                 'kabid',
                 'admin-kecamatan',
@@ -355,11 +359,11 @@ class UserController extends Controller
             ],
             'admin-kabupaten' => [
                 'kabid',
+                'ketua-posyandu',
                 'admin-kecamatan',
-                'ketua-kader',
+                'kades',
                 'operator-desa',
-                'kader',
-                'masyarakat',
+                'admin-kabupaten',
             ],
             'kabid' => [
                 'admin-kecamatan',
@@ -470,6 +474,14 @@ class UserController extends Controller
         ];
 
         switch ($request->role) {
+            case 'admin-kabupaten':
+                // ✅ Pilih Kabupaten (dari API)
+                $kabupatenValue = $request->kabupaten;
+                $kabupatenName = explode('_', $kabupatenValue)[1] ?? $kabupatenValue;
+
+                $data['kabupaten'] = $kabupatenName;
+                $data['jenis_wilayah'] = $request->jenis_wilayah ?? 'kabupaten';
+                break;
             case 'ketua-posyandu':
                 // ✅ Simpan string dari API: "3302_KABUPATEN BANYUMAS"
                 // Kita extract nama kabupaten saja

@@ -36,7 +36,7 @@
 
                 <form method="POST" action="{{ route('admin.posyandu.update-rw-rt', $posyandu) }}">
                     @csrf
-                    @method('PATCH')
+                    @method('PUT')
 
                     <!-- Counter Stats -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">

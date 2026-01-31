@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Pengajuan extends Model
 {
@@ -38,6 +39,7 @@ class Pengajuan extends Model
         'revision_requested_at',     // ← BARU
         'revision_count',            // ← BARU
         'auto_rejected',
+        'tracking_code',
     ];
 
     protected $casts = [
@@ -56,6 +58,32 @@ class Pengajuan extends Model
         'approved_by_kades_at' => 'datetime',  // ← BARU
         'revision_requested_at' => 'datetime',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($pengajuan) {
+            // Jika tracking_code belum di-set, generate otomatis
+            if (empty($pengajuan->tracking_code)) {
+                $pengajuan->tracking_code = self::generateTrackingCode();
+            }
+        });
+    }
+
+    /**
+     * Generate unique tracking code
+     * Format: PGJ-YYYYMM-XXXXX
+     */
+    private static function generateTrackingCode()
+    {
+        do {
+            // Format: PGJ-202501-AB123
+            $code = 'PGJ-' . date('Ym') . '-' . strtoupper(Str::random(5));
+        } while (self::where('tracking_code', $code)->exists());
+
+        return $code;
+    }
 
     public function ketuaPosyandu()
     {
@@ -89,6 +117,18 @@ class Pengajuan extends Model
         }
 
         return $workDays;
+    }
+
+    public function scopeArchived($query)
+    {
+        // Pengajuan dianggap arsip jika statusnya sudah final (Disetujui/Ditolak)
+        return $query->whereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
+    }
+
+    public function scopeActive($query)
+    {
+        // Pengajuan masih aktif jika statusnya selain Disetujui atau Ditolak
+        return $query->whereNotIn('status_pengajuan', ['Disetujui', 'Ditolak']);
     }
 
     public function user()

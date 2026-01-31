@@ -45,7 +45,8 @@ return new class extends Migration
             $table->timestamp('revision_requested_at')->nullable()->comment('Waktu revisi diminta');
             $table->integer('revision_count')->default(0)->comment('Jumlah revisi yang dilakukan');
             $table->boolean('auto_rejected')->default(false)->comment('Auto reject jika > 5 hari kerja');
-            
+            $table->string('tracking_code', 20)->unique()->after('id')->comment('Kode unik untuk tracking pengajuan (Format: PGJ-YYYYMM-XXXXX)');
+
             $table->timestamps();
         });
     }

@@ -179,6 +179,27 @@
                             class="flex items-center px-3 py-1 bg-green-500 text-white rounded-md text-xs hover:bg-green-600">
                             <i class="bi bi-printer-fill mr-1"></i> Cetak
                         </a>
+                        <div class="flex items-center gap-2">
+                            <!-- Dropdown Menu -->
+                            <div class="relative" x-data="{ open: false }">
+                                <button @click="open = !open" class="text-gray-600 hover:text-gray-900">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path
+                                            d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z">
+                                        </path>
+                                    </svg>
+                                </button>
+
+                                <div x-show="open" @click.away="open = false" x-transition
+                                    class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border"
+                                    style="display: none;">
+                                    <a href="{{ route('ajuan.cetak-dokumen', $ajuan->id) }}" target="_blank"
+                                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <i class="bi bi-files mr-2"></i> Cetak Dokumen
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
                     </td>
                 </tr>
             @empty

@@ -14,12 +14,20 @@ class AjuanIndex extends Component
     public $status = '';
     public $search = '';
     public $statusFilter = '';
+    public $showArchived = false;
 
     protected $queryString = [
         'status' => ['except' => ''],
         'search' => ['except' => ''],
-        'statusFilter' => ['except' => '']
+        'statusFilter' => ['except' => ''],
+        'showArchived' => ['except' => false] // Daftarkan di query string
     ];
+
+    public function toggleArchive()
+    {
+        $this->showArchived = !$this->showArchived;
+        $this->resetPage();
+    }
 
     public function updatingSearch()
     {
@@ -62,96 +70,118 @@ class AjuanIndex extends Component
                 ->orderBy('created_at', 'desc');
         }]);
 
-        // Filter by role
-        switch ($user->role) {
-            case 'masyarakat':
-                $query->where('user_id', $user->id);
-                break;
+        if ($this->showArchived) {
+            // Tampilkan yang SUDAH selesai/ditindaklanjuti sesuai role
+            switch ($user->role) {
+                case 'ketua-posyandu':
+                    // Arsip Ketua: Yang sudah disetujui (Sesuai) atau sudah dikirim ke Desa/Kades
+                    $query->whereIn('status_pengajuan', ['Sesuai', 'Diajukan ke Desa', 'Disetujui', 'Ditolak'])
+                        ->where('approved_by_ketua', true);
+                    break;
+                case 'kades':
+                    $query->whereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
+                    break;
+                case 'kader':
+                    // Kader melihat arsip jika verifikasi & kunjungan sudah selesai
+                    $query->where('sudah_verifikasi', true)->where('kunjungan_lapangan', true);
+                    break;
+                default:
+                    $query->whereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
+            }
+        } else {
+            // Tampilkan yang MASIH PERLU tindakan (Logic existing kamu)
+            switch ($user->role) {
+                case 'masyarakat':
+                    $query->where('user_id', $user->id);
+                    break;
 
-            case 'kader':
-                if ($user->bidang_id && $user->posyandu_id) {
-                    $query->where('bidang_id', $user->bidang_id)
-                        ->whereHas('user', function ($q) use ($user) {
+                case 'kader':
+                    if ($user->bidang_id && $user->posyandu_id) {
+                        $query->where('bidang_id', $user->bidang_id)
+                            ->whereHas('user', function ($q) use ($user) {
+                                $q->where('posyandu_id', $user->posyandu_id);
+                            })
+                            // ✅ Kader hanya lihat pengajuan yang statusnya "Diproses"
+                            ->where('status_pengajuan', 'Diproses');
+                    } else {
+                        $query->whereRaw('1 = 0');
+                    }
+                    break;
+
+                case 'operator-desa':
+                    if ($user->posyandu_id) {
+                        $query->whereHas('user', function ($q) use ($user) {
                             $q->where('posyandu_id', $user->posyandu_id);
-                        })
-                        // ✅ Kader hanya lihat pengajuan yang statusnya "Diproses"
-                        ->where('status_pengajuan', 'Diproses');
-                } else {
-                    $query->whereRaw('1 = 0');
-                }
-                break;
-
-            case 'operator-desa':
-                if ($user->posyandu_id) {
-                    $query->whereHas('user', function ($q) use ($user) {
-                        $q->where('posyandu_id', $user->posyandu_id);
-                    });
-                } else {
-                    $query->whereRaw('1 = 0');
-                }
-                break;
-
-            case 'ketua-posyandu':
-                if ($user->posyandu_id) {
-                    $query->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id))
-                        ->where(function ($q) {
-                            // Yang sudah kunjungan tapi belum diapprove ketua
-                            $q->where(function ($subQ) {
-                                $subQ->where('kunjungan_lapangan', true)
-                                    ->where('approved_by_ketua', false)
-                                    ->where('status_pengajuan', 'Diproses');
-                            })
-                                // Atau yang sudah disetujui ketua (status "Sesuai")
-                                ->orWhere('status_pengajuan', 'Sesuai');
                         });
-                } elseif ($user->desa) {
-                    $query->whereHas('user', fn($q) => $q->where('desa', $user->desa))
-                        ->where(function ($q) {
-                            $q->where(function ($subQ) {
-                                $subQ->where('kunjungan_lapangan', true)
-                                    ->where('approved_by_ketua', false)
-                                    ->where('status_pengajuan', 'Diproses');
-                            })
-                                ->orWhere('status_pengajuan', 'Sesuai');
-                        });
-                }
-                break;
-            case 'ketua-kader':
-            case 'kades':
-                if ($user->posyandu_id) {
-                    $query->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id))
-                        ->where('status_pengajuan', 'Diajukan ke Desa');
-                } elseif ($user->desa) {
-                    $query->whereHas('user', fn($q) => $q->where('desa', $user->desa))
-                        ->where('status_pengajuan', 'Diajukan ke Desa');
-                }
-                break;
+                    } else {
+                        $query->whereRaw('1 = 0');
+                    }
+                    break;
 
-            case 'admin-kecamatan':
-                if ($user->kecamatan) {
-                    $query->whereHas('user', fn($q) => $q->where('kecamatan', 'LIKE', '%' . $user->kecamatan . '%'));
-                }
-                break;
+                case 'ketua-posyandu':
+                    if ($user->posyandu_id) {
+                        $query->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id))
+                            ->where(function ($q) {
+                                // Yang sudah kunjungan tapi belum diapprove ketua
+                                $q->where(function ($subQ) {
+                                    $subQ->where('kunjungan_lapangan', true)
+                                        ->where('approved_by_ketua', false)
+                                        ->where('status_pengajuan', 'Diproses');
+                                })
+                                    // Atau yang sudah disetujui ketua (status "Sesuai")
+                                    ->orWhere('status_pengajuan', 'Sesuai');
+                            });
+                    } elseif ($user->desa) {
+                        $query->whereHas('user', fn($q) => $q->where('desa', $user->desa))
+                            ->where(function ($q) {
+                                $q->where(function ($subQ) {
+                                    $subQ->where('kunjungan_lapangan', true)
+                                        ->where('approved_by_ketua', false)
+                                        ->where('status_pengajuan', 'Diproses');
+                                })
+                                    ->orWhere('status_pengajuan', 'Sesuai');
+                            });
+                    }
+                    break;
+                case 'ketua-kader':
+                case 'kades':
+                    if ($user->posyandu_id) {
+                        $query->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id))
+                            ->where('status_pengajuan', 'Diajukan ke Desa');
+                    } elseif ($user->desa) {
+                        $query->whereHas('user', fn($q) => $q->where('desa', $user->desa))
+                            ->where('status_pengajuan', 'Diajukan ke Desa');
+                    }
+                    break;
 
-            case 'kabid':
-                if ($user->kabupaten) {
-                    $query->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%'));
-                }
-                if ($user->bidang_id) {
-                    $query->where('bidang_id', $user->bidang_id);
-                }
-                break;
+                case 'admin-kecamatan':
+                    if ($user->kecamatan) {
+                        $query->whereHas('user', fn($q) => $q->where('kecamatan', 'LIKE', '%' . $user->kecamatan . '%'));
+                    }
+                    break;
 
-            case 'admin-kabupaten':
-                if ($user->kabupaten) {
-                    $query->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%'));
-                }
-                break;
+                case 'kabid':
+                    if ($user->kabupaten) {
+                        $query->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%'));
+                    }
+                    if ($user->bidang_id) {
+                        $query->where('bidang_id', $user->bidang_id);
+                    }
+                    break;
 
-            case 'admin':
-                // Admin sees all
-                break;
+                case 'admin-kabupaten':
+                    if ($user->kabupaten) {
+                        $query->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%'));
+                    }
+                    break;
+
+                case 'admin':
+                    // Admin sees all
+                    break;
+            }
         }
+
+        // Filter by role
 
         if (!empty($this->status)) {
             $query->where('status_pengajuan', $this->status);

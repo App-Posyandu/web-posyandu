@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\BidangPengajuan;
 use App\Models\History;
 use App\Models\Pengajuan;
+use App\Models\SystemSetting;
 use App\Models\User;
 use App\Notifications\PengajuanStatusUpdated;
 use Illuminate\Http\Request;
@@ -34,6 +35,11 @@ class AjuanController extends Controller
 
     public function requestRevision(Request $request, Pengajuan $ajuan)
     {
+        $ajuan = Pengajuan::findOrFail($ajuan->id);
+
+        // ✅ GET dari SystemSetting
+        $autoRejectDays = SystemSetting::get('auto_reject_days', 5);
+
         $request->validate([
             'catatan' => 'required|string|max:500'
         ]);
@@ -49,11 +55,13 @@ class AjuanController extends Controller
             'status' => 'Revisi Diminta',
             'catatan' => $request->catatan,
             'diubah_oleh' => Auth::id(),
-            'action_by_role' => Auth::user()->role,
+            // ✅ FIX: enum constraint histories hanya allow: kader, ketua-posyandu, kades, ketua-kader
+            'action_by_role' => in_array(Auth::user()->role, ['kader', 'ketua-posyandu', 'kades', 'ketua-kader'])
+                ? Auth::user()->role : null,
             'created_at' => now(),
         ]);
 
-        return redirect()->back()->with('success', 'Revisi berhasil diminta. User memiliki 5 hari kerja untuk merevisi.');
+        return redirect()->back()->with('success', "Revisi berhasil diminta. User memiliki {$autoRejectDays} hari kerja untuk merevisi.");
     }
 
     public function pilihLayanan(Request $request)
@@ -252,6 +260,8 @@ class AjuanController extends Controller
             }, $finalChecklistData);
         }
 
+        $trackingCode = $this->generateTrackingCode();
+
         $pengajuan = Pengajuan::create([
             'user_id' => $targetUserId,
             'bidang_id' => $ajuanData['bidang_id'],
@@ -259,8 +269,8 @@ class AjuanController extends Controller
             'formulir_items' => $finalChecklistData,
             'administrasi_items' => $uploadedFiles,
             'deskripsi_pengajuan' => $ajuanData['deskripsi_pengajuan'] ?? 'Tidak ada deskripsi.',
-            'tanggal_permohonan' => now(), // ← TAMBAHKAN INI
-            'tindak_lanjut' => $ajuanData['deskripsi_pengajuan'],
+            'tanggal_permohonan' => now(),
+            'tracking_code' => $trackingCode,
         ]);
 
         History::create([
@@ -377,44 +387,54 @@ class AjuanController extends Controller
         if (!Gate::forUser(Auth::user())->check('viewAjuan', $ajuan)) {
             abort(403, 'Anda tidak memiliki akses untuk melihat pengajuan ini.');
         }
+        $user = Auth::user();
+        $ajuan = Pengajuan::with([
+            'user.posyandu',
+            'bidang',
+            'histories' => function ($q) {
+                $q->orderBy('created_at', 'desc');
+            }
+        ])->findOrFail($ajuan->id);
 
         // ✅ AUTO-REJECT jika expired (sama seperti di edit)
         if ($ajuan->revision_requested_at && $ajuan->status_pengajuan === 'Diproses') {
-            $debugMode = config('revision.debug_mode', false);
-            $debugMinutes = config('revision.deadline.debug_minutes');
-            $productionDays = config('revision.deadline.days', 5);
 
-            if ($debugMode && $debugMinutes) {
-                $revisionDeadline = \Carbon\Carbon::parse($ajuan->revision_requested_at)->addMinutes($debugMinutes);
-            } else {
-                $revisionDeadline = \Carbon\Carbon::parse($ajuan->revision_requested_at)->addDays($productionDays);
-            }
+            // Get settings from database
+            $enableAutoReject = SystemSetting::get('enable_auto_reject', true);
+            $debugMode = SystemSetting::get('revision_debug_mode', false);
+            $debugMinutes = SystemSetting::get('revision_debug_minutes', 5);
+            $productionDays = SystemSetting::get('auto_reject_days', 5);
 
-            $hasBeenRevised = $ajuan->histories()
-                ->where('status', 'Direvisi & Diajukan Kembali')
-                ->where('action_by_role', 'masyarakat')
-                ->where('created_at', '>', $ajuan->revision_requested_at)
-                ->exists();
+            if ($enableAutoReject) {
+                // Calculate deadline based on mode
+                if ($debugMode) {
+                    $revisionDeadline = \Carbon\Carbon::parse($ajuan->revision_requested_at)->addMinutes($debugMinutes);
+                } else {
+                    $revisionDeadline = \Carbon\Carbon::parse($ajuan->revision_requested_at)->addWeekdays($productionDays);
+                }
 
-            if (!$hasBeenRevised && now()->greaterThan($revisionDeadline)) {
-                $ajuan->update([
-                    'status_pengajuan' => 'Ditolak',
-                    'sudah_verifikasi' => false,
-                    'kunjungan_lapangan' => false,
-                    'approved_by_ketua' => false,
-                ]);
+                // Check if deadline passed and no revision submitted
+                $hasRevision = History::where('pengajuan_id', $ajuan->id)
+                    ->where('status', 'Revisi Submitted')
+                    ->where('created_at', '>', $ajuan->revision_requested_at)
+                    ->exists();
 
-                History::create([
-                    'pengajuan_id' => $ajuan->id,
-                    'status' => 'Ditolak - Masa Revisi Habis',
-                    'catatan' => 'Pengajuan otomatis ditolak karena tidak direvisi dalam waktu yang ditentukan.',
-                    'diubah_oleh' => null,
-                    'action_by_role' => 'system',
-                    'created_at' => now(),
-                ]);
+                if (now()->greaterThan($revisionDeadline) && !$hasRevision) {
+                    // Auto-reject
+                    $ajuan->update([
+                        'status_pengajuan' => 'Ditolak',
+                        'auto_rejected' => true,
+                    ]);
 
-                // Reload data setelah update
-                $ajuan->refresh();
+                    History::create([
+                        'pengajuan_id' => $ajuan->id,
+                        'status' => 'Auto-Rejected',
+                        'catatan' => "Pengajuan otomatis ditolak karena tidak ada revisi dalam {$productionDays} hari kerja.",
+                        'diubah_oleh' => null,
+                        'action_by_role' => null,
+                        'created_at' => now(),
+                    ]);
+                }
             }
         }
 
@@ -426,6 +446,7 @@ class AjuanController extends Controller
         return view('ajuan.detail', [
             'ajuan' => $ajuan,
             'templateData' => $templateData,
+            'currentUser' => $user,
         ]);
     }
 
@@ -444,41 +465,46 @@ class AjuanController extends Controller
 
         // ✅✅ AUTO-REJECT jika masa revisi sudah expired
         if ($ajuan->revision_requested_at) {
-            $debugMode = config('revision.debug_mode', false);
-            $debugMinutes = config('revision.deadline.debug_minutes');
-            $productionDays = config('revision.deadline.days', 5);
 
-            if ($debugMode && $debugMinutes) {
-                $revisionDeadline = \Carbon\Carbon::parse($ajuan->revision_requested_at)->addMinutes($debugMinutes);
-            } else {
-                $revisionDeadline = \Carbon\Carbon::parse($ajuan->revision_requested_at)->addDays($productionDays);
-            }
+            // Get settings from database
+            $enableAutoReject = SystemSetting::get('enable_auto_reject', true);
+            $debugMode = SystemSetting::get('revision_debug_mode', false);
+            $debugMinutes = SystemSetting::get('revision_debug_minutes', 5);
+            $productionDays = SystemSetting::get('auto_reject_days', 5);
 
-            $hasBeenRevised = $ajuan->histories()
-                ->where('status', 'Direvisi & Diajukan Kembali')
-                ->where('action_by_role', 'masyarakat')
-                ->where('created_at', '>', $ajuan->revision_requested_at)
-                ->exists();
+            if ($enableAutoReject) {
+                // Calculate deadline
+                if ($debugMode) {
+                    $revisionDeadline = \Carbon\Carbon::parse($ajuan->revision_requested_at)->addMinutes($debugMinutes);
+                } else {
+                    $revisionDeadline = \Carbon\Carbon::parse($ajuan->revision_requested_at)->addWeekdays($productionDays);
+                }
 
-            if (!$hasBeenRevised && now()->greaterThan($revisionDeadline)) {
-                $ajuan->update([
-                    'status_pengajuan' => 'Ditolak',
-                    'sudah_verifikasi' => false,
-                    'kunjungan_lapangan' => false,
-                    'approved_by_ketua' => false,
-                ]);
+                // Check if deadline passed
+                $hasRevision = History::where('pengajuan_id', $ajuan->id)
+                    ->where('status', 'Revisi Submitted')
+                    ->where('created_at', '>', $ajuan->revision_requested_at)
+                    ->exists();
 
-                History::create([
-                    'pengajuan_id' => $ajuan->id,
-                    'status' => 'Ditolak - Masa Revisi Habis',
-                    'catatan' => 'Pengajuan otomatis ditolak karena tidak direvisi dalam waktu yang ditentukan.',
-                    'diubah_oleh' => null,
-                    'action_by_role' => 'system',
-                    'created_at' => now(),
-                ]);
+                if (now()->greaterThan($revisionDeadline) && !$hasRevision) {
+                    // Auto-reject
+                    $ajuan->update([
+                        'status_pengajuan' => 'Ditolak',
+                        'auto_rejected' => true,
+                    ]);
 
-                return redirect()->route('ajuan.show', $ajuan)
-                    ->with('error', 'Pengajuan ini sudah ditolak karena masa revisi telah berakhir pada ' . $revisionDeadline->format('d F Y, H:i') . ' WIB.');
+                    History::create([
+                        'pengajuan_id' => $ajuan->id,
+                        'status' => 'Auto-Rejected',
+                        'catatan' => "Pengajuan otomatis ditolak karena tidak ada revisi dalam {$productionDays} hari kerja.",
+                        'diubah_oleh' => null,
+                        'action_by_role' => null,
+                        'created_at' => now(),
+                    ]);
+
+                    return redirect()->route('ajuan.index')
+                        ->with('error', "Pengajuan sudah ditolak karena melewati batas waktu revisi ({$productionDays} hari kerja).");
+                }
             }
         }
 
@@ -500,6 +526,38 @@ class AjuanController extends Controller
             'ajuan' => $ajuan,
             'allBidangs' => $allBidangs,
             'templateData' => $templateData,
+        ]);
+    }
+
+    public function timeline($id)
+    {
+        $pengajuan = Pengajuan::with([
+            'user',
+            'bidang',
+            'histories' => function ($q) {
+                $q->orderBy('created_at', 'asc');
+            }
+        ])->findOrFail($id);
+
+        // ✅ Calculate revision deadline if applicable
+        $revisionDeadline = null;
+        if ($pengajuan->revision_requested_at) {
+            $debugMode = SystemSetting::get('revision_debug_mode', false);
+            $debugMinutes = SystemSetting::get('revision_debug_minutes', 5);
+            $productionDays = SystemSetting::get('auto_reject_days', 5);
+
+            if ($debugMode) {
+                $revisionDeadline = \Carbon\Carbon::parse($pengajuan->revision_requested_at)
+                    ->addMinutes($debugMinutes);
+            } else {
+                $revisionDeadline = \Carbon\Carbon::parse($pengajuan->revision_requested_at)
+                    ->addWeekdays($productionDays);
+            }
+        }
+
+        return view('ajuan.timeline', [
+            'pengajuan' => $pengajuan,
+            'revisionDeadline' => $revisionDeadline,
         ]);
     }
 
@@ -607,7 +665,7 @@ class AjuanController extends Controller
             'status' => 'Direvisi & Diajukan Kembali',
             'catatan' => 'Pengguna telah memperbarui pengajuan sesuai permintaan revisi.',
             'diubah_oleh' => $user->id,
-            'action_by_role' => 'masyarakat',
+            'action_by_role' => null, // ✅ FIX: 'masyarakat' tidak ada di enum constraint histories
             'created_at' => now(),
         ]);
 
@@ -842,21 +900,19 @@ class AjuanController extends Controller
         if ($user->role === 'ketua-posyandu') {
             if ($step == 3) {
                 $request->validate([
-                    'keputusan' => 'required|in:setuju,tolak',
-                    'tindak_lanjut' => 'nullable|string',
-                    'catatan' => 'nullable|string|required_if:keputusan,tolak',
+                    'keputusan' => 'required|in:ditindaklanjuti,tidak-ditindaklanjuti',
+                    'catatan' => 'nullable|string|min:15|required_if:keputusan,tidak-ditindaklanjuti',
                 ], [
                     'keputusan.required' => 'Keputusan harus dipilih.',
                     'catatan.required_if' => 'Catatan wajib diisi jika menolak.',
                 ]);
 
-                if ($request->keputusan === 'setuju') {
+                if ($request->keputusan === 'ditindaklanjuti') {
                     $ajuan->update([
                         'status_pengajuan' => 'Sesuai',
                         'approved_by_ketua' => true,
                         'approved_by_ketua_id' => $user->id,
                         'approved_by_ketua_at' => now(),
-                        'tindak_lanjut' => $request->tindak_lanjut ?? $ajuan->deskripsi_pengajuan,
                     ]);
 
                     $statusHistory = 'Disetujui Ketua Posyandu';
@@ -926,18 +982,20 @@ class AjuanController extends Controller
         }
 
         $request->validate([
-            'keputusan' => 'required|in:setuju,tolak',
-            'catatan' => 'nullable|string|required_if:keputusan,tolak',
+            'keputusan' => 'required|in:diajukan,tidak-diajukan',
+            'tindak_lanjut' => 'nullable|string',
+            'catatan' => 'nullable|string|min:15|required_if:keputusan,tidak-diajukan',
         ], [
             'catatan.required_if' => 'Catatan wajib diisi jika menolak.',
         ]);
 
-        if ($request->keputusan === 'setuju') {
+        if ($request->keputusan === 'diajukan') {
             $ajuan->update([
                 'status_pengajuan' => 'Disetujui',
                 'approved_by_kades' => true,
                 'approved_by_kades_id' => $user->id,
                 'approved_by_kades_at' => now(),
+                'tindak_lanjut' => $request->tindak_lanjut ?? $ajuan->deskripsi_pengajuan,
             ]);
 
             $status = 'Disetujui Kades';
@@ -1032,6 +1090,82 @@ class AjuanController extends Controller
         ]);
     }
 
+    /**
+     * Cetak Ringkasan Pengajuan (1 halaman) - PDF
+     */
+    public function cetakRingkasan($id)
+    {
+        $ajuan = Pengajuan::with(['user.posyandu', 'bidang', 'ketuaPosyandu', 'kades'])->findOrFail($id);
+
+        // Decode JSON fields
+        foreach (['formulir_items', 'administrasi_items', 'verified_formulir_items', 'verified_administrasi_items'] as $key) {
+            if (is_string($ajuan->$key)) {
+                $ajuan->$key = json_decode($ajuan->$key, true) ?? [];
+            }
+        }
+
+        $templateData = $this->getBidangData($ajuan->bidang->slug);
+        if (!$templateData) {
+            $templateData = ['administrasi_items' => []];
+        }
+
+        $pdf = Pdf::loadView('ajuan.cetak_ringkasan', [
+            'ajuan' => $ajuan,
+            'templateData' => $templateData
+        ]);
+
+        $pdf->setPaper('A4', 'portrait');
+
+        $pdf->setOptions([
+            'isHtml5ParserEnabled' => true,
+            'isRemoteEnabled' => true,
+            'defaultFont' => 'sans-serif',
+        ]);
+
+        return $pdf->stream('ringkasan_ajuan_' . $ajuan->tracking_code . '.pdf');
+    }
+
+    /**
+     * Cetak Dokumen Administrasi (1 halaman per dokumen) - PDF
+     */
+    public function cetakDokumen($id)
+    {
+        $ajuan = Pengajuan::with(['user.posyandu', 'bidang'])->findOrFail($id);
+
+        // Decode JSON fields
+        foreach (['formulir_items', 'administrasi_items'] as $key) {
+            if (is_string($ajuan->$key)) {
+                $ajuan->$key = json_decode($ajuan->$key, true) ?? [];
+            }
+        }
+
+        $templateData = $this->getBidangData($ajuan->bidang->slug);
+        if (!$templateData) {
+            $templateData = ['administrasi_items' => []];
+        }
+
+        $administrasiItems = $ajuan->administrasi_items ?? [];
+
+        $documentCounter = 1;
+
+        $pdf = Pdf::loadView('ajuan.cetak_dokumen', [
+            'ajuan' => $ajuan,
+            'templateData' => $templateData,
+            'administrasiItems' => $administrasiItems,  // ← TAMBAHKAN
+            'documentCounter' => $documentCounter,
+        ]);
+
+        $pdf->setPaper('A4', 'portrait');
+
+        $pdf->setOptions([
+            'isHtml5ParserEnabled' => true,
+            'isRemoteEnabled' => true,
+            'defaultFont' => 'sans-serif',
+        ]);
+
+        return $pdf->stream('dokumen_ajuan_' . $ajuan->tracking_code . '.pdf');
+    }
+
     public function getItemsAjax($slug)
     {
         try {
@@ -1060,5 +1194,138 @@ class AjuanController extends Controller
                 'message' => 'Terjadi kesalahan: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * ✅ Generate unique tracking code untuk pengajuan
+     * Format: PGJ-YYYYMM-XXXXX
+     * Example: PGJ-202501-A1B2C
+     */
+    private function generateTrackingCode()
+    {
+        do {
+            // Format: PGJ-202501-AB123
+            $code = 'PGJ-' . date('Ym') . '-' . strtoupper(Str::random(5));
+        } while (Pengajuan::where('tracking_code', $code)->exists());
+
+        return $code;
+    }
+
+    /**
+     * ✅ Show tracking form (public, no auth required)
+     */
+    public function showTrackingForm()
+    {
+        return view('pengajuan.track');
+    }
+
+    /**
+     * ✅ Track pengajuan by tracking code (public, no auth required)
+     */
+    public function track(Request $request)
+    {
+        $request->validate([
+            'tracking_code' => 'required|string|max:50',
+        ]);
+
+        // Normalize tracking code (remove spaces, convert to uppercase)
+        $trackingCode = strtoupper(trim($request->tracking_code));
+
+        // Find pengajuan by tracking code
+        $pengajuan = Pengajuan::with(['user', 'bidang'])
+            ->where('tracking_code', $trackingCode)
+            ->first();
+
+        if (!$pengajuan) {
+            return redirect()->route('login')
+                ->with('track_error', 'Kode pengajuan tidak ditemukan. Pastikan Anda memasukkan kode yang benar.');
+        }
+
+        // Show tracking result
+        return view('ajuan.track-result', compact('pengajuan'));
+    }
+
+    /**
+     * ✅ Generate QR Code untuk tracking
+     * Dapat digunakan untuk cetak bukti pengajuan
+     */
+    public function generateQRCode(Pengajuan $pengajuan)
+    {
+        // URL untuk tracking
+        $trackingUrl = route('ajuan.track.show', ['code' => $pengajuan->tracking_code]);
+
+        // Generate QR Code menggunakan library (misal: simplesoftwareio/simple-qrcode)
+        // return QrCode::size(200)->generate($trackingUrl);
+
+        // Atau return data untuk generate di frontend
+        return response()->json([
+            'tracking_code' => $pengajuan->tracking_code,
+            'tracking_url' => $trackingUrl,
+            'qr_data' => $pengajuan->tracking_code,
+        ]);
+    }
+
+    /**
+     * ✅ Track by direct URL (untuk QR Code scan)
+     */
+    public function trackByCode($code)
+    {
+        $pengajuan = Pengajuan::with(['user', 'bidang'])
+            ->where('tracking_code', strtoupper($code))
+            ->first();
+
+        if (!$pengajuan) {
+            return redirect()->route('login')
+                ->with('track_error', 'Kode pengajuan tidak ditemukan.');
+        }
+
+        return view('ajuan.track-result', compact('pengajuan'));
+    }
+
+    /**
+     * Print bukti pengajuan dengan tracking code
+     */
+    public function printBukti(Pengajuan $pengajuan)
+    {
+        $user = Auth::user();
+        // Authorization check
+        if (
+            $user->id !== $pengajuan->user_id &&
+            !in_array($user->role, ['admin', 'kader', 'operator-desa', 'ketua-kader', 'ketua-posyandu'])
+        ) {
+            abort(403, 'Unauthorized');
+        }
+
+        return view('ajuan.print-bukti', [
+            'pengajuan' => $pengajuan
+        ]);
+    }
+
+    /**
+     * Show tracking result
+     */
+    public function trackShow(Request $request)
+    {
+        $request->validate([
+            'code' => 'required|string|max:20'
+        ]);
+
+        $trackingCode = strtoupper(trim($request->code));
+
+        // Find pengajuan by tracking code
+        $pengajuan = Pengajuan::with(['user', 'bidang', 'histories' => function ($q) {
+            $q->orderBy('created_at', 'asc');
+        }])
+            ->where('tracking_code', $trackingCode)
+            ->first();
+
+        if (!$pengajuan) {
+            return redirect()->route('login')
+                ->with('tracking_error', 'Kode tracking "' . $trackingCode . '" tidak ditemukan. Pastikan Anda memasukkan kode dengan benar.');
+        }
+
+        return view('ajuan.track-result', [
+            'pengajuan' => $pengajuan
+        ]);
     }
 }

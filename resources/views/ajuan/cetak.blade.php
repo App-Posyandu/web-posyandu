@@ -5,6 +5,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Cetak Pengajuan - SAPA POSYANDU</title>
+
+    {{-- ✅ Tambahkan QR Code Library --}}
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+
     <style>
         /* ========== RESET & BASE STYLING ========== */
         * {
@@ -53,7 +57,7 @@
 
         header table tr {
             width: 100%;
-            margin: 0 0 8px 0
+            /* margin: 0 0 8px 0 */
         }
 
         .left-cell {
@@ -83,7 +87,7 @@
         .header-title {
             text-align: center;
             flex-grow: 1;
-            margin-top: 4px;
+            margin-top: 1px;
         }
 
         .header-title h1 {
@@ -98,8 +102,71 @@
             text-transform: uppercase;
             color: #171717;
             font-size: 1rem;
-            margin: 4px 0 0;
+            margin: 1px 0 0;
             font-weight: 500;
+        }
+
+        /* ✅ TRACKING CODE STYLES */
+        .tracking-section {
+            background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
+            border: 2px solid #ec4899;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 16px 0 24px 0;
+            text-align: center;
+        }
+
+        .tracking-label {
+            font-size: 12px;
+            color: #9333ea;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .tracking-code-box {
+            background: white;
+            border: 2px dashed #ec4899;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin: 8px auto;
+            max-width: 400px;
+        }
+
+        .tracking-code {
+            font-family: 'Courier New', monospace;
+            font-size: 24px;
+            font-weight: 700;
+            color: #be123c;
+            letter-spacing: 2px;
+        }
+
+        .tracking-info {
+            font-size: 11px;
+            color: #be123c;
+            margin-top: 8px;
+            font-weight: 500;
+        }
+
+        .qr-section {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px dashed #ec4899;
+        }
+
+        .qr-code-container {
+            background: white;
+            padding: 8px;
+            border-radius: 8px;
+            display: inline-block;
+            margin: 8px auto;
+        }
+
+        .qr-instructions {
+            font-size: 10px;
+            color: #be123c;
+            margin-top: 6px;
         }
 
         /* ========== MAIN (FLEX FILLER) ========== */
@@ -128,7 +195,7 @@
 
         .info-section table {
             width: 100%;
-            margin: 24px 0;
+            /* margin: 24px 0; */
         }
 
         .info-section table tr {
@@ -137,7 +204,7 @@
 
         .info-section table tr td {
             width: 50%;
-            padding: 4px 0;
+            padding: 2px 0;
         }
 
         .info-section h3 {
@@ -148,7 +215,7 @@
         .info-section p {
             font-size: 14px;
             color: #4b5563;
-            margin-top: 4px;
+            /* margin-top: 4px; */
         }
 
         .content {
@@ -164,19 +231,22 @@
             font-size: 16px;
             font-weight: 600;
             color: #111827;
-            margin-bottom: 8px;
-            margin-top: 24px;
+            /* margin-bottom: 8px; */
+            /* margin-top: 10px; */
         }
 
         .table-content {
             width: 100%;
-            margin: 16px 0;
+            margin: 0;
+            padding: 0;
+            /* margin: 4px 0; */
             border-collapse: collapse;
         }
 
         .table-content td {
             vertical-align: middle;
-            padding: 4px 0;
+            padding: 2px 0;
+            font-size: 12px
         }
 
         .table-content td.cell-left {
@@ -199,7 +269,7 @@
 
         .signature-table {
             width: 100%;
-            margin-top: 32px;
+            margin-top: 12px;
             border-collapse: collapse;
             text-align: center;
         }
@@ -219,7 +289,7 @@
 
         .persyaratan-administrasi {
             width: 100%;
-            margin: 16px 0;
+            /* margin: 16px 0; */
             border-collapse: collapse;
         }
 
@@ -230,40 +300,40 @@
 
         .date-approval {
             text-align: right;
-            margin-top: 24px;
-            margin-bottom: 8px;
+            /* margin-top: 2px; */
+            /* margin-bottom: 8px; */
             font-size: 14px;
             color: #374151;
         }
 
         .date-approval p {
-            margin: 4px 0;
+            /* margin: 4px 0; */
         }
 
         .section-divider {
             border-top: 2px solid #e5e7eb;
-            margin: 24px 0;
+            margin: 4px 0;
         }
 
-        .description-box {
+        /* .description-box {
             margin: 16px 0;
             padding: 12px;
             background-color: #f9fafb;
             border-left: 4px solid #6366f1;
             border-radius: 4px;
-        }
+        } */
 
-        .description-box p {
+        /* .description-box p {
             font-size: 14px;
             color: #4b5563;
             line-height: 1.6;
-        }
+        } */
 
         /* ========== FOOTER ========== */
         footer {
             background-color: #ffffff;
             border-top: 1px solid #e5e7eb;
-            padding: 16px;
+            padding: 8px;
             text-align: center;
             font-size: 0.875rem;
             color: #6b7280;
@@ -272,6 +342,17 @@
         footer span {
             font-weight: 600;
             color: #111827;
+        }
+
+        /* ========== PRINT STYLES ========== */
+        @media print {
+            body {
+                background: white;
+            }
+
+            .tracking-section {
+                page-break-inside: avoid;
+            }
         }
 
         /* ========== RESPONSIVE ========== */
@@ -292,6 +373,10 @@
 
             .card {
                 padding: 24px;
+            }
+
+            .tracking-code {
+                font-size: 18px;
             }
         }
     </style>
@@ -322,6 +407,7 @@
             $checkBase64 = 'data:image/png;base64,' . base64_encode($checkData);
         }
     @endphp
+
     <header>
         <table>
             <tr>
@@ -349,9 +435,35 @@
 
     <main>
         <div class="container">
+            {{-- ✅ TRACKING CODE SECTION (PROMINENT - SEBELUM NAMA) --}}
+            {{-- <div class="tracking-section">
+                <div class="tracking-label">📋 Kode Tracking Pengajuan</div>
+                <div class="tracking-code-box">
+                    <div class="tracking-code">{{ $ajuan->tracking_code ?? 'PGJ-000000-00000' }}</div>
+                </div>
+                <div class="tracking-info">
+                    ✓ Simpan kode ini untuk melacak status pengajuan Anda
+                </div>
+
+                <div class="qr-section">
+                    <div class="qr-code-container">
+                        <canvas id="qrcode" width="120" height="120"></canvas>
+                    </div>
+                    <div class="qr-instructions">
+                        Scan QR Code atau gunakan kode di atas untuk cek status
+                    </div>
+                </div>
+            </div> --}}
+
             <div class="info-section">
                 {{-- Informasi Pemohon --}}
                 <table>
+                    <tr>
+                        <td>
+                            <h3>Kode Tracking Pengajuan</h3>
+                        </td>
+                        <td>: {{ $ajuan->tracking_code ?? 'PGJ-000000-00000' }}</td>
+                    </tr>
                     <tr>
                         <td>
                             <h3>Nama Pemohon</h3>
@@ -581,10 +693,31 @@
     </main>
 
     <footer>
-        <p>
-            &copy; {{ date('Y') }} <span>SAPA POSYANDU</span>. Sistem Aplikasi Pos Pelayanan Terpadu.
-        </p>
+        <p>&copy; {{now()->year}} <span>SAPA POSYANDU</span> - Layanan Standar Minimal Pelayanan Posyandu Kabupaten Kebumen</p>
     </footer>
+
+    {{-- ✅ QR CODE GENERATION SCRIPT --}}
+    <script>
+        // Generate QR Code for tracking
+        document.addEventListener('DOMContentLoaded', function() {
+            const trackingCode = "{{ $ajuan->tracking_code ?? '' }}";
+            const trackingUrl = "{{ route('ajuan.track.show', ['code' => $ajuan->tracking_code ?? 'INVALID']) }}";
+            const qrCanvas = document.getElementById('qrcode');
+
+            if (qrCanvas && trackingCode) {
+                QRCode.toCanvas(qrCanvas, trackingUrl, {
+                    width: 120,
+                    margin: 1,
+                    color: {
+                        dark: '#be123c',
+                        light: '#ffffff'
+                    }
+                }, function(error) {
+                    if (error) console.error('QR Code generation error:', error);
+                });
+            }
+        });
+    </script>
 </body>
 
 </html>

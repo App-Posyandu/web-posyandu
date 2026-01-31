@@ -23,6 +23,7 @@ return new class extends Migration
             $table->enum('role', ['masyarakat', 'kader', 'operator-desa', 'ketua-kader', 'kades', 'admin-kecamatan', 'kabid', 'admin-kabupaten', 'ketua-posyandu', 'admin'])->default('masyarakat');
             $table->string('kabupaten')->nullable();
             $table->string('kecamatan')->nullable();
+            $table->string('desa')->nullable();
 
             $table->string('rw', 10)->nullable()->comment('RW pemohon (max 15)');
             $table->string('rt', 10)->nullable()->comment('RT pemohon (max 53)');
@@ -32,7 +33,7 @@ return new class extends Migration
             $table->foreignUuid('kabupaten_id')
                 ->nullable();
 
-        $table->foreignUuid('kecamatan_id')
+            $table->foreignUuid('kecamatan_id')
                 ->nullable();
 
             // Kolom Tambahan dari Form Registrasi

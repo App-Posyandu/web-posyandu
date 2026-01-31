@@ -94,13 +94,17 @@
                             <option value="kader">Kader</option>
                             <option value="ketua-kader">Ketua Kader</option>
                             <option value="admin-kecamatan">Admin Kecamatan</option>
+                            <option value="admin-kecamatan">Admin Kabupaten</option>
                             <option value="operator-desa">Operator Desa</option>
                             <option value="kabid">Kabid</option>
                         @elseif ($currentUser->role === 'admin-kabupaten')
                             <option value="">Semua Role</option>
+                            <option value="ketua-posyandu">Ketua Posyandu</option>
                             <option value="kabid">Kabid</option>
+                            <option value="operator-desa">Operator Desa</option>
+                            <option value="admin-kabupaten">Admin Kabupaten</option>
                             <option value="admin-kecamatan">Admin Kecamatan</option>
-                            <option value="ketua-kader">Ketua Kader</option>
+                            <option value="kades">Kades</option>
                         @elseif ($currentUser->role === 'kabid')
                             <option value="">Semua Role</option>
                             <option value="admin-kecamatan">Admin Kecamatan</option>
@@ -338,7 +342,7 @@
                                             @endif
                                         </div>
                                     @elseif(auth()->user()->role === 'admin-kabupaten')
-                                        <div class="flex justify-between">
+                                        <div class="flex justify-between gap-3">
                                             {{-- Detail --}}
                                             {{-- <a href="{{ route('admin.users.show', $user) }}"
                                                 class="px-3 py-1 bg-blue-500 text-white rounded-md text-xs hover:bg-blue-600">
@@ -348,7 +352,7 @@
                                             {{-- Reset Password --}}
                                             <button type="button"
                                                 onclick="openResetPasswordModalKabid('{{ $user->id }}', '{{ $user->name }}')"
-                                                class="px-3 py-1 bg-yellow-500 text-white rounded-md text-xs hover:bg-yellow-600">
+                                                class="w-full px-3 py-1 bg-yellow-500 text-white rounded-md text-xs hover:bg-yellow-600">
                                                 <i class="bi bi-key"></i> Reset
                                             </button>
 
@@ -356,17 +360,17 @@
                                             @if ($user->is_active)
                                                 <button type="button"
                                                     onclick="openDeactivateModalKabid('{{ $user->id }}', '{{ $user->name }}')"
-                                                    class="px-3 py-1 bg-red-500 text-white rounded-md text-xs hover:bg-red-600">
+                                                    class="w-full px-3 py-1 bg-red-500 text-white rounded-md text-xs hover:bg-red-600">
                                                     <i class="bi bi-x-circle"></i> Nonaktifkan
                                                 </button>
                                             @else
-                                                <form action="{{ route('admin.users.reactivate-kabid', $user) }}"
+                                                <form action="{{ route('admin.users.reactivate-kabid', $user) }}" class="w-full"
                                                     method="POST" class="inline">
                                                     @csrf
                                                     @method('PATCH')
                                                     <button type="submit"
                                                         onclick="return confirm('Aktifkan kembali {{ $user->name }}?')"
-                                                        class="px-3 py-1 bg-green-500 text-white rounded-md text-xs hover:bg-green-600">
+                                                        class="w-full px-3 py-1 bg-green-500 text-white rounded-md text-xs hover:bg-green-600">
                                                         <i class="bi bi-check-circle"></i> Aktifkan
                                                     </button>
                                                 </form>

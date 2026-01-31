@@ -56,15 +56,6 @@
                             Total: {{ $semuaAjuan->total() }} pengajuan
                     @endif
                 </div>
-                <div>
-                    @if ($isVerified && in_array(auth()->user()->role, ['masyarakat', 'admin', 'ketua-kader', 'operator-desa']))
-                        <a href="{{ route('dashboard.partials.pilih-layanan') }}"
-                            class="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition">
-                            <i class="bi bi-plus-circle-fill mr-2"></i>
-                            Buat Pengajuan
-                        </a>
-                    @endif
-                </div>
                 {{-- ✅ INFO BANNER BERDASARKAN ROLE --}}
                 @if (auth()->user()->role === 'ketua-posyandu')
                     <div class="w-full bg-blue-50 border-l-4 border-blue-500 p-4 rounded-md">
@@ -163,6 +154,30 @@
                     @endif
                 </div>
             @endif
+        </div>
+
+        <div class="flex items-center justify-between mb-4 bg-gray-50 p-3 rounded-xl border border-gray-100">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-white rounded-lg shadow-sm">
+                    <i
+                        class="bi {{ $showArchived ? 'bi-archive-fill text-amber-500' : 'bi-inbox-fill text-blue-500' }}"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-gray-800">
+                        {{ $showArchived ? 'Arsip Pengajuan' : 'Pengajuan Aktif' }}
+                    </h3>
+                    <p class="text-xs text-gray-500">
+                        {{ $showArchived ? 'Menampilkan data yang telah selesai Anda tindak lanjuti' : 'Menampilkan data yang memerlukan tindakan Anda' }}
+                    </p>
+                </div>
+            </div>
+
+            {{-- Toggle Switch --}}
+            <button wire:click="toggleArchive" wire:loading.attr="disabled"
+                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {{ $showArchived ? 'bg-amber-500' : 'bg-gray-200' }} disabled:opacity-50">
+                <span
+                    class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ $showArchived ? 'translate-x-5' : 'translate-x-0' }}"></span>
+            </button>
         </div>
 
         {{-- Filter and Search Section --}}

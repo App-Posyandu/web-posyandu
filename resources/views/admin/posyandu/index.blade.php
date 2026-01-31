@@ -103,124 +103,6 @@
                         </div>
                     </div>
                 </div>
-                @push('scripts')
-                    <script>
-                        // Copy credentials untuk satu kader
-                        function copyKaderCredentials(index) {
-                            const kaders = @json(session('created_kaders'));
-                            const kader = kaders[index];
-
-                            const text = `Kader ${kader.bidang}
-Email: ${kader.email}
-Password: ${kader.password}`;
-
-                            navigator.clipboard.writeText(text).then(() => {
-                                alert('✅ Credentials berhasil disalin!');
-                            }).catch(() => {
-                                alert('❌ Gagal menyalin. Silakan copy manual.');
-                            });
-                        }
-
-                        // Print semua credentials
-                        function printKaderCredentials() {
-                            const kaders = @json(session('created_kaders'));
-
-                            let content = '<html><head><title>Credentials Kader Auto-Generated</title>';
-                            content += '<style>';
-                            content += 'body { font-family: Arial, sans-serif; padding: 30px; }';
-                            content += 'h2 { color: #1f2937; border-bottom: 3px solid #ec4899; padding-bottom: 10px; }';
-                            content += 'table { width: 100%; border-collapse: collapse; margin-top: 20px; }';
-                            content += 'th, td { border: 1px solid #d1d5db; padding: 12px; text-align: left; }';
-                            content += 'th { background-color: #4a5568; color: white; font-weight: bold; }';
-                            content += 'tr:nth-child(even) { background-color: #f9fafb; }';
-                            content += '.password { font-weight: bold; color: #dc2626; font-family: monospace; }';
-                            content +=
-                                '.footer { margin-top: 30px; padding: 15px; background-color: #fef3c7; border-left: 4px solid #f59e0b; }';
-                            content += '</style>';
-                            content += '</head><body>';
-
-                            content += '<h2>🏥 Credentials Kader Auto-Generated</h2>';
-                            content += '<p><strong>📅 Tanggal:</strong> ' + new Date().toLocaleString('id-ID') + '</p>';
-
-                            content += '<table>';
-                            content += '<thead><tr>';
-                            content += '<th>No</th>';
-                            content += '<th>Bidang</th>';
-                            content += '<th>Email</th>';
-                            content += '<th>Password</th>';
-                            content += '</tr></thead>';
-                            content += '<tbody>';
-
-                            kaders.forEach((kader, i) => {
-                                content += '<tr>';
-                                content += '<td>' + (i + 1) + '</td>';
-                                content += '<td>' + kader.bidang + '</td>';
-                                content += '<td>' + kader.email + '</td>';
-                                content += '<td class="password">' + kader.password + '</td>';
-                                content += '</tr>';
-                            });
-
-                            content += '</tbody></table>';
-
-                            content += '<div class="footer">';
-                            content += '<p><strong>⚠️ PENTING:</strong></p>';
-                            content += '<ul>';
-                            content += '<li>Simpan dokumen ini dengan aman!</li>';
-                            content += '<li>Password default: <strong>kader123</strong></li>';
-                            content += '<li>Kader dapat login menggunakan <strong>email</strong> atau <strong>nomor telepon</strong></li>';
-                            content +=
-                                '<li>Ketua Kader wajib meminta kader untuk <strong>mengganti password</strong> setelah login pertama</li>';
-                            content += '</ul>';
-                            content += '</div>';
-
-                            content += '</body></html>';
-
-                            const printWindow = window.open('', '_blank');
-                            printWindow.document.write(content);
-                            printWindow.document.close();
-                            printWindow.print();
-                        }
-
-                        // Download as TXT
-                        function downloadKaderCredentials() {
-                            const kaders = @json(session('created_kaders'));
-
-                            let content = '==============================================\n';
-                            content += '   CREDENTIALS KADER AUTO-GENERATED\n';
-                            content += '==============================================\n\n';
-                            content += 'Tanggal: ' + new Date().toLocaleString('id-ID') + '\n';
-                            content += '----------------------------------------------\n\n';
-
-                            kaders.forEach((kader, i) => {
-                                content += (i + 1) + '. Kader ' + kader.bidang + '\n';
-                                content += '   Email    : ' + kader.email + '\n';
-                                content += '   Password : ' + kader.password + '\n';
-                                content += '----------------------------------------------\n';
-                            });
-
-                            content += '\n';
-                            content += '⚠️ PENTING:\n';
-                            content += '- Simpan file ini dengan aman!\n';
-                            content += '- Password default: kader123\n';
-                            content += '- Kader dapat login menggunakan email atau nomor telepon\n';
-                            content += '- Ketua Kader wajib meminta kader untuk mengganti password\n';
-                            content += '\n';
-                            content += '==============================================\n';
-
-                            const blob = new Blob([content], {
-                                type: 'text/plain;charset=utf-8'
-                            });
-                            const url = window.URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = 'kader_credentials_' + Date.now() + '.txt';
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
-                            window.URL.revokeObjectURL(url);
-                        }
-                    </script>
-                @endpush
             @endif
             <div class="p-6 text-gray-900">
 
@@ -228,7 +110,7 @@ Password: ${kader.password}`;
                     <h2 class="text-2xl font-bold text-gray-800">List Posyandu</h2>
 
                     {{-- ✅ Hanya tampilkan tombol tambah untuk role tertentu --}}
-                    @if (in_array(auth()->user()->role, ['admin', 'ketua-posyandu', 'kabid', 'admin-kecamatan', 'admin-kabupaten']))
+                    @if (in_array(auth()->user()->role, ['admin', 'admin-kecamatan', 'admin-kabupaten', 'operator-desa']))
                         <a href="{{ route('admin.posyandu.create') }}"
                             class="px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600">
                             Tambah Posyandu
@@ -266,138 +148,361 @@ Password: ${kader.password}`;
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">No</th>
-                                <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Nama Posyandu
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    No
                                 </th>
-                                <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Ketua Kader
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Nama Posyandu
                                 </th>
-                                <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Wilayah</th>
-                                <th class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase">RW/RT</th>
-                                <th class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Action</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Ketua Kader
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Lokasi
+                                </th>
+                                <th
+                                    class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Jumlah RW
+                                </th>
+                                <th
+                                    class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Jumlah RT
+                                </th>
+                                <th
+                                    class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Aksi
+                                </th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            @forelse ($posyandus as $posyandu)
-                                @php
-                                    $ketuaKader = $posyandu->users->firstWhere('role', 'ketua-kader');
-                                    $totalRw = $posyandu->getAvailableRwList();
-                                    $totalRt = $posyandu->getTotalRtCount();
-                                @endphp
-                                <tr>
-                                    <td class="px-6 py-4">{{ $loop->iteration + $posyandus->firstItem() - 1 }}</td>
-                                    <td class="px-6 py-4 font-medium">{{ $posyandu->nama_posyandu }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                        {{ $ketuaKader?->name ?? 'Belum Ditentukan' }}
+                            @forelse($posyandus as $index => $posyandu)
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {{ $posyandus->firstItem() + $index }}
                                     </td>
-                                    <td class="px-6 py-4 text-sm">
-                                        <div class="text-gray-700">{{ $posyandu->desa ?? '' }}</div>
-                                        <div class="text-gray-500">{{ $posyandu->kecamatan ?? '' }}</div>
-                                        <div class="text-gray-400 text-xs">{{ $posyandu->kabupaten ?? '' }}</div>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-gray-900">{{ $posyandu->nama_posyandu }}</div>
                                     </td>
-                                    <td class="px-6 py-4 text-center">
-                                        @if ($totalRw > 0 || $totalRt > 0)
-                                            <div class="flex flex-col gap-1">
-                                                <span
-                                                    class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800">
-                                                    {{ $totalRw }} RW
-                                                </span>
-                                                <span
-                                                    class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
-                                                    {{ $totalRt }} RT
-                                                </span>
-                                            </div>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        @if ($posyandu->ketuaKader)
+                                            <div class="text-sm text-gray-900">{{ $posyandu->ketuaKader->name }}</div>
+                                            <div class="text-xs text-gray-500">{{ $posyandu->ketuaKader->email }}</div>
                                         @else
-                                            <span class="text-xs text-gray-400 italic">Belum diatur</span>
+                                            <span class="text-xs text-gray-400 italic">Belum ada</span>
                                         @endif
                                     </td>
-
                                     <td class="px-6 py-4">
-                                        <div class="flex flex-col gap-2">
-                                            @php
-                                                $currentUser = auth()->user();
-                                                $canEdit = in_array($currentUser->role, [
-                                                    'admin',
-                                                    'ketua-posyandu',
-                                                    'kabid',
-                                                    'admin-kecamatan',
-                                                    'admin-kabupaten',
-                                                ]);
-                                                $canDelete = in_array($currentUser->role, [
-                                                    'admin',
-                                                    'ketua-posyandu',
-                                                    'kabid',
-                                                    'admin-kecamatan',
-                                                    'admin-kabupaten',
-                                                ]);
-                                                $canManageRwRt = in_array($currentUser->role, [
-                                                    'admin',
-                                                    'ketua-posyandu',
-                                                    'operator-desa',
-                                                    'kabid',
-                                                    'admin-kecamatan',
-                                                    'admin-kabupaten',
-                                                ]);
-
-                                                // ✅ Validasi tambahan untuk operator-desa & ketua-kader
-                                                if (
-                                                    $currentUser->role === 'operator-desa' ||
-                                                    $currentUser->role === 'ketua-kader'
-                                                ) {
-                                                    $canManageRwRt = $posyandu->id === $currentUser->posyandu_id;
+                                        <div class="text-sm text-gray-900">{{ $posyandu->desa }}</div>
+                                        <div class="text-xs text-gray-500">{{ $posyandu->kecamatan }},
+                                            {{ $posyandu->kabupaten }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                        <span
+                                            class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-purple-100 text-purple-800">
+                                            {{ count($posyandu->rw_list ?? []) }} RW
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                        @php
+                                            $totalRt = 0;
+                                            if (is_array($posyandu->rt_mapping)) {
+                                                foreach ($posyandu->rt_mapping as $rtList) {
+                                                    if (is_array($rtList)) {
+                                                        $totalRt += count($rtList);
+                                                    }
                                                 }
-                                            @endphp
-
-                                            @if ($canEdit || $canDelete)
-                                                <div class="flex gap-2">
-                                                    @if ($canEdit)
-                                                        <a href="{{ route('admin.posyandu.edit', $posyandu) }}"
-                                                            class="w-full flex items-center justify-center px-2 py-1 bg-yellow-500 text-white rounded-md text-xs hover:bg-yellow-600">
-                                                            Ubah
-                                                        </a>
-                                                    @endif
-
-                                                    @if ($canDelete)
-                                                        <form action="{{ route('admin.posyandu.destroy', $posyandu) }}"
-                                                            class="w-full" method="POST"
-                                                            onsubmit="return confirm('Yakin hapus?');">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit"
-                                                                class="w-full flex items-center justify-center px-2 py-1 bg-red-500 text-white rounded-md text-xs hover:bg-red-600">
-                                                                Hapus
-                                                            </button>
-                                                        </form>
-                                                    @endif
-                                                </div>
-                                            @endif
-
-                                            {{-- ✅ Tombol Kelola RW/RT (semua role yang berwenang) --}}
-                                            @if ($canManageRwRt)
-                                                <a href="{{ route('admin.posyandu.manage-rw-rt', $posyandu) }}"
-                                                    class="flex items-center justify-center px-2 py-1 bg-blue-500 text-white rounded-md text-xs hover:bg-blue-600">
-                                                    <i class="bi bi-diagram-3 mr-1"></i>
-                                                    Kelola RW/RT
-                                                </a>
-                                            @endif
-
-                                            @if (!$canEdit && !$canDelete && !$canManageRwRt)
-                                                <span class="text-xs text-gray-400 italic">Tidak ada aksi</span>
-                                            @endif
+                                            }
+                                        @endphp
+                                        <span
+                                            class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800">
+                                            {{ $totalRt }} RT
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
+                                        <div class="flex items-center justify-center gap-2">
+                                            <button type="button"
+                                                onclick="showDetailPosyandu('{{ $posyandu->nama_posyandu }}', '{{ $posyandu->desa }}', {{ json_encode($posyandu->rw_list ?? []) }}, {{ json_encode($posyandu->rt_mapping ?? []) }})"
+                                                class="text-green-600 hover:text-green-900 transition"
+                                                title="Lihat Detail RW/RT">
+                                                <i class="bi bi-eye-fill text-lg"></i>
+                                            </button>
+                                            <a href="{{ route('admin.posyandu.edit', $posyandu) }}"
+                                                class="text-indigo-600 hover:text-indigo-900" title="Edit Data">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </a>
+                                            {{-- <a href="{{ route('admin.posyandu.edit-rw-rt', $posyandu) }}"
+                                                class="text-blue-600 hover:text-blue-900" title="Kelola RW/RT">
+                                                <i class="bi bi-diagram-3"></i>
+                                            </a> --}}
+                                            <form method="POST"
+                                                action="{{ route('admin.posyandu.destroy', $posyandu) }}"
+                                                onsubmit="return confirm('Yakin ingin menghapus posyandu ini?');"
+                                                class="inline">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="text-red-600 hover:text-red-900"
+                                                    title="Hapus">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
                                         </div>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">Tidak ada data
-                                        Posyandu.
+                                    <td colspan="7" class="px-6 py-4 text-center text-gray-500 text-sm">
+                                        Belum ada data posyandu.
                                     </td>
                                 </tr>
                             @endforelse
                         </tbody>
                     </table>
                 </div>
-                <div class="mt-4">{{ $posyandus->links() }}</div>
+
+                <div class="mt-4">
+                    {{ $posyandus->links() }}
+                </div>
             </div>
         </div>
     </div>
+    {{-- Modal Detail RW/RT --}}
+    <div x-data="{
+        show: false,
+        data: { nama: '', desa: '', rw_list: [], rt_mapping: {} }
+    }" x-show="show" @open-detail.window="show = true; data = $event.detail"
+        class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+
+        {{-- Backdrop --}}
+        <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" @click="show = false"></div>
+
+        <div class="relative min-h-screen flex items-center justify-center p-4">
+            <div
+                class="relative bg-white rounded-xl shadow-2xl max-w-2xl w-full p-6 overflow-hidden transition-all transform">
+                {{-- Header --}}
+                <div class="flex justify-between items-center border-b pb-3 mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">
+                        Detail Wilayah: <span x-text="data.nama" class="text-pink-600"></span>
+                    </h3>
+                    <button @click="show = false" class="text-gray-400 hover:text-gray-600">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+
+                {{-- Content --}}
+                <div class="max-h-[60vh] overflow-y-auto pr-2">
+                    <p class="text-sm text-gray-600 mb-4 italic">
+                        Daftar RW dan RT yang terdaftar di Desa <span x-text="data.desa"
+                            class="font-semibold text-gray-800"></span>
+                    </p>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <template x-for="rw in data.rw_list" :key="rw">
+                            <div class="border rounded-lg bg-gray-50 p-3">
+                                <div class="flex items-center gap-2 border-b border-gray-200 pb-2 mb-2">
+                                    <span class="bg-pink-100 text-pink-700 px-2 py-0.5 rounded text-xs font-bold"
+                                        x-text="rw"></span>
+                                    <span class="text-xs text-gray-500 font-medium uppercase tracking-wider">Rukun
+                                        Warga</span>
+                                </div>
+
+                                <div class="flex flex-wrap gap-2">
+                                    <template x-for="rt in (data.rt_mapping[rw] || [])" :key="rt">
+                                        <span
+                                            class="bg-white border border-gray-300 text-gray-700 px-2 py-1 rounded-md text-xs shadow-sm"
+                                            x-text="rt"></span>
+                                    </template>
+                                    <template x-if="!(data.rt_mapping[rw] || []).length">
+                                        <span class="text-xs text-gray-400 italic">Tidak ada RT terdaftar</span>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <template x-if="!data.rw_list.length">
+                        <div class="text-center py-10">
+                            <i class="bi bi-exclamation-triangle text-amber-500 text-4xl mb-3"></i>
+                            <p class="text-gray-500">Belum ada data RW/RT untuk posyandu ini.</p>
+                        </div>
+                    </template>
+                </div>
+
+                {{-- Footer --}}
+                <div class="mt-6 flex justify-end">
+                    <button @click="show = false"
+                        class="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition">
+                        Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @push('scripts')
+        <script>
+            function showDetailPosyandu(nama, desa, rwList, rtMapping) {
+                // Generate HTML untuk list RW dan RT
+                let contentHtml = `<div class="text-left mt-4">
+        <p class="text-sm text-gray-600 mb-4 italic text-center">Wilayah pelayanan di Desa <strong>${desa}</strong></p>
+        <div class="grid grid-cols-1 gap-3" style="max-height: 400px; overflow-y: auto; padding: 5px;">`;
+
+                if (rwList && rwList.length > 0) {
+                    rwList.forEach(rw => {
+                        const rts = rtMapping[rw] || [];
+                        contentHtml += `
+                <div class="border rounded-lg p-3 bg-gray-50 border-gray-200">
+                    <div class="flex items-center gap-2 mb-2 border-b pb-1">
+                        <span class="bg-pink-500 text-white px-2 py-0.5 rounded text-xs font-bold">${rw}</span>
+                        <span class="text-xs font-semibold text-gray-500 uppercase">Rukun Warga</span>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        ${rts.map(rt => `<span class="bg-white border border-gray-300 text-gray-700 px-2 py-1 rounded text-xs shadow-sm">${rt}</span>`).join('')}
+                        ${rts.length === 0 ? '<span class="text-xs text-gray-400 italic">Tidak ada RT</span>' : ''}
+                    </div>
+                </div>`;
+                    });
+                } else {
+                    contentHtml += `<div class="text-center py-8 text-gray-500">Belum ada data RW/RT terdaftar.</div>`;
+                }
+
+                contentHtml += `</div></div>`;
+
+                // Tampilkan SweetAlert
+                Swal.fire({
+                    title: `<span class="text-xl font-bold text-gray-800">Detail: ${nama}</span>`,
+                    html: contentHtml,
+                    width: '600px',
+                    confirmButtonText: 'Tutup',
+                    confirmButtonColor: '#ec4899', // Warna pink sesuai tema Anda
+                    customClass: {
+                        popup: 'rounded-2xl shadow-xl',
+                        title: 'border-b pb-4'
+                    },
+                    showCloseButton: true
+                });
+            }
+        </script>
+        {{-- <script>
+            (function() {
+
+                // Copy credentials untuk satu kader
+                function copyKaderCredentials(index) {
+                    const kaders = @json(session('created_kaders'));
+                    const kader = kaders[index];
+
+                    const text = `Kader ${kader.bidang}
+    Email: ${kader.email}
+    Password: ${kader.password}`;
+
+                    navigator.clipboard.writeText(text).then(() => {
+                        alert('✅ Credentials berhasil disalin!');
+                    }).catch(() => {
+                        alert('❌ Gagal menyalin. Silakan copy manual.');
+                    });
+                }
+
+                // Print semua credentials
+                function printKaderCredentials() {
+                    const kaders = @json(session('created_kaders'));
+
+                    let content = '<html><head><title>Credentials Kader Auto-Generated</title>';
+                    content += '<style>';
+                    content += 'body { font-family: Arial, sans-serif; padding: 30px; }';
+                    content += 'h2 { color: #1f2937; border-bottom: 3px solid #ec4899; padding-bottom: 10px; }';
+                    content += 'table { width: 100%; border-collapse: collapse; margin-top: 20px; }';
+                    content += 'th, td { border: 1px solid #d1d5db; padding: 12px; text-align: left; }';
+                    content += 'th { background-color: #4a5568; color: white; font-weight: bold; }';
+                    content += 'tr:nth-child(even) { background-color: #f9fafb; }';
+                    content += '.password { font-weight: bold; color: #dc2626; font-family: monospace; }';
+                    content +=
+                        '.footer { margin-top: 30px; padding: 15px; background-color: #fef3c7; border-left: 4px solid #f59e0b; }';
+                    content += '</style>';
+                    content += '</head><body>';
+
+                    content += '<h2>🏥 Credentials Kader Auto-Generated</h2>';
+                    content += '<p><strong>📅 Tanggal:</strong> ' + new Date().toLocaleString('id-ID') + '</p>';
+
+                    content += '<table>';
+                    content += '<thead><tr>';
+                    content += '<th>No</th>';
+                    content += '<th>Bidang</th>';
+                    content += '<th>Email</th>';
+                    content += '<th>Password</th>';
+                    content += '</tr></thead>';
+                    content += '<tbody>';
+
+                    kaders.forEach((kader, i) => {
+                        content += '<tr>';
+                        content += '<td>' + (i + 1) + '</td>';
+                        content += '<td>' + kader.bidang + '</td>';
+                        content += '<td>' + kader.email + '</td>';
+                        content += '<td class="password">' + kader.password + '</td>';
+                        content += '</tr>';
+                    });
+
+                    content += '</tbody></table>';
+
+                    content += '<div class="footer">';
+                    content += '<p><strong>⚠️ PENTING:</strong></p>';
+                    content += '<ul>';
+                    content += '<li>Simpan dokumen ini dengan aman!</li>';
+                    content += '<li>Password default: <strong>kader123</strong></li>';
+                    content +=
+                        '<li>Kader dapat login menggunakan <strong>email</strong> atau <strong>nomor telepon</strong></li>';
+                    content +=
+                        '<li>Ketua Kader wajib meminta kader untuk <strong>mengganti password</strong> setelah login pertama</li>';
+                    content += '</ul>';
+                    content += '</div>';
+
+                    content += '</body></html>';
+
+                    const printWindow = window.open('', '_blank');
+                    printWindow.document.write(content);
+                    printWindow.document.close();
+                    printWindow.print();
+                }
+
+                // Download as TXT
+                function downloadKaderCredentials() {
+                    const kaders = @json(session('created_kaders'));
+
+                    let content = '==============================================\n';
+                    content += '   CREDENTIALS KADER AUTO-GENERATED\n';
+                    content += '==============================================\n\n';
+                    content += 'Tanggal: ' + new Date().toLocaleString('id-ID') + '\n';
+                    content += '----------------------------------------------\n\n';
+
+                    kaders.forEach((kader, i) => {
+                        content += (i + 1) + '. Kader ' + kader.bidang + '\n';
+                        content += '   Email    : ' + kader.email + '\n';
+                        content += '   Password : ' + kader.password + '\n';
+                        content += '----------------------------------------------\n';
+                    });
+
+                    content += '\n';
+                    content += '⚠️ PENTING:\n';
+                    content += '- Simpan file ini dengan aman!\n';
+                    content += '- Password default: kader123\n';
+                    content += '- Kader dapat login menggunakan email atau nomor telepon\n';
+                    content += '- Ketua Kader wajib meminta kader untuk mengganti password\n';
+                    content += '\n';
+                    content += '==============================================\n';
+
+                    const blob = new Blob([content], {
+                        type: 'text/plain;charset=utf-8'
+                    });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'kader_credentials_' + Date.now() + '.txt';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                }
+                window.copyKaderCredentials = copyKaderCredentials;
+                window.printKaderCredentials = printKaderCredentials;
+                window.downloadKaderCredentials = downloadKaderCredentials;
+            })();
+        </script> --}}
+    @endpush
 @endsection

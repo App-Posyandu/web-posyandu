@@ -187,9 +187,30 @@
             <div class="bg-white overflow-hidden shadow-xl rounded-lg md:rounded-2xl p-4 md:p-6 lg:p-8">
                 {{-- Header with Search and Export --}}
                 <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-4 md:mb-6">
-                    <h2 class="text-xl md:text-2xl font-bold text-gray-800">List Pengajuan</h2>
+                    <h2 class="text-xl md:text-2xl font-bold text-gray-800">
+                        List Pengajuan
+                        @if ($showArchived ?? false)
+                            <span class="ml-3 px-3 py-1 text-sm font-semibold bg-gray-100 text-gray-700 rounded-full">
+                                Arsip
+                            </span>
+                        @else
+                            <span class="ml-3 px-3 py-1 text-sm font-semibold bg-green-100 text-green-700 rounded-full">
+                                Aktif
+                            </span>
+                        @endif
+                    </h2>
 
                     <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 md:gap-3 w-full md:w-auto">
+                        {{-- Archive Toggle --}}
+                        <button @click.prevent="toggleArchive($event)" type="button"
+                            class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium bg-white text-gray-700 hover:bg-gray-50 transition-colors">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4">
+                                </path>
+                            </svg>
+                            <span x-text="showArchived ? 'Lihat Pengajuan Aktif' : 'Lihat Arsip'"></span>
+                        </button>
                         {{-- Filter Status --}}
                         <select x-model="filterStatus" @change="loadDashboardData()"
                             class="border-gray-300 rounded-md shadow-sm text-sm w-full sm:w-auto px-3 py-2">
@@ -220,6 +241,22 @@
                             <span class="hidden sm:inline">Export to Excel</span>
                             <span class="sm:hidden">Export</span>
                         </button>
+                    </div>
+                </div>
+
+                <div x-show="showArchived" x-transition class="mb-4 bg-gray-50 border-l-4 border-gray-400 p-4 rounded-lg">
+                    <div class="flex">
+                        <svg class="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                                clip-rule="evenodd"></path>
+                        </svg>
+                        <div class="ml-3">
+                            <p class="text-sm text-gray-700">
+                                Anda sedang melihat <strong>Arsip Pengajuan</strong> yang sudah selesai diproses.
+                                Pengajuan dalam arsip tidak dapat diubah.
+                            </p>
+                        </div>
                     </div>
                 </div>
 
@@ -307,10 +344,11 @@
                 currentYear: {{ $currentYear }},
                 selectedYear: {{ $selectedYear }},
                 availableYears: @json($availableYears),
-                searchQuery: '',
-                filterStatus: '',
                 loading: false,
                 isVerified: {{ $isVerified ? 'true' : 'false' }},
+                filterStatus: '{{ request('status') }}',
+                searchQuery: '{{ request('search') }}',
+                showArchived: {{ $showArchived ?? false ? 'true' : 'false' }},
 
                 // Data
                 bidangData: @json($chartData),
@@ -338,6 +376,17 @@
                     this.loadDashboardData();
                 },
 
+                toggleArchive(event) {
+                    if (event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+
+                    this.showArchived = !this.showArchived;
+                    console.log('Toggled showArchived to:', this.showArchived);
+                    this.loadDashboardData();
+                },
+
                 async loadDashboardData(page = 1) {
                     if (!this.isVerified) return;
 
@@ -348,9 +397,12 @@
                             year: this.selectedYear,
                             search: this.searchQuery,
                             status: this.filterStatus,
+                            archived: this.showArchived ? '1' : '0',
                             ajax: '1',
                             page: page
                         });
+
+                        console.log('Loading dashboard data with params:', params.toString());
 
                         const response = await fetch(`{{ route('dashboard') }}?${params}`);
                         const data = await response.json();

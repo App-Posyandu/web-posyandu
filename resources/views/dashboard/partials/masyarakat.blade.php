@@ -327,6 +327,7 @@
                         this.myStats = data.myStats;
                         this.tableHtml = data.tableHtml;
                         this.paginationHtml = data.paginationHtml;
+                        console.log(data)
 
                         this.paginationInfo = data.paginationInfo;
 
@@ -349,7 +350,7 @@
                         const page = url.searchParams.get('page') || 1;
                         this.loadDashboardData(page);
                     }
-                }
+                },
 
                 resetToCurrentYear() {
                     this.selectedYear = this.currentYear;

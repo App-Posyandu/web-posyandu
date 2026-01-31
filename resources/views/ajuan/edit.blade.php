@@ -18,15 +18,16 @@
                         @php
                             $requestedDate = \Carbon\Carbon::parse($ajuan->revision_requested_at);
 
-                            // ✅ Gunakan config yang sama dengan command
-                            $debugMode = config('revision.debug_mode', false);
-                            $debugMinutes = config('revision.deadline.debug_minutes');
-                            $productionDays = config('revision.deadline.days', 5);
+                            // ✅ FIX: Pakai SystemSetting dari database, bukan config()
+                            $enableAutoReject = \App\Models\SystemSetting::get('enable_auto_reject', true);
+                            $debugMode = \App\Models\SystemSetting::get('revision_debug_mode', false);
+                            $debugMinutes = \App\Models\SystemSetting::get('revision_debug_minutes', 5);
+                            $productionDays = \App\Models\SystemSetting::get('auto_reject_days', 5);
 
-                            if ($debugMode && $debugMinutes) {
+                            if ($debugMode) {
                                 $revisionDeadline = $requestedDate->copy()->addMinutes($debugMinutes);
                             } else {
-                                $revisionDeadline = $requestedDate->copy()->addDays($productionDays);
+                                $revisionDeadline = $requestedDate->copy()->addWeekdays($productionDays);
                             }
 
                             $isExpired = now()->greaterThan($revisionDeadline);
@@ -43,13 +44,18 @@
                                         <p class="text-sm text-red-700 mt-1">
                                             Batas waktu revisi telah habis pada
                                             {{ $revisionDeadline->format('d F Y, H:i') }} WIB.
-                                            Pengajuan ini akan otomatis ditolak.
+                                            @if ($enableAutoReject)
+                                                Pengajuan ini akan otomatis ditolak.
+                                            @else
+                                                Namun fitur auto-reject saat ini <strong>nonaktif</strong>, sehingga
+                                                pengajuan tidak akan ditolak secara otomatis.
+                                            @endif
                                         </p>
                                     </div>
                                 </div>
                             </div>
                         @else
-                            {{-- Countdown Realtime dengan Auto-Reject --}}
+                            {{-- Countdown Realtime --}}
                             <div class="bg-orange-50 border-l-4 border-orange-500 p-4 mb-6" x-data="{
                                 deadline: new Date('{{ $revisionDeadline->toIso8601String() }}').getTime(),
                                 now: Date.now(),
@@ -60,6 +66,7 @@
                                 expired: false,
                                 rejecting: false,
                                 debugMode: {{ $debugMode ? 'true' : 'false' }},
+                                enableAutoReject: {{ $enableAutoReject ? 'true' : 'false' }},
                                 updateCountdown() {
                                     this.now = Date.now();
                                     const distance = this.deadline - this.now;
@@ -76,27 +83,36 @@
                                     this.seconds = Math.floor((distance % (1000 * 60)) / 1000);
                                 },
                                 handleExpired() {
-                                    // ✅ Ketika countdown habis, trigger auto-reject
                                     if (this.rejecting) return;
-
                                     this.rejecting = true;
 
-                                    // Show alert
-                                    Swal.fire({
-                                        icon: 'error',
-                                        title: 'Waktu Revisi Habis!',
-                                        html: 'Masa revisi telah berakhir.<br>Pengajuan akan otomatis ditolak.',
-                                        allowOutsideClick: false,
-                                        showConfirmButton: false,
-                                        timer: 3000,
-                                        timerProgressBar: true,
-                                        didOpen: () => {
-                                            Swal.showLoading();
-                                        }
-                                    }).then(() => {
-                                        // Redirect ke halaman detail untuk trigger auto-reject
-                                        window.location.href = '{{ route('ajuan.show', $ajuan) }}';
-                                    });
+                                    if (this.enableAutoReject) {
+                                        // ✅ Auto-reject aktif: tunjuk pesan dan redirect ke show() untuk trigger server-side reject
+                                        Swal.fire({
+                                            icon: 'error',
+                                            title: 'Waktu Revisi Habis!',
+                                            html: 'Masa revisi telah berakhir.<br>Pengajuan akan otomatis ditolak.',
+                                            allowOutsideClick: false,
+                                            showConfirmButton: false,
+                                            timer: 3000,
+                                            timerProgressBar: true,
+                                            didOpen: () => {
+                                                Swal.showLoading();
+                                            }
+                                        }).then(() => {
+                                            window.location.href = '{{ route('ajuan.show', $ajuan) }}';
+                                        });
+                                    } else {
+                                        // ✅ Auto-reject nonaktif: tunjuk info saja, tidak redirect atau reject
+                                        Swal.fire({
+                                            icon: 'info',
+                                            title: 'Waktu Revisi Habis',
+                                            html: 'Masa revisi telah berakhir.<br><small class=\'text-gray-500\'>Fitur auto-reject saat ini nonaktif, pengajuan tidak
+                                            akan ditolak secara otomatis. < /small>',
+                                            confirmButtonText: 'Mengerti',
+                                            confirmButtonColor: '#6b7280'
+                                        });
+                                    }
                                 }
                             }"
                                 x-init="updateCountdown();

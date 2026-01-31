@@ -104,7 +104,7 @@
 
                         {{-- Role --}}
                         <div
-                            class="{{ in_array(auth()->user()->role, ['ketua-kader', 'admin-kecamatan', 'operator-desa', 'kader']) ? 'hidden' : '' }}">
+                            class="{{ in_array(auth()->user()->role, ['ketua-kader', 'admin-kecamatan', 'kader']) ? 'hidden' : '' }}">
                             <x-input-label for="role" :value="__('Role')" />
                             <select id="role" name="role"
                                 class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
@@ -114,6 +114,9 @@
                                 @php $currentUserRole = auth()->user()->role; @endphp
 
                                 @if ($currentUserRole === 'admin')
+                                    <option value="admin-kabupaten"
+                                        {{ isset($defaultRole) && $defaultRole === 'admin-kabupaten' ? 'selected' : '' }}>
+                                        Admin Kabupaten</option>
                                     <option value="ketua-posyandu"
                                         {{ isset($defaultRole) && $defaultRole === 'ketua-posyandu' ? 'selected' : '' }}>
                                         Ketua Posyandu</option>
@@ -139,22 +142,18 @@
                                         {{ isset($defaultRole) && $defaultRole === 'masyarakat' ? 'selected' : '' }}>
                                         Masyarakat</option>
                                 @elseif ($currentUserRole === 'admin-kabupaten')
+                                    <option value="ketua-posyandu">Ketua Posyandu</option>
                                     <option value="kabid">Kabid</option>
                                     <option value="admin-kecamatan">Admin Kecamatan</option>
-                                    <option value="admin-kecamatan">Kades</option>
-                                    <option value="ketua-kader">Ketua Kader</option>
-                                @elseif ($currentUserRole === 'kades')
-                                    <option value="admin-kecamatan">Kabid</option>
-                                    <option value="admin-kecamatan">Admin Kecamatan</option>
-                                    <option value="ketua-kader">Ketua Kader</option>
-                                @elseif ($currentUserRole === 'kabid')
-                                    <option value="admin-kecamatan">Admin Kecamatan</option>
+                                    <option value="kades">Kades</option>
+                                    <option value="operator-desa">Operator Desa</option>
                                     <option value="ketua-kader">Ketua Kader</option>
                                 @elseif ($currentUserRole === 'admin-kecamatan')
                                     <option value="ketua-kader" @selected(true)>Ketua Kader</option>
-                                @elseif ($currentUserRole === 'ketua-kader')
-                                    <option value="kader" @selected(true)>Kader</option>
                                 @elseif ($currentUserRole === 'operator-desa')
+                                    <option value="ketua-kader">Ketua Kader</option>
+                                    <option value="kader">Kader</option>
+                                @elseif ($currentUserRole === 'ketua-kader')
                                     <option value="kader" @selected(true)>Kader</option>
                                 @elseif ($currentUserRole === 'kader')
                                     <option value="masyarakat" @selected(true)>Masyarakat</option>
@@ -679,7 +678,7 @@
                     const currentUserRole = '{{ auth()->user()->role }}';
 
                     // ✅ KETUA POSYANDU: Pilih Jenis Wilayah + Kabupaten/Kota
-                    if (role === 'ketua-posyandu') {
+                    if (role === 'ketua-posyandu' || role === 'admin-kabupaten') {
                         jenisWilayahField.style.display = 'block';
                         jenisWilayahSelect.required = true;
                         // Kabupaten/Kota akan muncul setelah pilih jenis wilayah

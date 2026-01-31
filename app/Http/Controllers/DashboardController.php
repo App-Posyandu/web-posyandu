@@ -35,6 +35,7 @@ class DashboardController extends Controller
         $selectedYear = $request->input('year', $currentYear);
         $startYear = 2024;
         $availableYears = range($currentYear, $startYear);
+        $showArchived = $request->boolean('archived', 0);
 
         $allBidangs = BidangPengajuan::orderBy('nama_bidang')->get();
         $colors = [
@@ -79,6 +80,14 @@ class DashboardController extends Controller
                 abort(403, 'Unauthorized');
         }
 
+        // Query untuk CHART & STATISTICS (TIDAK kena filter archive, hanya tahun)
+        $statsQuery = Pengajuan::with(['user', 'bidang'])
+            ->whereYear('created_at', $selectedYear);
+
+        // Query untuk LIST PENGAJUAN (kena filter archive + tahun)
+        $listQuery = Pengajuan::with(['user', 'bidang',])
+            ->whereYear('created_at', $selectedYear);
+
         // ✅ QUERY PENGAJUAN DENGAN FILTER TAHUN
         $query = Pengajuan::with(['user', 'bidang'])
             ->whereYear('created_at', $selectedYear);
@@ -98,7 +107,8 @@ class DashboardController extends Controller
         switch ($user->role) {
             case 'admin-kabupaten':
                 if ($user->kabupaten) {
-                    $query->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%'));
+                    $listQuery->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%'));
+                    $statsQuery->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%'));
                     $actualCountsQuery->where('users.kabupaten', 'LIKE', '%' . $user->kabupaten . '%');
                     $desasQuery->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%'));
                 }
@@ -106,7 +116,8 @@ class DashboardController extends Controller
 
             case 'admin-kecamatan':
                 if ($user->kecamatan) {
-                    $query->whereHas('user', fn($q) => $q->where('kecamatan', 'LIKE', '%' . $user->kecamatan . '%'));
+                    $listQuery->whereHas('user', fn($q) => $q->where('kecamatan', 'LIKE', '%' . $user->kecamatan . '%'));
+                    $statsQuery->whereHas('user', fn($q) => $q->where('kecamatan', 'LIKE', '%' . $user->kecamatan . '%'));
                     $actualCountsQuery->where('users.kecamatan', 'LIKE', '%' . $user->kecamatan . '%');
                     $desasQuery->whereHas('user', fn($q) => $q->where('kecamatan', 'LIKE', '%' . $user->kecamatan . '%'));
                 }
@@ -114,100 +125,80 @@ class DashboardController extends Controller
 
             case 'kabid':
                 if ($user->kabupaten) {
-                    $query->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%'));
+                    $listQuery->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%'));
+                    $statsQuery->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%'));
                     $actualCountsQuery->where('users.kabupaten', 'LIKE', '%' . $user->kabupaten . '%');
                     $desasQuery->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%'));
                 }
                 if ($user->bidang_id) {
-                    $query->where('bidang_id', $user->bidang_id);
+                    $listQuery->where('bidang_id', $user->bidang_id);
+                    $statsQuery->where('bidang_id', $user->bidang_id);
                     $actualCountsQuery->where('pengajuans.bidang_id', $user->bidang_id);
                 }
                 break;
 
-            // ✅ KEPALA DESA & KETUA POSYANDU: Lihat semua pengajuan di desanya
             case 'ketua-kader':
-                if ($user->posyandu_id) {
-                    $query->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id))
-                        ->where(function ($q) {
-                            // Yang sudah kunjungan tapi belum diapprove ketua
-                            $q->where(function ($subQ) {
-                                $subQ->where('kunjungan_lapangan', true)
-                                    ->where('approved_by_ketua', false)
-                                    ->where('status_pengajuan', 'Diproses');
-                            })
-                                // Atau yang sudah disetujui ketua (status "Sesuai")
-                                ->orWhere('status_pengajuan', 'Sesuai');
-                        });
-                    $actualCountsQuery->where('users.posyandu_id', $user->posyandu_id)
-                        ->where(function ($q) {
-                            $q->where(function ($subQ) {
-                                $subQ->where('pengajuans.kunjungan_lapangan', true)
-                                    ->where('pengajuans.approved_by_ketua', false)
-                                    ->where('pengajuans.status_pengajuan', 'Diproses');
-                            })
-                                ->orWhere('pengajuans.status_pengajuan', 'Sesuai');
-                        });
-                    $desasQuery->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
-                } elseif ($user->desa) {
-                    $query->whereHas('user', fn($q) => $q->where('desa', $user->desa))
-                        ->where(function ($q) {
-                            $q->where(function ($subQ) {
-                                $subQ->where('kunjungan_lapangan', true)
-                                    ->where('approved_by_ketua', false)
-                                    ->where('status_pengajuan', 'Diproses');
-                            })
-                                ->orWhere('status_pengajuan', 'Sesuai');
-                        });
-                    $actualCountsQuery->where('users.desa', $user->desa)
-                        ->where(function ($q) {
-                            $q->where(function ($subQ) {
-                                $subQ->where('pengajuans.kunjungan_lapangan', true)
-                                    ->where('pengajuans.approved_by_ketua', false)
-                                    ->where('pengajuans.status_pengajuan', 'Diproses');
-                            })
-                                ->orWhere('pengajuans.status_pengajuan', 'Sesuai');
-                        });
-                    $desasQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
-                }
-                break;
-
             case 'kades':
+                // ✅ FIX: Kades TIDAK filter status di stats query
                 if ($user->posyandu_id) {
-                    $query->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id))
-                        ->where('status_pengajuan', 'Diajukan ke Desa');
-                    $actualCountsQuery->where('users.posyandu_id', $user->posyandu_id)
-                        ->where('pengajuans.status_pengajuan', 'Diajukan ke Desa');
-                    $desasQuery->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
-                } elseif ($user->desa) {
-                    $query->whereHas('user', fn($q) => $q->where('desa', $user->desa))
-                        ->where('status_pengajuan', 'Diajukan ke Desa');
-                    $actualCountsQuery->where('users.desa', $user->desa)
-                        ->where('pengajuans.status_pengajuan', 'Diajukan ke Desa');
-                    $desasQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
-                }
-                break;
-            case 'ketua-posyandu':
-                if ($user->posyandu_id) {
-                    $query->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
+                    $listQuery->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
+                    $statsQuery->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
                     $actualCountsQuery->where('users.posyandu_id', $user->posyandu_id);
                     $desasQuery->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
                 } elseif ($user->desa) {
-                    // Fallback jika tidak ada posyandu_id
-                    $query->whereHas('user', fn($q) => $q->where('desa', $user->desa));
+                    $listQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
+                    $statsQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
                     $actualCountsQuery->where('users.desa', $user->desa);
                     $desasQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
+                }
+
+                // ✅ FIX: Filter status hanya untuk LIST, bukan STATS
+                if (!$showArchived) {
+                    // Mode Aktif: hanya yang "Diajukan ke Desa"
+                    $listQuery->where('status_pengajuan', 'Diajukan ke Desa');
+                }
+                break;
+
+            case 'ketua-posyandu':
+                if ($user->posyandu_id) {
+                    $listQuery->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
+                    $statsQuery->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
+                    $actualCountsQuery->where('users.posyandu_id', $user->posyandu_id);
+                    $desasQuery->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
+                } elseif ($user->desa) {
+                    $listQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
+                    $statsQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
+                    $actualCountsQuery->where('users.desa', $user->desa);
+                    $desasQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
+                }
+
+                if (!$showArchived) {
+                    $listQuery->where(function ($q) {
+                        $q->where(function ($subQ) {
+                            $subQ->where('kunjungan_lapangan', true)
+                                ->where('approved_by_ketua', false)
+                                ->where('status_pengajuan', 'Diproses');
+                        })->orWhere('status_pengajuan', 'Sesuai');
+                    });
                 }
                 break;
 
             case 'admin':
-                // Admin bisa lihat semua
+                // Admin sees all - no filter
                 break;
         }
 
+        if ($showArchived) {
+            // Mode Arsip: yang sudah selesai (Disetujui/Ditolak)
+            $listQuery->whereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
+        } else {
+            // Mode Aktif: yang masih perlu tindakan (Diajukan ke Desa)
+            $listQuery->where('status_pengajuan', 'Diajukan ke Desa');
+        }
         // ✅ FILTER SEARCH
         if ($request->has('search') && $request->input('search') != '') {
             $searchTerm = $request->input('search');
-            $query->where(function ($q) use ($searchTerm) {
+            $listQuery->where(function ($q) use ($searchTerm) {
                 $q->where('deskripsi_pengajuan', 'like', '%' . $searchTerm . '%')
                     ->orWhere('status_pengajuan', 'like', '%' . $searchTerm . '%')
                     ->orWhereHas('user', fn($userQuery) => $userQuery->where('name', 'like', '%' . $searchTerm . '%'))
@@ -217,7 +208,7 @@ class DashboardController extends Controller
 
         // ✅ FILTER STATUS
         if ($request->filled('status')) {
-            $query->where('status_pengajuan', $request->status);
+            $listQuery->where('status_pengajuan', $request->status);
         }
 
         // ✅ HITUNG AJUAN PER BIDANG
@@ -228,7 +219,7 @@ class DashboardController extends Controller
             $actualCountsQuery->groupBy('bidang_pengajuans.nama_bidang');
             $actualCounts = $actualCountsQuery->pluck('total', 'nama_bidang');
             $ajuanCounts = $baseCounts->merge($actualCounts);
-            $semuaAjuan = $query->latest()->paginate(5)->withQueryString();
+            $semuaAjuan = $listQuery->latest()->paginate(5)->withQueryString();
 
             // ✅ Tambahkan computed attributes untuk revision tracking
             $semuaAjuan->getCollection()->transform(function ($ajuan) {
@@ -294,19 +285,22 @@ class DashboardController extends Controller
                 ];
             })->values();
 
+            $allPengajuan = $statsQuery->get();
+
             return response()->json([
                 'bidangData' => $bidangData,
                 'statistics' => [
-                    'total' => $ajuanCounts->sum(),
-                    'disetujui' => $semuaAjuan->where('status_pengajuan', 'Disetujui')->count(),
-                    'diproses' => $semuaAjuan->where('status_pengajuan', 'Diproses')->count(),
-                    'ditolak' => $semuaAjuan->where('status_pengajuan', 'Ditolak')->count(),
+                    'total' => $allPengajuan->count(),
+                    'disetujui' => $allPengajuan->where('status_pengajuan', 'Disetujui')->count(),
+                    'diproses' => $allPengajuan->where('status_pengajuan', 'Diproses')->count(),
+                    'ditolak' => $allPengajuan->where('status_pengajuan', 'Ditolak')->count(),
                 ],
                 'paginationInfo' => [
                     'from' => $semuaAjuan->firstItem() ?? 0,
                     'to' => $semuaAjuan->lastItem() ?? 0,
                     'total' => $semuaAjuan->total(),
                 ],
+                'showArchived' => $showArchived,
                 'tableHtml' => view('ajuan.table', ['semuaAjuan' => $semuaAjuan])->render(),
                 'paginationHtml' => $semuaAjuan->links()->render(),
             ]);
@@ -322,8 +316,62 @@ class DashboardController extends Controller
             'currentUser',
             'selectedYear',
             'currentYear',
-            'availableYears'
+            'availableYears',
+            'showArchived'
         ));
+    }
+
+    // DashboardController.php
+
+    public function debugDashboard(Request $request)
+    {
+        $user = Auth::user();
+        $selectedYear = $request->input('year', now()->year);
+
+        // Ambil SEMUA pengajuan di tahun tersebut tanpa filter wilayah dulu untuk membuktikan data ada
+        $query = Pengajuan::with(['user.posyandu', 'bidang'])
+            ->whereYear('created_at', $selectedYear);
+
+        $semuaDataTanpaFilter = (clone $query)->get();
+
+        // Sekarang apply filter hirarki yang SEHARUSNYA (Fix Error SQL)
+        if (in_array($user->role, ['ketua-kader', 'ketua-posyandu']) && $user->posyandu_id) {
+            // Filter melalui relasi user karena posyandu_id tidak ada di tabel pengajuans
+            $query->whereHas('user', function ($q) use ($user) {
+                $q->where('posyandu_id', $user->posyandu_id);
+            });
+        } elseif ($user->role === 'kades') {
+            $desaName = $user->posyandu->desa ?? $user->desa;
+            $query->whereHas('user.posyandu', function ($q) use ($desaName) {
+                $q->where('desa', $desaName);
+            });
+        }
+
+        $allFiltered = $query->get();
+
+        return response()->json([
+            'info_login' => [
+                'role' => $user->role,
+                'my_posyandu_id' => $user->posyandu_id,
+                'my_desa' => $user->posyandu->desa ?? $user->desa,
+            ],
+            'hasil_tanpa_filter_wilayah' => [
+                'total' => $semuaDataTanpaFilter->count(),
+                'bidang_found' => $semuaDataTanpaFilter->groupBy('bidang.nama_bidang')->map->count(),
+            ],
+            'hasil_dengan_filter_wilayah' => [
+                'total' => $allFiltered->count(),
+                'status_breakdown' => $allFiltered->groupBy('status_pengajuan')->map->count(),
+            ],
+            'list_id_dan_bidang_di_db' => $semuaDataTanpaFilter->map(function ($p) {
+                return [
+                    'id' => $p->id,
+                    'bidang' => $p->bidang->nama_bidang,
+                    'posyandu_user' => $p->user->posyandu_id,
+                    'desa_user' => $p->user->posyandu->desa ?? 'N/A'
+                ];
+            })
+        ]);
     }
 
     private function masyarakatDashboard($request, $user, $selectedYear, $currentYear, $availableYears, $isVerified, $icons)

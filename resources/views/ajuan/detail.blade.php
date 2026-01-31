@@ -32,15 +32,15 @@
                                 @php
                                     $requestedDate = \Carbon\Carbon::parse($ajuan->revision_requested_at);
 
-                                    // ✅ Gunakan config yang sama dengan command
-                                    $debugMode = config('revision.debug_mode', false);
-                                    $debugMinutes = config('revision.deadline.debug_minutes');
-                                    $productionDays = config('revision.deadline.days', 5);
+                                    // ✅ FIX: Pakai SystemSetting dari database, bukan config()
+                                    $debugMode = \App\Models\SystemSetting::get('revision_debug_mode', false);
+                                    $debugMinutes = \App\Models\SystemSetting::get('revision_debug_minutes', 5);
+                                    $productionDays = \App\Models\SystemSetting::get('auto_reject_days', 5);
 
-                                    if ($debugMode && $debugMinutes) {
+                                    if ($debugMode) {
                                         $revisionDeadline = $requestedDate->copy()->addMinutes($debugMinutes);
                                     } else {
-                                        $revisionDeadline = $requestedDate->copy()->addDays($productionDays);
+                                        $revisionDeadline = $requestedDate->copy()->addWeekdays($productionDays);
                                     }
 
                                     $isExpired = now()->greaterThan($revisionDeadline);
@@ -111,15 +111,16 @@
                     @php
                         $requestedDate = \Carbon\Carbon::parse($ajuan->revision_requested_at);
 
-                        // ✅ Gunakan config yang sama dengan command
-                        $debugMode = config('revision.debug_mode', false);
-                        $debugMinutes = config('revision.deadline.debug_minutes');
-                        $productionDays = config('revision.deadline.days', 5);
+                        // ✅ FIX: Pakai SystemSetting dari database, bukan config()
+                        $enableAutoReject = \App\Models\SystemSetting::get('enable_auto_reject', true);
+                        $debugMode = \App\Models\SystemSetting::get('revision_debug_mode', false);
+                        $debugMinutes = \App\Models\SystemSetting::get('revision_debug_minutes', 5);
+                        $productionDays = \App\Models\SystemSetting::get('auto_reject_days', 5);
 
-                        if ($debugMode && $debugMinutes) {
+                        if ($debugMode) {
                             $revisionDeadline = $requestedDate->copy()->addMinutes($debugMinutes);
                         } else {
-                            $revisionDeadline = $requestedDate->copy()->addDays($productionDays);
+                            $revisionDeadline = $requestedDate->copy()->addWeekdays($productionDays);
                         }
 
                         $isExpired = now()->greaterThan($revisionDeadline);
@@ -136,13 +137,18 @@
                                     <p class="text-sm text-red-700 mt-1">
                                         Batas waktu revisi telah habis pada {{ $revisionDeadline->format('d F Y, H:i') }}
                                         WIB.
-                                        Pengajuan ini akan otomatis ditolak.
+                                        @if ($enableAutoReject)
+                                            Pengajuan ini akan otomatis ditolak.
+                                        @else
+                                            Namun fitur auto-reject saat ini <strong>nonaktif</strong>, sehingga pengajuan
+                                            tidak akan ditolak secara otomatis.
+                                        @endif
                                     </p>
                                 </div>
                             </div>
                         </div>
                     @else
-                        {{-- Countdown Realtime dengan Auto-Reject --}}
+                        {{-- Countdown Realtime --}}
                         <div class="bg-orange-50 border-l-4 border-orange-500 p-4 mb-6" x-data="{
                             deadline: new Date('{{ $revisionDeadline->toIso8601String() }}').getTime(),
                             now: Date.now(),
@@ -153,6 +159,7 @@
                             expired: false,
                             rejecting: false,
                             debugMode: {{ $debugMode ? 'true' : 'false' }},
+                            enableAutoReject: {{ $enableAutoReject ? 'true' : 'false' }},
                             updateCountdown() {
                                 this.now = Date.now();
                                 const distance = this.deadline - this.now;
@@ -169,27 +176,36 @@
                                 this.seconds = Math.floor((distance % (1000 * 60)) / 1000);
                             },
                             handleExpired() {
-                                // ✅ Ketika countdown habis, trigger auto-reject
                                 if (this.rejecting) return;
-
                                 this.rejecting = true;
 
-                                // Show alert
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Waktu Revisi Habis!',
-                                    html: 'Masa revisi telah berakhir.<br>Pengajuan akan otomatis ditolak.',
-                                    allowOutsideClick: false,
-                                    showConfirmButton: false,
-                                    timer: 3000,
-                                    timerProgressBar: true,
-                                    didOpen: () => {
-                                        Swal.showLoading();
-                                    }
-                                }).then(() => {
-                                    // Redirect ke halaman detail untuk trigger auto-reject
-                                    window.location.href = '{{ route('ajuan.show', $ajuan) }}';
-                                });
+                                if (this.enableAutoReject) {
+                                    // ✅ Auto-reject aktif: tunjuk pesan dan redirect ke show() untuk trigger server-side reject
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Waktu Revisi Habis!',
+                                        html: 'Masa revisi telah berakhir.<br>Pengajuan akan otomatis ditolak.',
+                                        allowOutsideClick: false,
+                                        showConfirmButton: false,
+                                        timer: 3000,
+                                        timerProgressBar: true,
+                                        didOpen: () => {
+                                            Swal.showLoading();
+                                        }
+                                    }).then(() => {
+                                        window.location.href = '{{ route('ajuan.show', $ajuan) }}';
+                                    });
+                                } else {
+                                    // ✅ Auto-reject nonaktif: tunjuk info saja, tidak redirect atau reject
+                                    Swal.fire({
+                                        icon: 'info',
+                                        title: 'Waktu Revisi Habis',
+                                        html: 'Masa revisi telah berakhir.<br><small class=\'text-gray-500\'>Fitur auto-reject saat ini nonaktif, pengajuan tidak akan
+                                        ditolak secara otomatis. < /small>',
+                                        confirmButtonText: 'Mengerti',
+                                        confirmButtonColor: '#6b7280'
+                                    });
+                                }
                             }
                         }"
                             x-init="updateCountdown();
@@ -724,39 +740,36 @@
                 <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-4 md:p-8 mx-0 md:mx-8">
                     <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Persetujuan Ketua Posyandu</h2>
 
-                    <form method="POST" action="{{ route('ajuan.verify', $ajuan) }}">
+                    <form method="POST" action="{{ route('ajuan.verify', $ajuan) }}" id="form-keputusan-ketua">
                         @csrf
                         @method('PATCH')
                         <input type="hidden" name="verification_step" value="3">
 
                         <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
                             <p class="text-sm text-blue-800">
-                                Kunjungan lapangan telah selesai. Silakan berikan keputusan dan tindak lanjut.
+                                Kunjungan lapangan telah selesai. Silakan berikan keputusan Anda terkait pengajuan ini.
                             </p>
                         </div>
 
                         <div class="mb-6">
                             <label class="block font-medium text-sm text-gray-700 mb-2">Keputusan</label>
-                            <select name="keputusan" required class="block w-full border-gray-300 rounded-md shadow-sm">
+                            <select name="keputusan" id="keputusan_step3" required
+                                class="block w-full border-gray-300 rounded-md shadow-sm">
                                 <option value="">Pilih Keputusan</option>
-                                <option value="setuju">Setuju (Lanjutkan ke Pemdes)</option>
-                                <option value="tolak">Tolak</option>
+                                <option value="ditindaklanjuti">Ditindaklanjuti (Lanjutkan ke Pemdes)</option>
+                                <option value="tidak-ditindaklanjuti">Tidak Ditindaklanjuti</option>
                             </select>
                         </div>
 
                         <div class="mb-6">
-                            <label class="block font-medium text-sm text-gray-700 mb-2">Tindak Lanjut Rekomendasi</label>
-                            <textarea name="tindak_lanjut" rows="4" class="block w-full border-gray-300 rounded-md shadow-sm"
-                                placeholder="Deskripsikan rekomendasi tindak lanjut yang perlu dilakukan..."></textarea>
-                        </div>
-
-                        <div class="mb-6">
                             <label class="block font-medium text-sm text-gray-700 mb-2">Catatan</label>
-                            <textarea name="catatan" rows="4" class="block w-full border-gray-300 rounded-md shadow-sm"></textarea>
+                            <textarea id="catatan_step3" name="catatan" rows="4"
+                                class="block w-full border-gray-300 rounded-md shadow-sm"></textarea>
                         </div>
 
                         <div class="flex justify-end">
-                            <button type="submit" class="px-6 py-2 bg-pink-600 text-white rounded-md hover:bg-pink-700">
+                            <button type="submit" id="submit-keputusan-ketua"
+                                class="px-6 py-2 bg-pink-600 text-white rounded-md hover:bg-pink-700">
                                 Simpan Keputusan
                             </button>
                         </div>
@@ -777,14 +790,14 @@
                         </p>
                     </div>
 
-                    <form method="POST" action="{{ route('ajuan.submit-to-pemdes', $ajuan) }}">
+                    <form method="POST" id="form-ke-pemdes" action="{{ route('ajuan.submit-to-pemdes', $ajuan) }}">
                         @csrf
                         <div class="flex justify-end gap-2">
                             <a href="/ajuan/cetak/{{ $ajuan->id }}" target="_blank"
                                 class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
                                 <i class="bi bi-printer-fill mr-2"></i> Cetak Rekomendasi
                             </a>
-                            <button type="submit"
+                            <button type="submit" id="submit-ke-pemdes"
                                 class="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
                                 <i class="bi bi-send-fill mr-2"></i> Kirim ke Pemdes
                             </button>
@@ -800,7 +813,7 @@
                 <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-4 md:p-8 mx-0 md:mx-8">
                     <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Persetujuan Kepala Desa</h2>
 
-                    <form method="POST" action="{{ route('ajuan.kades-approval', $ajuan) }}">
+                    <form method="POST" id="form-keputusan-kades" action="{{ route('ajuan.kades-approval', $ajuan) }}">
                         @csrf
                         <div class="bg-purple-50 border-l-4 border-purple-500 p-4 mb-6">
                             <p class="text-sm text-purple-800">
@@ -810,16 +823,25 @@
 
                         <div class="mb-6">
                             <label class="block font-medium text-sm text-gray-700 mb-2">Keputusan</label>
-                            <select name="keputusan" required class="block w-full border-gray-300 rounded-md shadow-sm">
+                            <select name="keputusan" id="keputusan_kades" required
+                                class="block w-full border-gray-300 rounded-md shadow-sm">
                                 <option value="">Pilih Keputusan</option>
-                                <option value="setuju">Setuju</option>
-                                <option value="tolak">Tolak</option>
+                                <option value="diajukan">Diajukan (Lanjutkan ke Pemdes)</option>
+                                <option value="tidak-diajukan">Tidak Diajukan</option>
                             </select>
                         </div>
 
                         <div class="mb-6">
+                            <label class="block font-medium text-sm text-gray-700 mb-2">Tindak Lanjut Rekomendasi</label>
+                            <textarea name="tindak_lanjut" id="tindaklanjut_kades" rows="4"
+                                class="block w-full border-gray-300 rounded-md shadow-sm"
+                                placeholder="Deskripsikan tindak lanjut yang perlu dilakukan..."></textarea>
+                        </div>
+
+                        <div class="mb-6">
                             <label class="block font-medium text-sm text-gray-700 mb-2">Catatan</label>
-                            <textarea name="catatan" rows="4" class="block w-full border-gray-300 rounded-md shadow-sm"></textarea>
+                            <textarea name="catatan" id="catatan_kades" rows="4"
+                                class="block w-full border-gray-300 rounded-md shadow-sm"></textarea>
                         </div>
 
                         <div class="flex justify-end gap-2">
@@ -827,7 +849,7 @@
                                 class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
                                 <i class="bi bi-printer-fill mr-2"></i> Cetak
                             </a>
-                            <button type="submit"
+                            <button type="submit" id="submit-kades"
                                 class="px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700">
                                 Simpan Keputusan Akhir
                             </button>
@@ -864,17 +886,18 @@
                         }
 
                         // Validasi catatan untuk revisi dan tolak
-                        if ((keputusan === 'revisi' || keputusan === 'tolak') && !catatan.trim()) {
+                        if ((keputusan === 'revisi' || keputusan === 'tidak-ditindaklanjuti' || keputusan ===
+                                'tidak-diajukan') && !catatan.trim()) {
                             Swal.fire({
                                 icon: 'warning',
                                 title: 'Catatan Diperlukan!',
                                 text: 'Silakan berikan catatan untuk keputusan ' + (keputusan ===
-                                    'revisi' ? 'revisi' : 'penolakan') + '.',
+                                    'revisi' ? 'revisi' : keputusan === 'tidak-ditindaklanjuti' ?
+                                    'tidak-ditindaklanjuti' : 'tidak-diajukan') + '.',
                                 confirmButtonColor: '#dc2626'
                             });
                             return;
                         }
-
                         // Tentukan pesan konfirmasi berdasarkan keputusan
                         let title, text, icon, confirmButtonText;
 
@@ -933,6 +956,34 @@
                     btnKunjungan.addEventListener('click', function(e) {
                         e.preventDefault();
 
+                        const keputusan = document.getElementById('keputusan_step1').value;
+                        const catatan = document.getElementById('catatan_step1').value;
+
+                        // Validasi keputusan harus dipilih
+                        if (!keputusan) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Perhatian!',
+                                text: 'Silakan pilih keputusan terlebih dahulu.',
+                                confirmButtonColor: '#dc2626'
+                            });
+                            return;
+                        }
+
+                        // Validasi catatan untuk revisi dan tolak
+                        if ((keputusan === 'revisi' || keputusan === 'tidak-ditindaklanjuti' || keputusan ===
+                                'tidak-diajukan') && !catatan.trim()) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Catatan Diperlukan!',
+                                text: 'Silakan berikan catatan untuk keputusan ' + (keputusan ===
+                                    'revisi' ? 'revisi' : keputusan === 'tidak-ditindaklanjuti' ?
+                                    'tidak-ditindaklanjuti' : 'tidak-diajukan') + '.',
+                                confirmButtonColor: '#dc2626'
+                            });
+                            return;
+                        }
+
                         const catatanKunjungan = formKunjungan.querySelector(
                             'textarea[name="catatan_kunjungan"]');
 
@@ -980,6 +1031,235 @@
                                 formKunjungan.submit();
                             }
                         });
+                    });
+                }
+
+                // Step 3
+                const formKeputusanKetua = document.getElementById('form-keputusan-ketua');
+                const btnKeputusanKetua = document.getElementById('submit-keputusan-ketua');
+
+                if (btnKeputusanKetua && formKeputusanKetua) {
+                    btnKeputusanKetua.addEventListener('click', function(e) {
+                        e.preventDefault();
+
+                        const keputusan = document.getElementById('keputusan_step3').value;
+                        const catatan = document.getElementById('catatan_step3').value;
+
+                        // Validasi keputusan harus dipilih
+                        if (!keputusan) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Perhatian!',
+                                text: 'Silakan pilih keputusan terlebih dahulu.',
+                                confirmButtonColor: '#dc2626'
+                            });
+                            return;
+                        }
+
+                        // Validasi catatan untuk revisi dan tolak
+                        if ((keputusan === 'revisi' || keputusan === 'tidak-ditindaklanjuti' || keputusan ===
+                                'tidak-diajukan') && !catatan.trim()) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Catatan Diperlukan!',
+                                text: 'Silakan berikan catatan untuk keputusan ' + (keputusan ===
+                                    'revisi' ? 'revisi' : keputusan === 'tidak-ditindaklanjuti' ?
+                                    'tidak-ditindaklanjuti' : 'tidak-diajukan') + '.',
+                                confirmButtonColor: '#dc2626'
+                            });
+                            return;
+                        }
+
+                        let title, text, icon, confirmButtonText;
+
+                        if (keputusan === 'ditindaklanjuti') {
+                            title = 'Tidak lanjuti Pengajuan?';
+                            text = 'Pengajuan akan ditindaklanjuti dan dilanjutkan ke pemdes.';
+                            icon = 'info';
+                            confirmButtonText = 'Ya, Lanjutkan';
+                        } else if (keputusan === 'tidak-ditindaklanjuti') {
+                            title = 'Tidak ditindaklanjuti Pengajuan?';
+                            text = 'Pengajuan akan ditolak. Tindakan ini tidak dapat dibatalkan.';
+                            icon = 'warning';
+                            confirmButtonText = 'Ya, Tidak Ditindaklanjuti';
+                        }
+
+                        Swal.fire({
+                            title: title,
+                            text: text,
+                            icon: icon,
+                            showCancelButton: true,
+                            confirmButtonColor: keputusan === 'tolak' ? '#dc2626' : '#16a34a',
+                            cancelButtonColor: '#6b7280',
+                            confirmButtonText: confirmButtonText,
+                            cancelButtonText: 'Batal',
+                            reverseButtons: true
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                // Tampilkan loading
+                                Swal.fire({
+                                    title: 'Memproses...',
+                                    text: 'Mohon tunggu sebentar',
+                                    allowOutsideClick: false,
+                                    allowEscapeKey: false,
+                                    didOpen: () => {
+                                        Swal.showLoading();
+                                    }
+                                });
+
+                                // Submit form
+                                formKeputusanKetua.submit();
+                            }
+                        });
+
+                    });
+                }
+
+                // Submit ke Pemdes
+                const formKePemdes = document.getElementById('form-ke-pemdes');
+                const btnKePemdes = document.getElementById('submit-ke-pemdes');
+
+                if (btnKePemdes && formKePemdes) {
+                    btnKePemdes.addEventListener('click', function(e) {
+                        e.preventDefault();
+
+                        let title, text, icon, confirmButtonText;
+
+                        title = 'Tidak lanjuti Pengajuan?';
+                        text = 'Pengajuan akan ditindaklanjuti dan dilanjutkan ke pemdes.';
+                        icon = 'info';
+                        confirmButtonText = 'Ya, Lanjutkan';
+
+                        Swal.fire({
+                            title: title,
+                            text: text,
+                            icon: icon,
+                            showCancelButton: true,
+                            confirmButtonColor: keputusan === 'tolak' ? '#dc2626' : '#16a34a',
+                            cancelButtonColor: '#6b7280',
+                            confirmButtonText: confirmButtonText,
+                            cancelButtonText: 'Batal',
+                            reverseButtons: true
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                // Tampilkan loading
+                                Swal.fire({
+                                    title: 'Memproses...',
+                                    text: 'Mohon tunggu sebentar',
+                                    allowOutsideClick: false,
+                                    allowEscapeKey: false,
+                                    didOpen: () => {
+                                        Swal.showLoading();
+                                    }
+                                });
+
+                                // Submit form
+                                formKePemdes.submit();
+                            }
+                        });
+
+                    });
+                }
+
+                // Kades
+                const formKeputusanKades = document.getElementById('form-keputusan-kades');
+                const btnKeputusanKades = document.getElementById('submit-kades');
+
+                if (btnKeputusanKades && formKeputusanKades) {
+                    btnKeputusanKades.addEventListener('click', function(e) {
+                        e.preventDefault();
+
+                        const keputusan = document.getElementById('keputusan_kades').value;
+                        const tindakLanjut = document.getElementById('tindaklanjut_kades').value;
+                        const catatan = document.getElementById('catatan_kades').value;
+
+                        // Validasi keputusan harus dipilih
+                        if (!keputusan) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Perhatian!',
+                                text: 'Silakan pilih keputusan terlebih dahulu.',
+                                confirmButtonColor: '#dc2626'
+                            });
+                            return;
+                        }
+
+                        if (!tindakLanjut) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Perhatian!',
+                                text: 'Silakan mengisi tindak lanjut terlebih dahulu.',
+                                confirmButtonColor: '#dc2626'
+                            });
+                            return;
+                        }
+
+                        if (!catatan) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Perhatian!',
+                                text: 'Silakan mengisi tindak lanjut terlebih dahulu.',
+                                confirmButtonColor: '#dc2626'
+                            });
+                            return;
+                        }
+
+                        // Validasi catatan untuk revisi dan tolak
+                        if ((keputusan === 'revisi' || keputusan === 'tidak-ditindaklanjuti' || keputusan ===
+                                'tidak-diajukan') && !catatan.trim()) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Catatan Diperlukan!',
+                                text: 'Silakan berikan catatan untuk keputusan ' + (keputusan ===
+                                    'revisi' ? 'revisi' : keputusan === 'tidak-ditindaklanjuti' ?
+                                    'tidak-ditindaklanjuti' : 'tidak-diajukan') + '.',
+                                confirmButtonColor: '#dc2626'
+                            });
+                            return;
+                        }
+
+                        let title, text, icon, confirmButtonText;
+
+                        if (keputusan === 'diajukan') {
+                            title = 'Ajukan Pengajuan?';
+                            text = 'Pengajuan akan diajukan dan disetujui.';
+                            icon = 'info';
+                            confirmButtonText = 'Ya, Lanjutkan';
+                        } else if (keputusan === 'tidak-diajukan') {
+                            title = 'Tidak ajukan Pengajuan?';
+                            text = 'Pengajuan akan ditolak. Tindakan ini tidak dapat dibatalkan.';
+                            icon = 'warning';
+                            confirmButtonText = 'Ya, Tidak diajukan';
+                        }
+
+                        Swal.fire({
+                            title: title,
+                            text: text,
+                            icon: icon,
+                            showCancelButton: true,
+                            confirmButtonColor: keputusan === 'tolak' ? '#dc2626' : '#16a34a',
+                            cancelButtonColor: '#6b7280',
+                            confirmButtonText: confirmButtonText,
+                            cancelButtonText: 'Batal',
+                            reverseButtons: true
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                // Tampilkan loading
+                                Swal.fire({
+                                    title: 'Memproses...',
+                                    text: 'Mohon tunggu sebentar',
+                                    allowOutsideClick: false,
+                                    allowEscapeKey: false,
+                                    didOpen: () => {
+                                        Swal.showLoading();
+                                    }
+                                });
+
+                                // Submit form
+                                formKeputusanKades.submit();
+                            }
+                        });
+
                     });
                 }
             });

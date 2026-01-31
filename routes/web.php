@@ -10,6 +10,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PenimbanganController;
 use App\Http\Controllers\PosyanduController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SystemSettingController;
 use App\Http\Controllers\UserController;
 use App\Models\Kabupaten;
 use App\Models\Kecamatan;
@@ -22,6 +23,8 @@ use Illuminate\Support\Facades\File;
 Route::get('/', function () {
     return redirect()->route('login');
 });
+
+Route::get('/debug-dashboard', [DashboardController::class, 'debugDashboard'])->middleware('auth');
 
 Route::get('/cetak-laporan-teknologi', function () {
     // 1. Definisi Deskripsi & Kategori (Database Kecil)
@@ -287,6 +290,30 @@ Route::get('/api/wilayah/posyandu', function (Request $request) {
     return response()->json($posyandus);
 })->name('api.posyandu.by-wilayah');
 
+// ========================================
+// TRACKING PENGAJUAN (PUBLIC - NO AUTH)
+// ========================================
+
+// Route untuk form tracking (di halaman login sudah ada tabnya)
+// Jadi ini optional, bisa pakai tab di login atau page terpisah
+Route::get('/track-submission', [AjuanController::class, 'showTrackingForm'])
+    ->name('ajuan.track.form');
+
+// Route untuk submit tracking code
+Route::post('/track-submission', [AjuanController::class, 'track'])
+    ->name('ajuan.track');
+
+// ✅ Public Tracking (No Auth Required)
+Route::get('/lacak-pengajuan', [AjuanController::class, 'trackShow'])
+    ->name('ajuan.track.show');
+
+// ✅ Print Bukti (Auth Required)
+Route::middleware(['auth'])->group(function () {
+    Route::get('/ajuan/{ajuan}/print-bukti', [AjuanController::class, 'printBukti'])
+        ->name('ajuan.print-bukti');
+});
+
+
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -303,6 +330,38 @@ Route::middleware('auth')->group(function () {
     Route::post('users/{user}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
     Route::post('users/{user}/activate', [UserController::class, 'activate'])->name('users.activate');
 
+
+    // ========================================
+    // PENGAJUAN MANAGEMENT (AUTHENTICATED)
+    // ========================================
+
+    Route::middleware(['auth'])->group(function () {
+        Route::middleware(['auth', 'role:admin,admin-kabupaten,admin-kecamatan,operator-desa'])->group(function () {
+            Route::get('/admin/settings', [SystemSettingController::class, 'index'])
+                ->name('admin.settings.index');
+            Route::put('/admin/settings', [SystemSettingController::class, 'update'])
+                ->name('admin.settings.update');
+
+            Route::post('/admin/settings/reset', [SystemSettingController::class, 'reset'])
+                ->name('admin.settings.reset');
+
+            // API endpoint untuk testing
+            Route::get('/api/settings/current', [SystemSettingController::class, 'getCurrent'])
+                ->name('api.settings.current');
+        });
+
+        // Print bukti pengajuan dengan QR Code
+        Route::get('/ajuan/{ajuan}/print', [AjuanController::class, 'printBukti'])
+            ->name('ajuan.print');
+
+        // Generate QR Code API
+        Route::get('/ajuan/{ajuan}/qrcode', [AjuanController::class, 'generateQRCode'])
+            ->name('ajuan.qrcode');
+
+        // Standard CRUD routes
+        Route::resource('pengajuan', AjuanController::class);
+    });
+
     // ✅ ROUTE AJUAN - TANPA MIDDLEWARE TAMBAHAN
     Route::get('/ajuan', [AjuanController::class, 'index'])->name('ajuan.index');
     Route::get('/ajuan/create/{bidang}', [AjuanController::class, 'create'])->name('ajuan.create');
@@ -315,6 +374,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/ajuan/{ajuan}/dokumen/{key}', [AjuanController::class, 'downloadDokumen'])->name('ajuan.dokumen.download');
     Route::get('/ajuan/{ajuan}/dokumen/{key}/stream', [AjuanController::class, 'streamDokumen'])->name('ajuan.dokumen.stream');
     Route::patch('/ajuan/{ajuan}/verify', [AjuanController::class, 'verifyAjuan'])->name('ajuan.verify');
+    // Cetak Ringkasan (1 halaman dengan kop)
+    Route::get('ajuan/{id}/cetak-ringkasan', [AjuanController::class, 'cetakRingkasan'])
+        ->name('ajuan.cetak-ringkasan')
+        ->middleware('auth');
+
+    // Cetak Dokumen Administrasi (1 halaman per dokumen)
+    Route::get('ajuan/{id}/cetak-dokumen', [AjuanController::class, 'cetakDokumen'])
+        ->name('ajuan.cetak-dokumen')
+        ->middleware('auth');
     Route::get('/ajuan/cetak/{id}', [AjuanController::class, 'cetak'])->name('ajuan.cetak');
     Route::get('/ajuan/get-items/{slug}', [AjuanController::class, 'getItemsAjax'])
         ->name('ajuan.get-items')
@@ -336,7 +404,7 @@ Route::middleware('auth')->group(function () {
     });
 
     // === ROUTES UNTUK ADMIN DESA (Operator) ===
-    Route::middleware('role:operator-desa,admin,ketua-posyandu')->group(function () {
+    Route::middleware('role:operator-desa,admin,ketua-posyandu,admin-kabupaten')->group(function () {
         Route::get('/posyandu/{posyandu}/edit-rw-rt', [PosyanduController::class, 'editRwRt'])
             ->name('admin.posyandu.edit-rw-rt');
         Route::put('/posyandu/{posyandu}/update-rw-rt', [PosyanduController::class, 'updateRwRt'])
@@ -387,7 +455,10 @@ Route::middleware('auth')->group(function () {
     });
 
     // ✅ ADMIN ROUTES
-    Route::middleware(['role:kabid,kader,admin,ketua-kader,admin-kecamatan,admin-kabupaten,operator-desa,ketua-posyandu'])->prefix('admin')->name('admin.')->group(function () {
+    Route::middleware(['role:kabid,ketua-posyandu,ketua-kader'])->prefix('admin')->name('admin.')->group(function () {
+        Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
+    });
+    Route::middleware(['role:kader,admin,admin-kecamatan,admin-kabupaten,operator-desa,ketua-kader'])->prefix('admin')->name('admin.')->group(function () {
         Route::get('admin/posyandu/clear-cache', [PosyanduController::class, 'clearWilayahCache'])
             ->middleware(['auth', 'admin'])
             ->name('admin.posyandu.clear-cache');
