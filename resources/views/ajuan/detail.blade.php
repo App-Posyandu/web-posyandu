@@ -383,8 +383,8 @@
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                             @foreach ($ajuan->foto_kunjungan as $foto)
                                 <div class="relative group cursor-pointer"
-                                    @click="showModal=true; fileUrl='{{ Illuminate\Support\Facades\Storage::url($foto) }}'; fileType='image';">
-                                    <img src="{{ Illuminate\Support\Facades\Storage::url($foto) }}" alt="Foto Kunjungan"
+                                    @click="showModal=true; fileUrl='{{ route('ajuan.foto-kunjungan', ['ajuan' => $ajuan, 'index' => $loop->index]) }}'; fileType='image';">
+                                    <img src="{{ route('ajuan.foto-kunjungan', ['ajuan' => $ajuan, 'index' => $loop->index]) }}" alt="Foto Kunjungan"
                                         class="w-full h-32 object-cover rounded-lg border shadow-sm hover:scale-105 transition">
                                     <div
                                         class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition rounded-lg flex items-center justify-center">
@@ -505,6 +505,12 @@
                         </button>
 
                         <div x-show="step1Open" x-transition style="display: none;">
+                            @php
+                                $step1History = $ajuan->histories
+                                    ->where('status', 'Menunggu Kunjungan')
+                                    ->sortByDesc('created_at')
+                                    ->first();
+                            @endphp
                             <div class="px-6 py-4 border-t">
                                 <form method="POST" action="{{ route('ajuan.verify', $ajuan) }}"
                                     id="form-ajuan-verify">
@@ -601,7 +607,7 @@
                                             class="block font-medium text-sm text-gray-700 mb-2">Catatan</label>
                                         <textarea id="catatan_step1" name="catatan" rows="3" {{ $ajuan->sudah_verifikasi ? 'disabled' : '' }}
                                             class="block w-full border-gray-300 rounded-md shadow-sm"
-                                            placeholder="Berikan catatan jika ada revisi atau penolakan..."></textarea>
+                                            placeholder="Berikan catatan jika ada revisi atau penolakan...">{{ $step1History?->catatan }}</textarea>
                                         @error('catatan')
                                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                         @enderror
@@ -824,7 +830,7 @@
                         </div>
 
                         <div class="mb-6">
-                            <label class="block font-medium text-sm text-gray-700 mb-2">Tindak Lanjut Rekomendasi</label>
+                            <label class="block font-medium text-sm text-gray-700 mb-2">Tindak Lanjut Rekomendasi (Wajib)</label>
                             <textarea name="tindak_lanjut" id="tindaklanjut_kades" rows="4"
                                 class="block w-full border-gray-300 rounded-md shadow-sm"
                                 placeholder="Deskripsikan tindak lanjut yang perlu dilakukan..."></textarea>
@@ -834,7 +840,7 @@
                         </div>
 
                         <div class="mb-6">
-                            <label class="block font-medium text-sm text-gray-700 mb-2">Catatan</label>
+                            <label class="block font-medium text-sm text-gray-700 mb-2">Catatan (Opsional)</label>
                             <textarea name="catatan" id="catatan_kades" rows="4"
                                 class="block w-full border-gray-300 rounded-md shadow-sm"></textarea>
                         </div>
@@ -1160,6 +1166,16 @@
                             });
                             return;
                         }
+
+/*                         if (!catatan) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Perhatian!',
+                                text: 'Silakan mengisi tindak lanjut terlebih dahulu.',
+                                confirmButtonColor: '#dc2626'
+                            });
+                            return;
+                        } */
 
                         // Validasi catatan untuk revisi dan tolak
                         if ((keputusan === 'revisi' || keputusan === 'tidak-ditindaklanjuti' || keputusan ===

@@ -1073,10 +1073,10 @@ class UserController extends Controller
         $roleMap = [
             'kader' => ['masyarakat'],
             'ketua-kader' => ['kader'],
-            'operator-desa' => ['ketua-kader'],
-            'admin-kecamatan' => ['operator-desa'],
-            'admin-kabupaten' => ['ketua-kader', 'kabid', 'admin-kecamatan'],
-            'admin' => ['masyarakat', 'kader', 'ketua-kader', 'operator-desa', 'admin-kecamatan', 'kabid', 'admin-kabupaten'],
+            'operator-desa' => ['ketua-kader', 'kader'],
+            'admin-kecamatan' => [],
+            'admin-kabupaten' => ['ketua-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'operator-desa'],
+            'admin' => ['admin-kabupaten', 'ketua-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'ketua-kader', 'operator-desa', 'kader', 'masyarakat'],
         ];
 
         return $roleMap[$role] ?? [];
@@ -1219,6 +1219,82 @@ class UserController extends Controller
 
         return redirect()->back()->with('success', 'Password berhasil direset');
     }
+
+    public function deactivateUserKabid(Request $request, User $user)
+    {
+        $request->validate([
+            'reason' => ['required', 'string', 'max:500'],
+        ]);
+
+        $currentUser = Auth::user();
+
+        if ($currentUser->role !== 'admin-kabupaten') {
+            return redirect()->back()->with('error', 'Unauthorized');
+        }
+
+        // Cek apakah user yang akan dinonaktifkan adalah role yang diizinkan
+        $allowedRoles = ['ketua-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'operator-desa'];
+        
+        if (!in_array($user->role, $allowedRoles)) {
+            return redirect()->back()->with('error', 'Anda tidak memiliki izin untuk menonaktifkan user ini');
+        }
+
+        $user->update([
+            'is_active' => false,
+            'deactivated_at' => now(),
+            'deactivated_by' => $currentUser->id,
+            'deactivation_reason' => $request->reason,
+        ]);
+
+        UserHistory::create([
+            'user_id' => $user->id,
+            'action_by' => $currentUser->id,
+            'action_type' => 'deactivated',
+            'description' => "User dinonaktifkan oleh {$currentUser->name}. Alasan: {$request->reason}",
+            'old_data' => ['is_active' => true],
+            'new_data' => [
+                'is_active' => false,
+                'reason' => $request->reason,
+            ],
+        ]);
+
+        return redirect()->back()->with('success', 'User berhasil dinonaktifkan.');
+    }
+
+    public function reactivateUserKabid(User $user)
+    {
+        $currentUser = Auth::user();
+
+        if ($currentUser->role !== 'admin-kabupaten') {
+            return redirect()->back()->with('error', 'Unauthorized');
+        }
+
+        // Cek apakah user yang akan diaktifkan adalah role yang diizinkan
+        $allowedRoles = ['ketua-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'operator-desa'];
+        
+        if (!in_array($user->role, $allowedRoles)) {
+            return redirect()->back()->with('error', 'Anda tidak memiliki izin untuk mengaktifkan user ini');
+        }
+
+        $user->update([
+            'is_active' => true,
+            'deactivated_at' => null,
+            'deactivated_by' => null,
+            'deactivation_reason' => null,
+        ]);
+
+        UserHistory::create([
+            'user_id' => $user->id,
+            'action_by' => $currentUser->id,
+            'action_type' => 'activated',
+            'description' => "User diaktifkan kembali oleh {$currentUser->name}",
+            'old_data' => ['is_active' => false],
+            'new_data' => ['is_active' => true],
+        ]);
+
+        return redirect()->back()->with('success', 'User berhasil diaktifkan kembali.');
+    }
+
     // ========================================
     // OPERATOR DESA: Manage Kaders
     // ========================================

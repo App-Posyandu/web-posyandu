@@ -1102,6 +1102,27 @@ class AjuanController extends Controller
         ]);
     }
 
+    public function showFotoKunjungan(Pengajuan $ajuan, int $index)
+    {
+        $this->authorize('viewAjuan', $ajuan);
+
+        $fotoList = $ajuan->foto_kunjungan ?? [];
+
+        if (!isset($fotoList[$index])) {
+            abort(404, 'Foto kunjungan tidak ditemukan.');
+        }
+
+        $path = $fotoList[$index];
+
+        if (!Storage::disk('public')->exists($path)) {
+            abort(404, 'File foto kunjungan tidak ditemukan.');
+        }
+
+        $fullPath = Storage::disk('public')->path($path);
+
+        return response()->file($fullPath);
+    }
+
     /**
      * Cetak Ringkasan Pengajuan (1 halaman) - PDF
      */

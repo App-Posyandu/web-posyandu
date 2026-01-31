@@ -31,7 +31,7 @@
                                 <tr>
                                     <td class="px-6 py-4">{{ $loop->iteration + $kecamatans->firstItem() - 1 }}</td>
                                     <td class="px-6 py-4 font-medium">{{ $item->nama_kecamatan }}</td>
-                                    <td class="px-6 py-4">{{ $item->kabupaten }}</td>
+                                    <td class="px-6 py-4">{{ $item->kabupaten->nama_lengkap ?? '-' }}</td>
                                     <td class="px-6 py-4 flex space-x-2">
                                         <a href="{{ route('admin.kecamatan.edit', $item) }}"
                                             class="px-3 py-1 bg-yellow-500 text-white rounded-md text-xs hover:bg-yellow-600">Ubah</a>

@@ -337,7 +337,7 @@ class PosyanduController extends Controller
         }
 
         $createdKaders = [];
-        $defaultPassword = 'kader123';
+        $defaultPassword = 'password123';
 
         foreach ($bidangs as $index => $bidang) {
             // ✅ Generate email unik
@@ -399,6 +399,8 @@ class PosyanduController extends Controller
 
         // ✅ Simpan info kader ke session untuk ditampilkan di halaman success
         session()->flash('created_kaders', $createdKaders);
+        session()->flash('posyandu_name', $posyandu->nama_posyandu);
+        session()->flash('posyandu_id', $posyandu->id);
 
         return $createdKaders;
     }
@@ -1096,5 +1098,57 @@ class PosyanduController extends Controller
     public function exportByDesa($desa)
     {
         return $this->exportByDesaKecamatan($desa, 'all');
+    }
+
+    /**
+     * Print Kader Credentials PDF
+     */
+    public function printKaderCredentials(Posyandu $posyandu)
+    {
+        // Authorize access
+        $this->authorizeAccessToPosyandu(Auth::user(), $posyandu);
+        
+        // Ambil semua kader dari posyandu ini
+        $kaders = User::where('posyandu_id', $posyandu->id)
+            ->where('role', 'kader')
+            ->with('bidang')
+            ->orderBy('created_at')
+            ->get(['name', 'email', 'no_telepon', 'bidang_id'])
+            ->map(function ($user) {
+                return [
+                    'nama_lengkap' => $user->name,
+                    'email' => $user->email,
+                    'no_hp' => $user->no_telepon,
+                    'username' => $user->email, // Email digunakan sebagai username
+                    'password' => 'password123', // Default password yang digunakan
+                    'bidang' => $user->bidang->nama_bidang ?? '-'
+                ];
+            })
+            ->toArray();
+        
+        if (empty($kaders)) {
+            return redirect()->route('admin.posyandu.index')
+                ->with('error', 'Posyandu ini belum memiliki kader.');
+        }
+
+        $posyanduName = $posyandu->nama_posyandu;
+        $currentUser = Auth::user();
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.posyandu.print_credentials', [
+            'kaders' => $kaders,
+            'posyanduName' => $posyanduName,
+            'currentUser' => $currentUser,
+            'printDate' => now()->format('d F Y H:i')
+        ]);
+
+        $pdf->setPaper('A4', 'portrait');
+
+        $pdf->setOptions([
+            'isHtml5ParserEnabled' => true,
+            'isRemoteEnabled' => true,
+            'defaultFont' => 'sans-serif',
+        ]);
+
+        return $pdf->stream('credentials_kader_' . Str::slug($posyanduName) . '_' . now()->format('YmdHis') . '.pdf');
     }
 }

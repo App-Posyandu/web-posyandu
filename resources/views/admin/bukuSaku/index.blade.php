@@ -1,7 +1,16 @@
 @extends('dashboard.layouts.dashboard')
 @section('title', 'Dokumen')
 @section('content')
-    <div class="w-full mx-auto min-h-[70vh]" x-data="{ showModal: false, pdfUrl: '', pdfTitle: '' }" @keydown.escape.window="showModal = false">
+    <div class="w-full mx-auto min-h-[70vh]" x-data="{ 
+        showModal: false, 
+        pdfUrl: '', 
+        pdfTitle: '',
+        closeModal() {
+            this.showModal = false;
+            this.pdfUrl = '';
+            this.pdfTitle = '';
+        }
+    }" @keydown.escape.window="closeModal()">
 
         <x-slot name="header">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
@@ -10,13 +19,13 @@
         </x-slot>
 
         <div x-show="showModal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/75" x-transition>
-            <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl h-5/6 flex flex-col" @click.away="showModal = false">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl h-5/6 flex flex-col" @click.away="closeModal()">
                 <div class="flex justify-between items-center p-4 border-b">
                     <h3 class="text-lg font-semibold" x-text="pdfTitle">Preview Dokumen</h3>
-                    <button @click="showModal = false" class="text-gray-400 hover:text-gray-600 text-3xl">&times;</button>
+                    <button @click="closeModal()" class="text-gray-400 hover:text-gray-600 text-3xl">&times;</button>
                 </div>
                 <div class="flex-grow p-4">
-                    <iframe :src="pdfUrl" width="100%" height="100%" frameborder="0"></iframe>
+                    <iframe x-show="pdfUrl" :src="pdfUrl" width="100%" height="100%" frameborder="0"></iframe>
                 </div>
             </div>
         </div>
@@ -51,12 +60,12 @@
                                     </div>
                                     <div class="flex-shrink-0 flex gap-2 mt-4 sm:mt-0">
                                         <button
-                                            @click="showModal = true; pdfUrl = '{{ route('buku_saku.stream', $buku) }}'; pdfTitle = '{{ $buku->title }}'"
+                                            @click="showModal = true; pdfUrl = '{{ route('buku_saku.stream-file', $buku) }}'; pdfTitle = '{{ $buku->title }}'"
                                             class="px-3 py-1 bg-blue-500 text-white rounded-md text-xs hover:bg-blue-600">
                                             Preview
                                         </button>
 
-                                        <a href="{{ Illuminate\Support\Facades\Storage::url($buku->file_path) }}"
+                                        <a href="{{ route('buku_saku.stream-file', $buku) }}"
                                             download="{{ $buku->title }}.pdf"
                                             class="px-3 py-1 bg-green-500 text-white rounded-md text-xs hover:bg-green-600">
                                             Download
@@ -71,10 +80,11 @@
 
                                         @can('delete', $buku)
                                             <form action="{{ route('buku_saku.destroy', $buku) }}" method="POST"
-                                                onsubmit="return confirm('Anda yakin ingin menghapus file ini?');">
+                                                id="delete-form-{{ $buku->id }}">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit"
+                                                <button type="button"
+                                                    onclick="confirmDelete('{{ $buku->id }}', '{{ $buku->title }}')"
                                                     class="px-3 py-1 bg-red-500 text-white rounded-md text-xs hover:bg-red-600">
                                                     Hapus
                                                 </button>
@@ -95,4 +105,26 @@
             </div>
         </div>
     </div>
+
+    @push('scripts')
+    <script>
+        function confirmDelete(bukuId, bukuTitle) {
+            Swal.fire({
+                title: 'Konfirmasi Hapus',
+                html: `Anda yakin ingin menghapus dokumen <strong>"${bukuTitle}"</strong> secara permanen?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Ya, Hapus!',
+                cancelButtonText: 'Batal',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('delete-form-' + bukuId).submit();
+                }
+            });
+        }
+    </script>
+    @endpush
 @endsection

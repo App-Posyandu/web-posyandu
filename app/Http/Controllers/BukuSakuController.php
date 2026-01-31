@@ -145,4 +145,23 @@ class BukuSakuController extends Controller
             'Content-Disposition' => 'inline; filename="' . basename($path) . '"'
         ]);
     }
+
+    public function streamFile(BukuSaku $bukuSaku): StreamedResponse|RedirectResponse
+    {
+        $this->authorize('viewBukuSaku', $bukuSaku);
+
+        if (!Storage::disk('public')->exists($bukuSaku->file_path)) {
+            abort(404, 'File Buku Saku tidak ditemukan.');
+        }
+
+        $path = $bukuSaku->file_path;
+        $stream = Storage::disk('public')->readStream($path);
+
+        return response()->stream(function () use ($stream) {
+            fpassthru($stream);
+        }, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . basename($path) . '"'
+        ]);
+    }
 }

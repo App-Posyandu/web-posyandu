@@ -147,9 +147,8 @@
                                     <option value="admin-kecamatan">Admin Kecamatan</option>
                                     <option value="kades">Kades</option>
                                     <option value="operator-desa">Operator Desa</option>
-                                    <option value="ketua-kader">Ketua Kader</option>
                                 @elseif ($currentUserRole === 'admin-kecamatan')
-                                    <option value="ketua-kader" @selected(true)>Ketua Kader</option>
+                                    {{-- Admin Kecamatan tidak boleh membuat user apapun --}}
                                 @elseif ($currentUserRole === 'operator-desa')
                                     <option value="ketua-kader">Ketua Kader</option>
                                     <option value="kader">Kader</option>
@@ -772,10 +771,10 @@
             const roleTargets = {
                 'kader': ['masyarakat'],
                 'ketua-kader': ['kader'],
-                'operator-desa': ['ketua-kader'],
-                'admin-kecamatan': ['operator-desa'],
-                'admin-kabupaten': ['ketua-kader', 'kabid', 'admin-kecamatan'],
-                'admin': ['masyarakat', 'kader', 'ketua-kader', 'operator-desa', 'admin-kecamatan', 'kabid', 'admin-kabupaten']
+                'operator-desa': ['ketua-kader', 'kader'],
+                'admin-kecamatan': [],
+                'admin-kabupaten': ['ketua-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'operator-desa'],
+                'admin': ['admin-kabupaten', 'ketua-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'ketua-kader', 'operator-desa', 'kader', 'masyarakat']
             };
             const roleLabels = {
                 'masyarakat': 'Masyarakat',
@@ -784,7 +783,9 @@
                 'operator-desa': 'Operator Desa',
                 'admin-kecamatan': 'Admin Kecamatan',
                 'kabid': 'Kabid',
-                'admin-kabupaten': 'Admin Kabupaten'
+                'admin-kabupaten': 'Admin Kabupaten',
+                'ketua-posyandu': 'Ketua Posyandu',
+                'kades': 'Kades'
             };
             let selectedRoleToCreate = null;
 
