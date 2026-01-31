@@ -460,6 +460,11 @@ Route::middleware('auth')->group(function () {
     
     Route::middleware(['role:kabid,admin-kecamatan,ketua-kader,ketua-posyandu,operator-desa,admin-kabupaten,admin'])->prefix('admin')->name('admin.')->group(function () {
         Route::resource('kecamatan', KecamatanController::class);
+        
+        // Print Kader Credentials PDF - HARUS SEBELUM RESOURCE ROUTE
+        Route::get('/posyandu/{posyandu}/print-credentials', [PosyanduController::class, 'printKaderCredentials'])
+            ->name('posyandu.print-credentials');
+        
         Route::resource('posyandu', PosyanduController::class);
         
         // Import Posyandu

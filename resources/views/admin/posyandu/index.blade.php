@@ -69,7 +69,7 @@
                                 </p>
                                 <ul class="list-disc list-inside text-sm text-amber-700 mt-2 space-y-1">
                                     <li>Semua kader sudah <strong>terverifikasi</strong> dan <strong>aktif</strong></li>
-                                    <li>Password default: <code class="bg-white px-2 py-1 rounded">kader123</code></li>
+                                    <li>Password default: <code class="bg-white px-2 py-1 rounded">password123</code></li>
                                     <li>Kader dapat login menggunakan <strong>email</strong> atau <strong>nomor
                                             telepon</strong></li>
                                     <li>Ketua Kader dapat <strong>melengkapi data</strong> kader (NIK, tanggal lahir, dll)
@@ -80,15 +80,15 @@
 
                             {{-- Action Buttons --}}
                             <div class="mt-4 flex gap-3">
-                                <button onclick="printKaderCredentials()"
+                                <a href="{{ route('admin.posyandu.print-credentials', session('posyandu_id')) }}" target="_blank"
                                     class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition flex items-center gap-2">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z">
                                         </path>
                                     </svg>
-                                    Print Credentials
-                                </button>
+                                    Print Credentials (PDF)
+                                </a>
 
                                 <button onclick="downloadKaderCredentials()"
                                     class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2">
@@ -381,128 +381,50 @@
                 });
             }
         </script>
-        {{-- <script>
-            (function() {
+        <script>
+            // Download as TXT
+            function downloadKaderCredentials() {
+                const kaders = @json(session('created_kaders'));
 
-                // Copy credentials untuk satu kader
-                function copyKaderCredentials(index) {
-                    const kaders = @json(session('created_kaders'));
-                    const kader = kaders[index];
-
-                    const text = `Kader ${kader.bidang}
-    Email: ${kader.email}
-    Password: ${kader.password}`;
-
-                    navigator.clipboard.writeText(text).then(() => {
-                        alert('✅ Credentials berhasil disalin!');
-                    }).catch(() => {
-                        alert('❌ Gagal menyalin. Silakan copy manual.');
-                    });
+                if (!kaders || kaders.length === 0) {
+                    alert('❌ Data credentials tidak tersedia');
+                    return;
                 }
 
-                // Print semua credentials
-                function printKaderCredentials() {
-                    const kaders = @json(session('created_kaders'));
+                let content = '==============================================\n';
+                content += '   CREDENTIALS KADER AUTO-GENERATED\n';
+                content += '==============================================\n\n';
+                content += 'Tanggal: ' + new Date().toLocaleString('id-ID') + '\n';
+                content += '----------------------------------------------\n\n';
 
-                    let content = '<html><head><title>Credentials Kader Auto-Generated</title>';
-                    content += '<style>';
-                    content += 'body { font-family: Arial, sans-serif; padding: 30px; }';
-                    content += 'h2 { color: #1f2937; border-bottom: 3px solid #ec4899; padding-bottom: 10px; }';
-                    content += 'table { width: 100%; border-collapse: collapse; margin-top: 20px; }';
-                    content += 'th, td { border: 1px solid #d1d5db; padding: 12px; text-align: left; }';
-                    content += 'th { background-color: #4a5568; color: white; font-weight: bold; }';
-                    content += 'tr:nth-child(even) { background-color: #f9fafb; }';
-                    content += '.password { font-weight: bold; color: #dc2626; font-family: monospace; }';
-                    content +=
-                        '.footer { margin-top: 30px; padding: 15px; background-color: #fef3c7; border-left: 4px solid #f59e0b; }';
-                    content += '</style>';
-                    content += '</head><body>';
+                kaders.forEach((kader, i) => {
+                    content += (i + 1) + '. Kader ' + kader.bidang + '\n';
+                    content += '   Email    : ' + kader.email + '\n';
+                    content += '   Password : ' + kader.password + '\n';
+                    content += '----------------------------------------------\n';
+                });
 
-                    content += '<h2>🏥 Credentials Kader Auto-Generated</h2>';
-                    content += '<p><strong>📅 Tanggal:</strong> ' + new Date().toLocaleString('id-ID') + '</p>';
+                content += '\n';
+                content += '⚠️ PENTING:\n';
+                content += '- Simpan file ini dengan aman!\n';
+                content += '- Password default: password123\n';
+                content += '- Kader dapat login menggunakan email atau nomor telepon\n';
+                content += '- Ketua Kader wajib meminta kader untuk mengganti password\n';
+                content += '\n';
+                content += '==============================================\n';
 
-                    content += '<table>';
-                    content += '<thead><tr>';
-                    content += '<th>No</th>';
-                    content += '<th>Bidang</th>';
-                    content += '<th>Email</th>';
-                    content += '<th>Password</th>';
-                    content += '</tr></thead>';
-                    content += '<tbody>';
-
-                    kaders.forEach((kader, i) => {
-                        content += '<tr>';
-                        content += '<td>' + (i + 1) + '</td>';
-                        content += '<td>' + kader.bidang + '</td>';
-                        content += '<td>' + kader.email + '</td>';
-                        content += '<td class="password">' + kader.password + '</td>';
-                        content += '</tr>';
-                    });
-
-                    content += '</tbody></table>';
-
-                    content += '<div class="footer">';
-                    content += '<p><strong>⚠️ PENTING:</strong></p>';
-                    content += '<ul>';
-                    content += '<li>Simpan dokumen ini dengan aman!</li>';
-                    content += '<li>Password default: <strong>kader123</strong></li>';
-                    content +=
-                        '<li>Kader dapat login menggunakan <strong>email</strong> atau <strong>nomor telepon</strong></li>';
-                    content +=
-                        '<li>Ketua Kader wajib meminta kader untuk <strong>mengganti password</strong> setelah login pertama</li>';
-                    content += '</ul>';
-                    content += '</div>';
-
-                    content += '</body></html>';
-
-                    const printWindow = window.open('', '_blank');
-                    printWindow.document.write(content);
-                    printWindow.document.close();
-                    printWindow.print();
-                }
-
-                // Download as TXT
-                function downloadKaderCredentials() {
-                    const kaders = @json(session('created_kaders'));
-
-                    let content = '==============================================\n';
-                    content += '   CREDENTIALS KADER AUTO-GENERATED\n';
-                    content += '==============================================\n\n';
-                    content += 'Tanggal: ' + new Date().toLocaleString('id-ID') + '\n';
-                    content += '----------------------------------------------\n\n';
-
-                    kaders.forEach((kader, i) => {
-                        content += (i + 1) + '. Kader ' + kader.bidang + '\n';
-                        content += '   Email    : ' + kader.email + '\n';
-                        content += '   Password : ' + kader.password + '\n';
-                        content += '----------------------------------------------\n';
-                    });
-
-                    content += '\n';
-                    content += '⚠️ PENTING:\n';
-                    content += '- Simpan file ini dengan aman!\n';
-                    content += '- Password default: kader123\n';
-                    content += '- Kader dapat login menggunakan email atau nomor telepon\n';
-                    content += '- Ketua Kader wajib meminta kader untuk mengganti password\n';
-                    content += '\n';
-                    content += '==============================================\n';
-
-                    const blob = new Blob([content], {
-                        type: 'text/plain;charset=utf-8'
-                    });
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'kader_credentials_' + Date.now() + '.txt';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    window.URL.revokeObjectURL(url);
-                }
-                window.copyKaderCredentials = copyKaderCredentials;
-                window.printKaderCredentials = printKaderCredentials;
-                window.downloadKaderCredentials = downloadKaderCredentials;
-            })();
-        </script> --}}
+                const blob = new Blob([content], {
+                    type: 'text/plain;charset=utf-8'
+                });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'kader_credentials_' + Date.now() + '.txt';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            }
+        </script>
     @endpush
 @endsection

@@ -88,46 +88,12 @@
                 {{-- Filter --}}
                 <div class="flex flex-col md:flex-row gap-2 w-full md:w-auto">
                     <select wire:model.live="role" class="border-gray-300 rounded-md shadow-sm text-sm">
-                        @if ($currentUser->role === 'admin')
-                            <option value="">Semua Role</option>
-                            <option value="masyarakat">Masyarakat</option>
-                            <option value="kader">Kader</option>
-                            <option value="ketua-kader">Ketua Kader</option>
-                            <option value="admin-kecamatan">Admin Kecamatan</option>
-                            <option value="admin-kecamatan">Admin Kabupaten</option>
-                            <option value="operator-desa">Operator Desa</option>
-                            <option value="kabid">Kabid</option>
-                        @elseif ($currentUser->role === 'admin-kabupaten')
-                            <option value="">Semua Role</option>
-                            <option value="ketua-posyandu">Ketua Posyandu</option>
-                            <option value="kabid">Kabid</option>
-                            <option value="operator-desa">Operator Desa</option>
-                            <option value="admin-kabupaten">Admin Kabupaten</option>
-                            <option value="admin-kecamatan">Admin Kecamatan</option>
-                            <option value="kades">Kades</option>
-                        @elseif ($currentUser->role === 'kabid')
-                            <option value="">Semua Role</option>
-                            <option value="admin-kecamatan">Admin Kecamatan</option>
-                            <option value="ketua-kader">Ketua Kader</option>
-                            <option value="kader">Kader</option>
-                            <option value="masyarakat">Masyarakat</option>
-                        @elseif ($currentUser->role === 'admin-kecamatan')
-                            <option value="">Semua Role</option>
-                            <option value="ketua-kader">Ketua Kader</option>
-                            <option value="kader">Kader</option>
-                            <option value="masyarakat">Masyarakat</option>
-                        @elseif ($currentUser->role === 'operator-desa')
-                            <option value="">Semua Role</option>
-                            <option value="kader">Kader</option>
-                            <option value="masyarakat">Masyarakat</option>
-                        @elseif ($currentUser->role === 'ketua-kader')
-                            <option value="">Semua Role</option>
-                            <option value="masyarakat">Masyarakat</option>
-                            <option value="kader">Kader</option>
-                        @elseif ($currentUser->role === 'kader')
-                            <option value="">Semua Role</option>
-                            <option value="masyarakat">Masyarakat</option>
-                        @endif
+                        <option value="">Semua Role</option>
+                        @foreach($allowedRoles as $roleOption)
+                            <option value="{{ $roleOption }}">
+                                {{ ucfirst(str_replace('-', ' ', $roleOption)) }}
+                            </option>
+                        @endforeach
                     </select>
 
                     <div class="relative w-full md:w-64">

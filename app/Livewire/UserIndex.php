@@ -38,67 +38,51 @@ class UserIndex extends Component
         $this->resetPage();
     }
 
+    /**
+     * Get allowed role targets based on current user role (same as UserController)
+     */
+    private function getAllowedRoleTargets(string $role): array
+    {
+        $roleMap = [
+            'kader' => ['masyarakat'],
+            'ketua-kader' => ['kader'],
+            'operator-desa' => ['ketua-kader', 'kader'],
+            'admin-kecamatan' => [],
+            'admin-kabupaten' => ['ketua-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'operator-desa'],
+            'admin' => ['admin-kabupaten', 'ketua-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'ketua-kader', 'operator-desa', 'kader', 'masyarakat'],
+        ];
+
+        return $roleMap[$role] ?? [];
+    }
+
     public function render()
     {
         $currentUser = Auth::user();
 
         $query = User::with(['posyandu', 'bidang'])->latest();
 
-        // 1. Filter Hirarki Role berdasarkan role user yang login
-        switch ($currentUser->role) {
-            case 'kader':
-                $query->where('role', 'masyarakat');
-                break;
-
-            case 'ketua-kader':
-                $query->whereIn('role', ['kader', 'masyarakat']);
-                break;
-
-            case 'admin-kecamatan':
-                $query->whereIn('role', ['ketua-kader', 'kader', 'masyarakat']);
-                break;
-
-            case 'admin-kabupaten':
-                $query->whereIn('role', ['admin-kecamatan', 'ketua-posyandu', 'operator-desa', 'kabid','kades','admin-kabupaten']);
-                break;
-
-            case 'operator-desa':
-                $query->where('role', 'kader')
-                    ->where('kecamatan', $currentUser->kecamatan);
-                break;
-
-            case 'kabid':
-                // PERBAIKAN: Tambahkan admin-kecamatan!
-                $query->whereIn('role', ['admin-kecamatan', 'ketua-kader', 'kader', 'masyarakat']);
-                break;
-
-            case 'admin':
-                // Admin bisa lihat semua role
-                // Tidak perlu filter role
-                break;
+        // 1. Filter Role berdasarkan role map (hanya tampilkan role yang bisa dibuat oleh current user)
+        $allowedRoles = $this->getAllowedRoleTargets($currentUser->role);
+        
+        if (!empty($allowedRoles)) {
+            $query->whereIn('role', $allowedRoles);
+        } elseif ($currentUser->role !== 'admin') {
+            // Jika tidak ada allowed roles dan bukan admin, jangan tampilkan user manapun
+            $query->whereRaw('1 = 0'); // Query yang selalu false
         }
 
         // 2. Filter Wilayah (Multi-Tenancy)
         if (in_array($currentUser->role, ['kader', 'ketua-kader'])) {
             // Filter berdasarkan posyandu
             $query->where('posyandu_id', $currentUser->posyandu_id);
-        } elseif ($currentUser->role === 'admin-kecamatan') {
-            // Filter berdasarkan kecamatan
+        } elseif ($currentUser->role === 'operator-desa') {
+            // Filter berdasarkan kecamatan untuk operator desa
             if ($currentUser->kecamatan) {
                 $kecamatanName = explode('_', $currentUser->kecamatan)[1] ?? $currentUser->kecamatan;
                 $query->where('kecamatan', 'LIKE', "%{$kecamatanName}%");
             }
-        } elseif ($currentUser->role === 'kabid') {
-            // Filter berdasarkan bidang (jika ada)
-            // if ($currentUser->bidang_id) {
-            //     $query->where(function ($q) use ($currentUser) {
-            //         $q->where('bidang_id', $currentUser->bidang_id)
-            //             ->orWhereNull('bidang_id'); // User yang belum punya bidang
-            //     });
-            // }
-            // Jika tidak ada bidang_id, kabid bisa lihat semua
         }
-        // Admin tidak perlu filter wilayah
+        // Admin, admin-kabupaten, admin-kecamatan, kabid tidak perlu filter wilayah
 
         // 3. Filter berdasarkan search
         if ($this->search) {
@@ -117,9 +101,13 @@ class UserIndex extends Component
 
         $users = $query->paginate(10);
 
+        // Get allowed roles for filter dropdown
+        $allowedRoles = $this->getAllowedRoleTargets($currentUser->role);
+
         return view('livewire.user-index', [
             'users' => $users,
-            'currentUser' => $currentUser
+            'currentUser' => $currentUser,
+            'allowedRoles' => $allowedRoles
         ]);
     }
 }
