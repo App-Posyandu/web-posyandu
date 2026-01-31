@@ -515,8 +515,18 @@
                     const bidangKabid = "{{ auth()->user()?->bidang?->nama_bidang ?? '' }}";
                     const kabupatenKabid = "{{ auth()->user()->kabupaten ?? '' }}";
 
-                    // ✅ KABID: Show modal untuk pilih desa
+                    // ✅ KABID: Show modal untuk pilih desa (bidang mengikuti profil kabid)
                     if (userRole === 'kabid') {
+                        if (!bidangKabid) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Bidang Kabid Belum Diset',
+                                text: 'Bidang kabid belum tersedia. Silakan lengkapi data bidang di profil.',
+                                confirmButtonColor: '#f87171'
+                            });
+                            return;
+                        }
+
                         this.showKabidExportModal();
                         return;
                     }
@@ -534,26 +544,24 @@
                 },
 
                 handlePagination(event) {
-                    // Cegah link default
-                    if (event.target.tagName === 'A' || event.target.closest('a')) {
-                        event.preventDefault();
+                    const link = event.target.tagName === 'A' ? event.target : event.target.closest('a');
+                    if (!link) return;
 
-                        const link = event.target.tagName === 'A' ? event.target : event.target.closest(
-                            'a');
-                        const url = new URL(link.href);
+                    // Hanya tangani klik pada pagination agar link Detail/Cetak tetap normal
+                    const isPagination = link.closest('.pagination');
+                    if (!isPagination) return;
 
-                        // Ambil page number dari URL
-                        const page = url.searchParams.get('page') || 1;
+                    event.preventDefault();
 
-                        // Load data dengan page number
-                        this.loadDashboardData(page);
-                    }
+                    const url = new URL(link.href);
+                    const page = url.searchParams.get('page') || 1;
+
+                    this.loadDashboardData(page);
                 },
 
                 // ✅ METHOD BARU: Modal khusus untuk Kabid
                 showKabidExportModal() {
                     const bidangKabid = "{{ auth()->user()->bidang?->nama_bidang ?? '' }}";
-                    console.log('Bidang Kabid:', bidangKabid);
                     const kabupatenKabid = "{{ auth()->user()->kabupaten ?? '' }}";
                     const desas = @json($desas ?? []);
 
@@ -643,11 +651,11 @@
                             if (selectedDesa === 'all') {
                                 // Export semua desa di kabupatennya untuk bidangnya
                                 window.location.href =
-                                    `/admin/export/${encodeURIComponent(bidangKabid)}`;
+                                    `/admin/export/${encodeURIComponent(bidangKabid)}?year=${selectedYear}`;
                             } else {
                                 // Export desa tertentu untuk bidangnya
                                 window.location.href =
-                                    `/admin/export/${encodeURIComponent(bidangKabid)}/${encodeURIComponent(selectedDesa)}`;
+                                    `/admin/export/${encodeURIComponent(bidangKabid)}/${encodeURIComponent(selectedDesa)}?year=${selectedYear}`;
                             }
 
                             Swal.close();

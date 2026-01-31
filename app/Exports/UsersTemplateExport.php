@@ -17,15 +17,20 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 class UsersTemplateExport implements FromArray, WithHeadings, WithEvents, WithDrawings, WithCustomStartCell
 {
     protected $dataRows;
+    protected $roleToCreate;
 
     /**
-     * Constructor menerima array data rows berdasarkan posyandu
-     * Format: [['desa' => 'SEMPU', 'kecamatan' => 'GOMBONG', 'kabupaten' => 'KEBUMEN'], ...]
+     * Constructor menerima array data rows berdasarkan posyandu dan role yang akan dibuat
+     * Format: [['desa' => 'SEMPU', 'kecamatan' => 'GOMBONG', 'kabupaten' => 'KEBUMEN', 'bidang' => 'KESEHATAN'], ...]
      */
-    public function __construct(array $dataRows)
+    public function __construct(array $dataRows, $roleToCreate = null)
     {
         $this->dataRows = $dataRows;
-        Log::info('UserTemplateExport initialized', ['total_rows' => count($dataRows)]);
+        $this->roleToCreate = $roleToCreate;
+        Log::info('UserTemplateExport initialized', [
+            'total_rows' => count($dataRows),
+            'role_to_create' => $roleToCreate
+        ]);
     }
 
     /**
@@ -36,6 +41,7 @@ class UsersTemplateExport implements FromArray, WithHeadings, WithEvents, WithDr
         $data = [];
         
         foreach ($this->dataRows as $index => $row) {
+            // Semua role: tanpa bidang
             $data[] = [
                 $index + 1,                    // NO (auto increment)
                 '',                            // NAMA (user isi)
@@ -46,7 +52,10 @@ class UsersTemplateExport implements FromArray, WithHeadings, WithEvents, WithDr
             ];
         }
         
-        Log::info('Template data generated', ['rows' => count($data)]);
+        Log::info('Template data generated', [
+            'rows' => count($data),
+            'role_to_create' => $this->roleToCreate
+        ]);
         return $data;
     }
 
@@ -58,12 +67,12 @@ class UsersTemplateExport implements FromArray, WithHeadings, WithEvents, WithDr
     public function headings(): array
     {
         return [
-            'NO.',
-            'NAMA',
-            'NOMOR TELEPON',
-            'DESA',
-            'KECAMATAN',
-            'KABUPATEN'
+            'no',
+            'nama',
+            'nomor_telepon',
+            'desa',
+            'kecamatan',
+            'kabupaten'
         ];
     }
 
@@ -121,9 +130,21 @@ class UsersTemplateExport implements FromArray, WithHeadings, WithEvents, WithDr
                 // Set row height untuk logo
                 $sheet->getRowDimension(1)->setRowHeight(80);
 
+                // Map role ke display name
+                $roleDisplayMap = [
+                    'masyarakat' => 'MASYARAKAT',
+                    'operator-desa' => 'OPERATOR DESA',
+                    'kader' => 'KADER',
+                    'ketua-kader' => 'KETUA KADER',
+                    'admin-kecamatan' => 'ADMIN KECAMATAN',
+                    'kabid' => 'KABID',
+                    'admin-kabupaten' => 'ADMIN KABUPATEN'
+                ];
+                $roleDisplay = $roleDisplayMap[$this->roleToCreate] ?? 'USER';
+
                 // JUDUL UTAMA - Baris 2
                 $sheet->mergeCells('A2:F2');
-                $sheet->setCellValue('A2', 'TEMPLATE IMPORT USER KETUA KADER KABUPATEN KEBUMEN');
+                $sheet->setCellValue('A2', 'TEMPLATE IMPORT USER [' . $roleDisplay . '] KABUPATEN KEBUMEN');
                 $sheet->getStyle('A2')->applyFromArray([
                     'font' => [
                         'bold' => true,
