@@ -19,27 +19,36 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEvents, WithDrawings, WithCustomStartCell
 {
     protected $rowNumber = 0;
-    protected $bidang; // Tambahan
+    protected $bidang; // Bidang (untuk filter pengajuan)
+    protected $desa; // Desa (untuk filter pengajuan)
+    protected $posyanduId; // Posyandu ID (untuk filter ketua-kader)
 
-    protected $desa; // Tambahan
-
-    public function __construct($bidang = 'all', $desa = 'all')
+    public function __construct($bidang = 'all', $desa = 'all', $posyanduId = null)
     {
         $this->bidang = $bidang;
         $this->desa = $desa;
+        $this->posyanduId = $posyanduId;
     }
 
 
     public function collection()
     {
         $query = Pengajuan::query();
-        if ($this->desa && $this->desa !== 'all') {
+
+        // ✅ Filter berdasarkan posyandu (untuk ketua-kader)
+        if ($this->posyanduId) {
+            $query->whereHas('user', function ($q) {
+                $q->where('posyandu_id', $this->posyanduId);
+            });
+        }
+        // ✅ Filter berdasarkan desa (jika tidak ada filter posyandu)
+        else if ($this->desa && $this->desa !== 'all') {
             $query->whereHas('user.posyandu', function ($q) {
                 $q->where('desa', $this->desa);
             });
         }
 
-
+        // ✅ Filter berdasarkan bidang
         if ($this->bidang !== 'all') {
             $query->whereHas('bidang', function ($q) {
                 $q->where('nama_bidang', $this->bidang);

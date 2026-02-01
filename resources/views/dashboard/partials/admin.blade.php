@@ -511,11 +511,64 @@
 
                 exportData() {
                     const userRole = "{{ auth()->user()->role }}";
-                    const userDesa = "{{ auth()->user()?->posyandu?->desa ?? '' }}";
+                    const userPosyanduDesa = "{{ auth()->user()?->posyandu?->desa ?? '' }}";
+                    const userDesa = "{{ auth()->user()->desa ?? '' }}";
+                    const userKecamatan = "{{ auth()->user()->kecamatan ?? '' }}";
+                    const userKabupaten = "{{ auth()->user()->kabupaten ?? '' }}";
                     const bidangKabid = "{{ auth()->user()?->bidang?->nama_bidang ?? '' }}";
-                    const kabupatenKabid = "{{ auth()->user()->kabupaten ?? '' }}";
 
-                    // ✅ KABID: Show modal untuk pilih desa (bidang mengikuti profil kabid)
+                    // ✅ KETUA KADER: Hanya bisa export data posyandu mereka sendiri
+                    if (userRole === 'ketua-kader') {
+                        if (!userPosyanduDesa) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Data Posyandu Tidak Ditemukan',
+                                text: 'Posyandu belum ditetapkan di profile Anda.',
+                                confirmButtonColor: '#f87171'
+                            });
+                            return;
+                        }
+
+                        // ✅ Direct export ke posyandu mereka saja
+                        const selectedYear = this.selectedYear;
+                        // Gunakan nama bidang dari modal atau default ke all
+                        this.showKetuaKaderExportModal();
+                        return;
+                    }
+
+                    // ✅ KADES: Hanya bisa export untuk desa mereka (semua bidang)
+                    if (userRole === 'kades') {
+                        if (!userDesa) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Data Desa Tidak Ditemukan',
+                                text: 'Desa belum ditetapkan di profile Anda.',
+                                confirmButtonColor: '#f87171'
+                            });
+                            return;
+                        }
+
+                        this.showKadesExportModal();
+                        return;
+                    }
+
+                    // ✅ ADMIN KECAMATAN: Hanya bisa export untuk desa & bidang di kecamatan mereka
+                    if (userRole === 'admin-kecamatan') {
+                        if (!userKecamatan) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Data Kecamatan Tidak Ditemukan',
+                                text: 'Kecamatan belum ditetapkan di profile Anda.',
+                                confirmButtonColor: '#f87171'
+                            });
+                            return;
+                        }
+
+                        this.showAdminKecamatanExportModal();
+                        return;
+                    }
+
+                    // ✅ KABID: Hanya bisa export bidang mereka saja (semua desa & kecamatan)
                     if (userRole === 'kabid') {
                         if (!bidangKabid) {
                             Swal.fire({
@@ -531,16 +584,269 @@
                         return;
                     }
 
-                    // ✅ KETUA KADER: Langsung export (sudah ada bidang & desa)
-                    if (userRole === 'ketua-kader') {
-                        // Export dengan bidang & desa dari user
-                        window.location.href =
-                            `/admin/export-all-bidang-desa?year=${this.selectedYear}&kabupaten=${encodeURIComponent(kabupatenKabid)}`;
+                    // ✅ KETUA POSYANDU, ADMIN KABUPATEN, ADMIN: Export semua data
+                    if (['ketua-posyandu', 'admin-kabupaten', 'admin'].includes(userRole)) {
+                        // Export semua bidang & desa
+                        window.location.href = `/admin/export-all-bidang-desa?year=${this.selectedYear}`;
                         return;
                     }
 
-                    // ✅ ROLE LAIN: Export dengan tahun yang dipilih
+                    // Default: export semua
                     window.location.href = `/admin/export-all-bidang-desa?year=${this.selectedYear}`;
+                },
+
+                // ✅ Modal untuk KETUA KADER
+                showKetuaKaderExportModal() {
+                    const selectedYear = this.selectedYear;
+                    const userDesa = "{{ auth()->user()?->posyandu?->desa ?? '' }}";
+
+                    Swal.fire({
+                        title: '<h2 class="text-lg md:text-xl font-bold text-gray-800 mb-2">Export Data Pengajuan</h2>',
+                        html: `
+            <div class="space-y-6">
+                <!-- Info Posyandu -->
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-md">
+                    <div class="flex items-start">
+                        <i class="bi bi-info-circle-fill text-blue-500 mr-2 mt-0.5"></i>
+                        <div class="text-left">
+                            <p class="text-sm font-medium text-gray-900">Posyandu Anda</p>
+                            <p class="text-xs text-gray-600 mt-1">
+                                Export data hanya untuk posyandu Anda di desa: <strong>${userDesa}</strong>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pilih Bidang -->
+                <div class="text-left">
+                    <label class="block text-start font-semibold mb-2 text-gray-700">Pilih Bidang:</label>
+                    <select id="ketuaKaderBidangSelect" class="w-full border border-gray-300 rounded-md p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="" disabled selected>Pilih Bidang</option>
+                        <option value="all">📊 Semua Bidang</option>
+                        <option value="Bidang Perumahan Rakyat">Bidang Perumahan Rakyat</option>
+                        <option value="Bidang Pendidikan">Bidang Pendidikan</option>
+                        <option value="Bidang Kesehatan">Bidang Kesehatan</option>
+                        <option value="Bidang Sosial">Bidang Sosial</option>
+                        <option value="Bidang Pekerjaan Umum">Bidang Pekerjaan Umum</option>
+                        <option value="Bidang Trantibumlinmas">Bidang Trantibumlinmas</option>
+                    </select>
+                </div>
+
+                <!-- Buttons -->
+                <div class="flex justify-between gap-4 mt-6">
+                    <button id="cancelKetuaKaderExport"
+                        class="bg-gray-500 text-white hover:bg-gray-600 font-medium rounded-md py-3 px-6 w-1/2 shadow transition-colors">
+                        Batal
+                    </button>
+                    <button id="confirmKetuaKaderExport"
+                        class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-md py-3 px-6 w-1/2 shadow transition-colors">
+                        <i class="bi bi-file-earmark-excel mr-2"></i>
+                        Export Data
+                    </button>
+                </div>
+            </div>
+        `,
+                        showConfirmButton: false,
+                        showCancelButton: false,
+                        width: 600,
+                        background: '#f9fafb',
+                        customClass: {
+                            popup: 'rounded-md md:rounded-2xl shadow-2xl p-6'
+                        }
+                    });
+
+                    const handleKetuaKaderExport = (e) => {
+                        if (e.target.id === 'cancelKetuaKaderExport') {
+                            Swal.close();
+                            document.removeEventListener('click', handleKetuaKaderExport);
+                        }
+
+                        if (e.target.id === 'confirmKetuaKaderExport') {
+                            const bidangSelect = document.getElementById('ketuaKaderBidangSelect');
+                            const selectedBidang = bidangSelect?.value;
+
+                            if (!selectedBidang) {
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: 'Bidang Belum Dipilih!',
+                                    text: 'Silakan pilih bidang terlebih dahulu.',
+                                    confirmButtonColor: '#f87171'
+                                });
+                                return;
+                            }
+
+                            // Export ke posyandu mereka dengan bidang tertentu
+                            if (selectedBidang === 'all') {
+                                window.location.href = `/admin/export-all/${userDesa}?year=${selectedYear}`;
+                            } else {
+                                window.location.href = `/admin/export/${encodeURIComponent(selectedBidang)}/${userDesa}?year=${selectedYear}`;
+                            }
+
+                            Swal.close();
+                            document.removeEventListener('click', handleKetuaKaderExport);
+                        }
+                    };
+
+                    document.addEventListener('click', handleKetuaKaderExport);
+                },
+
+                // ✅ Modal untuk KADES
+                showKadesExportModal() {
+                    const selectedYear = this.selectedYear;
+                    const userDesa = "{{ auth()->user()->desa ?? '' }}";
+
+                    Swal.fire({
+                        title: '<h2 class="text-lg md:text-xl font-bold text-gray-800 mb-2">Export Data Pengajuan</h2>',
+                        html: `
+            <div class="space-y-6">
+                <!-- Info Desa -->
+                <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-md">
+                    <div class="flex items-start">
+                        <i class="bi bi-info-circle-fill text-green-500 mr-2 mt-0.5"></i>
+                        <div class="text-left">
+                            <p class="text-sm font-medium text-gray-900">Desa Anda</p>
+                            <p class="text-xs text-gray-600 mt-1">
+                                Export data untuk semua bidang di desa: <strong>${userDesa}</strong>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="text-sm text-gray-600 text-center">
+                    Data akan diekspor untuk semua bidang di desa Anda
+                </p>
+
+                <!-- Buttons -->
+                <div class="flex justify-between gap-4 mt-6">
+                    <button id="cancelKadesExport"
+                        class="bg-gray-500 text-white hover:bg-gray-600 font-medium rounded-md py-3 px-6 w-1/2 shadow transition-colors">
+                        Batal
+                    </button>
+                    <button id="confirmKadesExport"
+                        class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-md py-3 px-6 w-1/2 shadow transition-colors">
+                        <i class="bi bi-file-earmark-excel mr-2"></i>
+                        Export Data
+                    </button>
+                </div>
+            </div>
+        `,
+                        showConfirmButton: false,
+                        showCancelButton: false,
+                        width: 600,
+                        background: '#f9fafb',
+                        customClass: {
+                            popup: 'rounded-md md:rounded-2xl shadow-2xl p-6'
+                        }
+                    });
+
+                    const handleKadesExport = (e) => {
+                        if (e.target.id === 'cancelKadesExport') {
+                            Swal.close();
+                            document.removeEventListener('click', handleKadesExport);
+                        }
+
+                        if (e.target.id === 'confirmKadesExport') {
+                            // Export semua bidang untuk desa mereka
+                            window.location.href = `/admin/export-all/${userDesa}?year=${selectedYear}`;
+                            Swal.close();
+                            document.removeEventListener('click', handleKadesExport);
+                        }
+                    };
+
+                    document.addEventListener('click', handleKadesExport);
+                },
+
+                // ✅ Modal untuk ADMIN KECAMATAN
+                showAdminKecamatanExportModal() {
+                    const selectedYear = this.selectedYear;
+                    const userKecamatan = "{{ auth()->user()->kecamatan ?? '' }}";
+                    const desas = @json($desas ?? []);
+
+                    Swal.fire({
+                        title: '<h2 class="text-lg md:text-xl font-bold text-gray-800 mb-2">Export Data Pengajuan</h2>',
+                        html: `
+            <div class="space-y-6">
+                <!-- Info Kecamatan -->
+                <div class="bg-purple-50 border-l-4 border-purple-500 p-4 rounded-md">
+                    <div class="flex items-start">
+                        <i class="bi bi-info-circle-fill text-purple-500 mr-2 mt-0.5"></i>
+                        <div class="text-left">
+                            <p class="text-sm font-medium text-gray-900">Kecamatan Anda</p>
+                            <p class="text-xs text-gray-600 mt-1">
+                                Export data untuk semua bidang dan desa di kecamatan: <strong>${userKecamatan}</strong>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pilih Desa -->
+                <div class="text-left">
+                    <label class="block text-start font-semibold mb-2 text-gray-700">Pilih Desa:</label>
+                    <select id="adminKecamatanDesaSelect" class="w-full border border-gray-300 rounded-md p-3 focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                        <option value="" disabled selected>Pilih Desa</option>
+                        <option value="all" class="font-bold">📊 Semua Desa di ${userKecamatan}</option>
+                        <optgroup label="Desa Spesifik:">
+                            ${desas.map(d => `<option value="${d}">${d}</option>`).join('')}
+                        </optgroup>
+                    </select>
+                </div>
+
+                <!-- Buttons -->
+                <div class="flex justify-between gap-4 mt-6">
+                    <button id="cancelAdminKecamatanExport"
+                        class="bg-gray-500 text-white hover:bg-gray-600 font-medium rounded-md py-3 px-6 w-1/2 shadow transition-colors">
+                        Batal
+                    </button>
+                    <button id="confirmAdminKecamatanExport"
+                        class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-md py-3 px-6 w-1/2 shadow transition-colors">
+                        <i class="bi bi-file-earmark-excel mr-2"></i>
+                        Export Data
+                    </button>
+                </div>
+            </div>
+        `,
+                        showConfirmButton: false,
+                        showCancelButton: false,
+                        width: 600,
+                        background: '#f9fafb',
+                        customClass: {
+                            popup: 'rounded-md md:rounded-2xl shadow-2xl p-6'
+                        }
+                    });
+
+                    const handleAdminKecamatanExport = (e) => {
+                        if (e.target.id === 'cancelAdminKecamatanExport') {
+                            Swal.close();
+                            document.removeEventListener('click', handleAdminKecamatanExport);
+                        }
+
+                        if (e.target.id === 'confirmAdminKecamatanExport') {
+                            const desaSelect = document.getElementById('adminKecamatanDesaSelect');
+                            const selectedDesa = desaSelect?.value;
+
+                            if (!selectedDesa) {
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: 'Desa Belum Dipilih!',
+                                    text: 'Silakan pilih desa terlebih dahulu.',
+                                    confirmButtonColor: '#f87171'
+                                });
+                                return;
+                            }
+
+                            // Export dengan desa tertentu atau semua desa
+                            if (selectedDesa === 'all') {
+                                window.location.href = `/admin/export-all/${selectedDesa}?year=${selectedYear}`;
+                            } else {
+                                window.location.href = `/admin/export-all/${selectedDesa}?year=${selectedYear}`;
+                            }
+
+                            Swal.close();
+                            document.removeEventListener('click', handleAdminKecamatanExport);
+                        }
+                    };
+
+                    document.addEventListener('click', handleAdminKecamatanExport);
                 },
 
                 handlePagination(event) {
