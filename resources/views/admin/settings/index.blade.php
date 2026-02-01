@@ -97,24 +97,14 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 @foreach ($categorySettings as $setting)
                                     <div class="bg-gray-50 border border-gray-200 rounded-lg p-5">
-                                        <div class="flex items-start justify-between mb-3">
-                                            <div class="flex-1">
-                                                <label for="setting_{{ $setting->key }}"
-                                                    class="block text-sm font-semibold text-gray-800 mb-1">
-                                                    {{ $setting->label }}
-                                                </label>
-                                                <p class="text-xs text-gray-600">
-                                                    {{ $setting->description }}
-                                                </p>
-                                            </div>
-
-                                            <span
-                                                class="ml-3 px-2 py-1 text-xs font-medium rounded-full
-                                                @if ($setting->type === 'integer') bg-blue-100 text-blue-800
-                                                @elseif($setting->type === 'boolean') bg-green-100 text-green-800
-                                                @else bg-gray-100 text-gray-800 @endif">
-                                                {{ $setting->type }}
-                                            </span>
+                                        <div class="flex-1 mb-3">
+                                            <label for="setting_{{ $setting->key }}"
+                                                class="block text-sm font-semibold text-gray-800 mb-1">
+                                                {{ $setting->label }}
+                                            </label>
+                                            <p class="text-xs text-gray-600">
+                                                {{ $setting->description }}
+                                            </p>
                                         </div>
 
                                         @if ($setting->type === 'boolean')
@@ -141,7 +131,7 @@
                                         @elseif($setting->type === 'integer')
                                             <div class="flex items-center gap-2 mt-3">
                                                 <button type="button" @click="decrementSetting('{{ $setting->key }}')"
-                                                    class="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+                                                    class="px-3 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition">
                                                     <i class="bi bi-dash-lg"></i>
                                                 </button>
 
@@ -152,7 +142,7 @@
                                                     class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-center font-mono text-lg font-semibold">
 
                                                 <button type="button" @click="incrementSetting('{{ $setting->key }}')"
-                                                    class="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+                                                    class="px-3 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition">
                                                     <i class="bi bi-plus-lg"></i>
                                                 </button>
                                             </div>

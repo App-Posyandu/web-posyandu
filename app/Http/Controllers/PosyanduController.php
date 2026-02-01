@@ -354,6 +354,7 @@ class PosyanduController extends Controller
             ]);
 
             $createdKaders[] = [
+                'email' => $email,
                 'password' => $defaultPassword,
                 'bidang' => $bidang->nama_bidang,
             ];

@@ -217,30 +217,26 @@
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
-                                        <div class="flex items-center justify-center gap-2">
+                                        <div class="flex items-center justify-center gap-2 flex-wrap">
                                             <button type="button"
                                                 onclick="showDetailPosyandu('{{ $posyandu->nama_posyandu }}', '{{ $posyandu->desa }}', {{ json_encode($posyandu->rw_list ?? []) }}, {{ json_encode($posyandu->rt_mapping ?? []) }})"
-                                                class="text-green-600 hover:text-green-900 transition"
-                                                title="Lihat Detail RW/RT">
-                                                <i class="bi bi-eye-fill text-lg"></i>
+                                                class="px-3 py-2 bg-green-500 text-white text-xs font-semibold rounded hover:bg-green-600 transition">
+                                                Lihat
                                             </button>
                                             <a href="{{ route('admin.posyandu.edit', $posyandu) }}"
-                                                class="text-indigo-600 hover:text-indigo-900" title="Edit Data">
-                                                <i class="bi bi-pencil-square"></i>
+                                                class="px-3 py-2 bg-blue-500 text-white text-xs font-semibold rounded hover:bg-blue-600 transition">
+                                                Edit
                                             </a>
-                                            {{-- <a href="{{ route('admin.posyandu.edit-rw-rt', $posyandu) }}"
-                                                class="text-blue-600 hover:text-blue-900" title="Kelola RW/RT">
-                                                <i class="bi bi-diagram-3"></i>
-                                            </a> --}}
                                             <form method="POST"
                                                 action="{{ route('admin.posyandu.destroy', $posyandu) }}"
-                                                onsubmit="return confirm('Yakin ingin menghapus posyandu ini?');"
+                                                id="delete-form-{{ $posyandu->id }}"
                                                 class="inline">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="text-red-600 hover:text-red-900"
-                                                    title="Hapus">
-                                                    <i class="bi bi-trash"></i>
+                                                <button type="button" 
+                                                    onclick="confirmDeletePosyandu(event, '{{ $posyandu->id }}')"
+                                                    class="px-3 py-2 bg-red-500 text-white text-xs font-semibold rounded hover:bg-red-600 transition">
+                                                    Hapus
                                                 </button>
                                             </form>
                                         </div>
@@ -375,6 +371,29 @@
                     },
                     showCloseButton: true
                 });
+            }
+        </script>
+        <script>
+            function confirmDeletePosyandu(event, id) {
+                event.preventDefault();
+                console.log('Delete function called with ID:', id);
+                Swal.fire({
+                    title: 'Hapus Posyandu?',
+                    text: 'Yakin ingin menghapus posyandu ini?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Hapus',
+                    cancelButtonText: 'Batal',
+                    confirmButtonColor: '#dc2626',
+                    cancelButtonColor: '#6b7280'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const formId = 'delete-form-' + id;
+                        console.log('Submitting form with ID:', formId);
+                        document.getElementById(formId).submit();
+                    }
+                });
+                return false;
             }
         </script>
         <script>
