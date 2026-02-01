@@ -409,7 +409,9 @@ class UserController extends Controller
                 'posyandu_id' => ['required', 'uuid', 'exists:posyandus,id'],
             ],
             'operator-desa' => [
-                'posyandu_id' => ['required', 'uuid', 'exists:posyandus,id'],
+                'kabupaten' => ['required', 'string'],
+                'kecamatan' => ['required', 'string'],
+                'desa' => ['required', 'string'],
             ],
             'kader' => [
                 'bidang_id' => ['required', 'uuid', 'exists:bidang_pengajuans,id'],
@@ -499,16 +501,18 @@ class UserController extends Controller
                 break;
 
             case 'operator-desa':
-                $posyanduId = $request->posyandu_id;
-                $posyandu = Posyandu::find($posyanduId);
+                $kabupatenValue = $request->kabupaten;
+                $kabupatenName = explode('_', $kabupatenValue)[1] ?? $kabupatenValue;
 
-                if ($posyandu) {
-                    $data['posyandu_id'] = $posyanduId;
-                    $data['kabupaten'] = $posyandu->kabupaten;
-                    $data['kecamatan'] = $posyandu->kecamatan;
-                    $data['desa'] = $posyandu->desa;
-                    $data['jenis_wilayah'] = $currentUser->jenis_wilayah ?? null;
-                }
+                $kecamatanValue = $request->kecamatan;
+                $kecamatanName = explode('_', $kecamatanValue)[1] ?? $kecamatanValue;
+
+                $desaValue = $request->desa;
+                $desaName = explode('_', $desaValue)[1] ?? $desaValue;
+
+                $data['kabupaten'] = $kabupatenName;
+                $data['kecamatan'] = $kecamatanName;
+                $data['desa'] = $desaName;
                 break;
 
             case 'kader':
@@ -520,8 +524,7 @@ class UserController extends Controller
                     $data['kecamatan'] = $currentUser->kecamatan;
                     $data['desa'] = $currentUser->desa;
                     $data['jenis_wilayah'] = $currentUser->jenis_wilayah;
-                }
-                elseif ($currentUser->role === 'operator-desa') {
+                } elseif ($currentUser->role === 'operator-desa') {
                     $data['posyandu_id'] = $currentUser->posyandu_id;
                     $data['kabupaten'] = $currentUser->kabupaten;
                     $data['kecamatan'] = $currentUser->kecamatan;
@@ -775,9 +778,7 @@ class UserController extends Controller
 
 
 
-    public function destroy(string $id)
-    {
-    }
+    public function destroy(string $id) {}
 
     public function verify(User $user)
     {

@@ -146,6 +146,7 @@
                                     <option value="kades">Kades</option>
                                     <option value="operator-desa">Operator Desa</option>
                                 @elseif ($currentUserRole === 'admin-kecamatan')
+
                                 @elseif ($currentUserRole === 'operator-desa')
                                     <option value="ketua-kader">Ketua Kader</option>
                                     <option value="kader">Kader</option>
@@ -181,7 +182,6 @@
                             <x-input-error :messages="$errors->get('jenis_wilayah')" class="mt-2" />
                         </div>
 
-                        <input type="hidden" id="kabupaten-hidden" name="kabupaten" value="">
 
                         <div id="kabupaten-field" style="display: none;" class="md:col-span-2">
                             <div x-data="kabupatenCombobox()" @click.away="open = false" x-init="$watch('selectedKabupaten', value => {
@@ -189,6 +189,7 @@
                             })"
                                 class="relative">
                                 <x-input-label for="kabupaten" :value="__('Pilih Kabupaten')" />
+                                <input type="hidden" id="kabupaten-hidden" name="kabupaten" :value="selectedKabupaten">
                                 <div class="relative">
                                     <input type="text" x-model="search" @focus="open = true" @input="open = true"
                                         :placeholder="getKabupatenName(selectedKabupaten) || 'Cari Kabupaten...'"
@@ -237,16 +238,16 @@
                         </div>
 
                         <div id="kecamatan-field" style="display: none;" class="md:col-span-2">
-                            <input type="hidden" name="kecamatan" id="kecamatan-hidden">
 
                             <div x-data="kecamatanCombobox()" @region-selected.window="fetchKecamatan($event.detail.code)"
                                 @click.away="open = false" class="relative">
 
                                 <x-input-label for="kecamatan" :value="__('Pilih Kecamatan')" />
+                                <input type="hidden" name="kecamatan" id="kecamatan-hidden" :value="selectedKecamatan">
 
                                 <div class="relative">
                                     <input type="text" x-model="search" @focus="open = true" @input="open = true"
-                                        :placeholder="selectedKecamatanName || 'Cari Kecamatan...'"
+                                        :placeholder="getKecamatanName(selectedKecamatan) || 'Cari Kecamatan...'"
                                         class="block mt-1 w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                         :disabled="loading" autocomplete="off">
 
@@ -270,11 +271,55 @@
                                         x-for="kec in kecamatanList.filter(k => (k.name || '').toLowerCase().includes(search.toLowerCase()))"
                                         :key="kec.id || kec.code">
                                         <div @click="selectKecamatan(kec)"
-                                            class="px-4 py-2 cursor-pointer hover:bg-indigo-50" x-text="kec.name"></div>
+                                            class="px-4 py-2 cursor-pointer hover:bg-indigo-50" x-text="kec.name">
+                                        </div>
                                     </template>
 
                                     <div x-show="kecamatanList.length === 0" class="px-4 py-2 text-gray-500 text-sm">
                                         Tidak ada data kecamatan / Silakan pilih Kabupaten dulu
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="desa-field" style="display: none;" class="md:col-span-2">
+
+                            <div x-data="desaCombobox()" @kecamatan-selected.window="fetchDesa($event.detail.code)"
+                                @click.away="open = false" class="relative">
+
+                                <x-input-label for="desa" :value="__('Pilih Desa')" />
+                                <input type="hidden" name="desa" id="desa-hidden" :value="selectedDesa">
+
+                                <div class="relative">
+                                    <input type="text" x-model="search" @focus="open = true" @input="open = true"
+                                        :placeholder="getDesaName(selectedDesa) || 'Cari Desa...'"
+                                        class="block mt-1 w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        :disabled="loading" autocomplete="off">
+
+                                    <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
+                                        <svg x-show="loading" class="animate-spin h-5 w-5 text-indigo-500"
+                                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10"
+                                                stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor"
+                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                            </path>
+                                        </svg>
+                                    </div>
+                                </div>
+
+                                <div x-show="open && !loading"
+                                    class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto"
+                                    style="display: none;">
+
+                                    <template
+                                        x-for="desa in desaList.filter(d => (d.name || '').toLowerCase().includes(search.toLowerCase()))"
+                                        :key="desa.id || desa.code">
+                                        <div @click="selectDesa(desa)" class="px-4 py-2 cursor-pointer hover:bg-indigo-50"
+                                            x-text="desa.name"></div>
+                                    </template>
+
+                                    <div x-show="desaList.length === 0" class="px-4 py-2 text-gray-500 text-sm">
+                                        Tidak ada data desa / Silakan pilih Kabupaten dulu
                                     </div>
                                 </div>
                             </div>
@@ -393,6 +438,22 @@
                     kabupatens: @json($kabupatenList ?? []),
 
                     init() {
+                        @if (auth()->user()->kabupaten)
+                            // Cari data kabupaten berdasarkan nama untuk mendapatkan kodenya
+                            const initialKab = this.kabupatens.find(k => k.name ===
+                                '{{ auth()->user()->kabupaten }}');
+                            if (initialKab) {
+                                const code = initialKab.id || initialKab.code;
+                                this.selectedKabupaten = `${code}_${initialKab.name}`;
+
+                                // Beritahu komponen lain bahwa kabupaten sudah terpilih secara otomatis
+                                this.$nextTick(() => {
+                                    this.$dispatch('region-selected', {
+                                        code: code
+                                    });
+                                });
+                            }
+                        @endif
                         if (this.kabupatens.length > 0) {
                             console.log('Sample Data Kabupaten:', this.kabupatens[0]);
                         }
@@ -468,43 +529,59 @@
                     search: '',
                     loading: false,
                     kecamatanList: [],
-                    selectedKecamatanRaw: '{{ old('kecamatan') }}',
-                    selectedKecamatanName: '',
+                    selectedKecamatan: '{{ old('kecamatan') }}',
 
                     init() {
-                        if (this.selectedKecamatanRaw) {
-                            this.selectedKecamatanName = this.selectedKecamatanRaw.split('_').slice(1).join(
-                                '_');
-                            document.getElementById('kecamatan-hidden').value = this.selectedKecamatanRaw;
+                        this.$el.addEventListener('region-selected', (e) => {
+                            this.fetchKecamatan(e.detail.code);
+                        }, {
+                            window: true
+                        });
+                        if (this.kecamatanList.length > 0) {
+                            console.log('Sample Data Kecamatan:', this.kecamatanList[0]);
                         }
+
+                        if (this.selectedKecamatan) {
+                            let code = this.selectedKecamatan.split('_')[0];
+                            this.$dispatch('region-selected', {
+                                code: code
+                            });
+                        }
+                    },
+
+                    getKecamatanName(value) {
+                        if (!value) return '';
+                        let fullName = value.split('_').slice(1).join('_');
+                        return fullName.replace('Kecamatan ', '');
+                    },
+
+                    getDisplayName(name) {
+                        return name ? name.replace('Kecamatan ', '') : '';
                     },
 
                     async fetchKecamatan(parentId) {
                         if (!parentId) return;
+                        this.loading = true;
 
                         console.log('Fetching Kecamatan for Parent:', parentId);
-                        this.loading = true;
                         this.kecamatanList = [];
-                        this.selectedKecamatanName = '';
+                        this.selectedKecamatan = '';
                         document.getElementById('kecamatan-hidden').value = '';
 
                         try {
-                            const response = await fetch(`/api/wilayah/kecamatan/${parentId}`);
+                            const response = await fetch(
+                                `{{ route('api.kecamatan') }}?kab_id=${parentId}`);
+                            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
                             const data = await response.json();
+                            this.kecamatanList = data.data ?? [];
 
-                            let list = [];
-                            if (Array.isArray(data)) {
-                                list = data;
-                            } else if (data && Array.isArray(data.data)) {
-                                list = data.data;
+                            if (this.kecamatanList.length === 0) {
+                                alert('Tidak ada data kecamatan untuk wilayah ini.');
                             }
-
-                            this.kecamatanList = list;
-                            console.log('Kecamatan Loaded:', this.kecamatanList);
-
                         } catch (error) {
-                            console.error('Gagal mengambil data kecamatan:', error);
-                            this.kecamatanList = [];
+                            console.error('Error fetching kecamatan:', error);
+                            alert('Gagal memuat data kecamatan.');
                         } finally {
                             this.loading = false;
                         }
@@ -513,9 +590,88 @@
                     selectKecamatan(kec) {
                         const code = getRegionCode(kec);
                         const val = `${code}_${kec.name}`;
+                        this.selectedKecamatan = val;
                         document.getElementById('kecamatan-hidden').value = val;
 
-                        this.selectedKecamatanName = kec.name;
+                        // this.selectedKecamatan = kec.name;
+                        this.search = '';
+                        this.open = false;
+                        this.$dispatch('kecamatan-selected', {
+                            code: code
+                        });
+                    }
+                }));
+
+                Alpine.data('desaCombobox', () => ({
+                    open: false,
+                    search: '',
+                    loading: false,
+                    desaList: [],
+                    selectedDesa: '{{ old('desa') }}',
+
+                    init() {
+                        this.$el.addEventListener('kecamatan-selected', (e) => {
+                            this.fetchDesa(e.detail.code);
+                        }, {
+                            window: true
+                        });
+                        if (this.desaList.length > 0) {
+                            console.log('Sample Data Desa:', this.desaList[0]);
+                        }
+
+                        // if (this.selectedDesa) {
+                        //     let code = this.selectedDesa.split('_')[0];
+                        //     this.$dispatch('kecamatan-selected', {
+                        //         code: code
+                        //     });
+                        // }
+                    },
+
+                    getDesaName(value) {
+                        if (!value) return '';
+                        let fullName = value.split('_').slice(1).join('_');
+                        return fullName.replace('Desa ', '');
+                    },
+
+                    getDisplayName(name) {
+                        return name ? name.replace('Desa ', '') : '';
+                    },
+
+
+                    async fetchDesa(parentId) {
+                        if (!parentId) return;
+
+                        console.log('Fetching Desa for Parent:', parentId);
+                        this.loading = true;
+                        this.desaList = [];
+                        this.selectedDesa = '';
+                        document.getElementById('desa-hidden').value = '';
+
+                        try {
+                            const response = await fetch(`{{ route('api.desa') }}?kec_id=${parentId}`);
+                            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+                            const data = await response.json();
+                            this.desaList = data.data ?? [];
+
+                            if (this.desaList.length === 0) {
+                                alert('Tidak ada data desa untuk kecamatan ini.');
+                            }
+
+                        } catch (error) {
+                            console.error('Gagal mengambil data desa:', error);
+                            this.desaList = [];
+                        } finally {
+                            this.loading = false;
+                        }
+                    },
+
+                    selectDesa(desa) {
+                        const code = getRegionCode(desa);
+                        const val = `${code}_${desa.name}`;
+                        this.selectedDesa = val;
+                        document.getElementById('desa-hidden').value = val;
+
                         this.search = '';
                         this.open = false;
                     }
@@ -610,23 +766,28 @@
                 const kabupatenField = document.getElementById('kabupaten-field');
                 const kotaField = document.getElementById('kota-field');
                 const kecamatanField = document.getElementById('kecamatan-field');
+                const desaField = document.getElementById('desa-field');
                 const posyanduField = document.getElementById('posyandu-field');
                 const posyanduSelect = document.getElementById('posyandu_id');
 
-                const kabupatenSelect = document.getElementById('kabupaten_id');
-                const kecamatanSelect = document.getElementById('kecamatan_id');
+                // const kabupatenSelect = document.getElementById('kabupaten_id');
+                // const kecamatanSelect = document.getElementById('kecamatan_id');
+                // const desaSelect = document.getElementById('desa_id');
 
                 function toggleFields() {
                     jenisWilayahField.style.display = 'none';
                     kabupatenField.style.display = 'none';
                     kotaField.style.display = 'none';
                     kecamatanField.style.display = 'none';
+                    desaField.style.display = 'none';
                     posyanduField.style.display = 'none';
                     bidangField.style.display = 'none';
 
                     jenisWilayahSelect.required = false;
                     posyanduSelect.required = false;
                     bidangSelect.required = false;
+                    // desaSelect.required = false;
+                    // kecamatanSelect.required = false;
 
                     const role = roleSelect.value;
                     const currentUserRole = '{{ auth()->user()->role }}';
@@ -644,8 +805,8 @@
                     }
 
                     if (role === 'admin-kecamatan') {
-                        jenisWilayahField.style.display = 'block';
-                        jenisWilayahSelect.required = true;
+                        kecamatanField.style.display = 'block';
+                        // kecamatanSelect.required = true;
                     }
 
                     if (role === 'ketua-kader') {
@@ -654,14 +815,11 @@
                     }
 
                     if (role === 'operator-desa') {
-                        posyanduField.style.display = 'block';
-                        posyanduSelect.required = true;
+                        kecamatanField.style.display = 'block';
+                        // kecamatanSelect.required = true;
 
-                        if (currentUserRole === 'ketua-kader') {
-                            const ketuaKaderPosyanduId = '{{ auth()->user()->posyandu_id }}';
-                            posyanduSelect.value = ketuaKaderPosyanduId;
-                            posyanduSelect.disabled = true;
-                        }
+                        desaField.style.display = 'block';
+                        // desaSelect.required = true;
                     }
 
                     if (role === 'kader') {
@@ -671,12 +829,10 @@
                         if (currentUserRole === 'operator-desa') {
                             posyanduField.style.display = 'none';
                             posyanduSelect.required = false;
-                        }
-                        else if (currentUserRole === 'ketua-kader') {
+                        } else if (currentUserRole === 'ketua-kader') {
                             posyanduField.style.display = 'none';
                             posyanduSelect.required = false;
-                        }
-                        else {
+                        } else {
                             posyanduField.style.display = 'block';
                             posyanduSelect.required = true;
                         }
@@ -714,7 +870,9 @@
                 'operator-desa': ['ketua-kader', 'kader'],
                 'admin-kecamatan': [],
                 'admin-kabupaten': ['ketua-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'operator-desa'],
-                'admin': ['admin-kabupaten', 'ketua-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'ketua-kader', 'operator-desa', 'kader', 'masyarakat']
+                'admin': ['admin-kabupaten', 'ketua-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'ketua-kader',
+                    'operator-desa', 'kader', 'masyarakat'
+                ]
             };
             const roleLabels = {
                 'masyarakat': 'Masyarakat',
@@ -790,6 +948,7 @@
                     }
                 });
             }
+
             function showMainMenu() {
                 const roleLabel = roleLabels[selectedRoleToCreate] || 'User';
                 let menuHTML = `
@@ -858,6 +1017,7 @@
                     }
                 });
             }
+
             function showUploadStep() {
                 let uploadHTML = `
         <div class="space-y-5 text-left">
@@ -969,6 +1129,7 @@
                     }
                 });
             }
+
             function executeDownload() {
                 Swal.fire({
                     title: 'Generating Template',
@@ -983,9 +1144,9 @@
                 window.location.href = url;
                 setTimeout(() => {
                     const roleLabel = roleLabels[selectedRoleToCreate] || 'User';
-                    const rowInfo = selectedRoleToCreate === 'kader'
-                        ? 'Jumlah baris = 6 per Posyandu'
-                        : 'Jumlah baris = Jumlah Posyandu terdaftar';
+                    const rowInfo = selectedRoleToCreate === 'kader' ?
+                        'Jumlah baris = 6 per Posyandu' :
+                        'Jumlah baris = Jumlah Posyandu terdaftar';
                     Swal.fire({
                         icon: 'success',
                         title: 'Template Sedang Diunduh',

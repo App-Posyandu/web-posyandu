@@ -41,13 +41,51 @@ class UserIndex extends Component
         $roleMap = [
             'kader' => ['masyarakat'],
             'ketua-kader' => ['kader'],
-            'operator-desa' => ['ketua-kader', 'kader'],
+            'operator-desa' => ['ketua-kader', 'kader', 'masyarakat'],
             'admin-kecamatan' => [],
             'admin-kabupaten' => ['ketua-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'operator-desa'],
             'admin' => ['admin-kabupaten', 'ketua-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'ketua-kader', 'operator-desa', 'kader', 'masyarakat'],
         ];
 
         return $roleMap[$role] ?? [];
+    }
+
+    public function getWhatsAppLink($userId)
+    {
+        $user = User::with(['posyandu', 'bidang'])->find($userId);
+        if (!$user) return '#';
+
+        $createdBy = Auth::user();
+
+        // Logika pesan yang sama dengan UserController
+        $roleNames = [
+            'kabid' => 'Kepala Bidang',
+            'ketua-kader' => 'Ketua Kader',
+            'admin-kecamatan' => 'Admin Kecamatan',
+        ];
+
+        $roleName = $roleNames[$user->role] ?? $user->role;
+        $posyandu = $user->posyandu ? $user->posyandu->nama_posyandu : '-';
+        $bidang = $user->bidang ? $user->bidang->nama_bidang : '-';
+
+        $message = "*Sistem Posyandu - Detail Login*\n\n";
+        $message .= "Halo *{$user->name}*,\n\n";
+        $message .= "Berikut adalah informasi akun Anda:\n";
+        $message .= "━━━━━━━━━━━━━━━━━━\n";
+        if ($user->email) $message .= "📧 Email: {$user->email}\n";
+        $message .= "Role: {$roleName}\n";
+        if ($user->role === 'kader' && $bidang !== '-') $message .= "Bidang: {$bidang}\n";
+        if ($posyandu !== '-') $message .= "Posyandu: {$posyandu}\n";
+        $message .= "━━━━━━━━━━━━━━━━━━\n\n";
+        $message .= "Silakan login di: " . route('login') . "\n";
+        $message .= "Jika lupa password, silakan hubungi admin.";
+
+        $phone = preg_replace('/[^0-9]/', '', $user->no_telepon);
+        if (substr($phone, 0, 1) === '0') {
+            $phone = '62' . substr($phone, 1);
+        }
+
+        return 'https://wa.me/' . $phone . '?text=' . urlencode($message);
     }
 
     public function render()
@@ -67,21 +105,29 @@ class UserIndex extends Component
         if (in_array($currentUser->role, ['kader', 'ketua-kader'])) {
             $query->where('posyandu_id', $currentUser->posyandu_id);
         } elseif ($currentUser->role === 'operator-desa') {
-            if ($currentUser->kecamatan) {
-                $kecamatanName = explode('_', $currentUser->kecamatan)[1] ?? $currentUser->kecamatan;
-                $query->where('kecamatan', 'LIKE', "%{$kecamatanName}%");
+            if ($currentUser->desa) {
+                // Get all posyandu IDs di desa ini
+                $posyanduIds = \App\Models\Posyandu::where('desa', $currentUser->desa)
+                    ->pluck('id')
+                    ->toArray();
+
+                // Filter users yang ada di posyandu-posyandu tersebut
+                $query->whereIn('posyandu_id', $posyanduIds);
             }
         }
 
+        // Search filter
         if ($this->search) {
             $searchTerm = $this->search;
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('name', 'like', '%' . $searchTerm . '%')
                     ->orWhere('email', 'like', '%' . $searchTerm . '%')
-                    ->orWhere('nik', 'like', '%' . $searchTerm . '%');
+                    ->orWhere('nik', 'like', '%' . $searchTerm . '%')
+                    ->orWhere('no_telepon', 'like', '%' . $searchTerm . '%');
             });
         }
 
+        // Role filter
         if ($this->role && $this->role !== '') {
             $query->where('role', $this->role);
         }

@@ -1,206 +1,310 @@
 @extends('dashboard.layouts.dashboard')
-@section('title', 'Kelola Status Pengguna')
+@section('title', 'Edit Pengguna')
 @section('content')
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Kelola Status Pengguna: ') }} {{ $user->name }}
-        </h2>
-    </x-slot>
-
-
     <div class="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-800">
+                <i class="bi bi-person-fill-gear mr-2 text-pink-600"></i>
+                Edit Pengguna: {{ $user->name }}
+            </h2>
             <a href="{{ route('admin.users.index') }}" class="flex items-center text-gray-600 hover:text-gray-900">
-                <i class="bi bi-arrow-left mr-2"></i> Kembali ke Daftar
+                <i class="bi bi-arrow-left mr-2"></i> Kembali
             </a>
         </div>
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-            <div class="p-6 sm:p-8 text-gray-900">
-                <div class="bg-gradient-to-r from-pink-50 to-purple-50 rounded-lg p-6 mb-6 border border-pink-200">
-                    <div class="flex items-start gap-4">
-                        <div class="flex-shrink-0">
-                            <div
-                                class="w-16 h-16 bg-pink-500 rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                                {{ strtoupper(substr($user->name, 0, 1)) }}
-                            </div>
-                        </div>
-                        <div class="flex-1">
-                            <h3 class="text-xl font-bold text-gray-800 mb-2">{{ $user->name }}</h3>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                                <div class="flex items-center gap-2">
-                                    <i class="bi bi-person-badge text-pink-600"></i>
-                                    <span class="text-gray-600">NIK:</span>
-                                    <span class="font-medium text-gray-800">{{ $user->nik }}</span>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <i class="bi bi-envelope text-pink-600"></i>
-                                    <span class="text-gray-600">Email:</span>
-                                    <span class="font-medium text-gray-800">{{ $user->email }}</span>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <i class="bi bi-telephone text-pink-600"></i>
-                                    <span class="text-gray-600">No. HP:</span>
-                                    <span class="font-medium text-gray-800">{{ $user->no_telepon }}</span>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <i class="bi bi-briefcase text-pink-600"></i>
-                                    <span class="text-gray-600">Role:</span>
-                                    <span class="font-medium text-gray-800">{{ ucfirst($user->role) }}</span>
-                                </div>
-                                @if ($user->posyandu)
-                                    <div class="flex items-center gap-2 sm:col-span-2">
-                                        <i class="bi bi-hospital text-pink-600"></i>
-                                        <span class="text-gray-600">Posyandu:</span>
-                                        <span class="font-medium text-gray-800">{{ $user->posyandu->nama_posyandu }}</span>
-                                    </div>
-                                @endif
-                                @if ($user->role === 'kader' && $user->bidang)
-                                    <div class="flex items-center gap-2 sm:col-span-2">
-                                        <i class="bi bi-folder text-pink-600"></i>
-                                        <span class="text-gray-600">Bidang:</span>
-                                        <span class="font-medium text-gray-800">{{ $user->bidang->nama_bidang }}</span>
-                                    </div>
-                                @endif
-                            </div>
-                        </div>
+
+        @if (auth()->user()->id === $user->id)
+            <div class="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded">
+                <div class="flex">
+                    <i class="bi bi-exclamation-triangle-fill text-yellow-400 mr-3"></i>
+                    <div>
+                        <p class="text-sm text-yellow-700">
+                            <strong>Perhatian:</strong> Anda sedang mengedit akun Anda sendiri.
+                            Untuk keamanan, role dan beberapa field sensitif tidak dapat diubah.
+                        </p>
                     </div>
                 </div>
+            </div>
+        @endif
 
-                @if (auth()->user()->id === $user->id)
-                    <div class="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded">
-                        <div class="flex">
-                            <div class="flex-shrink-0">
-                                <i class="bi bi-exclamation-triangle-fill text-yellow-400"></i>
+        <form method="POST" action="{{ route('admin.users.update', $user) }}" x-data="userEditForm()" class="space-y-6">
+            @csrf
+            @method('PUT')
+
+            {{-- ✅ SECTION 1: Informasi Dasar --}}
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                    <i class="bi bi-person-circle text-pink-600"></i>
+                    Informasi Dasar
+                </h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {{-- Name --}}
+                    <div>
+                        <x-input-label for="name" :value="__('Nama Lengkap')" />
+                        <x-text-input id="name" name="name" type="text" class="mt-1 block w-full"
+                            :value="old('name', $user->name)" required />
+                        <x-input-error :messages="$errors->get('name')" class="mt-2" />
+                    </div>
+
+                    {{-- NIK --}}
+                    <div>
+                        <x-input-label for="nik" :value="__('NIK')" />
+                        <x-text-input id="nik" name="nik" type="text" class="mt-1 block w-full"
+                            :value="old('nik', $user->nik)" maxlength="16" />
+                        <x-input-error :messages="$errors->get('nik')" class="mt-2" />
+                    </div>
+
+                    {{-- Email --}}
+                    <div>
+                        <x-input-label for="email" :value="__('Email')" />
+                        <x-text-input id="email" name="email" type="email" class="mt-1 block w-full"
+                            :value="old('email', $user->email)" />
+                        <x-input-error :messages="$errors->get('email')" class="mt-2" />
+                    </div>
+
+                    {{-- No Telepon --}}
+                    <div>
+                        <x-input-label for="no_telepon" :value="__('No. Telepon')" />
+                        <x-text-input id="no_telepon" name="no_telepon" type="text" class="mt-1 block w-full"
+                            :value="old('no_telepon', $user->no_telepon)" />
+                        <x-input-error :messages="$errors->get('no_telepon')" class="mt-2" />
+                    </div>
+
+                    {{-- Tempat Lahir --}}
+                    <div>
+                        <x-input-label for="tempat_lahir" :value="__('Tempat Lahir')" />
+                        <x-text-input id="tempat_lahir" name="tempat_lahir" type="text" class="mt-1 block w-full"
+                            :value="old('tempat_lahir', $user->tempat_lahir)" />
+                        <x-input-error :messages="$errors->get('tempat_lahir')" class="mt-2" />
+                    </div>
+
+                    {{-- Tanggal Lahir --}}
+                    <div>
+                        <x-input-label for="tanggal_lahir" :value="__('Tanggal Lahir')" />
+                        <x-text-input id="tanggal_lahir" name="tanggal_lahir" type="date" class="mt-1 block w-full"
+                            :value="old(
+                                'tanggal_lahir',
+                                $user->tanggal_lahir
+                                    ? \Carbon\Carbon::parse($user->tanggal_lahir)->format('Y-m-d')
+                                    : '',
+                            )" />
+                        <x-input-error :messages="$errors->get('tanggal_lahir')" class="mt-2" />
+                    </div>
+
+                    {{-- Jenis Kelamin --}}
+                    <div>
+                        <x-input-label for="jenis_kelamin" :value="__('Jenis Kelamin')" />
+                        <select id="jenis_kelamin" name="jenis_kelamin"
+                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-pink-500 focus:ring-pink-500">
+                            <option value="">Pilih Jenis Kelamin</option>
+                            <option value="Laki-laki"
+                                {{ old('jenis_kelamin', $user->jenis_kelamin) === 'Laki-laki' ? 'selected' : '' }}>
+                                Laki-laki
+                            </option>
+                            <option value="Perempuan"
+                                {{ old('jenis_kelamin', $user->jenis_kelamin) === 'Perempuan' ? 'selected' : '' }}>
+                                Perempuan
+                            </option>
+                        </select>
+                        <x-input-error :messages="$errors->get('jenis_kelamin')" class="mt-2" />
+                    </div>
+
+                    {{-- Alamat --}}
+                    <div class="md:col-span-2">
+                        <x-input-label for="alamat" :value="__('Alamat Lengkap')" />
+                        <textarea id="alamat" name="alamat" rows="3"
+                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-pink-500 focus:ring-pink-500">{{ old('alamat', $user->alamat) }}</textarea>
+                        <x-input-error :messages="$errors->get('alamat')" class="mt-2" />
+                    </div>
+                </div>
+            </div>
+
+            {{-- ✅ SECTION 2: Role & Wilayah --}}
+            {{-- <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                    <i class="bi bi-shield-check text-pink-600"></i>
+                    Role & Wilayah Kerja
+                </h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <x-input-label for="role" :value="__('Role')" />
+                        <select id="role" name="role" x-model="selectedRole" @change="handleRoleChange()"
+                            {{ auth()->user()->id === $user->id ? 'disabled' : '' }}
+                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-pink-500 focus:ring-pink-500">
+                            <option value="masyarakat" {{ $user->role === 'masyarakat' ? 'selected' : '' }}>Masyarakat
+                            </option>
+                            <option value="kader" {{ $user->role === 'kader' ? 'selected' : '' }}>Kader</option>
+                            <option value="ketua-kader" {{ $user->role === 'ketua-kader' ? 'selected' : '' }}>Ketua Kader
+                            </option>
+                            <option value="operator-desa" {{ $user->role === 'operator-desa' ? 'selected' : '' }}>Operator
+                                Desa</option>
+                            <option value="kades" {{ $user->role === 'kades' ? 'selected' : '' }}>Kepala Desa</option>
+                            <option value="admin-kecamatan" {{ $user->role === 'admin-kecamatan' ? 'selected' : '' }}>Admin
+                                Kecamatan</option>
+                            <option value="kabid" {{ $user->role === 'kabid' ? 'selected' : '' }}>Kabid</option>
+                            <option value="admin-kabupaten" {{ $user->role === 'admin-kabupaten' ? 'selected' : '' }}>Admin
+                                Kabupaten</option>
+                            @if (auth()->user()->role === 'admin')
+                                <option value="admin" {{ $user->role === 'admin' ? 'selected' : '' }}>Admin</option>
+                            @endif
+                        </select>
+                        @if (auth()->user()->id === $user->id)
+                            <input type="hidden" name="role" value="{{ $user->role }}">
+                            <p class="text-xs text-gray-500 mt-1">Role tidak dapat diubah untuk akun sendiri</p>
+                        @endif
+                        <x-input-error :messages="$errors->get('role')" class="mt-2" />
+                    </div>
+
+                    <div x-show="['kader', 'ketua-kader', 'masyarakat', 'ketua-posyandu'].includes(selectedRole)">
+                        <x-input-label for="posyandu_id" :value="__('Posyandu')" />
+                        <select id="posyandu_id" name="posyandu_id"
+                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-pink-500 focus:ring-pink-500">
+                            <option value="">Tidak Ada Posyandu</option>
+                            @foreach (\App\Models\Posyandu::all() as $posyandu)
+                                <option value="{{ $posyandu->id }}"
+                                    {{ old('posyandu_id', $user->posyandu_id) == $posyandu->id ? 'selected' : '' }}>
+                                    {{ $posyandu->nama_posyandu }} - {{ $posyandu->desa }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <x-input-error :messages="$errors->get('posyandu_id')" class="mt-2" />
+                    </div>
+
+                    <div x-show="selectedRole === 'kader'">
+                        <x-input-label for="bidang_id" :value="__('Bidang')" />
+                        <select id="bidang_id" name="bidang_id"
+                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-pink-500 focus:ring-pink-500">
+                            <option value="">Pilih Bidang</option>
+                            @foreach (\App\Models\BidangPengajuan::all() as $bidang)
+                                <option value="{{ $bidang->id }}"
+                                    {{ old('bidang_id', $user->bidang_id) == $bidang->id ? 'selected' : '' }}>
+                                    {{ $bidang->nama_bidang }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <x-input-error :messages="$errors->get('bidang_id')" class="mt-2" />
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <x-input-label for="kabupaten" :value="__('Kabupaten')" />
+                                <x-text-input id="kabupaten" name="kabupaten" type="text" class="mt-1 block w-full"
+                                    :value="old('kabupaten', $user->kabupaten)" />
                             </div>
-                            <div class="ml-3">
-                                <p class="text-sm text-yellow-700">
-                                    <strong class="font-semibold">Perhatian:</strong>
-                                    Anda tidak dapat mengubah status akun Anda sendiri.
-                                    @if (auth()->user()->role !== 'admin')
-                                        Silakan hubungi administrator lain untuk mengelola status akun Anda.
-                                    @endif
-                                </p>
+                            <div>
+                                <x-input-label for="kecamatan" :value="__('Kecamatan')" />
+                                <x-text-input id="kecamatan" name="kecamatan" type="text" class="mt-1 block w-full"
+                                    :value="old('kecamatan', $user->kecamatan)" />
+                            </div>
+                            <div>
+                                <x-input-label for="desa" :value="__('Desa')" />
+                                <x-text-input id="desa" name="desa" type="text" class="mt-1 block w-full"
+                                    :value="old('desa', $user->desa)" />
                             </div>
                         </div>
                     </div>
-                @else
-                    <form method="POST" action="{{ route('admin.users.update', $user) }}">
-                        @csrf
-                        @method('PATCH')
 
-                        <div class="bg-white border border-gray-200 rounded-lg p-6">
-                            <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                                <i class="bi bi-toggle-on text-pink-600"></i>
-                                Kelola Status Akun
-                            </h2>
-                            <div class="mb-6 p-4 bg-gray-50 rounded-lg">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <p class="text-sm text-gray-600 mb-1">Status Saat Ini:</p>
-                                        @if ($user->is_active)
-                                            <span
-                                                class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800">
-                                                <i class="bi bi-check-circle-fill mr-2"></i>
-                                                Aktif
-                                            </span>
-                                        @else
-                                            <span
-                                                class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-800">
-                                                <i class="bi bi-x-circle-fill mr-2"></i>
-                                                Nonaktif
-                                            </span>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mb-6">
-                                <label
-                                    class="flex items-center justify-between p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors duration-150">
-                                    <div class="flex items-center gap-3">
-                                        <div class="flex-shrink-0">
-                                            <i class="bi bi-person-check text-2xl text-pink-600"></i>
-                                        </div>
-                                        <div>
-                                            <span class="block text-base font-semibold text-gray-800">Status Akun
-                                                Aktif</span>
-                                            <span class="block text-sm text-gray-600">
-                                                {{ $user->is_active ? 'User dapat login dan mengakses sistem' : 'User tidak dapat login ke sistem' }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div class="flex-shrink-0">
-                                        <input type="checkbox" name="is_active" id="is_active" value="1"
-                                            {{ old('is_active', $user->is_active) ? 'checked' : '' }}
-                                            class="w-6 h-6 text-pink-600 bg-gray-100 border-gray-300 rounded focus:ring-pink-500 focus:ring-2">
-                                    </div>
-                                </label>
-                                <x-input-error :messages="$errors->get('is_active')" class="mt-2" />
-                            </div>
+                    <div>
+                        <x-input-label for="rw" :value="__('RW')" />
+                        <x-text-input id="rw" name="rw" type="text" class="mt-1 block w-full"
+                            :value="old('rw', $user->rw)" maxlength="10" placeholder="Contoh: 001" />
+                    </div>
+                    <div>
+                        <x-input-label for="rt" :value="__('RT')" />
+                        <x-text-input id="rt" name="rt" type="text" class="mt-1 block w-full"
+                            :value="old('rt', $user->rt)" maxlength="10" placeholder="Contoh: 003" />
+                    </div>
+                </div>
+            </div> --}}
 
-                            <div class="mt-4" x-data="{ isActive: {{ $user->is_active ? 'true' : 'false' }} }">
-                                <script>
-                                    document.getElementById('is_active').addEventListener('change', function() {
-                                        const reasonInput = document.getElementById('reason_container');
-                                        if (this.checked) {
-                                            reasonInput.style.display = 'none';
-                                        } else {
-                                            reasonInput.style.display = 'block';
-                                        }
-                                    });
-                                </script>
+            {{-- ✅ SECTION 3: Status & Password (Optional) --}}
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                    <i class="bi bi-key text-pink-600"></i>
+                    Keamanan & Status
+                </h3>
 
-                                <div id="reason_container" style="display: {{ $user->is_active ? 'none' : 'block' }};">
-                                    <x-input-label for="reason" :value="__('Alasan Penonaktifan')" />
-                                    <textarea id="reason" name="reason" rows="2" required
-                                        class="block mt-1 w-full border-gray-300 rounded-md shadow-sm focus:border-pink-500 focus:ring-pink-500"
-                                        placeholder="Contoh: User sudah pindah domisili, atau mengundurkan diri.">{{ old('reason', $user->deactivation_reason) }}</textarea>
-                                    <x-input-error :messages="$errors->get('reason')" class="mt-2" />
-                                </div>
-                            </div>
-                            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
-                                <div class="flex">
-                                    <div class="flex-shrink-0">
-                                        <i class="bi bi-exclamation-triangle-fill text-yellow-400"></i>
-                                    </div>
-                                    <div class="ml-3">
-                                        <p class="text-sm text-yellow-700">
-                                            <strong class="font-semibold">Perhatian:</strong>
-                                            Menonaktifkan user akan mencegah mereka login ke sistem.
-                                            User yang dinonaktifkan tidak akan kehilangan data mereka.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
+                <div class="space-y-4">
+                    {{-- Status Aktif --}}
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
+                        <div>
+                            <p class="font-medium text-gray-800">Status Akun</p>
+                            <p class="text-sm text-gray-600">
+                                {{ $user->is_active ? 'User dapat login' : 'User tidak dapat login' }}
+                            </p>
                         </div>
-                        <div class="flex flex-col sm:flex-row items-center justify-between mt-6 gap-3">
-                            <a href="{{ route('admin.users.index') }}"
-                                class="w-full sm:w-auto inline-flex items-center justify-center px-6 py-2.5 bg-gray-200 text-gray-800 rounded-md text-sm font-semibold hover:bg-gray-300 transition-colors duration-150">
-                                <i class="bi bi-arrow-left mr-2"></i>
-                                Kembali
-                            </a>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="is_active" value="1"
+                                {{ old('is_active', $user->is_active) ? 'checked' : '' }} class="sr-only peer">
+                            <div
+                                class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-pink-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-600">
+                            </div>
+                        </label>
+                    </div>
 
-                            <button type="submit"
-                                class="w-full sm:w-auto inline-flex items-center justify-center px-6 py-2.5 bg-pink-600 text-white rounded-md text-sm font-semibold hover:bg-pink-700 transition-colors duration-150 shadow-sm">
-                                <i class="bi bi-save mr-2"></i>
-                                Simpan Perubahan
-                            </button>
+                    {{-- ✅ OPTIONAL: Change Password --}}
+                    <div class="border-t pt-4">
+                        <div class="flex items-center gap-2 mb-3">
+                            <input type="checkbox" id="change_password"
+                                @change="showPasswordFields = !showPasswordFields"
+                                class="w-4 h-4 text-pink-600 bg-gray-100 border-gray-300 rounded focus:ring-pink-500">
+                            <label for="change_password" class="text-sm font-medium text-gray-700">
+                                Ubah Password
+                            </label>
                         </div>
-                    </form>
-                @endif
-                <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <div class="flex items-start">
-                        <i class="bi bi-info-circle-fill text-blue-500 mr-3 mt-0.5"></i>
-                        <div class="text-sm text-blue-700">
-                            <p class="font-semibold mb-1">Info Tambahan:</p>
-                            <ul class="list-disc list-inside space-y-1 ml-2">
-                                <li>User yang dinonaktifkan tidak dapat login ke sistem</li>
-                                <li>Data user tetap tersimpan dan dapat diaktifkan kembali</li>
-                                <li>Untuk mengubah data user lainnya, hubungi administrator</li>
-                            </ul>
+
+                        <div x-show="showPasswordFields" x-transition class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <x-input-label for="password" :value="__('Password Baru')" />
+                                <x-text-input id="password" name="password" type="password" class="mt-1 block w-full"
+                                    autocomplete="new-password" />
+                                <x-input-error :messages="$errors->get('password')" class="mt-2" />
+                                <p class="text-xs text-gray-500 mt-1">Minimal 8 karakter</p>
+                            </div>
+                            <div>
+                                <x-input-label for="password_confirmation" :value="__('Konfirmasi Password')" />
+                                <x-text-input id="password_confirmation" name="password_confirmation" type="password"
+                                    class="mt-1 block w-full" autocomplete="new-password" />
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+
+            {{-- Submit Buttons --}}
+            <div class="flex flex-col sm:flex-row justify-between items-center gap-3">
+                <a href="{{ route('admin.users.index') }}"
+                    class="w-full sm:w-auto px-6 py-2.5 bg-gray-200 text-gray-800 rounded-md text-sm font-semibold hover:bg-gray-300 transition text-center">
+                    <i class="bi bi-x-circle mr-2"></i>
+                    Batal
+                </a>
+
+                <button type="submit"
+                    class="w-full sm:w-auto px-6 py-2.5 bg-pink-600 text-white rounded-md text-sm font-semibold hover:bg-pink-700 transition shadow-sm">
+                    <i class="bi bi-save mr-2"></i>
+                    Simpan Perubahan
+                </button>
+            </div>
+        </form>
     </div>
+
+    @push('scripts')
+        <script>
+            function userEditForm() {
+                return {
+                    selectedRole: '{{ $user->role }}',
+                    showPasswordFields: false,
+
+                    handleRoleChange() {
+                        // Clear posyandu if operator-desa
+                        if (this.selectedRole === 'operator-desa') {
+                            document.getElementById('posyandu_id').value = '';
+                        }
+                    }
+                }
+            }
+        </script>
+    @endpush
 @endsection

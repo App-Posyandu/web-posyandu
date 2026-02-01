@@ -49,6 +49,12 @@ class User extends Authenticatable
         'deactivation_reason',
     ];
 
+    protected $casts = [
+        'tanggal_lahir' => 'date',
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+    ];
+
     public function validatePosyanduRw()
     {
         if ($this->posyandu && $this->rw) {
