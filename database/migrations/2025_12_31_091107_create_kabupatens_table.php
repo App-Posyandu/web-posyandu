@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('kabupatens', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('nama_kabupaten');
-            $table->enum('jenis', ['kabupaten', 'kota']); // Untuk membedakan Kabupaten/Kota
+            $table->enum('jenis', ['kabupaten', 'kota']);
             $table->timestamps();
         });
     }

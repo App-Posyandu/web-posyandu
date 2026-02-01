@@ -18,12 +18,12 @@
 
                         <div class="flex-1">
                             <h3 class="text-xl font-bold text-green-800 mb-3">
-                                ✅ Posyandu & 6 Akun Kader Berhasil Dibuat!
+                                Posyandu & 6 Akun Kader Berhasil Dibuat!
                             </h3>
 
                             <div class="bg-white rounded-lg p-4 mb-4">
                                 <p class="text-sm text-gray-700 mb-3">
-                                    <strong>⚠️ PENTING:</strong> Salin dan simpan credentials di bawah ini.
+                                    <strong>PENTING:</strong> Salin dan simpan credentials di bawah ini.
                                     Informasi ini hanya ditampilkan sekali!
                                 </p>
 
@@ -37,13 +37,13 @@
                                                     </p>
                                                     <div class="mt-2 space-y-1 text-sm">
                                                         <div class="flex items-center gap-2">
-                                                            <span class="text-gray-600 w-32">📧 Email:</span>
+                                                            <span class="text-gray-600 w-32">Email:</span>
                                                             <code class="bg-white px-2 py-1 rounded border text-gray-800">
                                                                 {{ $kaderInfo['email'] }}
                                                             </code>
                                                         </div>
                                                         <div class="flex items-center gap-2">
-                                                            <span class="text-gray-600 w-32">🔑 Password:</span>
+                                                            <span class="text-gray-600 w-32">Password:</span>
                                                             <code
                                                                 class="bg-white px-2 py-1 rounded border text-red-600 font-bold">
                                                                 {{ $kaderInfo['password'] }}
@@ -55,7 +55,7 @@
                                                 {{-- Copy Button --}}
                                                 <button onclick="copyKaderCredentials({{ $index }})"
                                                     class="ml-4 px-3 py-2 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition">
-                                                    📋 Copy
+                                                    Copy
                                                 </button>
                                             </div>
                                         </div>
@@ -65,7 +65,7 @@
 
                             <div class="bg-amber-50 border border-amber-300 rounded-lg p-4">
                                 <p class="text-sm text-amber-800">
-                                    <strong>📌 Catatan:</strong>
+                                    <strong>Catatan:</strong>
                                 </p>
                                 <ul class="list-disc list-inside text-sm text-amber-700 mt-2 space-y-1">
                                     <li>Semua kader sudah <strong>terverifikasi</strong> dan <strong>aktif</strong></li>
@@ -109,7 +109,6 @@
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold text-gray-800">List Posyandu</h2>
 
-                    {{-- ✅ Hanya tampilkan tombol tambah untuk role tertentu --}}
                     @if (in_array(auth()->user()->role, ['admin', 'admin-kecamatan', 'admin-kabupaten', 'operator-desa']))
                         <a href="{{ route('admin.posyandu.create') }}"
                             class="px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600">
@@ -125,13 +124,12 @@
 
                 @include('components.all-notifications')
 
-                {{-- ✅ Info untuk Operator Desa --}}
                 @if (auth()->user()->role === 'operator-desa')
                     <div class="mb-6 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
                         <div class="flex items-start">
                             <i class="bi bi-info-circle-fill text-blue-500 mr-3 mt-0.5"></i>
                             <div class="text-sm text-blue-700">
-                                <p class="font-semibold mb-1">ℹ️ Informasi untuk Operator Desa</p>
+                                <p class="font-semibold mb-1">Informasi untuk Operator Desa</p>
                                 <ul class="list-disc list-inside space-y-1 ml-2">
                                     <li>Anda hanya dapat melihat dan mengelola <strong>1 posyandu</strong> yang ditugaskan
                                         kepada Anda</li>
@@ -340,7 +338,6 @@
     @push('scripts')
         <script>
             function showDetailPosyandu(nama, desa, rwList, rtMapping) {
-                // Generate HTML untuk list RW dan RT
                 let contentHtml = `<div class="text-left mt-4">
         <p class="text-sm text-gray-600 mb-4 italic text-center">Wilayah pelayanan di Desa <strong>${desa}</strong></p>
         <div class="grid grid-cols-1 gap-3" style="max-height: 400px; overflow-y: auto; padding: 5px;">`;
@@ -366,13 +363,12 @@
 
                 contentHtml += `</div></div>`;
 
-                // Tampilkan SweetAlert
                 Swal.fire({
                     title: `<span class="text-xl font-bold text-gray-800">Detail: ${nama}</span>`,
                     html: contentHtml,
                     width: '600px',
                     confirmButtonText: 'Tutup',
-                    confirmButtonColor: '#ec4899', // Warna pink sesuai tema Anda
+                    confirmButtonColor: '#ec4899',
                     customClass: {
                         popup: 'rounded-2xl shadow-xl',
                         title: 'border-b pb-4'
@@ -382,12 +378,11 @@
             }
         </script>
         <script>
-            // Download as TXT
             function downloadKaderCredentials() {
                 const kaders = @json(session('created_kaders'));
 
                 if (!kaders || kaders.length === 0) {
-                    alert('❌ Data credentials tidak tersedia');
+                    alert('Data credentials tidak tersedia');
                     return;
                 }
 
@@ -405,7 +400,7 @@
                 });
 
                 content += '\n';
-                content += '⚠️ PENTING:\n';
+                content += 'PENTING:\n';
                 content += '- Simpan file ini dengan aman!\n';
                 content += '- Password default: password123\n';
                 content += '- Kader dapat login menggunakan email atau nomor telepon\n';

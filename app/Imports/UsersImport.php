@@ -16,16 +16,12 @@ class UsersImport implements ToModel, WithHeadingRow
     protected $importingUser;
     protected $allowedPosyanduIds;
 
-    /**
-     * Constructor untuk menerima role yang akan dibuat dan user yang melakukan import
-     */
     public function __construct($roleToCreate = null, $importingUser = null)
     {
         $this->importingUser = $importingUser ?? Auth::user();
         $this->roleToCreate = $roleToCreate;
         $this->allowedPosyanduIds = [];
 
-        // Tentukan posyandu yang diizinkan berdasarkan role
         if ($this->importingUser) {
             $this->setAllowedPosyandus();
             $this->validateRoleTarget();
@@ -38,9 +34,6 @@ class UsersImport implements ToModel, WithHeadingRow
         ]);
     }
 
-    /**
-     * Validasi role target sesuai role user yang melakukan import
-     */
     private function validateRoleTarget(): void
     {
         $allowedRoles = $this->getAllowedRoleTargets($this->importingUser->role);
@@ -56,9 +49,6 @@ class UsersImport implements ToModel, WithHeadingRow
         }
     }
 
-    /**
-     * Role target yang boleh dibuat berdasarkan role user
-     */
     private function getAllowedRoleTargets(string $role): array
     {
         $roleMap = [
@@ -73,28 +63,22 @@ class UsersImport implements ToModel, WithHeadingRow
         return $roleMap[$role] ?? [];
     }
 
-    /**
-     * Tentukan posyandu mana saja yang diizinkan berdasarkan role user yang melakukan import
-     */
     private function setAllowedPosyandus()
     {
         $currentUserRole = $this->importingUser->role;
 
         switch ($currentUserRole) {
             case 'kader':
-                // Kader hanya bisa import ke posyandu yang dia pegang
                 $this->allowedPosyanduIds = [$this->importingUser->posyandu_id];
                 $this->roleToCreate = $this->roleToCreate ?? 'masyarakat';
                 break;
 
             case 'ketua-kader':
-                // Ketua-kader hanya bisa import ke posyandu yang dia pegang
                 $this->allowedPosyanduIds = [$this->importingUser->posyandu_id];
                 $this->roleToCreate = $this->roleToCreate ?? 'kader';
                 break;
 
             case 'operator-desa':
-                // Operator-desa bisa import ke semua posyandu di desa yang sama
                 $desa = $this->importingUser->posyandu->desa;
                 $kecamatan = $this->importingUser->posyandu->kecamatan;
                 $this->allowedPosyanduIds = Posyandu::where('desa', $desa)
@@ -105,7 +89,6 @@ class UsersImport implements ToModel, WithHeadingRow
                 break;
 
             case 'admin-kecamatan':
-                // Admin-kecamatan bisa import ke semua posyandu di kecamatan
                 $this->allowedPosyanduIds = Posyandu::where('kecamatan_id', $this->importingUser->kecamatan_id)
                     ->pluck('id')
                     ->toArray();
@@ -113,7 +96,6 @@ class UsersImport implements ToModel, WithHeadingRow
                 break;
 
             case 'kabid':
-                // Kabid bisa import ke semua posyandu di kabupaten
                 $this->allowedPosyanduIds = Posyandu::where('kabupaten_id', $this->importingUser->kabupaten_id)
                     ->pluck('id')
                     ->toArray();
@@ -121,7 +103,6 @@ class UsersImport implements ToModel, WithHeadingRow
                 break;
 
             case 'admin-kabupaten':
-                // Admin-kabupaten bisa import ke semua posyandu di kabupaten
                 $this->allowedPosyanduIds = Posyandu::where('kabupaten_id', $this->importingUser->kabupaten_id)
                     ->pluck('id')
                     ->toArray();
@@ -129,7 +110,6 @@ class UsersImport implements ToModel, WithHeadingRow
                 break;
 
             case 'admin':
-                // Admin bisa import ke semua posyandu
                 $this->allowedPosyanduIds = Posyandu::pluck('id')->toArray();
                 $this->roleToCreate = $this->roleToCreate ?? 'ketua-kader';
                 break;
@@ -141,27 +121,23 @@ class UsersImport implements ToModel, WithHeadingRow
 
     public function headingRow(): int
     {
-        return 6; // Header di baris 6
+        return 6;
     }
 
     public function model(array $row)
     {
-        // Skip empty rows
         if (empty($row) || (count(array_filter($row, fn($v) => !empty($v))) === 0)) {
             return null;
         }
 
         Log::info('Excel Row Raw', ['row' => $row]);
 
-        // Handle berbagai variasi nama kolom (dengan spasi, underscore, atau titik)
         $nama = $row['nama'] ?? $row['NAMA'] ?? null;
         $nomorTelepon = $row['nomor_telepon'] ?? $row['nomor telepon'] ?? $row['NOMOR TELEPON'] ?? $row['NOMOR_TELEPON'] ?? null;
         $desa = $row['desa'] ?? $row['DESA'] ?? null;
         $kecamatan = $row['kecamatan'] ?? $row['KECAMATAN'] ?? null;
         $kabupaten = $row['kabupaten'] ?? $row['KABUPATEN'] ?? 'KEBUMEN';
 
-        // Trim dan normalize values
-        // Convert ke string jika numeric, jangan langsung null
         $nama = !empty($nama) ? trim((string)$nama) : null;
         $nomorTelepon = !empty($nomorTelepon) ? trim((string)$nomorTelepon) : null;
         $desa = !empty($desa) ? trim((string)$desa) : null;
@@ -176,7 +152,6 @@ class UsersImport implements ToModel, WithHeadingRow
             'kabupaten' => $kabupaten
         ]);
 
-        // Validasi: Nama dan Nomor Telepon wajib diisi
         if (empty($nama) || empty($nomorTelepon)) {
             Log::warning("Row dilewati karena NAMA atau NOMOR TELEPON kosong!", [
                 'nama' => $nama,
@@ -191,7 +166,6 @@ class UsersImport implements ToModel, WithHeadingRow
             return null;
         }
 
-        // Case-insensitive search dengan normalize
         $desaUpper = strtoupper($desa);
         $kecamatanUpper = strtoupper($kecamatan);
 
@@ -209,7 +183,6 @@ class UsersImport implements ToModel, WithHeadingRow
             return null;
         }
 
-        // Validasi: Posyandu harus berada dalam daftar posyandu yang diizinkan
         if (!in_array($posyandu->id, $this->allowedPosyanduIds)) {
             Log::warning("Row dilewati karena Posyandu tidak dalam scope akses user!", [
                 'posyandu_id' => $posyandu->id,
@@ -242,10 +215,10 @@ class UsersImport implements ToModel, WithHeadingRow
             'no_telepon' => $nomorTelepon,
             'posyandu_id' => $posyandu->id,
             'role' => $this->roleToCreate,
-            'password' => Hash::make('password123'), // Default password
+            'password' => Hash::make('password123'),
             'alamat' => $desaFormatted . ', ' . $kecamatanFormatted . ', ' . strtoupper($kabupaten),
-            'verified_at' => now(), // Auto-verify
-            'verified_by' => $this->importingUser->id // User yang melakukan import
+            'verified_at' => now(),
+            'verified_by' => $this->importingUser->id
         ];
 
         Log::info('User Data Ready', [

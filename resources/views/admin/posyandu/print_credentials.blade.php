@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Credentials Kader Auto-Generated</title>
     <style>
-        /* ========== RESET & BASE STYLING ========== */
         * {
             margin: 0;
             padding: 0;
@@ -38,7 +37,6 @@
             font-weight: bold;
         }
 
-        /* ========== HEADER ========== */
         header {
             background-color: #ffffff;
             border-bottom: 1px solid #e5e7eb;
@@ -104,7 +102,6 @@
             font-weight: 500;
         }
 
-        /* ========== MAIN (FLEX FILLER) ========== */
         main {
             flex: 1;
             display: flex;
@@ -121,7 +118,6 @@
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
         }
 
-        /* ========== INFO BOX ========== */
         .info-box {
             background: #fdf2f8;
             border-left: 4px solid #ec4899;
@@ -140,7 +136,7 @@
         }
 
         .info-box h3::before {
-            content: '🏥';
+            content: '';
             margin-right: 6px;
             font-size: 14px;
         }
@@ -161,7 +157,6 @@
             color: #1f2937;
         }
 
-        /* ========== TABLE ========== */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -220,7 +215,6 @@
             display: inline-block;
         }
 
-        /* ========== FOOTER WARNING ========== */
         .warning-box {
             background: #fef3c7;
             border-left: 4px solid #f59e0b;
@@ -239,7 +233,7 @@
         }
 
         .warning-box h4::before {
-            content: '⚠️';
+            content: '';
             margin-right: 6px;
             font-size: 14px;
         }
@@ -259,7 +253,6 @@
             font-weight: 700;
         }
 
-        /* ========== FOOTER ========== */
         footer {
             background-color: #ffffff;
             border-top: 1px solid #e5e7eb;
@@ -274,7 +267,6 @@
             color: #111827;
         }
 
-        /* ========== BADGES ========== */
         .badge {
             display: inline-block;
             padding: 3px 8px;
@@ -399,7 +391,7 @@
             <li>Ketua Kader <strong>wajib</strong> meminta setiap kader untuk mengganti password setelah login pertama kali</li>
             <li>Ketua Kader dapat <strong>melengkapi data</strong> kader (NIK, tanggal lahir, dll) melalui sistem</li>
             <li>Ketua Kader dapat <strong>reset password</strong> kader jika diperlukan melalui menu manajemen user</li>
-            <li><strong>⚠️ SIMPAN DOKUMEN INI DENGAN AMAN!</strong> Informasi credentials hanya ditampilkan sekali saat pembuatan posyandu</li>
+            <li><strong>SIMPAN DOKUMEN INI DENGAN AMAN!</strong> Informasi credentials hanya ditampilkan sekali saat pembuatan posyandu</li>
         </ul>
         </div>
     </main>

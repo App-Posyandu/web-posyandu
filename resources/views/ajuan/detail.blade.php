@@ -23,16 +23,13 @@
                             class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md text-sm font-semibold hover:bg-gray-300">Kembali</a>
 
                         @if (auth()->user()->role === 'masyarakat')
-                            {{-- Tombol Ubah muncul jika Ditolak ATAU ada permintaan revisi --}}
                             @if (
                                 $ajuan->status_pengajuan === 'Ditolak' ||
                                     ($ajuan->status_pengajuan === 'Diproses' && $ajuan->revision_requested_at))
 
-                                {{-- Cek apakah masih dalam masa revisi (5 hari kerja) --}}
                                 @php
                                     $requestedDate = \Carbon\Carbon::parse($ajuan->revision_requested_at);
 
-                                    // ✅ FIX: Pakai SystemSetting dari database, bukan config()
                                     $debugMode = \App\Models\SystemSetting::get('revision_debug_mode', false);
                                     $debugMinutes = \App\Models\SystemSetting::get('revision_debug_minutes', 5);
                                     $productionDays = \App\Models\SystemSetting::get('auto_reject_days', 5);
@@ -47,12 +44,10 @@
                                 @endphp
 
                                 @if ($ajuan->revision_requested_at && $isExpired)
-                                    {{-- Jika sudah expired, tampilkan peringatan --}}
                                     <div class="px-4 py-2 bg-red-100 text-red-800 rounded-md text-sm font-semibold">
                                         Masa Revisi Berakhir
                                     </div>
                                 @else
-                                    {{-- Tampilkan tombol Ubah jika belum expired --}}
                                     <a href="{{ route('ajuan.edit', $ajuan) }}"
                                         class="px-4 py-2 bg-yellow-500 text-white rounded-md text-sm font-semibold hover:bg-yellow-600">
                                         Ubah
@@ -69,7 +64,6 @@
                     </div>
                 </div>
 
-                {{-- Status Progress Bar --}}
                 <div class="mb-8">
                     <div class="flex items-center justify-between mb-4">
                         @php
@@ -106,12 +100,10 @@
                     </div>
                 </div>
 
-                {{-- Alert Permintaan Revisi --}}
                 @if (auth()->user()->role === 'masyarakat' && $ajuan->status_pengajuan === 'Diproses' && $ajuan->revision_requested_at)
                     @php
                         $requestedDate = \Carbon\Carbon::parse($ajuan->revision_requested_at);
 
-                        // ✅ FIX: Pakai SystemSetting dari database, bukan config()
                         $enableAutoReject = \App\Models\SystemSetting::get('enable_auto_reject', true);
                         $debugMode = \App\Models\SystemSetting::get('revision_debug_mode', false);
                         $debugMinutes = \App\Models\SystemSetting::get('revision_debug_minutes', 5);
@@ -126,8 +118,6 @@
                         $isExpired = now()->greaterThan($revisionDeadline);
                     @endphp
 
-                    {{-- ✅ FIX: Countdown SELALU tampil sampai habis, pesan dan behavior beda berdasarkan enableAutoReject --}}
-                    {{-- Countdown Realtime --}}
                     <div class="bg-orange-50 border-l-4 border-orange-500 p-4 mb-6" x-data="{
                         deadline: new Date('{{ $revisionDeadline->toIso8601String() }}').getTime(),
                         now: Date.now(),
@@ -159,7 +149,6 @@
                             this.rejecting = true;
 
                             if (this.enableAutoReject) {
-                                // ✅ Auto-reject AKTIF: redirect ke show() untuk trigger server-side reject
                                 Swal.fire({
                                     icon: 'error',
                                     title: 'Waktu Revisi Habis!',
@@ -174,9 +163,6 @@
                                 }).then(() => {
                                     window.location.href = '{{ route('ajuan.show', $ajuan) }}';
                                 });
-                            } else {
-                                // ✅ Auto-reject NONAKTIF: cuma info, gak diapa-apain
-                                // Countdown tetap jalan sampai habis, tapi tidak trigger reject
                             }
                         }
                     }"
@@ -192,11 +178,10 @@
                                 <i class="bi bi-clock-fill text-orange-500 text-lg"></i>
                             </div>
                             <div class="ml-3 flex-1">
-                                {{-- Debug Mode Indicator --}}
                                 @if ($debugMode && $debugMinutes)
                                     <div
                                         class="mb-2 bg-yellow-100 border border-yellow-300 rounded px-3 py-1 text-xs text-yellow-800">
-                                        🐛 <strong>DEBUG MODE:</strong> Deadline {{ $debugMinutes }} menit
+                                        <strong>DEBUG MODE:</strong> Deadline {{ $debugMinutes }} menit
                                     </div>
                                 @endif
 
@@ -204,7 +189,6 @@
                                     Revisi Diminta ({{ $ajuan->revision_count }}x)
                                 </p>
 
-                                {{-- ✅ Countdown Display - selalu tampil sampai habis --}}
                                 <div x-show="!expired">
                                     <p class="text-sm text-orange-700 mt-2">
                                         Sisa waktu untuk merevisi:
@@ -239,17 +223,16 @@
                                     </p>
                                 </div>
 
-                                {{-- ✅ Pesan setelah expired - berbeda based on enableAutoReject --}}
                                 <div x-show="expired && !rejecting">
                                     <template x-if="enableAutoReject">
                                         <div class="text-red-600 mt-2">
-                                            <p class="text-sm font-semibold">⚠️ Waktu revisi telah habis!</p>
+                                            <p class="text-sm font-semibold">Waktu revisi telah habis!</p>
                                             <p class="text-xs mt-1">Pengajuan akan otomatis ditolak...</p>
                                         </div>
                                     </template>
                                     <template x-if="!enableAutoReject">
                                         <div class="text-gray-600 mt-2 bg-gray-50 p-3 rounded border border-gray-200">
-                                            <p class="text-sm font-semibold">⏱️ Waktu revisi telah habis</p>
+                                            <p class="text-sm font-semibold">Waktu revisi telah habis</p>
                                             <p class="text-xs mt-1">Fitur auto-reject saat ini <strong>nonaktif</strong>,
                                                 pengajuan tidak akan ditolak secara otomatis.</p>
                                         </div>
@@ -258,27 +241,8 @@
                             </div>
                         </div>
                     </div>
-                    {{-- @elseif ($ajuan->revision_count > 0)
-                    <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-6">
-                        <div class="flex">
-                            <div class="flex-shrink-0">
-                                <i class="bi bi-info-circle-fill text-yellow-500 text-lg"></i>
-                            </div>
-                            <div class="ml-3">
-                                <p class="text-sm text-yellow-800">
-                                    Ini adalah revisi ke-<strong>{{ $ajuan->revision_count }}</strong> dari pengajuan
-                                    @if (auth()->user()->role === 'masyarakat')
-                                        Anda
-                                    @else
-                                        {{ $ajuan->user?->name ?? 'Pengguna Telah Dihapus' }}
-                                    @endif.
-                                </p>
-                            </div>
-                        </div>
-                    </div> --}}
                 @endif
 
-                {{-- Info Grid --}}
                 <div class="grid grid-cols-1 sm:grid-cols-4 gap-6 border-t border-b py-6">
                     <div>
                         <dt class="text-sm font-medium text-gray-500">Nama Pemohon</dt>
@@ -328,13 +292,11 @@
                     </div>
                 </div>
 
-                {{-- Deskripsi --}}
                 <div class="mt-6">
                     <h3 class="font-semibold mb-2">Deskripsi Permohonan</h3>
                     <p class="text-gray-700 bg-gray-50 p-4 rounded-md">{{ $ajuan->deskripsi_pengajuan }}</p>
                 </div>
 
-                {{-- Tindak Lanjut --}}
                 @if ($ajuan->tindak_lanjut)
                     <div class="mt-6">
                         <h3 class="font-semibold mb-2">Tindak Lanjut</h3>
@@ -343,7 +305,6 @@
                     </div>
                 @endif
 
-                {{-- Detail Permohonan & Dokumen --}}
                 <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div>
                         <h3 class="font-semibold mb-2">Detail Permohonan Dipilih</h3>
@@ -376,7 +337,6 @@
                     </div>
                 </div>
 
-                {{-- Foto Kunjungan --}}
                 @if ($ajuan->foto_kunjungan && count($ajuan->foto_kunjungan) > 0)
                     <div class="mt-6">
                         <h3 class="font-semibold mb-2">Foto Kunjungan Lapangan</h3>
@@ -396,7 +356,6 @@
                     </div>
                 @endif
 
-                {{-- Riwayat --}}
                 <div class="mt-8">
                     <h3 class="font-semibold mb-4">Riwayat Pengajuan</h3>
                     <div class="border-l-2 border-gray-200 pl-6">
@@ -427,12 +386,11 @@
             </div>
         </div>
 
-        {{-- Modal Preview Dokumen --}}
         <div x-show="showModal" x-cloak x-transition.opacity
             class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" @click.self="showModal = false">
             <div class="bg-white rounded-xl shadow-2xl w-11/12 md:w-3/4 h-[85vh] relative overflow-hidden flex flex-col">
                 <button @click="showModal=false"
-                    class="absolute top-3 right-3 text-gray-600 hover:text-black text-2xl font-bold z-20">✕</button>
+                    class="absolute top-3 right-3 text-gray-600 hover:text-black text-2xl font-bold z-20">X</button>
                 <h2 class="text-lg font-semibold text-center py-3 border-b" x-text="fileTitle"></h2>
                 <div class="flex-1 flex items-center justify-center bg-gray-100 relative">
                     <div x-show="isLoadingModal"
@@ -448,7 +406,6 @@
             </div>
         </div>
 
-        {{-- KADER: Verifikasi Step 1-2 --}}
         @if (auth()->user()->role === 'kader' && $ajuan->status_pengajuan === 'Diproses')
             <div class="w-full mx-8">
                 <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-4 md:p-8 mx-0 md:mx-8"
@@ -468,7 +425,6 @@
 
                     <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Proses Verifikasi Pengajuan</h2>
 
-                    {{-- STEP 1: Verifikasi Dokumen --}}
                     <div
                         class="mb-4 border rounded-lg overflow-hidden {{ $ajuan->sudah_verifikasi ? 'bg-green-50 border-green-300' : 'bg-white border-gray-300' }}">
                         <button @click="toggleStep(1)" type="button"
@@ -626,7 +582,6 @@
                         </div>
                     </div>
 
-                    {{-- STEP 2: Kunjungan Lapangan --}}
                     <div
                         class="mb-4 border rounded-lg overflow-hidden {{ $ajuan->kunjungan_lapangan ? 'bg-green-50 border-green-300' : ($ajuan->sudah_verifikasi ? 'bg-white border-gray-300' : 'bg-gray-100 border-gray-200') }}">
                         <button @click="toggleStep(2)" type="button" {{ !$ajuan->sudah_verifikasi ? 'disabled' : '' }}
@@ -720,7 +675,6 @@
                         @endif
                     </div>
 
-                    {{-- Info: Menunggu Ketua Posyandu --}}
                     @if ($ajuan->kunjungan_lapangan && !$ajuan->approved_by_ketua)
                         <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4">
                             <p class="text-sm text-yellow-800">
@@ -732,7 +686,6 @@
             </div>
         @endif
 
-        {{-- KETUA POSYANDU: Approval Step 3 --}}
         @if (auth()->user()->role === 'ketua-posyandu' && $ajuan->kunjungan_lapangan && !$ajuan->approved_by_ketua)
             <div class="w-full mx-8">
                 <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-4 md:p-8 mx-0 md:mx-8">
@@ -776,7 +729,6 @@
             </div>
         @endif
 
-        {{-- KETUA POSYANDU: Submit ke Pemdes --}}
         @if (auth()->user()->role === 'ketua-posyandu' && $ajuan->status_pengajuan === 'Sesuai')
             <div class="w-full mx-8">
                 <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-4 md:p-8 mx-0 md:mx-8">
@@ -805,7 +757,6 @@
             </div>
         @endif
 
-        {{-- KADES: Approval Final --}}
         @if (auth()->user()->role === 'kades' && $ajuan->status_pengajuan === 'Diajukan ke Desa')
             <div class="w-full mx-8">
                 <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-4 md:p-8 mx-0 md:mx-8">
@@ -863,8 +814,6 @@
     @push('scripts')
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-
-                // ===== STEP 1: Verifikasi Dokumen =====
                 const formVerifikasi = document.getElementById('form-ajuan-verify');
                 const btnSubmitVerifikasi = document.getElementById('submit-verifikasi');
 
@@ -875,7 +824,6 @@
                         const keputusan = document.getElementById('keputusan_step1').value;
                         const catatan = document.getElementById('catatan_step1').value;
 
-                        // Validasi keputusan harus dipilih
                         if (!keputusan) {
                             Swal.fire({
                                 icon: 'warning',
@@ -886,7 +834,6 @@
                             return;
                         }
 
-                        // Validasi catatan untuk revisi dan tolak
                         if ((keputusan === 'revisi' || keputusan === 'tidak-ditindaklanjuti' || keputusan ===
                                 'tidak-diajukan') && !catatan.trim()) {
                             Swal.fire({
@@ -899,7 +846,6 @@
                             });
                             return;
                         }
-                        // Tentukan pesan konfirmasi berdasarkan keputusan
                         let title, text, icon, confirmButtonText;
 
                         if (keputusan === 'lanjut') {
@@ -931,7 +877,6 @@
                             reverseButtons: true
                         }).then((result) => {
                             if (result.isConfirmed) {
-                                // Tampilkan loading
                                 Swal.fire({
                                     title: 'Memproses...',
                                     text: 'Mohon tunggu sebentar',
@@ -942,14 +887,12 @@
                                     }
                                 });
 
-                                // Submit form
                                 formVerifikasi.submit();
                             }
                         });
                     });
                 }
 
-                // ===== STEP 2: Kunjungan Lapangan =====
                 const formKunjungan = document.getElementById('form-kunjunganlapangan');
                 const btnKunjungan = document.getElementById('confirm-kunjunganlapangan');
 
@@ -960,7 +903,6 @@
                         const catatanKunjungan = formKunjungan.querySelector(
                             'textarea[name="catatan_kunjungan"]');
 
-                        // Validasi catatan kunjungan (required)
                         if (!catatanKunjungan.value.trim()) {
                             Swal.fire({
                                 icon: 'warning',
@@ -989,7 +931,6 @@
                             reverseButtons: true
                         }).then((result) => {
                             if (result.isConfirmed) {
-                                // Tampilkan loading
                                 Swal.fire({
                                     title: 'Menyimpan Data...',
                                     text: 'Mohon tunggu sebentar',
@@ -1000,14 +941,12 @@
                                     }
                                 });
 
-                                // Submit form
                                 formKunjungan.submit();
                             }
                         });
                     });
                 }
 
-                // Step 3
                 const formKeputusanKetua = document.getElementById('form-keputusan-ketua');
                 const btnKeputusanKetua = document.getElementById('submit-keputusan-ketua');
 
@@ -1018,7 +957,6 @@
                         const keputusan = document.getElementById('keputusan_step3').value;
                         const catatan = document.getElementById('catatan_step3').value;
 
-                        // Validasi keputusan harus dipilih
                         if (!keputusan) {
                             Swal.fire({
                                 icon: 'warning',
@@ -1029,7 +967,6 @@
                             return;
                         }
 
-                        // Validasi catatan untuk revisi dan tolak
                         if ((keputusan === 'revisi' || keputusan === 'tidak-ditindaklanjuti' || keputusan ===
                                 'tidak-diajukan') && !catatan.trim()) {
                             Swal.fire({
@@ -1069,7 +1006,6 @@
                             reverseButtons: true
                         }).then((result) => {
                             if (result.isConfirmed) {
-                                // Tampilkan loading
                                 Swal.fire({
                                     title: 'Memproses...',
                                     text: 'Mohon tunggu sebentar',
@@ -1080,7 +1016,6 @@
                                     }
                                 });
 
-                                // Submit form
                                 formKeputusanKetua.submit();
                             }
                         });
@@ -1088,7 +1023,6 @@
                     });
                 }
 
-                // Submit ke Pemdes
                 const formKePemdes = document.getElementById('form-ke-pemdes');
                 const btnKePemdes = document.getElementById('submit-ke-pemdes');
 
@@ -1115,7 +1049,6 @@
                             reverseButtons: true
                         }).then((result) => {
                             if (result.isConfirmed) {
-                                // Tampilkan loading
                                 Swal.fire({
                                     title: 'Memproses...',
                                     text: 'Mohon tunggu sebentar',
@@ -1126,7 +1059,6 @@
                                     }
                                 });
 
-                                // Submit form
                                 formKePemdes.submit();
                             }
                         });
@@ -1134,7 +1066,6 @@
                     });
                 }
 
-                // Kades
                 const formKeputusanKades = document.getElementById('form-keputusan-kades');
                 const btnKeputusanKades = document.getElementById('submit-kades');
 
@@ -1146,7 +1077,6 @@
                         const tindakLanjut = document.getElementById('tindaklanjut_kades').value;
                         const catatan = document.getElementById('catatan_kades').value;
 
-                        // Validasi keputusan harus dipilih
                         if (!keputusan) {
                             Swal.fire({
                                 icon: 'warning',
@@ -1167,17 +1097,6 @@
                             return;
                         }
 
-/*                         if (!catatan) {
-                            Swal.fire({
-                                icon: 'warning',
-                                title: 'Perhatian!',
-                                text: 'Silakan mengisi tindak lanjut terlebih dahulu.',
-                                confirmButtonColor: '#dc2626'
-                            });
-                            return;
-                        } */
-
-                        // Validasi catatan untuk revisi dan tolak
                         if ((keputusan === 'revisi' || keputusan === 'tidak-ditindaklanjuti' || keputusan ===
                                 'tidak-diajukan') && !catatan.trim()) {
                             Swal.fire({
@@ -1217,7 +1136,6 @@
                             reverseButtons: true
                         }).then((result) => {
                             if (result.isConfirmed) {
-                                // Tampilkan loading
                                 Swal.fire({
                                     title: 'Memproses...',
                                     text: 'Mohon tunggu sebentar',
@@ -1228,7 +1146,6 @@
                                     }
                                 });
 
-                                // Submit form
                                 formKeputusanKades.submit();
                             }
                         });

@@ -5,8 +5,6 @@
 @section('content')
     <div class="py-12" x-data="takeoverHandler()">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-
-            {{-- Tampilkan Password Baru Jika Berhasil Reset --}}
             @if (session('success') && session('new_password'))
                 <div class="mb-6 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-sm relative"
                     role="alert">
@@ -82,7 +80,6 @@
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-center">
-                                            {{-- Tombol Trigger Modal --}}
                                             <button
                                                 @click="openModal('{{ $kader->id }}', '{{ $kader->name }}', {{ $kader->is_active ? 'true' : 'false' }})"
                                                 class="text-indigo-600 hover:text-indigo-900 font-medium text-sm border border-indigo-200 px-3 py-1 rounded hover:bg-indigo-50 transition">
@@ -103,8 +100,6 @@
                 </div>
             </div>
         </div>
-
-        {{-- MODAL RESET PASSWORD --}}
         <div x-show="isOpen" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;"
             x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
             x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
@@ -197,8 +192,6 @@
                     openModal(id, name, isActiveStatus) {
                         this.targetName = name;
                         this.isActive = isActiveStatus;
-                        // Generate URL route secara dinamis
-                        // Asumsi route name: 'ketua-kader.takeover.reset' dengan parameter {kader}
                         this.actionUrl = `{{ url('/ketua-kader/takeover') }}/${id}/reset`;
                         this.isOpen = true;
                     },

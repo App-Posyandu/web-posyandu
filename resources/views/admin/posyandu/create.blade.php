@@ -9,7 +9,6 @@
                     @csrf
                     <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">Formulir Posyandu Baru</h2>
 
-                    {{-- SECTION 1: DATA POSYANDU --}}
                     <div class="mb-8 p-6 bg-gray-50 rounded-lg border border-gray-200">
                         <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                             <i class="bi bi-building text-pink-500"></i>
@@ -17,7 +16,6 @@
                         </h3>
 
                         <div class="space-y-4">
-                            {{-- Nama Posyandu --}}
                             <div>
                                 <x-input-label for="nama_posyandu" :value="__('Nama Posyandu')" />
                                 <x-text-input id="nama_posyandu" class="block mt-1 w-full" type="text"
@@ -26,9 +24,7 @@
                                 <x-input-error :messages="$errors->get('nama_posyandu')" class="mt-2" />
                             </div>
 
-                            {{-- Kabupaten/Kota --}}
                             @if (auth()->user()->kabupaten)
-                                {{-- User sudah punya kabupaten - Auto Fill --}}
                                 <div>
                                     <x-input-label for="kabupaten" :value="__('Kabupaten/Kota')" />
                                     <input type="hidden" name="kabupaten" value="{{ auth()->user()->kabupaten }}">
@@ -40,7 +36,6 @@
                                     </p>
                                 </div>
                             @else
-                                {{-- Admin atau role lain - Pilih Kabupaten --}}
                                 <div x-data="{ open: false, search: '' }" @click.away="open = false" class="relative">
                                     <x-input-label for="kabupaten" :value="__('Kabupaten/Kota')" />
                                     <input type="hidden" name="kabupaten" :value="selectedKabupaten">
@@ -77,9 +72,7 @@
                                 </div>
                             @endif
 
-                            {{-- Kecamatan --}}
                             @if (auth()->user()->kecamatan)
-                                {{-- User sudah punya kecamatan - Auto Fill --}}
                                 <div>
                                     <x-input-label for="kecamatan" :value="__('Kecamatan')" />
                                     <input type="hidden" name="kecamatan" value="{{ auth()->user()->kecamatan }}">
@@ -91,7 +84,6 @@
                                     </p>
                                 </div>
                             @else
-                                {{-- Pilih Kecamatan Manual --}}
                                 <div x-data="{ open: false, search: '' }" @click.away="open = false" class="relative">
                                     <x-input-label for="kecamatan" :value="__('Kecamatan')" />
                                     <input type="hidden" name="kecamatan" :value="selectedKecamatan">
@@ -142,9 +134,7 @@
                                 </div>
                             @endif
 
-                            {{-- Desa/Kelurahan --}}
                             @if (auth()->user()->desa)
-                                {{-- User sudah punya desa - Auto Fill --}}
                                 <div>
                                     <x-input-label for="desa" :value="__('Desa/Kelurahan')" />
                                     <input type="hidden" name="desa" value="{{ auth()->user()->desa }}">
@@ -156,7 +146,6 @@
                                     </p>
                                 </div>
                             @else
-                                {{-- Pilih Desa Manual --}}
                                 <div x-data="{ open: false, search: '' }" @click.away="open = false" class="relative">
                                     <x-input-label for="desa" :value="__('Desa/Kelurahan')" />
                                     <input type="hidden" name="desa" :value="selectedDesa">
@@ -205,19 +194,17 @@
                         </div>
                     </div>
 
-                    {{-- SECTION 2: KELOLA RW/RT --}}
                     <div class="mb-8 p-6 bg-blue-50 rounded-lg border border-blue-200">
                         <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                             <i class="bi bi-diagram-3 text-blue-500"></i>
                             Kelola RW/RT Posyandu
                         </h3>
 
-                        {{-- Info Card --}}
                         <div class="mb-6 bg-white border-l-4 border-blue-500 p-4 rounded">
                             <div class="flex items-start">
                                 <i class="bi bi-info-circle-fill text-blue-500 mr-3 mt-0.5 text-xl"></i>
                                 <div class="text-sm text-blue-700">
-                                    <p class="font-semibold mb-2">ℹ️ Informasi Sistem RW/RT</p>
+                                    <p class="font-semibold mb-2">Informasi Sistem RW/RT</p>
                                     <ul class="list-disc list-inside space-y-1 ml-2">
                                         <li><strong>RW tersedia:</strong> RW01 sampai RW15 (total 15 RW)</li>
                                         <li><strong>RT tersedia:</strong> RT001 sampai RT053 (total 53 RT)</li>
@@ -228,7 +215,6 @@
                             </div>
                         </div>
 
-                        {{-- Counter Stats --}}
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                             <div
                                 class="bg-gradient-to-r from-purple-50 to-purple-100 p-4 rounded-lg border border-purple-200">
@@ -249,7 +235,6 @@
                             </div>
                         </div>
 
-                        {{-- Pilih RW --}}
                         <div class="mb-6">
                             <h4 class="text-md font-semibold text-gray-800 mb-3 flex items-center gap-2">
                                 <i class="bi bi-check-square text-pink-500"></i>
@@ -275,7 +260,6 @@
                             </div>
                         </div>
 
-                        {{-- Mapping RT per RW --}}
                         <div x-show="selectedRwList.length > 0">
                             <h4 class="text-md font-semibold text-gray-800 mb-3 flex items-center gap-2">
                                 <i class="bi bi-list-check text-blue-500"></i>
@@ -324,7 +308,6 @@
                             </div>
                         </div>
 
-                        {{-- Hidden inputs untuk submit RW/RT --}}
                         <template x-for="(rw, index) in selectedRwList" :key="index">
                             <input type="hidden" :name="'rw_list[' + index + ']'" :value="rw">
                         </template>
@@ -337,7 +320,6 @@
                         </template>
                     </div>
 
-                    {{-- Action Buttons --}}
                     <div class="flex items-center justify-between pt-6 border-t gap-4">
                         <a href="{{ route('admin.posyandu.index') }}"
                             class="px-6 py-2.5 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">
@@ -347,7 +329,7 @@
                         <button type="submit"
                             class="px-8 py-2.5 bg-pink-600 text-white rounded-md hover:bg-pink-700 shadow-lg">
                             <i class="bi bi-save mr-2"></i>
-                            💾 Simpan Posyandu
+                            Simpan Posyandu
                         </button>
                     </div>
                 </form>
@@ -359,7 +341,6 @@
         <script>
             document.addEventListener('alpine:init', () => {
                 Alpine.data('posyanduForm', () => ({
-                    // Data Wilayah
                     kabupatens: @json($kabupatens['data'] ?? []),
                     kecamatanList: [],
                     desaList: [],
@@ -379,7 +360,6 @@
                     loadingKecamatan: false,
                     loadingDesa: false,
 
-                    // Data RW/RT
                     allRwOptions: Array.from({
                         length: 15
                     }, (_, i) => `RW${String(i + 1).padStart(2, '0')}`),
@@ -390,21 +370,18 @@
                     rtMapping: {},
 
                     init() {
-                        console.log('🟢 Posyandu Form initialized');
+                        console.log('Posyandu Form initialized');
 
                         @if (auth()->user()->kabupaten && !auth()->user()->kecamatan)
-                            // Auto-fetch kecamatan jika user punya kabupaten tapi belum punya kecamatan
                             this.fetchKecamatan();
                         @endif
 
                         @if (auth()->user()->kecamatan && !auth()->user()->desa)
-                            // Auto-fetch desa jika user punya kecamatan tapi belum punya desa
                             this.fetchDesa();
                         @endif
 
-                        // Watch selectedRwList untuk auto-init rtMapping
                         this.$watch('selectedRwList', (newVal, oldVal) => {
-                            console.log('📝 RW List changed:', newVal);
+                            console.log('RW List changed:', newVal);
 
                             newVal.forEach(rw => {
                                 if (!this.rtMapping[rw]) {
@@ -422,7 +399,7 @@
                         });
 
                         this.$watch('rtMapping', (newVal) => {
-                            console.log('📊 RT Mapping changed:', newVal);
+                            console.log('RT Mapping changed:', newVal);
                         }, {
                             deep: true
                         });
@@ -541,9 +518,8 @@
                         }
                     },
 
-                    // RW/RT Functions
                     selectAllRt(rw) {
-                        console.log('✅ Select all RT for', rw);
+                        console.log('Select all RT for', rw);
                         this.rtMapping[rw] = [...this.allRtOptions];
                         this.rtMapping = {
                             ...this.rtMapping
@@ -551,7 +527,7 @@
                     },
 
                     clearAllRt(rw) {
-                        console.log('❌ Clear all RT for', rw);
+                        console.log('Clear all RT for', rw);
                         this.rtMapping[rw] = [];
                         this.rtMapping = {
                             ...this.rtMapping

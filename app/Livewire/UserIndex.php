@@ -19,7 +19,6 @@ class UserIndex extends Component
         'search' => ['except' => ''],
     ];
 
-    // Reset pagination ketika filter berubah
     public function updatingRole()
     {
         $this->resetPage();
@@ -30,7 +29,6 @@ class UserIndex extends Component
         $this->resetPage();
     }
 
-    // Method untuk reset filter
     public function resetFilters()
     {
         $this->role = '';
@@ -38,9 +36,6 @@ class UserIndex extends Component
         $this->resetPage();
     }
 
-    /**
-     * Get allowed role targets based on current user role (same as UserController)
-     */
     private function getAllowedRoleTargets(string $role): array
     {
         $roleMap = [
@@ -61,30 +56,23 @@ class UserIndex extends Component
 
         $query = User::with(['posyandu', 'bidang'])->latest();
 
-        // 1. Filter Role berdasarkan role map (hanya tampilkan role yang bisa dibuat oleh current user)
         $allowedRoles = $this->getAllowedRoleTargets($currentUser->role);
-        
+
         if (!empty($allowedRoles)) {
             $query->whereIn('role', $allowedRoles);
         } elseif ($currentUser->role !== 'admin') {
-            // Jika tidak ada allowed roles dan bukan admin, jangan tampilkan user manapun
-            $query->whereRaw('1 = 0'); // Query yang selalu false
+            $query->whereRaw('1 = 0');
         }
 
-        // 2. Filter Wilayah (Multi-Tenancy)
         if (in_array($currentUser->role, ['kader', 'ketua-kader'])) {
-            // Filter berdasarkan posyandu
             $query->where('posyandu_id', $currentUser->posyandu_id);
         } elseif ($currentUser->role === 'operator-desa') {
-            // Filter berdasarkan kecamatan untuk operator desa
             if ($currentUser->kecamatan) {
                 $kecamatanName = explode('_', $currentUser->kecamatan)[1] ?? $currentUser->kecamatan;
                 $query->where('kecamatan', 'LIKE', "%{$kecamatanName}%");
             }
         }
-        // Admin, admin-kabupaten, admin-kecamatan, kabid tidak perlu filter wilayah
 
-        // 3. Filter berdasarkan search
         if ($this->search) {
             $searchTerm = $this->search;
             $query->where(function ($q) use ($searchTerm) {
@@ -94,14 +82,12 @@ class UserIndex extends Component
             });
         }
 
-        // 4. Filter berdasarkan role (dari dropdown filter)
         if ($this->role && $this->role !== '') {
             $query->where('role', $this->role);
         }
 
         $users = $query->paginate(10);
 
-        // Get allowed roles for filter dropdown
         $allowedRoles = $this->getAllowedRoleTargets($currentUser->role);
 
         return view('livewire.user-index', [

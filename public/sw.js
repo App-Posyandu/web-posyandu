@@ -1,6 +1,5 @@
 const preLoad = function () {
     return caches.open("offline").then(function (cache) {
-        // caching index and important routes
         return cache.addAll(filesToCache);
     });
 };
@@ -24,7 +23,6 @@ const checkResponse = function (request) {
 };
 
 const addToCache = function (request) {
-    // Only cache http(s) requests
     if (!request.url.startsWith("http")) {
         return Promise.resolve();
     }
@@ -54,7 +52,7 @@ self.addEventListener("fetch", function (event) {
         url.includes("/export-all-bidang-dan-desa") ||
         url.includes("/export-bidang-dan-desa/")
     ) {
-        return; // Jangan intercept, langsung fetch ke server
+        return;
     }
 
     event.respondWith(

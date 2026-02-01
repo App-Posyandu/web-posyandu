@@ -13,12 +13,9 @@ class GenerateTechReport extends Command
 
     public function handle()
     {
-        $this->info('🔍 Memulai analisis FULL (Production + Dev)...');
+        $this->info('Memulai analisis FULL (Production + Dev)...');
 
-        // ==========================================
-        // 1. SCAN COMPOSER (BACKEND)
-        // ==========================================
-        $this->info('📂 Membaca composer.json...');
+        $this->info('Membaca composer.json...');
         $composerPath = base_path('composer.json');
 
         if (!File::exists($composerPath)) {
@@ -28,19 +25,15 @@ class GenerateTechReport extends Command
 
         $composerData = json_decode(File::get($composerPath), true);
 
-        // Ambil kedua bagian
         $reqMain = $composerData['require'] ?? [];
         $reqDev  = $composerData['require-dev'] ?? [];
 
         $backendPackages = [];
 
-        // Fungsi helper kecil untuk memproses array composer
         $processComposer = function ($list, $type) use (&$backendPackages) {
             foreach ($list as $package => $version) {
-                // Skip PHP version atau ext- PHP
                 if ($package === 'php' || str_starts_with($package, 'ext-')) continue;
 
-                // Cari deskripsi otomatis
                 $desc = 'Library Backend';
                 $vendorPath = base_path("vendor/{$package}/composer.json");
 
@@ -52,21 +45,17 @@ class GenerateTechReport extends Command
                 $backendPackages[] = [
                     'name' => $package,
                     'version' => $version,
-                    'type' => $type, // "PROD" atau "DEV"
+                    'type' => $type,
                     'desc' => $desc
                 ];
-                $this->line("   ✅ [$type] PHP: $package");
+                $this->line("   [$type] PHP: $package");
             }
         };
 
-        // Jalankan proses
-        $processComposer($reqMain, 'PROD'); // Production
-        $processComposer($reqDev,  'DEV');  // Development
+        $processComposer($reqMain, 'PROD');
+        $processComposer($reqDev,  'DEV');
 
-        // ==========================================
-        // 2. SCAN NPM (FRONTEND)
-        // ==========================================
-        $this->info('📂 Membaca package.json...');
+        $this->info('Membaca package.json...');
         $npmPath = base_path('package.json');
         $frontendPackages = [];
 
@@ -76,7 +65,6 @@ class GenerateTechReport extends Command
             $depMain = $npmData['dependencies'] ?? [];
             $depDev  = $npmData['devDependencies'] ?? [];
 
-            // Fungsi helper untuk NPM
             $processNpm = function ($list, $type) use (&$frontendPackages) {
                 foreach ($list as $package => $version) {
                     $desc = 'Library Frontend';
@@ -93,7 +81,7 @@ class GenerateTechReport extends Command
                         'type' => $type,
                         'desc' => $desc
                     ];
-                    $this->line("   ✅ [$type] JS: $package");
+                    $this->line("   [$type] JS: $package");
                 }
             };
 
@@ -101,10 +89,7 @@ class GenerateTechReport extends Command
             $processNpm($depDev,  'DEV');
         }
 
-        // ==========================================
-        // 3. GENERATE PDF
-        // ==========================================
-        $this->info('🖨️  Sedang mencetak PDF Laporan Lengkap...');
+        $this->info('Sedang mencetak PDF Laporan Lengkap...');
 
         $html = $this->generateHtml($backendPackages, $frontendPackages);
 
@@ -112,7 +97,7 @@ class GenerateTechReport extends Command
         $filename = 'Laporan_Teknologi_Lengkap.pdf';
         $pdf->save(public_path($filename));
 
-        $this->info("🎉 SUKSES! File tersimpan di: public/$filename");
+        $this->info("SUKSES! File tersimpan di: public/$filename");
     }
 
     private function generateHtml($backend, $frontend)
@@ -127,10 +112,9 @@ class GenerateTechReport extends Command
             th, td { border: 1px solid #e2e8f0; padding: 6px; text-align: left; vertical-align: top; }
             th { background-color: #edf2f7; color: #4a5568; font-size: 9pt; }
 
-            /* Badge Styles */
             .badge { padding: 3px 5px; border-radius: 4px; font-size: 8pt; font-weight: bold; display: inline-block; min-width: 40px; text-align: center; }
-            .badge-prod { background-color: #c6f6d5; color: #22543d; border: 1px solid #9ae6b4; } /* Hijau */
-            .badge-dev { background-color: #fed7d7; color: #822727; border: 1px solid #feb2b2; } /* Merah */
+            .badge-prod { background-color: #c6f6d5; color: #22543d; border: 1px solid #9ae6b4; }
+            .badge-dev { background-color: #fed7d7; color: #822727; border: 1px solid #feb2b2; }
 
             .ver { font-family: monospace; color: #555; }
             .footer { margin-top: 30px; text-align: right; font-size: 8pt; color: #a0aec0; border-top: 1px solid #eee; padding-top: 5px;}
@@ -139,7 +123,6 @@ class GenerateTechReport extends Command
         $buildTableRows = function ($items) {
             $html = "";
             foreach ($items as $item) {
-                // Tentukan warna badge
                 $badgeClass = ($item['type'] === 'PROD') ? 'badge-prod' : 'badge-dev';
 
                 $html .= "<tr>

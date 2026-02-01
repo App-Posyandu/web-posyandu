@@ -19,9 +19,9 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEvents, WithDrawings, WithCustomStartCell
 {
     protected $rowNumber = 0;
-    protected $bidang; // Bidang (untuk filter pengajuan)
-    protected $desa; // Desa (untuk filter pengajuan)
-    protected $posyanduId; // Posyandu ID (untuk filter ketua-kader)
+    protected $bidang;
+    protected $desa;
+    protected $posyanduId;
 
     public function __construct($bidang = 'all', $desa = 'all', $posyanduId = null)
     {
@@ -35,20 +35,17 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
     {
         $query = Pengajuan::query();
 
-        // ✅ Filter berdasarkan posyandu (untuk ketua-kader)
         if ($this->posyanduId) {
             $query->whereHas('user', function ($q) {
                 $q->where('posyandu_id', $this->posyanduId);
             });
         }
-        // ✅ Filter berdasarkan desa (jika tidak ada filter posyandu)
         else if ($this->desa && $this->desa !== 'all') {
             $query->whereHas('user.posyandu', function ($q) {
                 $q->where('desa', $this->desa);
             });
         }
 
-        // ✅ Filter berdasarkan bidang
         if ($this->bidang !== 'all') {
             $query->whereHas('bidang', function ($q) {
                 $q->where('nama_bidang', $this->bidang);
@@ -81,16 +78,6 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
             'DITOLAK',
             'KETERANGAN',
         ];
-
-        // Jika export semua bidang & desa → tambahkan kolom di akhir
-        // if ($this->bidang === 'all' && $this->desa === 'all') {
-        //     $base[] = 'DESA';
-        //     $base[] = 'BIDANG';
-        // }else if( $this->bidang === 'all'){
-        //     $base[] = 'BIDANG';
-        // }else if( $this->desa === 'all'){
-        //     $base[] = 'DESA';
-        // }
 
         return $base;
     }
@@ -161,12 +148,10 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
             $data[] = "{$desa}, {$bidang}";
         }
 
-        // Semua bidang → tambahkan kolom BIDANG saja
         else if ($this->bidang === 'all') {
             $data[] =  $pengajuan->bidang->nama_bidang ?? '-';
         }
 
-        // Semua desa → tambahkan kolom DESA saja
         else if ($this->desa === 'all') {
             $data[] = $pengajuan->user->posyandu->desa ?? '-';
         }
@@ -174,31 +159,28 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
         return $data;
     }
 
-
-    /** LOGO DI ATAS TABEL **/
     public function drawings()
     {
         $drawings = [];
 
-        // Pusatkan logo sejajar secara horizontal di tengah sheet
         $logos = [
             [
                 'path' => public_path('assets/image/logo/logo_kebumen.png'),
                 'width' => 90,
                 'height' => 60,
-                'offsetX' => -30, // kiri dari tengah
+                'offsetX' => -30,
             ],
             [
                 'path' => public_path('assets/image/logo/logo_posyandu.png'),
                 'width' => 85,
                 'height' => 60,
-                'offsetX' => 80, // tengah
+                'offsetX' => 80,
             ],
             [
                 'path' => public_path('assets/image/logo/logo_sapaposyandu.png'),
                 'width' => 90,
                 'height' => 60,
-                'offsetX' => 200, // kanan dari tengah
+                'offsetX' => 200,
             ],
         ];
 
@@ -209,7 +191,6 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
                 $drawing->setHeight($logo['height']);
                 $drawing->setWidth($logo['width']);
 
-                // Semua logo ditempatkan di sel "G1" (tengah lembar) tapi dengan offset berbeda
                 $drawing->setCoordinates('H1');
                 $drawing->setOffsetX($logo['offsetX']);
                 $drawing->setOffsetY(5);
@@ -256,7 +237,6 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
                 $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 $sheet->getStyle('A2')->getFont()->setBold(true);
 
-                // Baris kedua
                 $sheet->mergeCells('A3:M3');
                 if ($this->desa !== 'all') {
                     $sheet->setCellValue('A3', "NAMA POSYANDU {$namaPosyandu}, DESA {$desa}, KECAMATAN {$kecamatan}, KABUPATEN KEBUMEN");
@@ -266,7 +246,6 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
                 $sheet->getStyle('A3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 $sheet->getStyle('A3')->getFont()->setBold(true);
 
-                //Keterangan Bidang
                 if ($this->bidang !== 'all') {
                     $sheet->mergeCells('A6:B6');
                     $sheet->setCellValue('A6', strtoupper($this->bidang));
@@ -275,7 +254,6 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
 
 
 
-                // header tabel
                 $sheet->setCellValue('A7', 'NO.');
                 $sheet->setCellValue('B7', 'HARI/TANGGAL');
                 $sheet->setCellValue('C7', 'NAMA');
@@ -293,15 +271,6 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
                 $sheet->setCellValue('J8', 'KUNJUNGAN');
                 $sheet->setCellValue('K8', 'DISETUJUI');
                 $sheet->setCellValue('L8', 'DITOLAK');
-                /*                 if( $this->bidang === 'all' && $this->desa === 'all') {
-                    $sheet->setCellValue('N7', 'DESA');
-                    $sheet->setCellValue('O7', 'BIDANG');
-                }else if( $this->bidang === 'all'){
-                    $sheet->setCellValue('N7', 'BIDANG');
-                }else if( $this->desa === 'all'){
-                    $sheet->setCellValue('N7', 'DESA');
-                } */
-
                 $merge = [
                     'A7:A8',
                     'B7:B8',
@@ -316,14 +285,6 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
                     'A6:B6'
                 ];
                 $maxCell = 'M';
-                /*                 if( $this->bidang === 'all' && $this->desa === 'all') {
-                    $merge[] = 'N7:N8';
-                    $merge[] = 'O7:O8';
-                    $maxCell='O';
-                }else {
-                    $merge[] = 'N7:N8';
-                    $maxCell='N';
-                } */
                 foreach ($merge as $range) $sheet->mergeCells($range);
 
                 $highestRow = $sheet->getHighestRow();

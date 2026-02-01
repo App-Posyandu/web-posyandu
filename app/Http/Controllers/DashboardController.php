@@ -15,14 +15,13 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
 
-        // ✅ Tambahkan 'kades' ke daftar role yang auto-verified
         $alwaysVerifiedRoles = [
             'admin',
             'kabid',
             'admin-kabupaten',
             'admin-kecamatan',
-            'ketua-kader',  // ← Ini bisa jadi Kepala Desa
-            'kades',         // ← Role baru untuk Kepala Desa (jika ada)
+            'ketua-kader',
+            'kades',
             'ketua-posyandu',
             'operator-desa',
             'masyarakat'
@@ -30,7 +29,6 @@ class DashboardController extends Controller
 
         $isVerified = !is_null($user->verified_at) || in_array($user->role, $alwaysVerifiedRoles);
 
-        // ✅ YEAR FILTER LOGIC
         $currentYear = now()->year;
         $selectedYear = $request->input('year', $currentYear);
         $startYear = 2024;
@@ -55,7 +53,6 @@ class DashboardController extends Controller
             'trantibumlinmas' => asset('assets/image/icon/bidang/trantibumlinmas.svg'),
         ];
 
-        // ✅ ROUTING BERDASARKAN ROLE
         switch ($user->role) {
             case 'masyarakat':
                 return $this->masyarakatDashboard($request, $user, $selectedYear, $currentYear, $availableYears, $isVerified, $icons);
@@ -66,11 +63,10 @@ class DashboardController extends Controller
             case 'operator-desa':
                 return redirect()->route('admin.users.index');
 
-                // ✅ Role yang bisa lihat dashboard
             case 'admin-kabupaten':
             case 'kabid':
-            case 'ketua-kader':   // ← Kepala Desa (jika pakai role ini)
-            case 'kades':          // ← Kepala Desa (jika pakai role baru)
+            case 'ketua-kader':
+            case 'kades':
             case 'admin-kecamatan':
             case 'ketua-posyandu':
             case 'admin':
@@ -80,15 +76,12 @@ class DashboardController extends Controller
                 abort(403, 'Unauthorized');
         }
 
-        // Query untuk CHART & STATISTICS (TIDAK kena filter archive, hanya tahun)
         $statsQuery = Pengajuan::with(['user', 'bidang'])
             ->whereYear('created_at', $selectedYear);
 
-        // Query untuk LIST PENGAJUAN (kena filter archive + tahun)
         $listQuery = Pengajuan::with(['user', 'bidang',])
             ->whereYear('created_at', $selectedYear);
 
-        // ✅ QUERY PENGAJUAN DENGAN FILTER TAHUN
         $query = Pengajuan::with(['user', 'bidang'])
             ->whereYear('created_at', $selectedYear);
 
@@ -101,9 +94,6 @@ class DashboardController extends Controller
             ->whereYear('pengajuans.created_at', $selectedYear)
             ->select('bidang_pengajuans.nama_bidang', DB::raw('count(pengajuans.id) as total'));
 
-        // ========================================
-        // 🎯 FILTER BERDASARKAN ROLE (HIRARKI)
-        // ========================================
         switch ($user->role) {
             case 'admin-kabupaten':
                 if ($user->kabupaten) {
@@ -139,7 +129,6 @@ class DashboardController extends Controller
 
             case 'ketua-kader':
             case 'kades':
-                // ✅ FIX: Kades TIDAK filter status di stats query
                 if ($user->posyandu_id) {
                     $listQuery->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
                     $statsQuery->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
@@ -152,9 +141,7 @@ class DashboardController extends Controller
                     $desasQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
                 }
 
-                // ✅ FIX: Filter status hanya untuk LIST, bukan STATS
                 if (!$showArchived) {
-                    // Mode Aktif: hanya yang "Diajukan ke Desa"
                     $listQuery->where('status_pengajuan', 'Diajukan ke Desa');
                 }
                 break;
@@ -184,18 +171,14 @@ class DashboardController extends Controller
                 break;
 
             case 'admin':
-                // Admin sees all - no filter
                 break;
         }
 
         if ($showArchived) {
-            // Mode Arsip: yang sudah selesai (Disetujui/Ditolak)
             $listQuery->whereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
         } else {
-            // Mode Aktif: yang masih perlu tindakan (Diajukan ke Desa)
             $listQuery->where('status_pengajuan', 'Diajukan ke Desa');
         }
-        // ✅ FILTER SEARCH
         if ($request->has('search') && $request->input('search') != '') {
             $searchTerm = $request->input('search');
             $listQuery->where(function ($q) use ($searchTerm) {
@@ -206,12 +189,10 @@ class DashboardController extends Controller
             });
         }
 
-        // ✅ FILTER STATUS
         if ($request->filled('status')) {
             $listQuery->where('status_pengajuan', $request->status);
         }
 
-        // ✅ HITUNG AJUAN PER BIDANG
         $allBidangNames = BidangPengajuan::pluck('nama_bidang');
         $baseCounts = $allBidangNames->mapWithKeys(fn($nama) => [$nama => 0]);
 
@@ -221,7 +202,6 @@ class DashboardController extends Controller
             $ajuanCounts = $baseCounts->merge($actualCounts);
             $semuaAjuan = $listQuery->latest()->paginate(5)->withQueryString();
 
-            // ✅ Tambahkan computed attributes untuk revision tracking
             $semuaAjuan->getCollection()->transform(function ($ajuan) {
                 $latestRevisionRequest = $ajuan->histories
                     ->where('status', 'Revisi Diminta')
@@ -254,7 +234,6 @@ class DashboardController extends Controller
             $semuaAjuan = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 5);
         }
 
-        // ✅ DAFTAR DESA
         $desas = $desasQuery->get()
             ->map(fn($p) => optional($p->user->posyandu)->desa)
             ->filter()
@@ -264,7 +243,6 @@ class DashboardController extends Controller
 
         $currentUser = Auth::user();
 
-        // ✅ AJAX RESPONSE
         if ($request->ajax() || $request->input('ajax')) {
             $colorMap = [
                 'Bidang Perumahan Rakyat' => 'bg-blue-500',
@@ -320,23 +298,17 @@ class DashboardController extends Controller
             'showArchived'
         ));
     }
-
-    // DashboardController.php
-
     public function debugDashboard(Request $request)
     {
         $user = Auth::user();
         $selectedYear = $request->input('year', now()->year);
 
-        // Ambil SEMUA pengajuan di tahun tersebut tanpa filter wilayah dulu untuk membuktikan data ada
         $query = Pengajuan::with(['user.posyandu', 'bidang'])
             ->whereYear('created_at', $selectedYear);
 
         $semuaDataTanpaFilter = (clone $query)->get();
 
-        // Sekarang apply filter hirarki yang SEHARUSNYA (Fix Error SQL)
         if (in_array($user->role, ['ketua-kader', 'ketua-posyandu']) && $user->posyandu_id) {
-            // Filter melalui relasi user karena posyandu_id tidak ada di tabel pengajuans
             $query->whereHas('user', function ($q) use ($user) {
                 $q->where('posyandu_id', $user->posyandu_id);
             });
@@ -415,7 +387,6 @@ class DashboardController extends Controller
         $ajuanCounts = $baseCounts->merge($desaStats);
         $myAjuan = $myAjuanQuery->latest()->paginate(5)->withQueryString();
 
-        // ✅ Tambahkan computed attributes untuk revision tracking
         $myAjuan->getCollection()->transform(function ($ajuan) {
             $latestRevisionRequest = $ajuan->histories
                 ->where('status', 'Revisi Diminta')

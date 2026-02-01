@@ -14,14 +14,10 @@
                     <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">Ubah Data Kecamatan</h2>
 
                     <div class="space-y-6">
-
-                        {{-- 1. Combobox Kabupaten (Searchable) --}}
                         <div class="relative" @click.away="openKabupaten = false">
                             <x-input-label for="kabupaten" :value="__('Kabupaten')" />
 
-                            {{-- Hidden Input (CODE_NAMA) --}}
                             <input type="hidden" name="kabupaten" x-model="selectedKabupatenValue">
-
                             <div class="relative mt-1">
                                 <input type="text" x-model="searchKabupaten" @focus="openKabupaten = true"
                                     @input="openKabupaten = true"
@@ -58,12 +54,9 @@
                             </div>
                             <x-input-error :messages="$errors->get('kabupaten')" class="mt-2" />
                         </div>
-
-                        {{-- 2. Combobox Kecamatan (Searchable - Dependent) --}}
                         <div class="relative" @click.away="openKecamatan = false">
                             <x-input-label for="kecamatan" :value="__('Kecamatan')" />
-
-                            {{-- Hidden Input (CODE_NAMA) --}}
+                            
                             <input type="hidden" name="kecamatan" x-model="selectedKecamatanValue">
 
                             <div class="relative mt-1">
@@ -132,14 +125,12 @@
         <script>
             document.addEventListener('alpine:init', () => {
                 Alpine.data('wilayahDropdown', (initialKabName, initialKecName) => ({
-                    // Data Kabupaten
                     kabupatenList: @json($kabupatens['data'] ?? []),
                     openKabupaten: false,
                     searchKabupaten: '',
                     selectedKabupatenValue: '',
                     selectedKabupatenName: '',
 
-                    // Data Kecamatan
                     kecamatanList: [],
                     openKecamatan: false,
                     loadingKecamatan: false,
@@ -147,19 +138,14 @@
                     selectedKecamatanValue: '',
                     selectedKecamatanName: '',
 
-                    // Inisialisasi Data Awal (Auto Select)
                     async init() {
-                        // 1. Cari & Set Kabupaten Awal
                         const foundKab = this.kabupatenList.find(k => k.name === initialKabName);
                         if (foundKab) {
                             this.selectedKabupatenValue = `${foundKab.code}_${foundKab.name}`;
                             this.selectedKabupatenName = foundKab.name;
 
-                            // 2. Fetch Kecamatan berdasarkan Kabupaten yg dipilih
-                            await this.fetchKecamatan(
-                            false); // false = jangan reset nilai kecamatan dulu
+                            await this.fetchKecamatan(false);
 
-                            // 3. Cari & Set Kecamatan Awal
                             const foundKec = this.kecamatanList.find(k => k.name === initialKecName);
                             if (foundKec) {
                                 this.selectedKecamatanValue = `${foundKec.code}_${foundKec.name}`;
@@ -168,7 +154,6 @@
                         }
                     },
 
-                    // Filter Kabupaten
                     get filteredKabupaten() {
                         if (this.searchKabupaten === '') return this.kabupatenList;
                         return this.kabupatenList.filter(kab =>
@@ -176,17 +161,15 @@
                         );
                     },
 
-                    // Pilih Kabupaten
                     selectKabupaten(kab) {
                         this.selectedKabupatenValue = `${kab.code}_${kab.name}`;
                         this.selectedKabupatenName = kab.name;
                         this.searchKabupaten = '';
                         this.openKabupaten = false;
 
-                        this.fetchKecamatan(true); // true = reset kecamatan karena ganti kabupaten
+                        this.fetchKecamatan(true);
                     },
 
-                    // Fetch API Kecamatan
                     async fetchKecamatan(reset = false) {
                         if (reset) {
                             this.selectedKecamatanValue = '';
@@ -212,7 +195,6 @@
                         }
                     },
 
-                    // Filter Kecamatan
                     get filteredKecamatan() {
                         if (this.searchKecamatan === '') return this.kecamatanList;
                         return this.kecamatanList.filter(kec =>
@@ -220,7 +202,6 @@
                         );
                     },
 
-                    // Pilih Kecamatan
                     selectKecamatan(kec) {
                         this.selectedKecamatanValue = `${kec.code}_${kec.name}`;
                         this.selectedKecamatanName = kec.name;

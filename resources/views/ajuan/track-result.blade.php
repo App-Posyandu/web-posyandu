@@ -1,13 +1,11 @@
 <x-guest-layout>
     <div class="space-y-6">
-        {{-- Header --}}
         <div class="text-center">
             <h2 class="text-2xl font-bold text-gray-800 mb-2">Status Pengajuan</h2>
             <p class="text-gray-600 text-sm">Kode: <span
                     class="font-mono font-semibold">{{ $pengajuan->tracking_code }}</span></p>
         </div>
 
-        {{-- Status Badge --}}
         <div class="flex justify-center">
             @php
                 $statusConfig = [
@@ -27,7 +25,6 @@
             </div>
         </div>
 
-        {{-- Informasi Pengajuan --}}
         <div class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
             <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                 <i class="bi bi-file-text text-pink-500 mr-2"></i>
@@ -58,7 +55,6 @@
             </div>
         </div>
 
-        {{-- Timeline Status --}}
         <div class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
             <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                 <i class="bi bi-clock-history text-pink-500 mr-2"></i>
@@ -66,11 +62,9 @@
             </h3>
 
             <div class="relative">
-                {{-- Vertical Line --}}
                 <div class="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200"></div>
 
                 <div class="space-y-6 relative">
-                    {{-- Step 1: Pengajuan Dibuat --}}
                     <div class="flex items-start">
                         <div class="flex items-center justify-center w-8 h-8 rounded-full bg-green-500 text-white z-10">
                             <i class="bi bi-check-lg"></i>
@@ -83,7 +77,6 @@
                         </div>
                     </div>
 
-                    {{-- Step 2: Diproses Kader --}}
                     <div class="flex items-start">
                         <div
                             class="flex items-center justify-center w-8 h-8 rounded-full z-10 {{ in_array($pengajuan->status_pengajuan, ['Sesuai', 'Diajukan ke Desa', 'Disetujui']) ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500' }}">
@@ -105,7 +98,6 @@
                         </div>
                     </div>
 
-                    {{-- Step 3: Disetujui Ketua Posyandu --}}
                     <div class="flex items-start">
                         <div
                             class="flex items-center justify-center w-8 h-8 rounded-full z-10 {{ $pengajuan->approved_by_ketua ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500' }}">
@@ -128,7 +120,6 @@
                         </div>
                     </div>
 
-                    {{-- Step 4: Diajukan ke Desa --}}
                     <div class="flex items-start">
                         <div
                             class="flex items-center justify-center w-8 h-8 rounded-full z-10 {{ in_array($pengajuan->status_pengajuan, ['Diajukan ke Desa', 'Disetujui']) ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500' }}">
@@ -150,7 +141,6 @@
                         </div>
                     </div>
 
-                    {{-- Step 5: Keputusan Final --}}
                     <div class="flex items-start">
                         <div
                             class="flex items-center justify-center w-8 h-8 rounded-full z-10 {{ $pengajuan->status_pengajuan === 'Disetujui' ? 'bg-green-500 text-white' : ($pengajuan->status_pengajuan === 'Ditolak' ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-500') }}">
@@ -179,7 +169,6 @@
             </div>
         </div>
 
-        {{-- Additional Info for Rejected --}}
         @if ($pengajuan->status_pengajuan === 'Ditolak')
             <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded">
                 <div class="flex items-start">
@@ -192,7 +181,6 @@
             </div>
         @endif
 
-        {{-- Additional Info for Approved --}}
         @if ($pengajuan->status_pengajuan === 'Disetujui')
             <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded">
                 <div class="flex items-start">
@@ -205,7 +193,6 @@
             </div>
         @endif
 
-        {{-- Action Buttons --}}
         <div class="flex flex-col sm:flex-row gap-3">
             <a href="{{ route('login') }}"
                 class="flex-1 px-4 py-3 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 text-center font-medium transition-colors">
@@ -219,7 +206,6 @@
             </button>
         </div>
 
-        {{-- Contact Info --}}
         <div class="text-center text-sm text-gray-600">
             <p>Butuh bantuan? Hubungi posyandu terdekat atau</p>
             <a href="tel:+62123456789" class="text-pink-600 hover:text-pink-700 font-medium">

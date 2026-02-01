@@ -15,7 +15,6 @@ class KecamatanController extends Controller
     const API_TIMEOUT = 10;
     const CACHE_TTL = 3600;
 
-    // Helper untuk fetch API (sama seperti di PosyanduController)
     private function fetchWilayahData($endpoint, $cacheKey)
     {
         return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($endpoint) {
@@ -53,7 +52,6 @@ class KecamatanController extends Controller
 
     public function create()
     {
-        // Ambil data Kabupaten dari API untuk dropdown
         $kabupatens = $this->fetchWilayahData(
             'regencies/' . self::PROVINCE_ID . '.json',
             'kabupatens_jateng'
@@ -69,29 +67,25 @@ class KecamatanController extends Controller
             'kecamatan' => 'required|string',
         ]);
 
-        // Ambil nama dari format "ID_NAMA"
         $kabupatenFull = explode('_', $request->kabupaten)[1] ?? $request->kabupaten;
         $kecamatanName = explode('_', $request->kecamatan)[1] ?? $request->kecamatan;
 
-        // Parse jenis dan nama kabupaten (misal: "Kabupaten Banyumas" atau "Kota Semarang")
-        $jenis = 'kabupaten'; // default
+        $jenis = 'kabupaten';
         $namaKabupaten = $kabupatenFull;
         
         if (stripos($kabupatenFull, 'Kabupaten ') === 0) {
             $jenis = 'kabupaten';
-            $namaKabupaten = trim(substr($kabupatenFull, 10)); // Remove "Kabupaten "
+            $namaKabupaten = trim(substr($kabupatenFull, 10));
         } elseif (stripos($kabupatenFull, 'Kota ') === 0) {
             $jenis = 'kota';
-            $namaKabupaten = trim(substr($kabupatenFull, 5)); // Remove "Kota "
+            $namaKabupaten = trim(substr($kabupatenFull, 5));
         }
 
-        // Cari atau buat record Kabupaten
         $kabupaten = Kabupaten::firstOrCreate(
             ['nama_kabupaten' => $namaKabupaten, 'jenis' => $jenis],
             ['nama_kabupaten' => $namaKabupaten, 'jenis' => $jenis]
         );
 
-        // Cek duplikasi berdasarkan kabupaten_id (UUID) dan nama_kecamatan
         $exists = Kecamatan::where('nama_kecamatan', $kecamatanName)
                            ->where('kabupaten_id', $kabupaten->id)
                            ->exists();
@@ -101,7 +95,7 @@ class KecamatanController extends Controller
         }
 
         Kecamatan::create([
-            'kabupaten_id' => $kabupaten->id, // UUID dari model Kabupaten
+            'kabupaten_id' => $kabupaten->id,
             'nama_kecamatan' => $kecamatanName,
         ]);
 
@@ -110,7 +104,6 @@ class KecamatanController extends Controller
 
     public function edit(Kecamatan $kecamatan)
     {
-        // Logic edit mirip create, kirim data lama
         $kabupatens = $this->fetchWilayahData(
             'regencies/' . self::PROVINCE_ID . '.json',
             'kabupatens_jateng'
@@ -126,11 +119,9 @@ class KecamatanController extends Controller
             'kecamatan' => 'required|string',
         ]);
 
-        // Ambil nama dari format "ID_NAMA"
         $kabupatenFull = explode('_', $request->kabupaten)[1] ?? $request->kabupaten;
         $kecamatanName = explode('_', $request->kecamatan)[1] ?? $request->kecamatan;
 
-        // Parse jenis dan nama kabupaten
         $jenis = 'kabupaten';
         $namaKabupaten = $kabupatenFull;
         
@@ -142,14 +133,13 @@ class KecamatanController extends Controller
             $namaKabupaten = trim(substr($kabupatenFull, 5));
         }
 
-        // Cari atau buat record Kabupaten
         $kabupaten = Kabupaten::firstOrCreate(
             ['nama_kabupaten' => $namaKabupaten, 'jenis' => $jenis],
             ['nama_kabupaten' => $namaKabupaten, 'jenis' => $jenis]
         );
 
         $kecamatan->update([
-            'kabupaten_id' => $kabupaten->id, // UUID dari model Kabupaten
+            'kabupaten_id' => $kabupaten->id,
             'nama_kecamatan' => $kecamatanName,
         ]);
 

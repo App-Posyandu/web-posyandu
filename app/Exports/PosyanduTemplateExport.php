@@ -18,31 +18,24 @@ class PosyanduTemplateExport implements FromArray, WithHeadings, WithEvents, Wit
 {
     protected $dataRows;
 
-    /**
-     * Constructor menerima array data rows yang sudah berisi desa dan kecamatan
-     * Format: [['desa' => 'SEMPU', 'kecamatan' => 'GOMBONG'], ...]
-     */
     public function __construct(array $dataRows)
     {
         $this->dataRows = $dataRows;
         Log::info('PosyanduTemplateExport initialized', ['total_rows' => count($dataRows)]);
     }
 
-    /**
-     * Generate array untuk template dengan nomor urut dan data auto-fill
-     */
     public function array(): array
     {
         $data = [];
 
         foreach ($this->dataRows as $index => $row) {
             $data[] = [
-                $index + 1,                    // NO (auto increment)
-                '',                            // NAMA POSYANDU (user isi)
-                $row['desa'] ?? '',           // DESA (auto-fill dari API)
-                $row['kecamatan'] ?? '',      // KECAMATAN (auto-fill dari API)
-                'KEBUMEN',                     // KABUPATEN (fixed)
-                'JAWA TENGAH'                  // PROVINSI (fixed)
+                $index + 1,
+                '',
+                $row['desa'] ?? '',
+                $row['kecamatan'] ?? '',
+                'KEBUMEN',
+                'JAWA TENGAH'
             ];
         }
 
@@ -52,7 +45,7 @@ class PosyanduTemplateExport implements FromArray, WithHeadings, WithEvents, Wit
 
     public function startCell(): string
     {
-        return 'A6'; // Data mulai dari baris 6
+        return 'A6';
     }
 
     public function headings(): array
@@ -67,7 +60,6 @@ class PosyanduTemplateExport implements FromArray, WithHeadings, WithEvents, Wit
         ];
     }
 
-    /** LOGO DI ATAS TABEL **/
     public function drawings()
     {
         $drawings = [];
@@ -77,21 +69,21 @@ class PosyanduTemplateExport implements FromArray, WithHeadings, WithEvents, Wit
                 'path' => public_path('assets/image/logo/logo_kebumen.png'),
                 'width' => 85,
                 'height' => 60,
-                'offsetX' => 0, // kiri dari tengah
+                'offsetX' => 0,
                 'position' => 'C1',
             ],
             [
                 'path' => public_path('assets/image/logo/logo_posyandu.png'),
                 'width' => 85,
                 'height' => 60,
-                'offsetX' => 90, // tengah
+                'offsetX' => 90,
                 'position' => 'C1',
             ],
             [
                 'path' => public_path('assets/image/logo/logo_sapaposyandu.png'),
                 'width' => 95,
                 'height' => 60,
-                'offsetX' => 50, // kanan dari tengah
+                'offsetX' => 50,
                 'position' => 'D1',
             ],
         ];
@@ -118,10 +110,8 @@ class PosyanduTemplateExport implements FromArray, WithHeadings, WithEvents, Wit
             AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
 
-                // Set row height untuk logo
                 $sheet->getRowDimension(1)->setRowHeight(80);
 
-                // JUDUL UTAMA - Baris 2
                 $sheet->mergeCells('A2:F2');
                 $sheet->setCellValue('A2', 'TEMPLATE IMPORT POSYANDU KABUPATEN KEBUMEN');
                 $sheet->getStyle('A2')->applyFromArray([
@@ -138,7 +128,6 @@ class PosyanduTemplateExport implements FromArray, WithHeadings, WithEvents, Wit
                 ]);
                 $sheet->getRowDimension(2)->setRowHeight(30);
 
-                // INSTRUKSI - Baris 3
                 $sheet->mergeCells('A3:F3');
                 $instruksi = 'Isi kolom NAMA POSYANDU saja. Kolom lainnya sudah otomatis terisi.';
                 $sheet->setCellValue('A3', $instruksi);
@@ -159,18 +148,15 @@ class PosyanduTemplateExport implements FromArray, WithHeadings, WithEvents, Wit
                 ]);
                 $sheet->getRowDimension(3)->setRowHeight(25);
 
-                // Baris kosong 4, 5
                 $sheet->getRowDimension(4)->setRowHeight(10);
                 $sheet->getRowDimension(5)->setRowHeight(10);
 
-                // HEADER TABEL - Baris 6
                 $headers = ['NO.', 'NAMA POSYANDU', 'DESA', 'KECAMATAN', 'KABUPATEN', 'PROVINSI'];
                 foreach ($headers as $index => $header) {
-                    $column = chr(65 + $index); // A, B, C, D, E, F
+                    $column = chr(65 + $index);
                     $sheet->setCellValue($column . '6', $header);
                 }
 
-                // Style untuk header
                 $sheet->getStyle('A6:F6')->applyFromArray([
                     'font' => [
                         'bold' => true,
@@ -194,18 +180,15 @@ class PosyanduTemplateExport implements FromArray, WithHeadings, WithEvents, Wit
                     ],
                 ]);
 
-                // Get highest row untuk styling data
                 $highestRow = 6 + count($this->dataRows);
 
-                // Highlight kolom NAMA POSYANDU (user harus isi ini)
                 $sheet->getStyle('B7:B' . $highestRow)->applyFromArray([
                     'fill' => [
                         'fillType' => Fill::FILL_SOLID,
-                        'startColor' => ['argb' => 'FFEFF6FF'] // Light blue
+                        'startColor' => ['argb' => 'FFEFF6FF']
                     ]
                 ]);
 
-                // Style untuk semua data (border dan alignment)
                 $sheet->getStyle('A6:F' . $highestRow)->applyFromArray([
                     'borders' => [
                         'allBorders' => [
@@ -219,45 +202,35 @@ class PosyanduTemplateExport implements FromArray, WithHeadings, WithEvents, Wit
                     ]
                 ]);
 
-                // Alignment khusus per kolom
-                // NO - Center
                 $sheet->getStyle('A7:A' . $highestRow)->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-                // NAMA POSYANDU - Left (user isi)
                 $sheet->getStyle('B7:B' . $highestRow)->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_LEFT);
 
-                // DESA - Left
                 $sheet->getStyle('C7:C' . $highestRow)->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_LEFT);
 
-                // KECAMATAN - Center
                 $sheet->getStyle('D7:D' . $highestRow)->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-                // KABUPATEN - Center
                 $sheet->getStyle('E7:E' . $highestRow)->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-                // PROVINSI - Center
                 $sheet->getStyle('F7:F' . $highestRow)->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-                // Set column widths
-                $sheet->getColumnDimension('A')->setWidth(6);   // NO
-                $sheet->getColumnDimension('B')->setWidth(30);  // NAMA POSYANDU (lebih lebar untuk user input)
-                $sheet->getColumnDimension('C')->setWidth(20);  // DESA
-                $sheet->getColumnDimension('D')->setWidth(20);  // KECAMATAN
-                $sheet->getColumnDimension('E')->setWidth(15);  // KABUPATEN
-                $sheet->getColumnDimension('F')->setWidth(15);  // PROVINSI
+                $sheet->getColumnDimension('A')->setWidth(6);
+                $sheet->getColumnDimension('B')->setWidth(30);
+                $sheet->getColumnDimension('C')->setWidth(20);
+                $sheet->getColumnDimension('D')->setWidth(20);
+                $sheet->getColumnDimension('E')->setWidth(15);
+                $sheet->getColumnDimension('F')->setWidth(15);
     
-                // Set row height untuk data
                 for ($row = 7; $row <= $highestRow; $row++) {
                     $sheet->getRowDimension($row)->setRowHeight(22);
                 }
 
-                // Lock semua cell kecuali NAMA POSYANDU
                 $sheet->getProtection()->setSheet(true);
                 $sheet->getStyle('B7:B' . $highestRow)->getProtection()->setLocked(false);
             },

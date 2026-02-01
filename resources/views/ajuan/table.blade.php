@@ -1,4 +1,3 @@
-{{-- DESKTOP VIEW: TABLE --}}
 <div class="hidden md:block overflow-x-auto">
     <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
@@ -44,7 +43,6 @@
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm">
                         <div class="space-y-2">
-                            {{-- Status Utama --}}
                             @if ($ajuan->status_pengajuan == 'Disetujui')
                                 <span
                                     class="px-1 md:px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
@@ -72,10 +70,8 @@
                                 </span>
                             @endif
 
-                            {{-- ✅ PROGRESS INDICATOR - Hanya untuk status "Diproses" --}}
                             @if ($ajuan->status_pengajuan == 'Diproses')
                                 <div class="flex items-center gap-1 text-xs">
-                                    {{-- Tahap 1: Verifikasi --}}
                                     @if ($ajuan->sudah_verifikasi)
                                         <span
                                             class="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center text-white"
@@ -94,7 +90,6 @@
                                         class="w-2 h-0.5 {{ $ajuan->sudah_verifikasi ? 'bg-green-500' : 'bg-gray-300' }}">
                                     </div>
 
-                                    {{-- Tahap 2: Kunjungan --}}
                                     @if ($ajuan->kunjungan_lapangan)
                                         <span
                                             class="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center text-white"
@@ -119,7 +114,6 @@
                                         class="w-2 h-0.5 {{ $ajuan->kunjungan_lapangan ? 'bg-green-500' : 'bg-gray-300' }}">
                                     </div>
 
-                                    {{-- Tahap 3: Ketua Posyandu --}}
                                     @if ($ajuan->approved_by_ketua)
                                         <span
                                             class="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center text-white"
@@ -142,9 +136,7 @@
                                 </div>
                             @endif
 
-                            {{-- Badge Revisi --}}
                             @if ($ajuan->status_pengajuan != 'Ditolak')
-                                {{-- Badge: Sudah Direvisi oleh User --}}
                                 @if (isset($ajuan->has_been_revised_by_user) && $ajuan->has_been_revised_by_user)
                                     <span
                                         class="block px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 border border-blue-300">
@@ -152,7 +144,6 @@
                                     </span>
                                 @endif
 
-                                {{-- Badge: Menunggu Revisi --}}
                                 @if (isset($ajuan->is_waiting_revision) && $ajuan->is_waiting_revision)
                                     <span
                                         class="block px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800 animate-pulse">
@@ -161,7 +152,6 @@
                                 @endif
                             @endif
 
-                            {{-- Badge: Jumlah Revisi --}}
                             @if ($ajuan->revision_count > 0)
                                 <span
                                     class="block px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
@@ -180,7 +170,6 @@
                             <i class="bi bi-printer-fill mr-1"></i> Cetak
                         </a>
                         <div class="flex items-center gap-2">
-                            <!-- Dropdown Menu -->
                             <div class="relative" x-data="{ open: false }">
                                 <button @click="open = !open" class="text-gray-600 hover:text-gray-900">
                                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -211,12 +200,10 @@
     </table>
 </div>
 
-{{-- MOBILE VIEW: CARDS --}}
 <div class="md:hidden space-y-4">
     @forelse ($semuaAjuan as $ajuan)
         <div
             class="bg-white rounded-lg shadow-md border {{ $ajuan->has_been_revised_by_user ? 'border-blue-300 ring-2 ring-blue-100' : 'border-gray-200' }} overflow-hidden">
-            {{-- Card Header --}}
             <div class="bg-gradient-to-r from-pink-50 to-purple-50 px-4 py-3 border-b border-gray-200">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-3">
@@ -242,9 +229,7 @@
                 </div>
             </div>
 
-            {{-- Card Body --}}
             <div class="px-4 py-3 space-y-3">
-                {{-- Bidang --}}
                 <div class="flex items-start">
                     <div class="flex-shrink-0 w-32">
                         <span class="text-xs font-medium text-gray-500">Bidang</span>
@@ -256,7 +241,6 @@
                     </div>
                 </div>
 
-                {{-- Deskripsi Permohonan --}}
                 <div class="flex items-start">
                     <div class="flex-shrink-0 w-32">
                         <span class="text-xs font-medium text-gray-500">Deskripsi</span>
@@ -268,7 +252,6 @@
                     </div>
                 </div>
 
-                {{-- Tindak Lanjut --}}
                 <div class="flex items-start">
                     <div class="flex-shrink-0 w-32">
                         <span class="text-xs font-medium text-gray-500">Tindak Lanjut</span>
@@ -280,13 +263,11 @@
                     </div>
                 </div>
 
-                {{-- Status Pengajuan --}}
                 <div class="flex items-start">
                     <div class="flex-shrink-0 w-32">
                         <span class="text-xs font-medium text-gray-500">Status</span>
                     </div>
                     <div class="flex-1 space-y-1">
-                        {{-- Status Utama --}}
                         @if ($ajuan->status_pengajuan == 'Disetujui')
                             <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                                 Disetujui
@@ -309,7 +290,6 @@
                             </span>
                         @endif
 
-                        {{-- Badge: Sudah Direvisi oleh User --}}
                         @if ($ajuan->has_been_revised_by_user)
                             <span
                                 class="block px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 border border-blue-300">
@@ -317,7 +297,6 @@
                             </span>
                         @endif
 
-                        {{-- Badge: Menunggu Revisi --}}
                         @if ($ajuan->is_waiting_revision)
                             <span
                                 class="block px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800 animate-pulse">
@@ -325,7 +304,6 @@
                             </span>
                         @endif
 
-                        {{-- Badge: Jumlah Revisi --}}
                         @if ($ajuan->revision_count > 0)
                             <span
                                 class="block px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
@@ -336,7 +314,6 @@
                 </div>
             </div>
 
-            {{-- Card Footer - Action Buttons --}}
             <div class="bg-gray-50 px-4 py-3 border-t border-gray-200 flex gap-2">
                 <a href="{{ route('ajuan.show', $ajuan) }}"
                     class="flex-1 flex items-center justify-center px-3 py-2 bg-blue-500 text-white rounded-md text-xs font-medium hover:bg-blue-600 transition-colors duration-150">

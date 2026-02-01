@@ -20,21 +20,17 @@
 
             <x-auth-session-status class="mb-4" :status="session('status')" />
 
-            {{-- ✅ MODAL BUKU PANDUAN --}}
             <div id="guideModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title"
                 role="dialog" aria-modal="true">
                 <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                    {{-- Background overlay --}}
                     <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
 
-                    {{-- Modal panel --}}
                     <div
                         class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
                         <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                             <div class="sm:flex sm:items-start">
                                 <div
                                     class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
-                                    {{-- Icon Book --}}
                                     <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor"
                                         viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -53,7 +49,6 @@
                                             buku panduan untuk membantu Anda menggunakan sistem ini.
                                         </p>
 
-                                        {{-- Preview PDF --}}
                                         <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
                                             <div class="flex items-center justify-between mb-3">
                                                 <div class="flex items-center space-x-2">
@@ -72,7 +67,6 @@
                                                 </div>
                                             </div>
 
-                                            {{-- Embedded PDF Preview --}}
                                             <div class="relative w-full" style="height: 400px;">
                                                 <iframe
                                                     src="https://drive.google.com/file/d/18TIpDP-BjaseFDf0q32GpEMyzM7E_wJi/preview"
@@ -82,7 +76,6 @@
                                             </div>
                                         </div>
 
-                                        {{-- Download Button --}}
                                         <div class="mt-4 flex items-center justify-center space-x-3">
                                             <a href="https://drive.google.com/uc?export=download&id=18TIpDP-BjaseFDf0q32GpEMyzM7E_wJi"
                                                 target="_blank"
@@ -110,7 +103,6 @@
                                             </a>
                                         </div>
 
-                                        {{-- Checkbox: Jangan tampilkan lagi --}}
                                         <div class="mt-4 flex items-center">
                                             <input id="dontShowAgain" type="checkbox"
                                                 class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
@@ -181,7 +173,7 @@
 
                 <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
                     <p class="text-xs text-blue-800">
-                        💡 <strong>Tips:</strong> Anda bisa login menggunakan:
+                        <strong>Tips:</strong> Anda bisa login menggunakan:
                     </p>
                     <ul class="text-xs text-blue-700 mt-1 ml-4 list-disc">
                         <li>Email: contoh@email.com</li>
@@ -241,7 +233,6 @@
                 </p>
             </div>
 
-            {{-- ✅ FORM TRACKING (Manual Input Only) --}}
             <form method="GET" action="{{ route('ajuan.track.show') }}" class="space-y-4">
                 <div>
                     <label for="tracking_code" class="block text-sm font-medium text-gray-700 mb-2">
@@ -258,7 +249,6 @@
                     </p>
                 </div>
 
-                {{-- Error Message if tracking code not found (from session) --}}
                 @if (session('tracking_error'))
                     <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
                         <div class="flex items-start">
@@ -278,7 +268,6 @@
                 </button>
             </form>
 
-            {{-- ✅ INFO CARD --}}
             <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div class="flex items-start">
                     <i class="bi bi-lightbulb-fill text-blue-500 mr-3 mt-0.5 text-xl"></i>
@@ -294,7 +283,6 @@
                 </div>
             </div>
 
-            {{-- ✅ CONTACT INFO --}}
             <div class="mt-6 text-center">
                 <p class="text-sm text-gray-600 mb-2">Belum memiliki kode tracking?</p>
                 <p class="text-sm text-gray-800">
@@ -311,37 +299,26 @@
         </div>
     </div>
 
-    {{-- ✅ JAVASCRIPT --}}
     <script>
         function openScanner() {
-            // Placeholder untuk QR Scanner
-            // Nanti bisa diintegrasikan dengan library seperti html5-qrcode
             alert(
                 'Fitur scan QR Code akan segera tersedia!\n\nSaat ini, silakan masukkan kode pengajuan secara manual.'
             );
-
-            // TODO: Implementasi QR Scanner
-            // Example:
-            // const html5QrCode = new Html5Qrcode("qr-reader");
-            // html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess);
         }
 
-        // Auto-focus on tracking code if track tab is active from session
         if (session('track_error')) {
             document.addEventListener('DOMContentLoaded', function() {
                 Alpine.store('activeTab', 'track');
             });
         }
 
-        // Check if user has seen guide before (using localStorage for guest)
         const hasSeenGuide = localStorage.getItem('hasSeenGuide');
 
-        // Show modal on first visit
         if (!hasSeenGuide) {
             document.addEventListener('DOMContentLoaded', function() {
                 setTimeout(() => {
                     document.getElementById('guideModal').classList.remove('hidden');
-                }, 500); // Delay 500ms agar smooth
+                }, 500);
             });
         }
 
@@ -358,15 +335,11 @@
 
             document.getElementById('guideModal').classList.add('hidden');
         }
-
-        // Close modal when clicking outside
         document.getElementById('guideModal')?.addEventListener('click', function(e) {
             if (e.target === this) {
                 closeGuideModal();
             }
         });
-
-        // Close with ESC key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 closeGuideModal();

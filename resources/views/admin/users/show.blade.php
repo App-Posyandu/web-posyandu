@@ -3,8 +3,6 @@
 @section('content')
     <div class="py-12">
         <div class="w-full max-w-7xl mx-auto sm:px-6 lg:px-8">
-
-            {{-- Tombol Kembali & Edit --}}
             <div class="flex justify-between items-center mb-6">
                 <a href="{{ route('admin.users.index') }}" class="flex items-center text-gray-600 hover:text-gray-900">
                     <i class="bi bi-arrow-left mr-2"></i> Kembali ke Daftar
@@ -19,8 +17,6 @@
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-8 text-gray-900">
-
-                    {{-- Header Profil --}}
                     <div class="flex flex-col md:flex-row items-start gap-6 mb-8 border-b pb-8">
                         <div class="flex-shrink-0">
                             <div
@@ -35,13 +31,10 @@
                                     <p class="text-gray-500">{{ $user->email }}</p>
                                 </div>
                                 <div class="flex flex-col items-end gap-2">
-                                    {{-- Badge Role --}}
                                     <span
                                         class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-blue-100 text-blue-800 border border-blue-200">
                                         {{ ucfirst($user->role) }}
                                     </span>
-
-                                    {{-- Badge Status Akun --}}
                                     @if ($user->is_active)
                                         <span
                                             class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-green-100 text-green-800 border border-green-200 flex items-center gap-1">
@@ -53,8 +46,6 @@
                                             <i class="bi bi-x-circle-fill"></i> Nonaktif
                                         </span>
                                     @endif
-
-                                    {{-- Badge Verifikasi --}}
                                     @if ($user->verified_at)
                                         <span
                                             class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-teal-100 text-teal-800 border border-teal-200 flex items-center gap-1">
@@ -68,8 +59,6 @@
                                     @endif
                                 </div>
                             </div>
-
-                            {{-- Info Penonaktifan (Hanya Muncul Jika Nonaktif) --}}
                             @if (!$user->is_active)
                                 <div class="mt-4 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-md">
                                     <h4 class="text-sm font-bold text-red-800 mb-1 flex items-center">
@@ -83,7 +72,6 @@
                                         Dinonaktifkan pada:
                                         {{ \Carbon\Carbon::parse($user->deactivated_at)->format('d F Y, H:i') }}
                                         @php
-                                            // Opsional: Ambil nama admin yang menonaktifkan (jika relasi ada)
                                             $admin = \App\Models\User::find($user->deactivated_by);
                                         @endphp
                                         @if ($admin)
@@ -95,10 +83,7 @@
                         </div>
                     </div>
 
-                    {{-- Grid Informasi Detail --}}
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
-
-                        {{-- Kolom Kiri: Biodata --}}
                         <div class="space-y-6">
                             <h3 class="text-lg font-semibold text-gray-800 border-b pb-2">Biodata Diri</h3>
 
@@ -132,9 +117,7 @@
                             </div>
                         </div>
 
-                        {{-- Kolom Kanan: Penugasan & Dokumen --}}
                         <div class="space-y-8">
-                            {{-- Info Penugasan --}}
                             <div>
                                 <h3 class="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">Penugasan</h3>
                                 <div class="grid grid-cols-1 gap-4">
@@ -158,12 +141,9 @@
                                     @endif
                                 </div>
                             </div>
-
-                            {{-- Dokumen (KTP/KK) --}}
                             <div>
                                 <h3 class="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">Dokumen</h3>
                                 <div class="grid grid-cols-2 gap-4">
-                                    {{-- KTP --}}
                                     <div x-data="{ open: false }">
                                         <dt class="text-xs uppercase tracking-wider text-gray-500 font-semibold mb-2">KTP
                                         </dt>
@@ -177,7 +157,6 @@
                                                         class="bi bi-eye text-white opacity-0 group-hover:opacity-100 text-2xl"></i>
                                                 </div>
                                             </div>
-                                            {{-- Modal Preview KTP --}}
                                             <div x-show="open"
                                                 class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 p-4"
                                                 x-transition style="display: none;">
@@ -194,8 +173,6 @@
                                             </div>
                                         @endif
                                     </div>
-
-                                    {{-- KK --}}
                                     <div x-data="{ open: false }">
                                         <dt class="text-xs uppercase tracking-wider text-gray-500 font-semibold mb-2">KK
                                         </dt>
@@ -209,7 +186,6 @@
                                                         class="bi bi-eye text-white opacity-0 group-hover:opacity-100 text-2xl"></i>
                                                 </div>
                                             </div>
-                                            {{-- Modal Preview KK --}}
                                             <div x-show="open"
                                                 class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 p-4"
                                                 x-transition style="display: none;">

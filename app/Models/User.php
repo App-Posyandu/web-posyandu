@@ -2,8 +2,6 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -11,14 +9,8 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasUuids;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $primaryKey = 'id';
     protected $foreignKey = 'posyandu_id';
     public $incrementing = false;
@@ -110,23 +102,18 @@ class User extends Authenticatable
         if ($this->kecamatanRelation) {
             $parts[] = 'Kec. ' . $this->kecamatanRelation->nama_kecamatan;
         } elseif ($this->kecamatan) {
-            // Fallback ke string lama
             $parts[] = 'Kec. ' . str_replace('KECAMATAN ', '', $this->kecamatan);
         }
 
         if ($this->kabupatenRelation) {
             $parts[] = $this->kabupatenRelation->nama_lengkap;
         } elseif ($this->kabupaten) {
-            // Fallback ke string lama
             $parts[] = $this->kabupaten;
         }
 
         return implode(', ', $parts) ?: '-';
     }
 
-    /**
-     * Get nama kabupaten (from relation or fallback to string)
-     */
     public function getKabupatenNameAttribute()
     {
         if ($this->kabupatenRelation) {
@@ -135,9 +122,6 @@ class User extends Authenticatable
         return $this->kabupaten ?? '-';
     }
 
-    /**
-     * Get nama kecamatan (from relation or fallback to string)
-     */
     public function getKecamatanNameAttribute()
     {
         if ($this->kecamatanRelation) {
@@ -151,7 +135,6 @@ class User extends Authenticatable
         return $this->belongsTo(User::class, 'deactivated_by');
     }
 
-    // ✅ TAMBAHKAN HELPER METHOD
     public function isActive()
     {
         return $this->status === 'active';
@@ -167,21 +150,11 @@ class User extends Authenticatable
         $this->attributes['nik'] = empty($value) ? null : $value;
     }
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [

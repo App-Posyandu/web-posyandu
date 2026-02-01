@@ -19,10 +19,6 @@ class UsersTemplateExport implements FromArray, WithHeadings, WithEvents, WithDr
     protected $dataRows;
     protected $roleToCreate;
 
-    /**
-     * Constructor menerima array data rows berdasarkan posyandu dan role yang akan dibuat
-     * Format: [['desa' => 'SEMPU', 'kecamatan' => 'GOMBONG', 'kabupaten' => 'KEBUMEN', 'bidang' => 'KESEHATAN'], ...]
-     */
     public function __construct(array $dataRows, $roleToCreate = null)
     {
         $this->dataRows = $dataRows;
@@ -33,22 +29,18 @@ class UsersTemplateExport implements FromArray, WithHeadings, WithEvents, WithDr
         ]);
     }
 
-    /**
-     * Generate array untuk template dengan nomor urut dan data auto-fill
-     */
     public function array(): array
     {
         $data = [];
         
         foreach ($this->dataRows as $index => $row) {
-            // Semua role: tanpa bidang
             $data[] = [
-                $index + 1,                    // NO (auto increment)
-                '',                            // NAMA (user isi)
-                '',                            // NOMOR TELEPON (user isi)
-                $row['desa'] ?? '',           // DESA (auto-fill dari posyandu)
-                $row['kecamatan'] ?? '',      // KECAMATAN (auto-fill dari posyandu)
-                $row['kabupaten'] ?? 'KEBUMEN' // KABUPATEN (auto-fill dari posyandu)
+                $index + 1,
+                '',
+                '',
+                $row['desa'] ?? '',
+                $row['kecamatan'] ?? '',
+                $row['kabupaten'] ?? 'KEBUMEN'
             ];
         }
         
@@ -61,7 +53,7 @@ class UsersTemplateExport implements FromArray, WithHeadings, WithEvents, WithDr
 
     public function startCell(): string
     {
-        return 'A6'; // Data mulai dari baris 6
+        return 'A6';
     }
 
     public function headings(): array
@@ -76,7 +68,6 @@ class UsersTemplateExport implements FromArray, WithHeadings, WithEvents, WithDr
         ];
     }
 
-    /** LOGO DI ATAS TABEL **/
     public function drawings()
     {
         $drawings = [];
@@ -86,21 +77,21 @@ class UsersTemplateExport implements FromArray, WithHeadings, WithEvents, WithDr
                 'path' => public_path('assets/image/logo/logo_kebumen.png'),
                 'width' => 85,
                 'height' => 60,
-                'offsetX' => 0, // kiri dari tengah
+                'offsetX' => 0,
                 'position' => 'C1',
             ],
             [
                 'path' => public_path('assets/image/logo/logo_posyandu.png'),
                 'width' => 85,
                 'height' => 60,
-                'offsetX' => 100, // tengah
+                'offsetX' => 100,
                 'position' => 'C1',
             ],
             [
                 'path' => public_path('assets/image/logo/logo_sapaposyandu.png'),
                 'width' => 95,
                 'height' => 60,
-                'offsetX' => 80, // kanan dari tengah
+                'offsetX' => 80,
                 'position' => 'D1',
             ],
         ];
@@ -127,10 +118,8 @@ class UsersTemplateExport implements FromArray, WithHeadings, WithEvents, WithDr
             AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
 
-                // Set row height untuk logo
                 $sheet->getRowDimension(1)->setRowHeight(80);
 
-                // Map role ke display name
                 $roleDisplayMap = [
                     'masyarakat' => 'MASYARAKAT',
                     'operator-desa' => 'OPERATOR DESA',
@@ -142,7 +131,6 @@ class UsersTemplateExport implements FromArray, WithHeadings, WithEvents, WithDr
                 ];
                 $roleDisplay = $roleDisplayMap[$this->roleToCreate] ?? 'USER';
 
-                // JUDUL UTAMA - Baris 2
                 $sheet->mergeCells('A2:F2');
                 $sheet->setCellValue('A2', 'TEMPLATE IMPORT USER [' . $roleDisplay . '] KABUPATEN KEBUMEN');
                 $sheet->getStyle('A2')->applyFromArray([
@@ -159,7 +147,6 @@ class UsersTemplateExport implements FromArray, WithHeadings, WithEvents, WithDr
                 ]);
                 $sheet->getRowDimension(2)->setRowHeight(30);
 
-                // INSTRUKSI - Baris 3
                 $sheet->mergeCells('A3:F3');
                 $instruksi = 'Isi kolom NAMA dan NOMOR TELEPON saja. Kolom lainnya sudah otomatis terisi berdasarkan data Posyandu.';
                 $sheet->setCellValue('A3', $instruksi);
@@ -180,18 +167,15 @@ class UsersTemplateExport implements FromArray, WithHeadings, WithEvents, WithDr
                 ]);
                 $sheet->getRowDimension(3)->setRowHeight(25);
 
-                // Baris kosong 4, 5
                 $sheet->getRowDimension(4)->setRowHeight(10);
                 $sheet->getRowDimension(5)->setRowHeight(10);
 
-                // HEADER TABEL - Baris 6
                 $headers = ['NO.', 'NAMA', 'NOMOR TELEPON', 'DESA', 'KECAMATAN', 'KABUPATEN'];
                 foreach ($headers as $index => $header) {
-                    $column = chr(65 + $index); // A, B, C, D, E, F
+                    $column = chr(65 + $index);
                     $sheet->setCellValue($column . '6', $header);
                 }
 
-                // Style untuk header
                 $sheet->getStyle('A6:F6')->applyFromArray([
                     'font' => [
                         'bold' => true,
@@ -215,18 +199,15 @@ class UsersTemplateExport implements FromArray, WithHeadings, WithEvents, WithDr
                     ],
                 ]);
 
-                // Get highest row untuk styling data
                 $highestRow = 6 + count($this->dataRows);
 
-                // Highlight kolom NAMA dan NOMOR TELEPON (user harus isi)
                 $sheet->getStyle('B7:C' . $highestRow)->applyFromArray([
                     'fill' => [
                         'fillType' => Fill::FILL_SOLID,
-                        'startColor' => ['argb' => 'FFEFF6FF'] // Light blue
+                        'startColor' => ['argb' => 'FFEFF6FF']
                     ]
                 ]);
 
-                // Style untuk semua data (border dan alignment)
                 $sheet->getStyle('A6:F' . $highestRow)->applyFromArray([
                     'borders' => [
                         'allBorders' => [
@@ -240,45 +221,35 @@ class UsersTemplateExport implements FromArray, WithHeadings, WithEvents, WithDr
                     ]
                 ]);
 
-                // Alignment khusus per kolom
-                // NO - Center
                 $sheet->getStyle('A7:A' . $highestRow)->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-                // NAMA - Left (user isi)
                 $sheet->getStyle('B7:B' . $highestRow)->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_LEFT);
 
-                // NOMOR TELEPON - Left (user isi)
                 $sheet->getStyle('C7:C' . $highestRow)->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_LEFT);
 
-                // DESA - Left
                 $sheet->getStyle('D7:D' . $highestRow)->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_LEFT);
 
-                // KECAMATAN - Center
                 $sheet->getStyle('E7:E' . $highestRow)->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-                // KABUPATEN - Center
                 $sheet->getStyle('F7:F' . $highestRow)->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-                // Set column widths
-                $sheet->getColumnDimension('A')->setWidth(6);   // NO
-                $sheet->getColumnDimension('B')->setWidth(25);  // NAMA (user input)
-                $sheet->getColumnDimension('C')->setWidth(18);  // NOMOR TELEPON (user input)
-                $sheet->getColumnDimension('D')->setWidth(20);  // DESA
-                $sheet->getColumnDimension('E')->setWidth(20);  // KECAMATAN
-                $sheet->getColumnDimension('F')->setWidth(15);  // KABUPATEN
+                $sheet->getColumnDimension('A')->setWidth(6);
+                $sheet->getColumnDimension('B')->setWidth(25);
+                $sheet->getColumnDimension('C')->setWidth(18);
+                $sheet->getColumnDimension('D')->setWidth(20);
+                $sheet->getColumnDimension('E')->setWidth(20);
+                $sheet->getColumnDimension('F')->setWidth(15);
 
-                // Set row height untuk data
                 for ($row = 7; $row <= $highestRow; $row++) {
                     $sheet->getRowDimension($row)->setRowHeight(22);
                 }
 
-                // Lock semua cell kecuali NAMA dan NOMOR TELEPON
                 $sheet->getProtection()->setSheet(true);
                 $sheet->getStyle('B7:C' . $highestRow)->getProtection()->setLocked(false);
             },

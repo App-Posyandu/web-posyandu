@@ -17,21 +17,12 @@ use Str;
 
 class RegisteredUserController extends Controller
 {
-    /**
-     * Display the registration view.
-     */
     const PROVINCE_ID = 33;
     public function create(): View
     {
         $kabupatens = Http::get(env('API_WILAYAH_URL') . 'regencies/' . self::PROVINCE_ID . '.json')->json();
         return view('auth.register', compact('kabupatens'));
     }
-
-    /**
-     * Handle an incoming registration request.
-     *
-     * @throws \Illuminate\Validation\ValidationException
-     */
 
     public function store(Request $request): RedirectResponse
     {
@@ -49,14 +40,12 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'no_telepon' => ['required', 'string', 'max:20', 'unique:users'],
 
-            // ✅ TAMBAHAN BARU: RW/RT
-            'rw' => ['required', 'string', 'regex:/^RW\d{2}$/'],  // Format: RW01, RW02, dst
-            'rt' => ['nullable', 'string', 'regex:/^RT\d{3}$/'],  // Format: RT001, RT002, dst
+            'rw' => ['required', 'string', 'regex:/^RW\d{2}$/'],
+            'rt' => ['nullable', 'string', 'regex:/^RT\d{3}$/'],
         ];
 
         $posyanduId = $request->posyandu_id;
 
-        // ✅ Validasi: Jika posyandu sudah UUID, cek apakah RW valid
         if (\Illuminate\Support\Str::isUuid($posyanduId)) {
             $posyandu = Posyandu::find($posyanduId);
 
@@ -66,7 +55,6 @@ class RegisteredUserController extends Controller
                     ->withInput();
             }
 
-            // ✅ Validasi RT jika diisi
             if ($request->filled('rt') && $posyandu) {
                 if (!$posyandu->isRtValidForRw($request->rw, $request->rt)) {
                     return redirect()->back()
@@ -76,14 +64,12 @@ class RegisteredUserController extends Controller
             }
         }
 
-        // ✅ Jika posyandu belum ada (user ketik manual), buat posyandu baru
         if (!\Illuminate\Support\Str::isUuid($posyanduId)) {
             $newPosyandu = Posyandu::create([
                 'nama_posyandu' => $posyanduId,
                 'kabupaten' => explode('_', $request->kabupaten)[1] ?? $request->kabupaten,
                 'kecamatan' => explode('_', $request->kecamatan)[1] ?? $request->kecamatan,
                 'desa' => explode('_', $request->desa)[1] ?? $request->desa,
-                // ✅ Posyandu baru belum punya mapping RW/RT, admin perlu setup nanti
             ]);
             $posyanduId = $newPosyandu->id;
         }
@@ -94,7 +80,6 @@ class RegisteredUserController extends Controller
 
         $request->validate($validationRules);
 
-        // ✅ Buat user baru dengan RW/RT
         $userData = [
             'name' => $request->name,
             'tempat_lahir' => $request->tempat_lahir,
@@ -105,7 +90,6 @@ class RegisteredUserController extends Controller
             'no_telepon' => $request->no_telepon,
             'posyandu_id' => $posyanduId,
 
-            // ✅ TAMBAHAN BARU
             'rw' => $request->rw,
             'rt' => $request->rt,
 

@@ -37,7 +37,6 @@ class UserHistory extends Model
         return $this->belongsTo(User::class, 'action_by');
     }
 
-    // Helper untuk format action type
     public function getActionTypeLabel()
     {
         return match ($this->action_type) {

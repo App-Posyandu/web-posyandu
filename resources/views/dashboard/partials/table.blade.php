@@ -1,8 +1,3 @@
-{{--
-    File: resources/views/ajuan/partials/table.blade.php
-    Komponen tabel yang unified untuk Dashboard dan List Ajuan Index
---}}
-
 <div class="overflow-x-auto">
     <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
@@ -37,12 +32,10 @@
         <tbody class="bg-white divide-y divide-gray-200">
             @forelse ($semuaAjuan as $index => $ajuan)
                 <tr class="hover:bg-gray-50 transition-colors">
-                    {{-- No --}}
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {{ $semuaAjuan->firstItem() + $index }}
                     </td>
 
-                    {{-- Nama Pemohon + RW/RT --}}
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 h-10 w-10">
@@ -62,7 +55,6 @@
                         </div>
                     </td>
 
-                    {{-- Bidang --}}
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center">
                             @php
@@ -87,17 +79,14 @@
                         </div>
                     </td>
 
-                    {{-- Deskripsi (Truncated) --}}
                     <td class="px-6 py-4 text-sm text-gray-500 max-w-xs">
                         <div class="line-clamp-2" title="{{ $ajuan->deskripsi_pengajuan }}">
                             {{ \Illuminate\Support\Str::limit($ajuan->deskripsi_pengajuan, 60) }}
                         </div>
                     </td>
 
-                    {{-- Status dengan Badge --}}
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex flex-col gap-1">
-                            {{-- Status Badge --}}
                             @if ($ajuan->status_pengajuan == 'Disetujui')
                                 <span
                                     class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -130,7 +119,6 @@
                                 </span>
                             @endif
 
-                            {{-- Revision Badge (jika ada) --}}
                             @if ($ajuan->revision_count > 0)
                                 <span
                                     class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
@@ -139,7 +127,6 @@
                                 </span>
                             @endif
 
-                            {{-- Status Revisi Badge --}}
                             @if (isset($ajuan->is_waiting_revision) && $ajuan->is_waiting_revision)
                                 <span
                                     class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
@@ -156,7 +143,6 @@
                         </div>
                     </td>
 
-                    {{-- Tanggal --}}
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <div class="flex flex-col">
                             <span
@@ -166,7 +152,6 @@
                         </div>
                     </td>
 
-                    {{-- Aksi --}}
                     <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                         <a href="{{ route('ajuan.show', $ajuan) }}"
                             class="inline-flex items-center px-3 py-1.5 bg-pink-500 text-white rounded-md hover:bg-pink-600 transition-colors">
@@ -190,7 +175,6 @@
     </table>
 </div>
 
-{{-- Pagination --}}
 @if ($semuaAjuan->hasPages())
     <div class="mt-4 px-6 py-3 bg-gray-50 border-t border-gray-200">
         {{ $semuaAjuan->links() }}

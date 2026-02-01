@@ -30,5 +30,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 window.addEventListener('appinstalled', () => {
     console.log('PWA was installed');
-    // your logic to handle the PWA installation
 });

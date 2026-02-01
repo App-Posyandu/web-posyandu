@@ -13,7 +13,6 @@
 
     <div class="container mx-auto px-4 py-8 max-w-4xl">
 
-        <!-- Back Button -->
         <div class="mb-6">
             <a href="{{ route('landing') }}"
                 class="inline-flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors">
@@ -22,7 +21,6 @@
             </a>
         </div>
 
-        <!-- Header Card -->
         <div class="bg-white rounded-2xl shadow-xl p-8 mb-6">
             <div class="flex items-start justify-between mb-6">
                 <div>
@@ -65,7 +63,6 @@
                 </div>
             </div>
 
-            <!-- Timeline Progress -->
             <div class="relative">
                 <div class="flex items-center justify-between mb-2">
                     @php
@@ -108,7 +105,6 @@
             </div>
         </div>
 
-        <!-- Detail Pengajuan -->
         <div class="bg-white rounded-2xl shadow-xl p-8 mb-6">
             <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
                 <i class="bi bi-info-circle text-blue-600"></i>
@@ -143,7 +139,6 @@
             </div>
         </div>
 
-        <!-- History Timeline -->
         @if ($ajuan->history && count($ajuan->history) > 0)
             <div class="bg-white rounded-2xl shadow-xl p-8">
                 <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
@@ -176,7 +171,6 @@
             </div>
         @endif
 
-        <!-- Feedback/Catatan -->
         @if ($ajuan->feedback_kades)
             <div class="bg-white rounded-2xl shadow-xl p-8 mt-6">
                 <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
@@ -193,7 +187,6 @@
             </div>
         @endif
 
-        <!-- Action Buttons -->
         <div class="flex gap-4 mt-6">
             <a href="{{ route('landing') }}"
                 class="flex-1 px-6 py-3 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300 transition-colors text-center">

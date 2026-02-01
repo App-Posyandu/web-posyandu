@@ -5,7 +5,6 @@
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
             <div class="p-6 text-gray-900">
 
-                {{-- Header --}}
                 <div class="flex justify-between items-center mb-6">
                     <div>
                         <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
@@ -18,7 +17,6 @@
                     </div>
                 </div>
 
-                {{-- Success Message --}}
                 @if (session('success'))
                     <div class="mb-6 bg-green-50 border-l-4 border-green-500 p-4 rounded-lg">
                         <div class="flex items-start">
@@ -30,7 +28,6 @@
                     </div>
                 @endif
 
-                {{-- Warning Message --}}
                 @if (session('warning'))
                     <div class="mb-6 bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-lg">
                         <div class="flex items-start">
@@ -42,7 +39,6 @@
                     </div>
                 @endif
 
-                {{-- Errors --}}
                 @if ($errors->any())
                     <div class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
                         <div class="flex items-start">
@@ -59,12 +55,10 @@
                     </div>
                 @endif
 
-                {{-- Form --}}
                 <form action="{{ route('admin.settings.update') }}" method="POST" x-data="settingsForm()">
                     @csrf
                     @method('PUT')
 
-                    {{-- Tabs for Categories --}}
                     <div class="border-b border-gray-200 mb-6">
                         <nav class="-mb-px flex space-x-8">
                             @foreach ($groupedSettings as $category => $categorySettings)
@@ -84,11 +78,9 @@
                         </nav>
                     </div>
 
-                    {{-- Tab Content --}}
                     @foreach ($groupedSettings as $category => $categorySettings)
                         <div x-show="activeTab === '{{ $category }}'" x-transition class="space-y-6">
 
-                            {{-- Category Description --}}
                             @if ($category === 'revision')
                                 <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg mb-6">
                                     <div class="flex items-start">
@@ -102,7 +94,6 @@
                                 </div>
                             @endif
 
-                            {{-- Settings Cards --}}
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 @foreach ($categorySettings as $setting)
                                     <div class="bg-gray-50 border border-gray-200 rounded-lg p-5">
@@ -117,7 +108,6 @@
                                                 </p>
                                             </div>
 
-                                            {{-- Type Badge --}}
                                             <span
                                                 class="ml-3 px-2 py-1 text-xs font-medium rounded-full
                                                 @if ($setting->type === 'integer') bg-blue-100 text-blue-800
@@ -127,9 +117,7 @@
                                             </span>
                                         </div>
 
-                                        {{-- Input based on type --}}
                                         @if ($setting->type === 'boolean')
-                                            {{-- Toggle Switch --}}
                                             <div
                                                 class="flex items-center justify-between mt-3 p-3 bg-white rounded border border-gray-200">
                                                 <span class="text-sm font-medium text-gray-700">
@@ -139,8 +127,6 @@
                                                             'text-green-600' : 'text-gray-500'"></span>
                                                 </span>
                                                 <label class="relative inline-flex items-center cursor-pointer">
-                                                    {{-- ✅ FIX: Hidden input selalu dikirim value true/false.
-                                                         Checkbox unchecked tidak dikirim browser, hidden input mengatasinya --}}
                                                     <input type="hidden" name="settings[{{ $setting->key }}]"
                                                         :value="settings['{{ $setting->key }}']">
                                                     <input type="checkbox"
@@ -153,7 +139,6 @@
                                                 </label>
                                             </div>
                                         @elseif($setting->type === 'integer')
-                                            {{-- Number Input with + - buttons --}}
                                             <div class="flex items-center gap-2 mt-3">
                                                 <button type="button" @click="decrementSetting('{{ $setting->key }}')"
                                                     class="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
@@ -172,13 +157,11 @@
                                                 </button>
                                             </div>
                                         @else
-                                            {{-- Text Input --}}
                                             <input type="text" id="setting_{{ $setting->key }}"
                                                 name="settings[{{ $setting->key }}]" value="{{ $setting->value }}"
                                                 class="mt-3 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500">
                                         @endif
 
-                                        {{-- Last Updated Info --}}
                                         @if ($setting->updatedByUser)
                                             <div class="mt-3 pt-3 border-t border-gray-200">
                                                 <p class="text-xs text-gray-500">
@@ -192,7 +175,6 @@
                                 @endforeach
                             </div>
 
-                            {{-- Preview/Summary for Revision Settings --}}
                             @if ($category === 'revision')
                                 <div
                                     class="bg-gradient-to-r from-pink-50 to-purple-50 border-2 border-pink-200 rounded-lg p-6 mt-6">
@@ -274,9 +256,7 @@
                         </div>
                     @endforeach
 
-                    {{-- Action Buttons --}}
                     <div class="mt-8 flex justify-between items-center pt-6 border-t border-gray-200">
-                        {{-- ✅ FIX: Reset pakai form terpisah karena formaction tidak works pada type="button" --}}
                         <form action="{{ route('admin.settings.reset') }}" method="POST" id="form-reset-settings">
                             @csrf
                             <button type="submit"
@@ -285,8 +265,6 @@
                                 <i class="bi bi-arrow-clockwise"></i>
                                 Reset ke Default
                             </button>
-                        </form>
-
                         </form>
 
                         <div class="flex gap-3">

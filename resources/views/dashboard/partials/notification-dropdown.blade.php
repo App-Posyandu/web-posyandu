@@ -1,16 +1,10 @@
-{{-- Ini adalah komponen dropdown untuk lonceng notifikasi --}}
 <div x-data="{ open: false }" class="relative">
-
-    {{-- Tombol Lonceng --}}
     <button @click="open = !open" class="relative px-2 py-1 rounded-md bg-white text-pink-500 hover:text-pink-700 focus:outline-none">
         <i class="bi bi-bell-fill text-xl"></i>
-        {{-- Tampilkan titik merah jika ada notifikasi baru --}}
         @if (auth()->user()->unreadNotifications->count() > 0)
             <span class="absolute top-0 right-0 block h-2 w-2 rounded-full bg-pink-500 ring-2 ring-white"></span>
         @endif
     </button>
-
-    {{-- Panel Dropdown --}}
     <div x-show="open" @click.away="open = false" x-transition:enter="transition ease-out duration-200"
         x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
         x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 scale-100"
@@ -38,7 +32,6 @@
                 <p class="text-gray-500 text-sm text-center py-4">Tidak ada notifikasi baru.</p>
             @endforelse
 
-            {{-- Link untuk melihat semua notifikasi (jika Anda membuat halaman 'semua notifikasi') --}}
             @if (auth()->user()->notifications->count() > 5)
                 <a href="#" class="block text-center py-2 text-sm text-blue-500 hover:bg-gray-100">
                     Lihat Semua Notifikasi

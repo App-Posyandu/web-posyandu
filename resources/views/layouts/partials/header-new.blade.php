@@ -1,8 +1,6 @@
 <header class="w-full top-0 z-50 bg-white md:bg-transparent" x-data="{ mobileMenuOpen: false }">
     <div class="max-w-screen-2xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center">
-
-            {{-- Logo Section --}}
             <div class="flex-shrink-0">
                 <a href="/" class="flex items-center gap-2 sm:gap-4">
                     <img src="{{ asset('assets/image/logo/logo_sapaposyandu.png') }}" alt="Logo Sapaposyandu"
@@ -18,8 +16,6 @@
                     </div>
                 </a>
             </div>
-
-            {{-- Desktop Menu --}}
             <div class="hidden md:flex items-center gap-3 lg:gap-5">
                 @include('dashboard.partials.notification-dropdown')
 
@@ -109,8 +105,6 @@
                     </x-slot>
                 </x-dropdown>
             </div>
-
-            {{-- Mobile Menu Button --}}
             <div class="flex md:hidden items-center gap-3">
                 @include('dashboard.partials.notification-dropdown')
 
@@ -126,8 +120,6 @@
                 </button>
             </div>
         </div>
-
-        {{-- Mobile Menu Dropdown --}}
         <div x-show="mobileMenuOpen" x-transition:enter="transition ease-out duration-200"
             x-transition:enter-start="opacity-0 transform -translate-y-2"
             x-transition:enter-end="opacity-100 transform translate-y-0"
@@ -136,7 +128,6 @@
             x-transition:leave-end="opacity-0 transform -translate-y-2"
             class="md:hidden mt-4 pb-3 border-t border-gray-200" style="display: none;">
 
-            {{-- User Info --}}
             <div class="pt-4 pb-3 border-b border-gray-200">
                 <div class="flex items-center px-4">
                     <div class="flex-shrink-0">
@@ -152,7 +143,6 @@
                 </div>
             </div>
 
-            {{-- Mobile Menu Links --}}
             <div class="pt-2 pb-3 space-y-1">
                 <a href="{{ route('dashboard') }}"
                     class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-pink-500 transition duration-150 ease-in-out">
@@ -173,7 +163,6 @@
                     </a>
                 @endif
 
-                {{-- Menu untuk Ketua Kader --}}
                 @if (auth()->user()->role === 'ketua-kader')
                     <a href="{{ route('ketua-kader.takeover') }}"
                         class="{{ request()->routeIs('ketua-kader.takeover*') ? 'border-pink-500 bg-pink-50' : 'border-transparent' }} block pl-3 pr-4 py-2 border-l-4 text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-pink-500 transition duration-150 ease-in-out">

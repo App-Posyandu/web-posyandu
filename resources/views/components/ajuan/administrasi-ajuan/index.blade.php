@@ -6,8 +6,6 @@
             id="form-administrasi">
             @csrf
             <h2 class="text-2xl font-bold text-center text-gray-800 mb-2">Administrasi Ajuan</h2>
-
-            {{-- ✅ Info Banner --}}
             <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 rounded-lg">
                 <div class="flex items-start">
                     <svg class="w-5 h-5 text-blue-500 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -73,7 +71,7 @@
                                         const file = $event.target.files[0];
                                         if (file) {
                                             if (file.size > 2048000) {
-                                                alert('⚠️ Ukuran file terlalu besar! Maksimal 2 MB.');
+                                                alert('Ukuran file terlalu besar! Maksimal 2 MB.');
                                                 $event.target.value = '';
                                                 return;
                                             }
@@ -85,7 +83,6 @@
                                     ">
                             </div>
 
-                            <!-- Preview Box dengan Icon -->
                             <div x-show="ktp_preview" x-transition class="mt-3 relative">
                                 <div class="flex items-center gap-2 mb-2 text-gray-600">
                                     <i class="fa-solid fa-eye text-pink-500"></i>
@@ -134,7 +131,7 @@
                                         const file = $event.target.files[0];
                                         if (file) {
                                             if (file.size > 2048000) {
-                                                alert('⚠️ Ukuran file terlalu besar! Maksimal 2 MB.');
+                                                alert('Ukuran file terlalu besar! Maksimal 2 MB.');
                                                 $event.target.value = '';
                                                 return;
                                             }
@@ -146,7 +143,6 @@
                                     ">
                             </div>
 
-                            <!-- Preview Box dengan Icon -->
                             <div x-show="kk_preview" x-transition class="mt-3 relative">
                                 <div class="flex items-center gap-2 mb-2 text-gray-600">
                                     <i class="fa-solid fa-eye text-pink-500"></i>
@@ -196,7 +192,7 @@
                                         const file = $event.target.files[0];
                                         if (file) {
                                             if (file.size > 2048000) {
-                                                alert('⚠️ Ukuran file terlalu besar! Maksimal 2 MB.');
+                                                alert('Ukuran file terlalu besar! Maksimal 2 MB.');
                                                 $event.target.value = '';
                                                 return;
                                             }

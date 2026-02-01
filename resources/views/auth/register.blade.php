@@ -27,13 +27,6 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
 
-            {{-- <div>
-                <x-input-label class="text-sm md:text-lg" for="nik" :value="__('NIK')" />
-                <x-text-input id="nik" class="block mt-1 w-full" type="text" name="nik" :value="old('nik')"
-                    autofocus placeholder="Masukkan NIK" maxlength="16" />
-                <x-input-error :messages="$errors->get('nik')" class="mt-2" />
-            </div> --}}
-
             <div>
                 <x-input-label class="text-sm md:text-lg" for="name" :value="__('Nama')" />
                 @if (session()->has('google_user_name'))
@@ -57,14 +50,6 @@
                 @endif
                 <x-input-error :messages="$errors->get('email')" class="mt-2" />
             </div>
-
-            {{-- <div class="md:col-span-2">
-                <x-input-label class="text-sm md:text-lg" for="alamat" :value="__('Alamat')" />
-                <textarea id="alamat" name="alamat"
-                    class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                    rows="3" placeholder="Masukkan Alamat Lengkap">{{ old('alamat') }}</textarea>
-                <x-input-error :messages="$errors->get('alamat')" class="mt-2" />
-            </div> --}}
 
             <div>
                 <x-input-label class="text-sm md:text-lg" for="tempat_lahir" :value="__('Tempat Lahir')" />
@@ -99,7 +84,6 @@
                 <x-input-error :messages="$errors->get('no_telepon')" class="mt-2" />
             </div>
 
-            {{-- Combobox Kabupaten --}}
             <div x-data="{ open: false, search: '' }" @click.away="open = false" class="relative">
                 <x-input-label class="text-sm md:text-lg" for="kabupaten" :value="__('Kabupaten')" />
                 <input type="hidden" name="kabupaten" :value="selectedKabupaten">
@@ -134,7 +118,6 @@
                 <x-input-error :messages="$errors->get('kabupaten')" class="mt-2" />
             </div>
 
-            {{-- Combobox Kecamatan --}}
             <div x-data="{ open: false, search: '' }" @click.away="open=false" class="relative">
                 <x-input-label class="text-sm md:text-lg" for="kecamatan" :value="__('Kecamatan')" />
                 <input type="hidden" name="kecamatan" :value="selectedKecamatan">
@@ -176,7 +159,6 @@
                 <x-input-error :messages="$errors->get('kecamatan')" class="mt-2" />
             </div>
 
-            {{-- Combobox Desa --}}
             <div x-data="{ open: false, search: '' }" @click.away="open = false" class="relative">
                 <x-input-label class="text-sm md:text-lg" for="desa" :value="__('Desa/Kelurahan')" />
                 <input type="hidden" name="desa" :value="selectedDesa">
@@ -199,7 +181,7 @@
                     <template x-for="desa in desaList.filter(d => d.name.toLowerCase().includes(search.toLowerCase()))"
                         :key="desa.code">
                         <div @click="selectedDesa = `${desa.code}_${desa.name}`; selectedDesaName = desa.name; search = ''; open = false; fetchPosyandu()"
-                            {{-- <-- PERBAIKI DI SINI --}} class="px-4 py-2 cursor-pointer hover:bg-indigo-50"
+                            class="px-4 py-2 cursor-pointer hover:bg-indigo-50"
                             :class="{ 'bg-indigo-100': selectedDesa === `${desa.code}_${desa.name}` }"
                             x-text="desa.name">
                         </div>
@@ -216,7 +198,6 @@
                 <x-input-error :messages="$errors->get('desa')" class="mt-2" />
             </div>
 
-            {{-- ✅ COMBOBOX POSYANDU DENGAN SELECT2 (SEARCHABLE + CREATE NEW) --}}
             <div x-data="{ open: false, search: '', creating: false }" @click.away="open = false" class="relative">
                 <x-input-label class="text-sm md:text-lg" for="posyandu" :value="__('Nama Posyandu')" />
                 <input type="hidden" name="posyandu_id" :value="selectedPosyandu">
@@ -261,44 +242,7 @@
                 <p class="mt-1 text-xs text-gray-500">Ketik untuk mencari atau buat posyandu baru.</p>
                 <x-input-error :messages="$errors->get('posyandu_id')" class="mt-2" />
             </div>
-            {{--
-            <div x-data="{ fileName: '' }">
-                <x-input-label class="text-sm md:text-lg" for="ktp" :value="__('KTP')" />
-                <label for="ktp"
-                    class="mt-1 flex justify-between items-center px-4 py-2 bg-white text-gray-500 rounded-md shadow-sm border border-gray-300 cursor-pointer hover:text-gray-700">
-                    <span x-text="fileName || 'Unggah KTP'"></span>
-                    <i class="bi bi-cloud-upload text-pink-500 text-lg"></i>
-                </label>
-                <input id="ktp" class="hidden" type="file" name="ktp" accept="image/*,application/pdf"
-                    @change="fileName = $event.target.files[0].name" />
-                <x-input-error :messages="$errors->get('ktp')" class="mt-2" />
-            </div>
-
-            <div x-data="{ fileName: '' }">
-                <x-input-label class="text-sm md:text-lg" for="kk" :value="__('KK')" />
-                <label for="kk"
-                    class="mt-1 flex justify-between items-center px-4 py-2 bg-white text-gray-500 rounded-md shadow-sm border border-gray-300 cursor-pointer hover:text-gray-700">
-                    <span x-text="fileName || 'Unggah KK'"></span>
-                    <i class="bi bi-cloud-upload text-pink-500 text-lg"></i>
-                </label>
-                <input id="kk" class="hidden" type="file" name="kk" accept="image/*,application/pdf"
-                    @change="fileName = $event.target.files[0].name" />
-                <x-input-error :messages="$errors->get('kk')" class="mt-2" />
-            </div> --}}
-
-            {{-- <div class="md:col-span-2">
-                <x-input-label class="text-sm md:text-lg" for="role" :value="__('Role')" />
-                <select id="role" name="role"
-                    class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                    required>
-                    <option value="" disabled selected>Pilih role</option>
-                    <option value="masyarakat" @selected(old('role') == 'masyarakat')>Masyarakat</option>
-                    <option value="kader" @selected(old('role') == 'kader')>Kader</option>
-                </select>
-                <x-input-error :messages="$errors->get('role')" class="mt-2" />
-            </div> --}}
-
-            {{-- ✅ DROPDOWN BIDANG (HANYA MUNCUL JIKA ROLE = KADER) --}}
+            
             <div id="bidang-field" style="display: none;" class="md:col-span-2">
                 <x-input-label class="text-sm md:text-lg" for="bidang_id" :value="__('Bidang Tugas')" />
                 <select id="bidang_id" name="bidang_id"
@@ -313,9 +257,7 @@
                 <p class="mt-1 text-xs text-gray-500">Kader hanya bisa mengelola 1 bidang.</p>
                 <x-input-error :messages="$errors->get('bidang_id')" class="mt-2" />
             </div>
-            {{-- ✅ TAMBAHKAN SETELAH DROPDOWN POSYANDU, SEBELUM PASSWORD --}}
-
-            {{-- RW Dropdown (Dynamic based on Posyandu) --}}
+            
             <div x-show="selectedPosyandu" x-transition class="md:col-span-2">
                 <x-input-label for="rw" :value="__('RW (Rukun Warga)')" />
                 <span class="text-red-600">*</span>
@@ -334,7 +276,6 @@
                 <x-input-error :messages="$errors->get('rw')" class="mt-2" />
             </div>
 
-            {{-- RT Dropdown (Dynamic based on RW) --}}
             <div x-show="selectedRw" x-transition class="md:col-span-2">
                 <x-input-label for="rt" :value="__('RT (Rukun Tetangga)')" />
                 <span class="text-gray-500 text-sm">(Opsional)</span>
@@ -353,7 +294,6 @@
                 <x-input-error :messages="$errors->get('rt')" class="mt-2" />
             </div>
 
-            {{-- ✅ INFO TAMBAHAN jika posyandu belum setup RW/RT --}}
             <div x-show="selectedPosyandu && availableRw.length === 0" x-transition class="md:col-span-2">
                 <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
                     <div class="flex">
@@ -402,14 +342,14 @@
                 kecamatanList: [],
                 desaList: [],
                 posyanduList: [],
-                availableRw: [], // ✅ BARU
-                availableRt: [], // ✅ BARU
+                availableRw: [],
+                availableRt: [],
                 selectedKabupaten: '',
                 selectedKecamatan: '',
                 selectedDesa: '',
                 selectedPosyandu: '',
-                selectedRw: '', // ✅ BARU
-                selectedRt: '', // ✅ BARU
+                selectedRw: '',
+                selectedRt: '',
                 selectedRole: '{{ old('role') }}',
                 loadingKecamatan: false,
                 loadingDesa: false,
@@ -447,13 +387,13 @@
                     this.selectedKecamatan = '';
                     this.selectedDesa = '';
                     this.selectedPosyandu = '';
-                    this.selectedRw = ''; // ✅ RESET
-                    this.selectedRt = ''; // ✅ RESET
+                    this.selectedRw = '';
+                    this.selectedRt = '';
                     this.kecamatanList = [];
                     this.desaList = [];
                     this.posyanduList = [];
-                    this.availableRw = []; // ✅ RESET
-                    this.availableRt = []; // ✅ RESET
+                    this.availableRw = [];
+                    this.availableRt = [];
                     this.fetchKecamatan(kab.code);
                 },
 
@@ -461,23 +401,23 @@
                     this.selectedKecamatan = `${kec.code}_${kec.name}`;
                     this.selectedDesa = '';
                     this.selectedPosyandu = '';
-                    this.selectedRw = ''; // ✅ RESET
-                    this.selectedRt = ''; // ✅ RESET
+                    this.selectedRw = '';
+                    this.selectedRt = '';
                     this.desaList = [];
                     this.posyanduList = [];
-                    this.availableRw = []; // ✅ RESET
-                    this.availableRt = []; // ✅ RESET
+                    this.availableRw = [];
+                    this.availableRt = [];
                     this.fetchDesa(kec.code);
                 },
 
                 selectDesa(desa) {
                     this.selectedDesa = `${desa.code}_${desa.name}`;
                     this.selectedPosyandu = '';
-                    this.selectedRw = ''; // ✅ RESET
-                    this.selectedRt = ''; // ✅ RESET
+                    this.selectedRw = '';
+                    this.selectedRt = '';
                     this.posyanduList = [];
-                    this.availableRw = []; // ✅ RESET
-                    this.availableRt = []; // ✅ RESET
+                    this.availableRw = [];
+                    this.availableRt = [];
                     this.fetchPosyandu();
                 },
 
@@ -485,16 +425,15 @@
                     this.selectedPosyandu = posyandu.id;
                     this.selectedRw = '';
                     this.selectedRt = '';
-                    this.fetchRwList(posyandu.id); // ✅ FETCH RW SETELAH PILIH POSYANDU
+                    this.fetchRwList(posyandu.id);
                 },
 
                 createNewPosyandu(name) {
                     this.selectedPosyandu = name;
-                    // ✅ Posyandu baru belum punya mapping RW/RT
                     this.availableRw = [];
                     this.availableRt = [];
                     alert(
-                        '⚠️ Posyandu baru belum memiliki mapping RW/RT. Admin akan setup setelah Anda mendaftar.'
+                        'Posyandu baru belum memiliki mapping RW/RT. Admin akan setup setelah Anda mendaftar.'
                     );
                 },
 
@@ -552,7 +491,6 @@
                         this.loadingPosyandu = false;
                     }
                 },
-                // ✅ Fetch RW yang dilayani posyandu
                 async fetchRwList(posyanduId = null) {
                     const id = posyanduId || this.selectedPosyandu;
                     if (!id) return;
@@ -560,11 +498,9 @@
                     try {
                         const posyandu = this.posyanduList.find(p => p.id === id);
 
-                        // ✅ Ambil dari data posyandu (sudah include rw_list & rt_mapping)
                         if (posyandu && posyandu.rw_list && Array.isArray(posyandu.rw_list)) {
                             this.availableRw = posyandu.rw_list;
                         } else {
-                            // ✅ Fetch dari API jika belum ada
                             const response = await fetch(`/api/posyandu/${id}/rw-rt`);
                             const data = await response.json();
 
@@ -583,7 +519,6 @@
                     }
                 },
 
-                // ✅ Fetch RT untuk RW yang dipilih
                 async fetchRtList() {
                     if (!this.selectedRw || !this.selectedPosyandu) return;
 
@@ -591,12 +526,10 @@
                         const posyandu = this.posyanduList.find(p => p.id === this
                         .selectedPosyandu);
 
-                        // ✅ Ambil dari rt_mapping
                         if (posyandu && posyandu.rt_mapping && posyandu.rt_mapping[this
                             .selectedRw]) {
                             this.availableRt = posyandu.rt_mapping[this.selectedRw];
                         } else {
-                            // ✅ Fetch dari API
                             const response = await fetch(
                                 `/api/posyandu/${this.selectedPosyandu}/rw-rt`);
                             const data = await response.json();

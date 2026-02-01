@@ -20,7 +20,7 @@ class AjuanIndex extends Component
         'status' => ['except' => ''],
         'search' => ['except' => ''],
         'statusFilter' => ['except' => ''],
-        'showArchived' => ['except' => false] // Daftarkan di query string
+        'showArchived' => ['except' => false]
     ];
 
     public function toggleArchive()
@@ -63,18 +63,14 @@ class AjuanIndex extends Component
         ];
         $isVerified = in_array($user->role, $alwaysVerifiedRoles) || !is_null($user->verified_at);
 
-        // Build query based on role
         $query = Pengajuan::with(['user.posyandu', 'bidang', 'histories' => function ($q) {
-            // ✅ Eager load semua history untuk cek revisi
             $q->whereIn('status', ['Revisi Diminta', 'Direvisi & Diajukan Kembali'])
                 ->orderBy('created_at', 'desc');
         }]);
 
         if ($this->showArchived) {
-            // Tampilkan yang SUDAH selesai/ditindaklanjuti sesuai role
             switch ($user->role) {
                 case 'ketua-posyandu':
-                    // Arsip Ketua: Yang sudah disetujui (Sesuai) atau sudah dikirim ke Desa/Kades
                     $query->whereIn('status_pengajuan', ['Sesuai', 'Diajukan ke Desa', 'Disetujui', 'Ditolak'])
                         ->where('approved_by_ketua', true);
                     break;
@@ -82,14 +78,12 @@ class AjuanIndex extends Component
                     $query->whereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
                     break;
                 case 'kader':
-                    // Kader melihat arsip jika verifikasi & kunjungan sudah selesai
                     $query->where('sudah_verifikasi', true)->where('kunjungan_lapangan', true);
                     break;
                 default:
                     $query->whereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
             }
         } else {
-            // Tampilkan yang MASIH PERLU tindakan (Logic existing kamu)
             switch ($user->role) {
                 case 'masyarakat':
                     $query->where('user_id', $user->id);
@@ -101,7 +95,6 @@ class AjuanIndex extends Component
                             ->whereHas('user', function ($q) use ($user) {
                                 $q->where('posyandu_id', $user->posyandu_id);
                             })
-                            // ✅ Kader hanya lihat pengajuan yang statusnya "Diproses"
                             ->where('status_pengajuan', 'Diproses');
                     } else {
                         $query->whereRaw('1 = 0');
@@ -122,13 +115,11 @@ class AjuanIndex extends Component
                     if ($user->posyandu_id) {
                         $query->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id))
                             ->where(function ($q) {
-                                // Yang sudah kunjungan tapi belum diapprove ketua
                                 $q->where(function ($subQ) {
                                     $subQ->where('kunjungan_lapangan', true)
                                         ->where('approved_by_ketua', false)
                                         ->where('status_pengajuan', 'Diproses');
                                 })
-                                    // Atau yang sudah disetujui ketua (status "Sesuai")
                                     ->orWhere('status_pengajuan', 'Sesuai');
                             });
                     } elseif ($user->desa) {
@@ -176,18 +167,14 @@ class AjuanIndex extends Component
                     break;
 
                 case 'admin':
-                    // Admin sees all
                     break;
             }
         }
-
-        // Filter by role
 
         if (!empty($this->status)) {
             $query->where('status_pengajuan', $this->status);
         }
 
-        // Apply search filter
         if ($this->search) {
             $query->where(function ($q) {
                 $q->where('deskripsi_pengajuan', 'like', '%' . $this->search . '%')
@@ -199,29 +186,22 @@ class AjuanIndex extends Component
             });
         }
 
-        // Apply status filter
         if ($this->statusFilter) {
             $query->where('status_pengajuan', $this->statusFilter);
         }
 
         $semuaAjuan = $query->latest()->paginate(10);
 
-        // ✅ Tambahkan computed attributes untuk setiap pengajuan
         $semuaAjuan->getCollection()->transform(function ($ajuan) {
-            // Ambil history "Revisi Diminta" terakhir
             $latestRevisionRequest = $ajuan->histories
                 ->where('status', 'Revisi Diminta')
-                ->first(); // Sudah sorted by created_at desc
+                ->first();
 
-            // Ambil history "Direvisi & Diajukan Kembali" terakhir
-            // ✅ TIDAK perlu cek action_by_role karena statusnya sudah spesifik
             $latestRevisionSubmit = $ajuan->histories
                 ->where('status', 'Direvisi & Diajukan Kembali')
                 ->first();
 
-            // Logic: Sudah direvisi jika ada submit revision SETELAH request revision terakhir
             if ($latestRevisionRequest && $latestRevisionSubmit) {
-                // ✅ Parse ke Carbon jika masih string
                 $requestDate = $latestRevisionRequest->created_at instanceof \Carbon\Carbon
                     ? $latestRevisionRequest->created_at
                     : \Carbon\Carbon::parse($latestRevisionRequest->created_at);
@@ -235,7 +215,6 @@ class AjuanIndex extends Component
                 $ajuan->has_been_revised_by_user = false;
             }
 
-            // Logic: Menunggu revisi jika ada request tapi belum ada submit setelahnya
             $ajuan->is_waiting_revision = $latestRevisionRequest && !$ajuan->has_been_revised_by_user;
 
             return $ajuan;

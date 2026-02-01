@@ -9,12 +9,8 @@ use Illuminate\Support\Facades\Validator;
 
 class SystemSettingController extends Controller
 {
-    /**
-     * ✅ FIX: Display system settings index
-     */
     public function index()
     {
-        // Get all settings grouped by category
         $settings = SystemSetting::orderBy('category')->orderBy('key')->get();
 
         $groupedSettings = $settings->groupBy('category');
@@ -25,9 +21,6 @@ class SystemSettingController extends Controller
         ]);
     }
 
-    /**
-     * Update multiple settings
-     */
     public function update(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -44,9 +37,6 @@ class SystemSettingController extends Controller
         $updatedCount = 0;
         $errors = [];
 
-        // ✅ FIX: Checkbox yang tidak dicek tidak dikirim browser sama sekali.
-        // Tambahkan 'false' secara manual untuk semua setting bertipe boolean
-        // yang tidak ada di request.
         $allSettings = SystemSetting::all();
         foreach ($allSettings as $s) {
             if ($s->type === 'boolean' && !isset($request->settings[$s->key])) {
@@ -62,7 +52,6 @@ class SystemSettingController extends Controller
                 continue;
             }
 
-            // Validate based on type
             $validated = $this->validateSettingValue($value, $setting->type, $setting->key);
 
             if ($validated['error']) {
@@ -87,9 +76,6 @@ class SystemSettingController extends Controller
             ->with('success', "{$updatedCount} pengaturan berhasil diupdate!");
     }
 
-    /**
-     * Validate setting value based on type
-     */
     private function validateSettingValue($value, $type, $key)
     {
         switch ($type) {
@@ -127,24 +113,18 @@ class SystemSettingController extends Controller
         }
     }
 
-    /**
-     * ✅ FIX: Reset settings to default
-     */
     public function reset(Request $request)
     {
         $category = $request->input('category');
 
         if ($category) {
-            // Reset specific category
             $settings = SystemSetting::where('category', $category)->get();
             $message = "Pengaturan kategori '{$category}' berhasil direset ke nilai default!";
         } else {
-            // Reset all settings
             $settings = SystemSetting::all();
             $message = 'Semua pengaturan berhasil direset ke nilai default!';
         }
 
-        // Re-seed default values
         $resetCount = 0;
         foreach ($settings as $setting) {
             $defaultValue = $this->getDefaultValue($setting->key);
@@ -160,9 +140,6 @@ class SystemSettingController extends Controller
             ->with('success', "{$message} ({$resetCount} pengaturan direset)");
     }
 
-    /**
-     * Get default value for a setting key
-     */
     private function getDefaultValue($key)
     {
         $defaults = [
@@ -176,9 +153,6 @@ class SystemSettingController extends Controller
         return $defaults[$key] ?? null;
     }
 
-    /**
-     * ✅ FIX: Get current setting values (API for testing)
-     */
     public function getCurrent()
     {
         return response()->json([

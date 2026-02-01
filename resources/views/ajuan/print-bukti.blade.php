@@ -49,10 +49,7 @@
                 </div>
             </div>
         </div>
-
-        {{-- Content --}}
         <div class="p-8 print-section">
-            {{-- Info Pengajuan --}}
             <div class="mb-8">
                 <h2 class="text-xl font-bold text-gray-800 mb-4 border-b-2 border-pink-500 pb-2">
                     <i class="bi bi-file-text text-pink-500 mr-2"></i>
@@ -105,7 +102,6 @@
                 </div>
             </div>
 
-            {{-- Deskripsi --}}
             <div class="mb-8">
                 <h3 class="text-lg font-semibold text-gray-800 mb-3">Deskripsi Pengajuan:</h3>
                 <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
@@ -113,7 +109,6 @@
                 </div>
             </div>
 
-            {{-- QR Code Section (SIMPLIFIED) --}}
             <div class="border-t-2 border-dashed border-gray-300 pt-8 mt-8 print-section">
                 <h2 class="text-xl font-bold text-gray-800 mb-6 text-center">
                     <i class="bi bi-qr-code text-pink-500 mr-2"></i>
@@ -121,7 +116,6 @@
                 </h2>
 
                 <div class="max-w-md mx-auto">
-                    {{-- Tracking Code Display (PROMINENT) --}}
                     <div class="bg-gradient-to-r from-pink-50 to-pink-100 border-2 border-pink-300 rounded-lg p-6 mb-6">
                         <p class="text-sm text-gray-600 text-center mb-2">Kode Tracking Anda:</p>
                         <div class="bg-white border-2 border-pink-400 rounded-lg p-4 text-center">
@@ -134,8 +128,6 @@
                             Simpan kode ini dengan baik untuk melacak status pengajuan
                         </p>
                     </div>
-
-                    {{-- QR Code (Optional/Secondary) --}}
                     <div class="text-center mb-6">
                         <p class="text-sm text-gray-600 mb-3">Atau scan QR Code:</p>
                         <div class="inline-block bg-white p-4 rounded-lg border-2 border-gray-300 shadow-sm">
@@ -145,11 +137,7 @@
                             Scan dengan aplikasi camera smartphone
                         </p>
                     </div>
-
-                    {{-- ❌ HAPUS BARCODE SECTION --}}
                 </div>
-
-                {{-- Instruksi --}}
                 <div class="mt-8 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
                     <div class="flex items-start">
                         <i class="bi bi-info-circle-fill text-blue-500 mr-3 mt-0.5 text-xl flex-shrink-0"></i>
@@ -183,8 +171,6 @@
                     </div>
                 </div>
             </div>
-
-            {{-- Footer Info --}}
             <div class="mt-8 pt-6 border-t border-gray-300 text-center text-sm text-gray-600 print-section">
                 <p class="mb-2">
                     <i class="bi bi-telephone-fill text-pink-500 mr-2"></i>
@@ -199,8 +185,6 @@
                 </p>
             </div>
         </div>
-
-        {{-- Action Buttons (No Print) --}}
         <div class="bg-gray-50 p-6 border-t border-gray-200 no-print">
             <div class="flex gap-4 justify-center">
                 <button onclick="window.print()"
@@ -223,7 +207,6 @@
     </div>
 
     <script>
-        // ✅ Generate QR Code Only
         const trackingUrl = "{{ route('pengajuan.track.show', ['code' => $pengajuan->tracking_code]) }}";
         const qrCanvas = document.getElementById('qrcode');
 
@@ -237,10 +220,6 @@
         }, function(error) {
             if (error) console.error(error);
         });
-
-        // ❌ HAPUS: Barcode generation code
-
-        // Download PDF function
         function downloadPDF() {
             alert(
                 'Fitur download PDF akan segera tersedia!\n\nSaat ini, silakan gunakan fitur "Cetak" dan pilih "Save as PDF" pada dialog print.');

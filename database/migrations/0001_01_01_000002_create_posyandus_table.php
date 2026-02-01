@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('posyandus', function (Blueprint $table) {
@@ -21,15 +18,11 @@ return new class extends Migration
                 ->nullable();
             $table->foreignUuid('kecamatan_id')
                 ->nullable();
-            $table->json('rw_list')->nullable()->comment('List RW yang dilayani posyandu (max 15)');
-            $table->json('rt_mapping')->nullable()->comment('Mapping RT ke RW dalam format {"RW01": ["RT001", "RT002"]}');
+            $table->json('rw_list')->nullable();
+            $table->json('rt_mapping')->nullable();
             $table->timestamps();
         });
     }
-
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('posyandus');

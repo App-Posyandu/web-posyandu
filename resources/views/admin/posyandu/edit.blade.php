@@ -246,7 +246,7 @@
                         </a>
                         <button type="submit"
                             class="px-8 py-2.5 bg-pink-600 text-white rounded-md hover:bg-pink-700 shadow-lg">
-                            💾 Simpan Perubahan
+                            Simpan Perubahan
                         </button>
                     </div>
                 </form>
@@ -267,31 +267,26 @@
                     loadingKecamatan: false,
                     loadingDesa: false,
 
-                    // RW/RT Data
                     allRwOptions: Array.from({length: 15}, (_, i) => `RW${String(i + 1).padStart(2, '0')}`),
                     allRtOptions: Array.from({length: 53}, (_, i) => `RT${String(i + 1).padStart(3, '0')}`),
                     selectedRwList: @json($posyandu->rw_list ?? []),
                     rtMapping: @json($posyandu->rt_mapping ?? []),
 
                     async init() {
-                        // Set initial values
                         const initialKab = '{{ old('kabupaten', $posyandu->kabupaten) }}';
                         const initialKec = '{{ old('kecamatan', $posyandu->kecamatan) }}';
                         const initialDesa = '{{ old('desa', $posyandu->desa) }}';
 
-                        // Find kabupaten code
                         const kab = this.kabupatens.find(k => k.name === initialKab);
                         if (kab) {
                             this.selectedKabupaten = `${kab.code}_${kab.name}`;
                             await this.fetchKecamatan();
 
-                            // Find kecamatan code
                             const kec = this.kecamatanList.find(k => k.name === initialKec);
                             if (kec) {
                                 this.selectedKecamatan = `${kec.code}_${kec.name}`;
                                 await this.fetchDesa();
 
-                                // Find desa code
                                 const desa = this.desaList.find(d => d.name === initialDesa);
                                 if (desa) {
                                     this.selectedDesa = `${desa.code}_${desa.name}`;
@@ -299,7 +294,6 @@
                             }
                         }
 
-                        // Watch RW/RT changes
                         this.$watch('selectedRwList', (newVal, oldVal) => {
                             newVal.forEach(rw => {
                                 if (!this.rtMapping[rw]) this.rtMapping[rw] = [];

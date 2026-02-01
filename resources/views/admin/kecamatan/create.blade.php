@@ -11,11 +11,9 @@
 
                     <div class="space-y-6">
 
-                        {{-- 1. Combobox Kabupaten (Searchable) --}}
                         <div class="relative" @click.away="openKabupaten = false">
                             <x-input-label for="kabupaten" :value="__('Kabupaten')" />
 
-                            {{-- Hidden Input untuk kirim ke Backend --}}
                             <input type="hidden" name="kabupaten" x-model="selectedKabupatenValue">
 
                             <div class="relative mt-1">
@@ -25,7 +23,6 @@
                                     class="block w-full border-gray-300 rounded-md shadow-sm focus:border-pink-500 focus:ring-pink-500"
                                     autocomplete="off">
 
-                                {{-- Icon Panah --}}
                                 <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
                                     <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
                                         viewBox="0 0 24 24">
@@ -35,7 +32,6 @@
                                 </div>
                             </div>
 
-                            {{-- Dropdown List Kabupaten --}}
                             <div x-show="openKabupaten && filteredKabupaten.length > 0" x-transition
                                 class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto"
                                 style="display: none;">
@@ -57,7 +53,6 @@
                             <x-input-error :messages="$errors->get('kabupaten')" class="mt-2" />
                         </div>
 
-                        {{-- 2. Combobox Kecamatan (Searchable - Dependent) --}}
                         <div class="relative" @click.away="openKecamatan = false">
                             <x-input-label for="kecamatan" :value="__('Kecamatan')" />
 
@@ -71,7 +66,6 @@
                                     class="block w-full border-gray-300 rounded-md shadow-sm focus:border-pink-500 focus:ring-pink-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                                     autocomplete="off">
 
-                                {{-- Icon Loading / Panah --}}
                                 <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
                                     <svg x-show="!loadingKecamatan" class="w-5 h-5 text-gray-400" fill="none"
                                         stroke="currentColor" viewBox="0 0 24 24">
@@ -89,7 +83,6 @@
                                 </div>
                             </div>
 
-                            {{-- Dropdown List Kecamatan --}}
                             <div x-show="openKecamatan && !loadingKecamatan && kecamatanList.length > 0" x-transition
                                 class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto"
                                 style="display: none;">
@@ -131,14 +124,12 @@
         <script>
             document.addEventListener('alpine:init', () => {
                 Alpine.data('wilayahDropdown', () => ({
-                    // --- STATE KABUPATEN ---
                     openKabupaten: false,
                     searchKabupaten: '',
-                    selectedKabupatenValue: '', // Disimpan ke DB (Code_Nama)
-                    selectedKabupatenName: '', // Ditampilkan di input
-                    kabupatenList: @json($kabupatens['data'] ?? []), // Inject Data dari PHP
+                    selectedKabupatenValue: '',
+                    selectedKabupatenName: '',
+                    kabupatenList: @json($kabupatens['data'] ?? []),
 
-                    // --- STATE KECAMATAN ---
                     openKecamatan: false,
                     loadingKecamatan: false,
                     searchKecamatan: '',
@@ -146,7 +137,6 @@
                     selectedKecamatanName: '',
                     kecamatanList: [],
 
-                    // --- LOGIC KABUPATEN ---
                     get filteredKabupaten() {
                         if (this.searchKabupaten === '') return this.kabupatenList;
                         return this.kabupatenList.filter(kab =>
@@ -160,11 +150,9 @@
                         this.searchKabupaten = '';
                         this.openKabupaten = false;
 
-                        // Trigger fetch kecamatan
                         this.fetchKecamatan();
                     },
 
-                    // --- LOGIC KECAMATAN ---
                     get filteredKecamatan() {
                         if (this.searchKecamatan === '') return this.kecamatanList;
                         return this.kecamatanList.filter(kec =>
@@ -173,7 +161,6 @@
                     },
 
                     async fetchKecamatan() {
-                        // Reset kecamatan saat kabupaten berubah
                         this.kecamatanList = [];
                         this.selectedKecamatanValue = '';
                         this.selectedKecamatanName = '';
@@ -181,7 +168,6 @@
 
                         if (this.selectedKabupatenValue) {
                             this.loadingKecamatan = true;
-                            // Ambil kode kabupaten dari string "CODE_NAMA"
                             const kabId = this.selectedKabupatenValue.split('_')[0];
 
                             try {

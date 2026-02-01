@@ -27,16 +27,8 @@ class SystemSetting extends Model
         'is_public' => 'boolean',
     ];
 
-    /**
-     * ✅ FIX: Get setting value by key with caching
-     *
-     * @param string|null $key Setting key (null for getting all)
-     * @param mixed $default Default value if not found
-     * @return mixed
-     */
     public static function get($key = null, $default = null)
     {
-        // ✅ FIX: Handle null key (get all settings)
         if ($key === null) {
             return self::all()->mapWithKeys(function ($setting) {
                 return [$setting->key => self::castValue($setting->value, $setting->type)];
@@ -54,14 +46,6 @@ class SystemSetting extends Model
         });
     }
 
-    /**
-     * Set setting value by key
-     *
-     * @param string $key
-     * @param mixed $value
-     * @param string|null $updatedBy
-     * @return bool
-     */
     public static function set($key, $value, $updatedBy = null)
     {
         $setting = self::where('key', $key)->first();
@@ -74,19 +58,11 @@ class SystemSetting extends Model
         $setting->updated_by = $updatedBy ?? Auth::id();
         $setting->save();
 
-        // Clear cache
         Cache::forget("setting_{$key}");
 
         return true;
     }
 
-    /**
-     * Cast value based on type
-     *
-     * @param mixed $value
-     * @param string $type
-     * @return mixed
-     */
     private static function castValue($value, $type)
     {
         switch ($type) {
@@ -103,12 +79,6 @@ class SystemSetting extends Model
         }
     }
 
-    /**
-     * ✅ FIX: Get all settings by category
-     *
-     * @param string $category
-     * @return \Illuminate\Support\Collection
-     */
     public static function getByCategory($category)
     {
         return Cache::remember("settings_category_{$category}", 3600, function () use ($category) {
@@ -118,11 +88,6 @@ class SystemSetting extends Model
         });
     }
 
-    /**
-     * ✅ NEW: Get all categories
-     *
-     * @return \Illuminate\Support\Collection
-     */
     public static function getAllCategories()
     {
         return Cache::remember('settings_all_categories', 3600, function () {
@@ -132,17 +97,11 @@ class SystemSetting extends Model
         });
     }
 
-    /**
-     * User who last updated
-     */
     public function updatedByUser()
     {
         return $this->belongsTo(User::class, 'updated_by');
     }
 
-    /**
-     * Boot method to clear cache on save
-     */
     protected static function boot()
     {
         parent::boot();

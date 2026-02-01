@@ -21,13 +21,7 @@
 <body class="font-sans antialiased">
     <div class="min-h-screen bg-gray-100">
         <div x-data="{ sidebarOpen: true }" class="flex h-screen bg-gray-100">
-
-            {{-- @include('layouts.partials.sidebar') --}}
-
             <div class="flex-1 flex flex-col overflow-hidden">
-
-                {{-- @include('layouts.partials.header') --}}
-
                 <main class="flex-1 overflow-x-hidden overflow-y-auto p-6">
                     {{ $slot }}
                 </main>
@@ -36,5 +30,4 @@
         </div>
     </div>
 </body>
-
 </html>

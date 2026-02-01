@@ -42,17 +42,12 @@ class PosyanduController extends Controller
         });
     }
 
-    /**
-     * ✅ Helper method untuk authorization akses posyandu berdasarkan wilayah
-     */
     private function authorizeAccessToPosyandu($user, Posyandu $posyandu)
     {
-        // Admin dan Ketua Posyandu bisa akses semua
         if (in_array($user->role, ['admin', 'ketua-posyandu'])) {
             return true;
         }
 
-        // Operator Desa: hanya posyandu di desa yang sama
         if ($user->role === 'operator-desa') {
             if (
                 $posyandu->kabupaten !== $user->kabupaten ||
@@ -64,7 +59,6 @@ class PosyanduController extends Controller
             return true;
         }
 
-        // Admin Kabupaten: hanya posyandu di kabupaten yang sama
         if ($user->role === 'admin-kabupaten') {
             if ($posyandu->kabupaten !== $user->kabupaten) {
                 abort(403, 'Anda hanya dapat mengelola posyandu di kabupaten Anda sendiri.');
@@ -72,7 +66,6 @@ class PosyanduController extends Controller
             return true;
         }
 
-        // Ketua Kader: hanya posyandu miliknya sendiri
         if ($user->role === 'ketua-kader') {
             if ($posyandu->id !== $user->posyandu_id) {
                 abort(403, 'Anda hanya dapat mengelola posyandu Anda sendiri.');
@@ -80,14 +73,12 @@ class PosyanduController extends Controller
             return true;
         }
 
-        // Admin Kecamatan: hanya posyandu di kecamatan yang sama
         if ($user->role === 'admin-kecamatan') {
             if ($user->kecamatan_id) {
                 if ($posyandu->kecamatan_id !== $user->kecamatan_id) {
                     abort(403, 'Anda hanya dapat mengelola posyandu di kecamatan Anda sendiri.');
                 }
             } else {
-                // Fallback jika menggunakan string
                 if ($posyandu->kecamatan !== $user->kecamatan) {
                     abort(403, 'Anda hanya dapat mengelola posyandu di kecamatan Anda sendiri.');
                 }
@@ -95,14 +86,12 @@ class PosyanduController extends Controller
             return true;
         }
 
-        // Kabid: hanya posyandu di kabupaten yang sama
         if ($user->role === 'kabid') {
             if ($user->kabupaten_id) {
                 if ($posyandu->kabupaten_id !== $user->kabupaten_id) {
                     abort(403, 'Anda hanya dapat mengelola posyandu di kabupaten Anda sendiri.');
                 }
             } else {
-                // Fallback jika menggunakan string
                 if ($posyandu->kabupaten !== $user->kabupaten) {
                     abort(403, 'Anda hanya dapat mengelola posyandu di kabupaten Anda sendiri.');
                 }
@@ -110,7 +99,6 @@ class PosyanduController extends Controller
             return true;
         }
 
-        // Default: tidak ada akses
         abort(403, 'Anda tidak memiliki akses untuk mengelola posyandu ini.');
     }
 
@@ -120,36 +108,27 @@ class PosyanduController extends Controller
         $query = Posyandu::with('users')->latest();
 
         if ($currentUser->role === 'operator-desa') {
-            // ✅ Operator Desa: lihat semua posyandu di DESA yang sama
             $query->where('kabupaten', $currentUser->kabupaten)
                 ->where('kecamatan', $currentUser->kecamatan)
                 ->where('desa', $currentUser->desa);
         } elseif ($currentUser->role === 'admin-kabupaten') {
-            // ✅ Admin Kabupaten: lihat semua posyandu di KABUPATEN yang sama
             $query->where('kabupaten', $currentUser->kabupaten);
         } elseif ($currentUser->role === 'ketua-kader') {
-            // Ketua Kader: hanya lihat posyandu miliknya sendiri
             $query->where('id', $currentUser->posyandu_id);
         } elseif ($currentUser->role === 'admin-kecamatan') {
-            // Admin Kecamatan: lihat semua posyandu di kecamatannya
             if ($currentUser->kecamatan_id) {
                 $query->where('kecamatan_id', $currentUser->kecamatan_id);
             } else {
-                // Fallback jika menggunakan string kecamatan
                 $query->where('kecamatan', $currentUser->kecamatan);
             }
         } elseif ($currentUser->role === 'kabid') {
-            // Kabid: lihat semua posyandu di kabupatennya
             if ($currentUser->kabupaten_id) {
                 $query->where('kabupaten_id', $currentUser->kabupaten_id);
             } else {
-                // Fallback jika menggunakan string kabupaten
                 $query->where('kabupaten', $currentUser->kabupaten);
             }
         }
-        // Admin & Ketua Posyandu: lihat semua
 
-        // Search
         if ($request->filled('search')) {
             $query->where(function ($q) use ($request) {
                 $q->where('nama_posyandu', 'like', '%' . $request->search . '%')
@@ -172,15 +151,13 @@ class PosyanduController extends Controller
     {
         $currentUser = Auth::user();
 
-        // ✅ Jika user adalah Kabid, kabupaten/kota sudah fixed
         if ($currentUser->role === 'kabid' && $currentUser->kabupaten) {
-            $kabupatens = null; // Tidak perlu dropdown kabupaten
+            $kabupatens = null;
             $fixedWilayah = [
                 'nama' => $currentUser->kabupaten,
                 'jenis' => $currentUser->jenis_wilayah
             ];
         } else {
-            // Untuk admin atau role lain, tampilkan semua kabupaten
             $kabupatens = $this->fetchWilayahData(
                 'regencies/' . self::PROVINCE_ID . '.json',
                 'kabupatens_jateng'
@@ -277,7 +254,6 @@ class PosyanduController extends Controller
         $kecamatanName = explode('_', $request->kecamatan)[1] ?? $request->kecamatan;
         $desaName = explode('_', $request->desa)[1] ?? $request->desa;
 
-        // ✅ Validasi total RT tidak lebih dari 53 (jika ada)
         if ($request->filled('rt_mapping')) {
             $totalRt = 0;
             foreach ($request->rt_mapping as $rw => $rtList) {
@@ -291,7 +267,6 @@ class PosyanduController extends Controller
             }
         }
 
-        // ✅ Buat Posyandu
         $posyandu = Posyandu::create([
             'nama_posyandu' => $request->nama_posyandu,
             'kabupaten' => $kabupatenName,
@@ -301,10 +276,8 @@ class PosyanduController extends Controller
             'rt_mapping' => $request->rt_mapping ?? [],
         ]);
 
-        // ✅ Auto-generate 6 Kader (1 untuk setiap bidang)
         $this->createKadersForPosyandu($posyandu);
 
-        // ✅ Log pembuatan posyandu
         UserHistory::create([
             'user_id' => Auth::id(),
             'action_by' => Auth::id(),
@@ -324,12 +297,8 @@ class PosyanduController extends Controller
             ->with('success', 'Posyandu, mapping RW/RT, dan 6 akun kader berhasil dibuat.');
     }
 
-    /**
-     * ✅ Generate 6 akun kader untuk posyandu baru
-     */
     private function createKadersForPosyandu(Posyandu $posyandu)
     {
-        // Ambil semua bidang
         $bidangs = \App\Models\BidangPengajuan::orderBy('nama_bidang')->get();
 
         if ($bidangs->count() !== 6) {
@@ -340,23 +309,18 @@ class PosyanduController extends Controller
         $defaultPassword = 'password123';
 
         foreach ($bidangs as $index => $bidang) {
-            // ✅ Generate email unik
-            // Format: kader.{bidang-slug}.{posyandu-slug}@posyandu.local
             $bidangSlug = Str::slug($bidang->nama_bidang);
             $posyanduSlug = Str::slug($posyandu->nama_posyandu);
             $posyanduShort = substr($posyandu->id, 0, 8);
 
             $email = "kader.{$bidangSlug}.{$posyanduShort}@posyandu.local";
 
-            // ✅ Generate nomor telepon unik (fake tapi valid format)
-            // Format: 0812-XXXX-YYYY (X = posyandu_id prefix, Y = bidang index)
             $phonePrefix = substr(str_replace('-', '', $posyandu->id), 0, 4);
             $phoneSuffix = str_pad($index + 1, 4, '0', STR_PAD_LEFT);
 
-            // ✅ Buat akun kader dengan credentials lengkap
             $kader = User::create([
                 'name' => "Kader " . $bidang->nama_bidang . " - " . $posyandu->nama_posyandu,
-                'email' => $email, // ✅ Email unik
+                'email' => $email,
                 'password' => Hash::make($defaultPassword),
                 'role' => 'kader',
                 'bidang_id' => $bidang->id,
@@ -369,14 +333,13 @@ class PosyanduController extends Controller
                 'verified_at' => now(),
                 'verified_by' => Auth::id(),
                 'is_active' => true,
-                'nik' => null, // Bisa diisi nanti oleh Ketua Kader
+                'nik' => null,
                 'alamat' => "Posyandu {$posyandu->nama_posyandu}, {$posyandu->desa}",
                 'tempat_lahir' => null,
                 'tanggal_lahir' => null,
                 'jenis_kelamin' => null,
             ]);
 
-            // ✅ Log untuk tracking
             UserHistory::create([
                 'user_id' => $kader->id,
                 'action_by' => Auth::id(),
@@ -391,13 +354,11 @@ class PosyanduController extends Controller
             ]);
 
             $createdKaders[] = [
-                'email' => $email,
                 'password' => $defaultPassword,
                 'bidang' => $bidang->nama_bidang,
             ];
         }
 
-        // ✅ Simpan info kader ke session untuk ditampilkan di halaman success
         session()->flash('created_kaders', $createdKaders);
         session()->flash('posyandu_name', $posyandu->nama_posyandu);
         session()->flash('posyandu_id', $posyandu->id);
@@ -416,7 +377,7 @@ class PosyanduController extends Controller
             'rw_list' => 'required|array|max:15',
             'rw_list.*' => 'required|string|regex:/^RW\d{2}$/',
             'rt_mapping' => 'required|array',
-            'rt_mapping.*' => 'array', // Each RW should map to array of RTs
+            'rt_mapping.*' => 'array',
             'rt_mapping.*.*' => 'required|string|regex:/^RT\d{3}$/',
         ], [
             'rw_list.max' => 'Maksimal 15 RW per posyandu',
@@ -424,7 +385,6 @@ class PosyanduController extends Controller
             'rt_mapping.*.*.regex' => 'Format RT harus: RT001, RT002, dst',
         ]);
 
-        // ✅ Validasi total RT tidak lebih dari 53
         $totalRt = 0;
         foreach ($request->rt_mapping as $rw => $rtList) {
             $totalRt += count($rtList);
@@ -436,7 +396,6 @@ class PosyanduController extends Controller
                 ->withInput();
         }
 
-        // ✅ Validasi setiap RW dalam rt_mapping harus ada di rw_list
         foreach (array_keys($request->rt_mapping) as $rw) {
             if (!in_array($rw, $request->rw_list)) {
                 return redirect()->back()
@@ -445,13 +404,11 @@ class PosyanduController extends Controller
             }
         }
 
-        // ✅ Update posyandu
         $posyandu->update([
             'rw_list' => $request->rw_list,
             'rt_mapping' => $request->rt_mapping,
         ]);
 
-        // ✅ Log perubahan
         UserHistory::create([
             'user_id' => Auth::id(),
             'action_by' => Auth::id(),
@@ -467,48 +424,35 @@ class PosyanduController extends Controller
             ->with('success', 'Mapping RW/RT berhasil diperbarui.');
     }
 
-    /**
-     * ✅ Tampilkan form untuk manage RW/RT mapping
-     */
     public function manageRwRt(Posyandu $posyandu)
     {
         $user = Auth::user();
 
-        // ✅ Validasi akses yang lebih ketat
         if ($user->role === 'operator-desa') {
-            // Operator Desa hanya bisa kelola posyandu miliknya sendiri
             if ($posyandu->id !== $user->posyandu_id) {
                 abort(403, 'Anda hanya bisa mengelola RW/RT di posyandu Anda sendiri.');
             }
         } elseif ($user->role === 'ketua-kader') {
-            // Ketua Kader hanya bisa kelola posyandu miliknya sendiri
             if ($posyandu->id !== $user->posyandu_id) {
                 abort(403, 'Anda hanya bisa mengelola RW/RT di posyandu Anda sendiri.');
             }
         } elseif ($user->role === 'admin-kecamatan') {
-            // Admin Kecamatan hanya bisa kelola posyandu di kecamatannya
             if ($posyandu->kecamatan_id !== $user->kecamatan_id) {
                 abort(403, 'Anda hanya bisa mengelola posyandu di kecamatan Anda.');
             }
         } elseif ($user->role === 'kabid') {
-            // Kabid hanya bisa kelola posyandu di kabupatennya
             if ($posyandu->kabupaten_id !== $user->kabupaten_id) {
                 abort(403, 'Anda hanya bisa mengelola posyandu di kabupaten Anda.');
             }
         }
-        // Admin & Ketua Posyandu bisa kelola semua
 
         return view('admin.posyandu.manage-rw-rt', compact('posyandu'));
     }
 
-    /**
-     * ✅ Simpan RW/RT mapping (simplified - hanya pilih dari fixed options)
-     */
     public function saveRwRt(Request $request, Posyandu $posyandu)
     {
         $user = Auth::user();
 
-        // ✅ Validasi akses yang lebih ketat (sama seperti manageRwRt)
         if ($user->role === 'operator-desa') {
             if ($posyandu->id !== $user->posyandu_id) {
                 abort(403, 'Unauthorized - Anda hanya bisa mengelola posyandu Anda sendiri.');
@@ -527,7 +471,6 @@ class PosyanduController extends Controller
             }
         }
 
-        // ✅ Validasi dengan cara yang lebih sederhana
         $request->validate([
             'rw_list' => 'required|array|min:1',
             'rw_list.*' => 'required|string',
@@ -540,7 +483,6 @@ class PosyanduController extends Controller
             'rt_mapping.required' => 'Setiap RW harus memiliki minimal 1 RT',
         ]);
 
-        // ✅ Validasi manual untuk format RW (RW01-RW15)
         foreach ($request->rw_list as $rw) {
             if (!preg_match('/^RW(0[1-9]|1[0-5])$/', $rw)) {
                 return redirect()->back()
@@ -549,7 +491,6 @@ class PosyanduController extends Controller
             }
         }
 
-        // ✅ Validasi manual untuk format RT (RT001-RT053)
         foreach ($request->rt_mapping as $rw => $rtList) {
             if (!is_array($rtList) || empty($rtList)) {
                 return redirect()->back()
@@ -566,7 +507,6 @@ class PosyanduController extends Controller
             }
         }
 
-        // ✅ Validasi: Setiap RW yang dipilih harus ada di rt_mapping
         foreach ($request->rw_list as $rw) {
             if (!isset($request->rt_mapping[$rw]) || empty($request->rt_mapping[$rw])) {
                 return redirect()->back()
@@ -575,7 +515,6 @@ class PosyanduController extends Controller
             }
         }
 
-        // ✅ Hitung total RT untuk info
         $totalRt = 0;
         foreach ($request->rt_mapping as $rtList) {
             if (is_array($rtList)) {
@@ -583,13 +522,11 @@ class PosyanduController extends Controller
             }
         }
 
-        // ✅ Update posyandu
         $posyandu->update([
             'rw_list' => $request->rw_list,
             'rt_mapping' => $request->rt_mapping,
         ]);
 
-        // ✅ Log perubahan
         UserHistory::create([
             'user_id' => $user->id,
             'action_by' => $user->id,
@@ -721,12 +658,10 @@ class PosyanduController extends Controller
             'rt_mapping.*.*.regex' => 'Format RT harus: RT001, RT002, dst',
         ]);
 
-        // Extract names dari format code_name
         $kabupatenName = explode('_', $request->kabupaten)[1] ?? $request->kabupaten;
         $kecamatanName = explode('_', $request->kecamatan)[1] ?? $request->kecamatan;
         $desaName = explode('_', $request->desa)[1] ?? $request->desa;
 
-        // ✅ Validasi total RT tidak lebih dari 53 (jika ada)
         if ($request->filled('rt_mapping')) {
             $totalRt = 0;
             foreach ($request->rt_mapping as $rw => $rtList) {
@@ -740,7 +675,6 @@ class PosyanduController extends Controller
             }
         }
 
-        // Update posyandu data including RW/RT
         $posyandu->update([
             'nama_posyandu' => $request->nama_posyandu,
             'kabupaten' => $kabupatenName,
@@ -750,7 +684,6 @@ class PosyanduController extends Controller
             'rt_mapping' => $request->rt_mapping ?? [],
         ]);
 
-        // ✅ Log perubahan
         UserHistory::create([
             'user_id' => Auth::id(),
             'action_by' => Auth::id(),
@@ -859,9 +792,6 @@ class PosyanduController extends Controller
         return redirect()->back()->with('success', 'Cache wilayah berhasil dibersihkan.');
     }
 
-    /**
-     * ✅ FIXED: Export dengan data wilayah yang sudah di-fetch dari API
-     */
     public function exportByDesaKecamatan($desa, $kecamatan)
     {
         $desaName = urldecode($desa);
@@ -876,7 +806,6 @@ class PosyanduController extends Controller
             $apiUrl = env('API_WILAYAH_URL', 'https://wilayah.id/api/');
             $dataRows = [];
 
-            // 1. Fetch kabupaten untuk dapat ID Kebumen
             $kabupatenUrl = $apiUrl . 'regencies/33.json';
             Log::info('Fetching Kabupaten', ['url' => $kabupatenUrl]);
 
@@ -889,12 +818,10 @@ class PosyanduController extends Controller
 
             $kabupatens = $kabupatenResponse->json()['data'] ?? [];
 
-            // ✅ FIX: Cari berdasarkan nama yang mengandung "KEBUMEN"
             $kebumen = collect($kabupatens)->first(function ($kab) {
                 return stripos($kab['name'], 'KEBUMEN') !== false;
             });
 
-            // ✅ FIX: Gunakan format code yang benar (33.05 bukan 3404)
             $kabupatenId = $kebumen['code'] ?? '33.05';
 
             Log::info('Kabupaten ID', [
@@ -902,14 +829,12 @@ class PosyanduController extends Controller
                 'kebumen_found' => !is_null($kebumen),
             ]);
 
-            // SKENARIO 1: SEMUA KECAMATAN + SEMUA DESA
             if (
                 ($kecamatanName === 'all' || $kecamatanName === 'SEMUA KECAMATAN') &&
                 ($desaName === 'all' || $desaName === 'SEMUA DESA')
             ) {
                 Log::info('Scenario: SEMUA KECAMATAN + SEMUA DESA');
 
-                // 2. Fetch semua kecamatan di Kebumen
                 $kecamatanUrl = $apiUrl . "districts/{$kabupatenId}.json";
                 Log::info('Fetching Kecamatan', ['url' => $kecamatanUrl]);
 
@@ -928,7 +853,6 @@ class PosyanduController extends Controller
                     'sample' => array_slice($kecamatans, 0, 2)
                 ]);
 
-                // 3. Loop setiap kecamatan, fetch semua desa
                 foreach ($kecamatans as $index => $kec) {
                     $desaUrl = $apiUrl . "villages/{$kec['code']}.json";
                     Log::info("Fetching Desa [{$index}]", [
@@ -953,7 +877,6 @@ class PosyanduController extends Controller
                         'sample_desa' => array_slice($desas, 0, 2)
                     ]);
 
-                    // 4. Setiap desa = 1 baris dengan kolom desa dan kecamatan auto-fill
                     foreach ($desas as $ds) {
                         $dataRows[] = [
                             'desa' => $this->cleanDesaName($ds['name']),
@@ -962,15 +885,12 @@ class PosyanduController extends Controller
                     }
                 }
             }
-            // SKENARIO 2: KECAMATAN SPESIFIK + SEMUA DESA
             else if ($desaName === 'all' || $desaName === 'SEMUA DESA') {
                 Log::info('Scenario: KECAMATAN SPESIFIK + SEMUA DESA', ['kecamatan' => $kecamatanName]);
 
-                // 2. Fetch semua kecamatan
                 $kecamatanResponse = Http::timeout(15)->get($apiUrl . "districts/{$kabupatenId}.json");
                 $kecamatans = $kecamatanResponse->json()['data'] ?? [];
 
-                // 3. Cari kecamatan yang dipilih
                 $selectedKec = collect($kecamatans)->first(function ($kec) use ($kecamatanName) {
                     $cleanKecName = $this->cleanKecamatanName($kec['name']);
                     $cleanInput = $this->cleanKecamatanName($kecamatanName);
@@ -979,13 +899,11 @@ class PosyanduController extends Controller
                 });
 
                 if ($selectedKec) {
-                    // 4. Fetch semua desa di kecamatan ini
                     $desaResponse = Http::timeout(15)->get($apiUrl . "villages/{$selectedKec['code']}.json");
                     $desas = $desaResponse->json()['data'] ?? [];
 
                     Log::info("Kecamatan: {$selectedKec['name']}", ['total_desa' => count($desas)]);
 
-                    // 5. Setiap desa = 1 baris
                     foreach ($desas as $ds) {
                         $dataRows[] = [
                             'desa' => $this->cleanDesaName($ds['name']),
@@ -994,14 +912,12 @@ class PosyanduController extends Controller
                     }
                 }
             }
-            // SKENARIO 3: KECAMATAN SPESIFIK + DESA SPESIFIK
             else {
                 Log::info('Scenario: KECAMATAN SPESIFIK + DESA SPESIFIK', [
                     'kecamatan' => $kecamatanName,
                     'desa' => $desaName
                 ]);
 
-                // Generate 20 baris dengan data yang sama
                 for ($i = 0; $i < 20; $i++) {
                     $dataRows[] = [
                         'desa' => $this->cleanDesaName($desaName),
@@ -1012,7 +928,6 @@ class PosyanduController extends Controller
 
             Log::info('Total Rows Generated', ['count' => count($dataRows)]);
 
-            // Fallback jika tidak ada data
             if (empty($dataRows)) {
                 for ($i = 0; $i < 10; $i++) {
                     $dataRows[] = [
@@ -1022,7 +937,6 @@ class PosyanduController extends Controller
                 }
             }
 
-            // Generate filename
             $filename = 'Template_Posyandu_';
             if ($kecamatanName === 'all' || $kecamatanName === 'SEMUA KECAMATAN') {
                 $filename .= 'Semua_Kecamatan_';
@@ -1038,7 +952,6 @@ class PosyanduController extends Controller
 
             $filename .= date('Y-m-d_His') . '.xlsx';
 
-            // Export ke Excel dengan data yang sudah auto-fill
             return Excel::download(
                 new PosyanduTemplateExport($dataRows),
                 $filename
@@ -1049,7 +962,6 @@ class PosyanduController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
 
-            // Fallback
             $fallbackRows = [];
             for ($i = 0; $i < 10; $i++) {
                 $fallbackRows[] = [
@@ -1100,15 +1012,10 @@ class PosyanduController extends Controller
         return $this->exportByDesaKecamatan($desa, 'all');
     }
 
-    /**
-     * Print Kader Credentials PDF
-     */
     public function printKaderCredentials(Posyandu $posyandu)
     {
-        // Authorize access
         $this->authorizeAccessToPosyandu(Auth::user(), $posyandu);
         
-        // Ambil semua kader dari posyandu ini
         $kaders = User::where('posyandu_id', $posyandu->id)
             ->where('role', 'kader')
             ->with('bidang')
@@ -1119,8 +1026,8 @@ class PosyanduController extends Controller
                     'nama_lengkap' => $user->name,
                     'email' => $user->email,
                     'no_hp' => $user->no_telepon,
-                    'username' => $user->email, // Email digunakan sebagai username
-                    'password' => 'password123', // Default password yang digunakan
+                    'username' => $user->email,
+                    'password' => 'password123',
                     'bidang' => $user->bidang->nama_bidang ?? '-'
                 ];
             })

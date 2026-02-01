@@ -5,12 +5,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Cetak Pengajuan - SAPA POSYANDU</title>
-
-    {{-- ✅ Tambahkan QR Code Library --}}
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 
     <style>
-        /* ========== RESET & BASE STYLING ========== */
         * {
             margin: 0;
             padding: 0;
@@ -22,7 +19,6 @@
         body {
             height: 100%;
         }
-
         body {
             display: flex;
             flex-direction: column;
@@ -30,19 +26,15 @@
             background-color: #ffffff;
             color: #171717;
         }
-
         a {
             text-decoration: none;
             color: inherit;
         }
-
         h1,
         h2,
         h3 {
             font-weight: bold;
         }
-
-        /* ========== HEADER ========== */
         header {
             background-color: #ffffff;
             border-bottom: 1px solid #e5e7eb;
@@ -57,7 +49,6 @@
 
         header table tr {
             width: 100%;
-            /* margin: 0 0 8px 0 */
         }
 
         .left-cell {
@@ -106,7 +97,6 @@
             font-weight: 500;
         }
 
-        /* ✅ TRACKING CODE STYLES */
         .tracking-section {
             background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
             border: 2px solid #ec4899;
@@ -169,7 +159,6 @@
             margin-top: 6px;
         }
 
-        /* ========== MAIN (FLEX FILLER) ========== */
         main {
             flex: 1;
             display: flex;
@@ -195,7 +184,6 @@
 
         .info-section table {
             width: 100%;
-            /* margin: 24px 0; */
         }
 
         .info-section table tr {
@@ -215,7 +203,6 @@
         .info-section p {
             font-size: 14px;
             color: #4b5563;
-            /* margin-top: 4px; */
         }
 
         .content {
@@ -231,15 +218,12 @@
             font-size: 16px;
             font-weight: 600;
             color: #111827;
-            /* margin-bottom: 8px; */
-            /* margin-top: 10px; */
         }
 
         .table-content {
             width: 100%;
             margin: 0;
             padding: 0;
-            /* margin: 4px 0; */
             border-collapse: collapse;
         }
 
@@ -289,7 +273,6 @@
 
         .persyaratan-administrasi {
             width: 100%;
-            /* margin: 16px 0; */
             border-collapse: collapse;
         }
 
@@ -300,14 +283,11 @@
 
         .date-approval {
             text-align: right;
-            /* margin-top: 2px; */
-            /* margin-bottom: 8px; */
             font-size: 14px;
             color: #374151;
         }
 
         .date-approval p {
-            /* margin: 4px 0; */
         }
 
         .section-divider {
@@ -315,21 +295,6 @@
             margin: 4px 0;
         }
 
-        /* .description-box {
-            margin: 16px 0;
-            padding: 12px;
-            background-color: #f9fafb;
-            border-left: 4px solid #6366f1;
-            border-radius: 4px;
-        } */
-
-        /* .description-box p {
-            font-size: 14px;
-            color: #4b5563;
-            line-height: 1.6;
-        } */
-
-        /* ========== FOOTER ========== */
         footer {
             background-color: #ffffff;
             border-top: 1px solid #e5e7eb;
@@ -344,7 +309,6 @@
             color: #111827;
         }
 
-        /* ========== PRINT STYLES ========== */
         @media print {
             body {
                 background: white;
@@ -355,7 +319,6 @@
             }
         }
 
-        /* ========== RESPONSIVE ========== */
         @media (max-width: 640px) {
             header {
                 flex-direction: column;
@@ -435,28 +398,7 @@
 
     <main>
         <div class="container">
-            {{-- ✅ TRACKING CODE SECTION (PROMINENT - SEBELUM NAMA) --}}
-            {{-- <div class="tracking-section">
-                <div class="tracking-label">📋 Kode Tracking Pengajuan</div>
-                <div class="tracking-code-box">
-                    <div class="tracking-code">{{ $ajuan->tracking_code ?? 'PGJ-000000-00000' }}</div>
-                </div>
-                <div class="tracking-info">
-                    ✓ Simpan kode ini untuk melacak status pengajuan Anda
-                </div>
-
-                <div class="qr-section">
-                    <div class="qr-code-container">
-                        <canvas id="qrcode" width="120" height="120"></canvas>
-                    </div>
-                    <div class="qr-instructions">
-                        Scan QR Code atau gunakan kode di atas untuk cek status
-                    </div>
-                </div>
-            </div> --}}
-
             <div class="info-section">
-                {{-- Informasi Pemohon --}}
                 <table>
                     <tr>
                         <td>
@@ -510,7 +452,6 @@
 
                 <div class="section-divider"></div>
 
-                {{-- Deskripsi Permohonan --}}
                 @if ($ajuan->deskripsi_pengajuan)
                     <h4 class="sub-title">Deskripsi Permohonan</h4>
                     <div class="description-box">
@@ -518,7 +459,6 @@
                     </div>
                 @endif
 
-                {{-- Detail Permohonan yang Dipilih --}}
                 <h4 class="sub-title">Detail Permohonan Dipilih</h4>
                 <table class="table-content">
                     @forelse ($ajuan->formulir_items as $item)
@@ -539,7 +479,6 @@
 
                 <div class="section-divider"></div>
 
-                {{-- Verifikasi Permohonan --}}
                 <h4 class="sub-title">Verifikasi Permohonan</h4>
                 <table class="table-content">
                     @forelse ($ajuan->formulir_items ?? [] as $item)
@@ -574,7 +513,6 @@
                     @endforelse
                 </table>
 
-                {{-- Dokumen Administrasi --}}
                 <h4 class="sub-title">Dokumen Administrasi</h4>
                 <table class="table-content">
                     @forelse ($ajuan->administrasi_items ?? [] as $key => $path)
@@ -610,7 +548,6 @@
                     @endforelse
                 </table>
 
-                {{-- Tindak Lanjut --}}
                 @if ($ajuan->tindak_lanjut)
                     <div class="section-divider"></div>
                     <h4 class="sub-title">Tindak Lanjut Rekomendasi</h4>
@@ -619,7 +556,6 @@
                     </div>
                 @endif
 
-                {{-- Tanggal Permohonan & Persetujuan --}}
                 <div class="date-approval">
                     <p><strong>Kota Kebumen, </strong>
                         {{ \Carbon\Carbon::parse($ajuan->tanggal_permohonan ?? $ajuan->created_at)->format('d F Y') }}
@@ -636,7 +572,6 @@
                     @endif
                 </div>
 
-                {{-- Tanda Tangan --}}
                 <table class="signature-table">
                     <tr class="signature-content">
                         <td>Ketua Posyandu</td>
@@ -668,7 +603,6 @@
                     </tr>
                 </table>
 
-                {{-- Tanda Tangan Kades (jika sudah disetujui) --}}
                 @if ($ajuan->approved_by_kades)
                     <table class="signature-table" style="margin-top: 16px;">
                         <tr class="signature-content">
@@ -696,9 +630,7 @@
         <p>&copy; {{now()->year}} <span>SAPA POSYANDU</span> - Layanan Standar Minimal Pelayanan Posyandu Kabupaten Kebumen</p>
     </footer>
 
-    {{-- ✅ QR CODE GENERATION SCRIPT --}}
     <script>
-        // Generate QR Code for tracking
         document.addEventListener('DOMContentLoaded', function() {
             const trackingCode = "{{ $ajuan->tracking_code ?? '' }}";
             const trackingUrl = "{{ route('ajuan.track.show', ['code' => $ajuan->tracking_code ?? 'INVALID']) }}";

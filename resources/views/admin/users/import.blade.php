@@ -33,8 +33,6 @@
             : ($allowedRoles[0] ?? 'user');
         $roleToCreate = $roleLabels[$roleToCreateKey] ?? 'User';
     @endphp
-
-    <!-- Info Card -->
     <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
         <h3 class="font-semibold text-blue-900 mb-3">Informasi Import</h3>
         <ul class="text-sm text-blue-800 space-y-2">

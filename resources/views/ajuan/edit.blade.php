@@ -18,7 +18,6 @@
                         @php
                             $requestedDate = \Carbon\Carbon::parse($ajuan->revision_requested_at);
 
-                            // ✅ FIX: Pakai SystemSetting dari database, bukan config()
                             $enableAutoReject = \App\Models\SystemSetting::get('enable_auto_reject', true);
                             $debugMode = \App\Models\SystemSetting::get('revision_debug_mode', false);
                             $debugMinutes = \App\Models\SystemSetting::get('revision_debug_minutes', 5);
@@ -33,8 +32,7 @@
                             $isExpired = now()->greaterThan($revisionDeadline);
                         @endphp
 
-                        {{-- ✅ FIX: Countdown SELALU tampil sampai habis, pesan dan behavior beda berdasarkan enableAutoReject --}}
-                        {{-- Countdown Realtime --}}
+
                         <div class="bg-orange-50 border-l-4 border-orange-500 p-4 mb-6" x-data="{
                             deadline: new Date('{{ $revisionDeadline->toIso8601String() }}').getTime(),
                             now: Date.now(),
@@ -66,7 +64,6 @@
                                 this.rejecting = true;
 
                                 if (this.enableAutoReject) {
-                                    // ✅ Auto-reject AKTIF: redirect ke show() untuk trigger server-side reject
                                     Swal.fire({
                                         icon: 'error',
                                         title: 'Waktu Revisi Habis!',
@@ -81,9 +78,6 @@
                                     }).then(() => {
                                         window.location.href = '{{ route('ajuan.show', $ajuan) }}';
                                     });
-                                } else {
-                                    // ✅ Auto-reject NONAKTIF: cuma info, gak diapa-apain
-                                    // Countdown tetap jalan sampai habis, tapi tidak trigger reject
                                 }
                             }
                         }"
@@ -99,11 +93,10 @@
                                     <i class="bi bi-clock-fill text-orange-500 text-lg"></i>
                                 </div>
                                 <div class="ml-3 flex-1">
-                                    {{-- Debug Mode Indicator --}}
                                     @if ($debugMode && $debugMinutes)
                                         <div
                                             class="mb-2 bg-yellow-100 border border-yellow-300 rounded px-3 py-1 text-xs text-yellow-800">
-                                            🐛 <strong>DEBUG MODE:</strong> Deadline {{ $debugMinutes }} menit
+                                            <strong>DEBUG MODE:</strong> Deadline {{ $debugMinutes }} menit
                                         </div>
                                     @endif
 
@@ -116,7 +109,6 @@
                                             Sisa waktu untuk merevisi:
                                         </p>
 
-                                        {{-- Countdown Display --}}
                                         <div class="mt-3 flex flex-wrap gap-2">
                                             <div
                                                 class="bg-white rounded-lg px-3 py-2 border border-orange-200 min-w-[70px] text-center">
@@ -146,17 +138,16 @@
                                         </p>
                                     </div>
 
-                                    {{-- ✅ Pesan setelah expired - berbeda based on enableAutoReject --}}
                                     <div x-show="expired && !rejecting">
                                         <template x-if="enableAutoReject">
                                             <div class="text-red-600 mt-2">
-                                                <p class="text-sm font-semibold">⚠️ Waktu revisi telah habis!</p>
+                                                <p class="text-sm font-semibold">Waktu revisi telah habis!</p>
                                                 <p class="text-xs mt-1">Pengajuan akan otomatis ditolak...</p>
                                             </div>
                                         </template>
                                         <template x-if="!enableAutoReject">
                                             <div class="text-gray-600 mt-2 bg-gray-50 p-3 rounded border border-gray-200">
-                                                <p class="text-sm font-semibold">⏱️ Waktu revisi telah habis</p>
+                                                <p class="text-sm font-semibold">Waktu revisi telah habis</p>
                                                 <p class="text-xs mt-1">Fitur auto-reject saat ini
                                                     <strong>nonaktif</strong>, pengajuan tidak akan ditolak secara otomatis.
                                                 </p>
@@ -167,7 +158,6 @@
                             </div>
                         </div>
                     @elseif ($ajuan->revision_count > 0)
-                        {{-- Badge revisi tanpa countdown --}}
                         <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-6">
                             <div class="flex">
                                 <div class="flex-shrink-0">
@@ -183,7 +173,6 @@
                         </div>
                     @endif
 
-                    {{-- Catatan dari Kader --}}
                     @php
                         $latestRevisionHistory = $ajuan
                             ->histories()
@@ -213,10 +202,8 @@
                         </div>
                     @endif
 
-                    {{-- Hidden input untuk bidang --}}
                     <input type="hidden" name="bidang_pelayanan" value="{{ $ajuan->bidang->slug }}">
 
-                    {{-- Info Bidang yang Dipilih --}}
                     <div class="mb-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
                         <label class="block font-medium text-sm text-gray-700 mb-2">
                             <i class="bi bi-briefcase-fill text-pink-500"></i> Bidang Layanan
@@ -229,7 +216,6 @@
                         </div>
                     </div>
 
-                    {{-- Item Permohonan --}}
                     <div class="mb-6">
                         <label class="block font-medium text-base text-gray-700 mb-3">
                             <i class="bi bi-list-check text-pink-500"></i> Pilih Item Permohonan <span
@@ -285,7 +271,6 @@
                         @enderror
                     </div>
 
-                    {{-- Deskripsi Pengajuan --}}
                     <div class="mt-6">
                         <label for="deskripsi_pengajuan" class="block font-medium text-base text-gray-700 mb-2">
                             <i class="bi bi-file-text-fill text-pink-500"></i> Deskripsi Pengajuan <span
@@ -302,7 +287,6 @@
                         @enderror
                     </div>
 
-                    {{-- Dokumen Administrasi --}}
                     <div class="mt-8">
                         <h3 class="text-lg font-semibold text-gray-800 mb-2">
                             <i class="bi bi-folder-fill text-pink-500"></i> Dokumen Administrasi
@@ -336,7 +320,6 @@
                                         @endif
                                     </h4>
 
-                                    {{-- Status dokumen saat ini --}}
                                     @if (isset($ajuan->administrasi_items[$key]))
                                         <div
                                             class="mb-3 bg-green-50 border border-green-200 rounded p-2 text-xs text-green-700">
@@ -349,7 +332,6 @@
                                         </div>
                                     @endif
 
-                                    {{-- Preview Area --}}
                                     <div
                                         class="mt-2 w-full h-40 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-md bg-gray-50 overflow-hidden">
                                         <img x-show="previewUrl" :src="previewUrl"
@@ -361,7 +343,6 @@
                                         </div>
                                     </div>
 
-                                    {{-- File Input --}}
                                     <div class="mt-3">
                                         <div class="relative">
                                             <div
@@ -382,7 +363,7 @@
                                                 const file = $event.target.files[0];
                                                 if (file) {
                                                     if (file.size > 2048000) {
-                                                        alert('⚠️ Ukuran file terlalu besar! Maksimal 2 MB.');
+                                                        alert('Ukuran file terlalu besar! Maksimal 2 MB.');
                                                         $event.target.value = '';
                                                         fileName = '{{ isset($ajuan->administrasi_items[$key]) ? 'File saat ini' : 'Belum diunggah' }}';
                                                         fileSize = 0;
@@ -410,7 +391,6 @@
                         </div>
                     </div>
 
-                    {{-- Buttons --}}
                     <div class="flex items-center justify-end mt-8 space-x-4">
                         <a href="{{ route('ajuan.show', $ajuan) }}"
                             class="py-2 px-6 border-2 border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 transition">

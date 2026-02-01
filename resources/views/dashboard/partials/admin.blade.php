@@ -14,10 +14,8 @@
             </div>
         @endif
 
-        {{-- ✅ YEAR FILTER SECTION --}}
         <div class="bg-white overflow-hidden shadow-xl rounded-lg md:rounded-2xl p-4 md:p-6 w-full">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                {{-- Info Current Year --}}
                 <div class="flex items-center gap-3">
                     <div class="flex items-center justify-center w-12 h-12 bg-indigo-100 rounded-lg">
                         <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -43,13 +41,11 @@
                     </div>
                 </div>
 
-                {{-- Year Selector --}}
                 <div class="flex items-center gap-3">
                     <label for="yearFilter" class="text-sm font-medium text-gray-700 whitespace-nowrap">
                         Pilih Tahun:
                     </label>
                     <form method="GET" action="{{ route('dashboard') }}" id="yearFilterForm" class="flex gap-2">
-                        {{-- Preserve existing filters --}}
                         @if (request('search'))
                             <input type="hidden" name="search" value="{{ request('search') }}">
                         @endif
@@ -69,7 +65,6 @@
                             @endforeach
                         </select>
 
-                        {{-- Reset Button (jika bukan tahun berjalan) --}}
                         @if ($selectedYear != $currentYear)
                             <a href="{{ route('dashboard') }}"
                                 class="inline-flex items-center px-4 py-2 bg-gray-500 text-white text-sm rounded-lg hover:bg-gray-600 transition">
@@ -85,7 +80,6 @@
                 </div>
             </div>
 
-            {{-- Statistics Summary --}}
             <div x-show="!loading && isVerified" class="mt-4 pt-4 border-t border-gray-200">
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div class="text-center">
@@ -107,7 +101,6 @@
                 </div>
             </div>
 
-            {{-- Loading Indicator --}}
             <div x-show="loading" class="mt-4 pt-4 border-t border-gray-200 text-center">
                 <div class="inline-flex items-center gap-2 text-indigo-600">
                     <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
@@ -122,7 +115,6 @@
             </div>
         </div>
 
-        {{-- Info Message (Data Historis) --}}
         <div x-show="selectedYear != currentYear" class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg" x-transition>
             <div class="flex">
                 <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
@@ -141,14 +133,10 @@
                 </div>
             </div>
         </div>
-
-        <!-- Dashboard Cards Section -->
         @if (auth()->user()->role !== 'kabid')
             <div class="bg-white overflow-hidden shadow-xl rounded-lg md:rounded-2xl p-4 md:p-6 lg:p-8 w-full">
                 <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6">Dashboard Ajuan Pelayanan</h2>
-
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-                    <!-- Cards Grid -->
                     <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                         @php
                             $bidangColors = [
@@ -173,8 +161,6 @@
                             </div>
                         @endforeach
                     </div>
-
-                    <!-- Pie Chart -->
                     <div class="bg-white p-3 md:p-4 rounded-lg" x-data="pieChartData" x-init="drawChart()">
                         <canvas x-ref="pieChart"></canvas>
                     </div>
@@ -182,10 +168,8 @@
             </div>
         @endif
 
-        {{-- List Pengajuan Section --}}
         <div class="w-full">
             <div class="bg-white overflow-hidden shadow-xl rounded-lg md:rounded-2xl p-4 md:p-6 lg:p-8">
-                {{-- Header with Search and Export --}}
                 <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-4 md:mb-6">
                     <h2 class="text-xl md:text-2xl font-bold text-gray-800">
                         List Pengajuan
@@ -201,7 +185,6 @@
                     </h2>
 
                     <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 md:gap-3 w-full md:w-auto">
-                        {{-- Archive Toggle --}}
                         <button @click.prevent="toggleArchive($event)" type="button"
                             class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium bg-white text-gray-700 hover:bg-gray-50 transition-colors">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -211,7 +194,6 @@
                             </svg>
                             <span x-text="showArchived ? 'Lihat Pengajuan Aktif' : 'Lihat Arsip'"></span>
                         </button>
-                        {{-- Filter Status --}}
                         <select x-model="filterStatus" @change="loadDashboardData()"
                             class="border-gray-300 rounded-md shadow-sm text-sm w-full sm:w-auto px-3 py-2">
                             <option value="">Semua Status</option>
@@ -220,7 +202,6 @@
                             <option value="Ditolak">Ditolak</option>
                         </select>
 
-                        {{-- Search Input --}}
                         <div class="relative w-full sm:w-auto">
                             <input type="text" x-model="searchQuery" @input.debounce.500ms="loadDashboardData()"
                                 placeholder="Cari berdasarkan nama..."
@@ -228,13 +209,11 @@
                             <i class="bi bi-search absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400"></i>
                         </div>
 
-                        {{-- Reset Link --}}
                         <button x-show="searchQuery || filterStatus" @click="resetFilters()"
                             class="text-sm text-center sm:text-left text-gray-600 hover:text-gray-900 py-2 sm:py-0">
                             Reset
                         </button>
 
-                        {{-- Export Button --}}
                         <button @click="exportData()"
                             class="flex items-center justify-center px-4 py-2 bg-green-500 text-white text-sm md:text-base rounded-md hover:bg-green-600 whitespace-nowrap">
                             <i class="bi bi-file-earmark-excel-fill mr-2"></i>
@@ -260,10 +239,8 @@
                     </div>
                 </div>
 
-                {{-- Table --}}
                 <div class="overflow-x-auto -mx-4 md:mx-0">
                     <div class="inline-block min-w-full align-middle">
-                        {{-- Loading State --}}
                         <div x-show="loading" class="text-center py-12">
                             <div class="inline-flex items-center gap-2 text-gray-600">
                                 <svg class="animate-spin h-8 w-8" fill="none" viewBox="0 0 24 24">
@@ -277,16 +254,13 @@
                             </div>
                         </div>
 
-                        {{-- Table Content --}}
                         <div x-show="!loading" x-html="tableHtml" @click="handlePagination($event)"></div>
                     </div>
                 </div>
 
-                {{-- Pagination --}}
                 <div class="mt-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs md:text-sm text-gray-600"
                     @click="handlePagination($event)">
 
-                    {{-- Info (Kiri) --}}
                     <div x-show="!loading" class="text-gray-600">
                         <template x-if="paginationInfo.total > 0">
                             <span>
@@ -304,7 +278,6 @@
                         </template>
                     </div>
 
-                    {{-- Pagination Links (Kanan) --}}
                     <div x-html="paginationHtml"></div>
                 </div>
             </div>
@@ -322,8 +295,6 @@
                     'Bidang Pekerjaan Umum' => 'bg-green-500',
                     'Bidang Trantibumlinmas' => 'bg-yellow-500',
                 ];
-
-                // Buat slug untuk icon
                 $slug = \Illuminate\Support\Str::slug(str_replace('Bidang ', '', $nama));
                 $icon = $icons[$slug] ?? asset('assets/image/icon/bidang/default.svg');
 
@@ -340,7 +311,6 @@
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('dashboardFilter', () => ({
-                // State
                 currentYear: {{ $currentYear }},
                 selectedYear: {{ $selectedYear }},
                 availableYears: @json($availableYears),
@@ -349,8 +319,6 @@
                 filterStatus: '{{ request('status') }}',
                 searchQuery: '{{ request('search') }}',
                 showArchived: {{ $showArchived ?? false ? 'true' : 'false' }},
-
-                // Data
                 bidangData: @json($chartData),
 
                 statistics: {
@@ -370,7 +338,6 @@
                 paginationHtml: '',
                 chart: null,
 
-                // Methods
                 init() {
                     this.drawChart();
                     this.loadDashboardData();
@@ -407,7 +374,6 @@
                         const response = await fetch(`{{ route('dashboard') }}?${params}`);
                         const data = await response.json();
 
-                        // Update bidang data
                         this.bidangData = data.bidangData;
                         this.statistics = data.statistics;
                         this.tableHtml = data.tableHtml;
@@ -415,7 +381,6 @@
 
                         this.paginationInfo = data.paginationInfo;
 
-                        // Update chart
                         this.updateChart();
 
                     } catch (error) {
@@ -517,7 +482,6 @@
                     const userKabupaten = "{{ auth()->user()->kabupaten ?? '' }}";
                     const bidangKabid = "{{ auth()->user()?->bidang?->nama_bidang ?? '' }}";
 
-                    // ✅ KETUA KADER: Hanya bisa export data posyandu mereka sendiri
                     if (userRole === 'ketua-kader') {
                         if (!userPosyanduDesa) {
                             Swal.fire({
@@ -529,14 +493,11 @@
                             return;
                         }
 
-                        // ✅ Direct export ke posyandu mereka saja
                         const selectedYear = this.selectedYear;
-                        // Gunakan nama bidang dari modal atau default ke all
                         this.showKetuaKaderExportModal();
                         return;
                     }
 
-                    // ✅ KADES: Hanya bisa export untuk desa mereka (semua bidang)
                     if (userRole === 'kades') {
                         if (!userDesa) {
                             Swal.fire({
@@ -552,7 +513,6 @@
                         return;
                     }
 
-                    // ✅ ADMIN KECAMATAN: Hanya bisa export untuk desa & bidang di kecamatan mereka
                     if (userRole === 'admin-kecamatan') {
                         if (!userKecamatan) {
                             Swal.fire({
@@ -568,7 +528,6 @@
                         return;
                     }
 
-                    // ✅ KABID: Hanya bisa export bidang mereka saja (semua desa & kecamatan)
                     if (userRole === 'kabid') {
                         if (!bidangKabid) {
                             Swal.fire({
@@ -584,18 +543,13 @@
                         return;
                     }
 
-                    // ✅ KETUA POSYANDU, ADMIN KABUPATEN, ADMIN: Export semua data
                     if (['ketua-posyandu', 'admin-kabupaten', 'admin'].includes(userRole)) {
-                        // Export semua bidang & desa
                         window.location.href = `/admin/export-all-bidang-desa?year=${this.selectedYear}`;
                         return;
                     }
-
-                    // Default: export semua
                     window.location.href = `/admin/export-all-bidang-desa?year=${this.selectedYear}`;
                 },
 
-                // ✅ Modal untuk KETUA KADER
                 showKetuaKaderExportModal() {
                     const selectedYear = this.selectedYear;
                     const userDesa = "{{ auth()->user()?->posyandu?->desa ?? '' }}";
@@ -604,7 +558,6 @@
                         title: '<h2 class="text-lg md:text-xl font-bold text-gray-800 mb-2">Export Data Pengajuan</h2>',
                         html: `
             <div class="space-y-6">
-                <!-- Info Posyandu -->
                 <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-md">
                     <div class="flex items-start">
                         <i class="bi bi-info-circle-fill text-blue-500 mr-2 mt-0.5"></i>
@@ -617,12 +570,11 @@
                     </div>
                 </div>
 
-                <!-- Pilih Bidang -->
                 <div class="text-left">
                     <label class="block text-start font-semibold mb-2 text-gray-700">Pilih Bidang:</label>
                     <select id="ketuaKaderBidangSelect" class="w-full border border-gray-300 rounded-md p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                         <option value="" disabled selected>Pilih Bidang</option>
-                        <option value="all">📊 Semua Bidang</option>
+                        <option value="all">Semua Bidang</option>
                         <option value="Bidang Perumahan Rakyat">Bidang Perumahan Rakyat</option>
                         <option value="Bidang Pendidikan">Bidang Pendidikan</option>
                         <option value="Bidang Kesehatan">Bidang Kesehatan</option>
@@ -632,7 +584,6 @@
                     </select>
                 </div>
 
-                <!-- Buttons -->
                 <div class="flex justify-between gap-4 mt-6">
                     <button id="cancelKetuaKaderExport"
                         class="bg-gray-500 text-white hover:bg-gray-600 font-medium rounded-md py-3 px-6 w-1/2 shadow transition-colors">
@@ -674,8 +625,6 @@
                                 });
                                 return;
                             }
-
-                            // Export ke posyandu mereka dengan bidang tertentu
                             if (selectedBidang === 'all') {
                                 window.location.href = `/admin/export-all/${userDesa}?year=${selectedYear}`;
                             } else {
@@ -690,7 +639,6 @@
                     document.addEventListener('click', handleKetuaKaderExport);
                 },
 
-                // ✅ Modal untuk KADES
                 showKadesExportModal() {
                     const selectedYear = this.selectedYear;
                     const userDesa = "{{ auth()->user()->desa ?? '' }}";
@@ -699,7 +647,6 @@
                         title: '<h2 class="text-lg md:text-xl font-bold text-gray-800 mb-2">Export Data Pengajuan</h2>',
                         html: `
             <div class="space-y-6">
-                <!-- Info Desa -->
                 <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-md">
                     <div class="flex items-start">
                         <i class="bi bi-info-circle-fill text-green-500 mr-2 mt-0.5"></i>
@@ -716,7 +663,6 @@
                     Data akan diekspor untuk semua bidang di desa Anda
                 </p>
 
-                <!-- Buttons -->
                 <div class="flex justify-between gap-4 mt-6">
                     <button id="cancelKadesExport"
                         class="bg-gray-500 text-white hover:bg-gray-600 font-medium rounded-md py-3 px-6 w-1/2 shadow transition-colors">
@@ -746,7 +692,6 @@
                         }
 
                         if (e.target.id === 'confirmKadesExport') {
-                            // Export semua bidang untuk desa mereka
                             window.location.href = `/admin/export-all/${userDesa}?year=${selectedYear}`;
                             Swal.close();
                             document.removeEventListener('click', handleKadesExport);
@@ -756,7 +701,6 @@
                     document.addEventListener('click', handleKadesExport);
                 },
 
-                // ✅ Modal untuk ADMIN KECAMATAN
                 showAdminKecamatanExportModal() {
                     const selectedYear = this.selectedYear;
                     const userKecamatan = "{{ auth()->user()->kecamatan ?? '' }}";
@@ -766,7 +710,6 @@
                         title: '<h2 class="text-lg md:text-xl font-bold text-gray-800 mb-2">Export Data Pengajuan</h2>',
                         html: `
             <div class="space-y-6">
-                <!-- Info Kecamatan -->
                 <div class="bg-purple-50 border-l-4 border-purple-500 p-4 rounded-md">
                     <div class="flex items-start">
                         <i class="bi bi-info-circle-fill text-purple-500 mr-2 mt-0.5"></i>
@@ -779,7 +722,6 @@
                     </div>
                 </div>
 
-                <!-- Pilih Desa -->
                 <div class="text-left">
                     <label class="block text-start font-semibold mb-2 text-gray-700">Pilih Desa:</label>
                     <select id="adminKecamatanDesaSelect" class="w-full border border-gray-300 rounded-md p-3 focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
@@ -791,7 +733,6 @@
                     </select>
                 </div>
 
-                <!-- Buttons -->
                 <div class="flex justify-between gap-4 mt-6">
                     <button id="cancelAdminKecamatanExport"
                         class="bg-gray-500 text-white hover:bg-gray-600 font-medium rounded-md py-3 px-6 w-1/2 shadow transition-colors">
@@ -834,7 +775,6 @@
                                 return;
                             }
 
-                            // Export dengan desa tertentu atau semua desa
                             if (selectedDesa === 'all') {
                                 window.location.href = `/admin/export-all/${selectedDesa}?year=${selectedYear}`;
                             } else {
@@ -853,7 +793,6 @@
                     const link = event.target.tagName === 'A' ? event.target : event.target.closest('a');
                     if (!link) return;
 
-                    // Hanya tangani klik pada pagination agar link Detail/Cetak tetap normal
                     const isPagination = link.closest('.pagination');
                     if (!isPagination) return;
 
@@ -865,7 +804,6 @@
                     this.loadDashboardData(page);
                 },
 
-                // ✅ METHOD BARU: Modal khusus untuk Kabid
                 showKabidExportModal() {
                     const bidangKabid = "{{ auth()->user()->bidang?->nama_bidang ?? '' }}";
                     const kabupatenKabid = "{{ auth()->user()->kabupaten ?? '' }}";
@@ -875,7 +813,6 @@
                         title: '<h2 class="text-lg md:text-xl font-bold text-gray-800 mb-2">Export Data Pengajuan</h2>',
                         html: `
             <div class="space-y-6">
-                <!-- Info Bidang -->
                 <div class="bg-pink-50 border-l-4 border-pink-500 p-4 rounded-md">
                     <div class="flex items-start">
                         <i class="bi bi-info-circle-fill text-pink-500 mr-2 mt-0.5"></i>
@@ -891,12 +828,11 @@
                     </div>
                 </div>
 
-                <!-- Pilih Desa -->
                 <div class="text-left">
                     <label class="block text-start font-semibold mb-2 text-gray-700">Pilih Desa:</label>
                     <select id="kabidDesaSelect" class="w-full border border-gray-300 rounded-md p-3 focus:ring-2 focus:ring-pink-500 focus:border-pink-500">
                         <option value="" disabled selected>Pilih Desa</option>
-                        <option value="all" class="font-bold">📊 Semua Desa di ${kabupatenKabid}</option>
+                        <option value="all" class="font-bold">Semua Desa di ${kabupatenKabid}</option>
                         <optgroup label="Desa Spesifik:">
                             ${desas.map(d => `<option value="${d}">${d}</option>`).join('')}
                         </optgroup>
@@ -907,7 +843,6 @@
                     </p>
                 </div>
 
-                <!-- Buttons -->
                 <div class="flex justify-between gap-4 mt-6">
                     <button id="cancelKabidExport"
                         class="bg-gray-500 text-white hover:bg-gray-600 font-medium rounded-md py-3 px-6 w-1/2 shadow transition-colors">
@@ -930,7 +865,6 @@
                         }
                     });
 
-                    // Event listeners
                     const handleKabidExport = (e) => {
                         if (e.target.id === 'cancelKabidExport') {
                             Swal.close();
@@ -951,15 +885,12 @@
                                 return;
                             }
 
-                            // ✅ Export dengan parameter yang benar
                             const selectedYear = this.selectedYear;
 
                             if (selectedDesa === 'all') {
-                                // Export semua desa di kabupatennya untuk bidangnya
                                 window.location.href =
                                     `/admin/export/${encodeURIComponent(bidangKabid)}?year=${selectedYear}`;
                             } else {
-                                // Export desa tertentu untuk bidangnya
                                 window.location.href =
                                     `/admin/export/${encodeURIComponent(bidangKabid)}/${encodeURIComponent(selectedDesa)}?year=${selectedYear}`;
                             }
@@ -1015,8 +946,6 @@
                     };
 
                     const colors = labels.map(label => bidangColors[label] || 'rgb(209, 213, 219)');
-
-                    // Responsive font sizes
                     const isMobile = window.innerWidth < 640;
                     const fontSize = isMobile ? 9 : 11;
                     const legendPadding = isMobile ? 10 : 15;
@@ -1078,7 +1007,7 @@
                         }
                     });
 
-                    console.log('✅ Chart berhasil dibuat dengan ' + labels.length + ' bidang!', this
+                    console.log('Chart berhasil dibuat dengan ' + labels.length + ' bidang!', this
                         .chart);
                 },
 
@@ -1097,10 +1026,9 @@
 
         const userRole = "{{ Auth::user()->role }}";
         const userDesa = "{{ Auth::user()?->posyandu?->desa ?? '' }}";
-        const bidangKabid = "{{ Auth::user()?->bidang?->nama_bidang ?? '' }}"; // ✅ Fixed: nama_bidang bukan name
+        const bidangKabid = "{{ Auth::user()?->bidang?->nama_bidang ?? '' }}";
 
         document.getElementById('exportExcelBtn').addEventListener('click', function() {
-            // ✅ KABID: Tidak perlu pilih bidang (sudah ada di profil)
             let bidangSelectHTML = "";
 
             if (userRole !== 'kabid') {
@@ -1120,7 +1048,6 @@
             </div>
         `;
             } else {
-                // ✅ KABID: Tampilkan info bidang yang sudah ditetapkan
                 bidangSelectHTML = `
             <div class="bg-pink-50 border-l-4 border-pink-500 p-4 rounded-md">
                 <div class="flex items-start">
@@ -1199,18 +1126,14 @@
                     popup: 'rounded-md md:rounded-2xl shadow-lg p-4 md:p-6'
                 },
                 didOpen: () => {
-                    // Initialize dropdown desa dengan vanilla JS
                     @if (Auth::user()->role === 'kabid')
-                        const desas = ['all', ...
-                            @json($desas)
-                        ]; // ✅ Tambahkan opsi 'all'
+                        const desas = ['all', ...@json($desas)];
                         const searchInput = document.getElementById('desaSearch');
                         const dropdownList = document.getElementById('desaDropdownList');
                         const desaOptions = document.getElementById('desaOptions');
                         const toggleBtn = document.getElementById('toggleDesaDropdown');
                         const desaValue = document.getElementById('desaValue');
 
-                        // Fungsi untuk render options
                         function renderOptions(filter = '') {
                             const filtered = filter ?
                                 desas.filter(d => d.toLowerCase().includes(filter.toLowerCase())) :
@@ -1232,7 +1155,6 @@
                         </div>`;
                             }).join('');
 
-                            // Event listener untuk setiap option
                             document.querySelectorAll('.desa-option').forEach(option => {
                                 option.addEventListener('click', function() {
                                     const value = this.getAttribute('data-value');
@@ -1244,27 +1166,22 @@
                             });
                         }
 
-                        // Initial render
                         renderOptions();
 
-                        // Show dropdown on focus
                         searchInput.addEventListener('focus', () => {
                             dropdownList.classList.remove('hidden');
                         });
 
-                        // Filter saat typing
                         searchInput.addEventListener('input', (e) => {
                             renderOptions(e.target.value);
                             dropdownList.classList.remove('hidden');
                         });
 
-                        // Toggle dropdown
                         toggleBtn.addEventListener('click', (e) => {
                             e.stopPropagation();
                             dropdownList.classList.toggle('hidden');
                         });
 
-                        // Close dropdown saat click di luar
                         document.addEventListener('click', (e) => {
                             if (!searchInput.contains(e.target) && !dropdownList.contains(e
                                     .target) && !toggleBtn.contains(e.target)) {
@@ -1275,7 +1192,6 @@
                 }
             });
 
-            // Event listener untuk tombol
             document.addEventListener('click', function handler(e) {
                 if (e.target.id === 'cancelExportBtn') {
                     Swal.close();
@@ -1286,25 +1202,19 @@
                     let bidang = null;
                     let desa = null;
 
-                    // ✅ HANDLE BIDANG
                     if (userRole === 'kabid') {
-                        // Kabid: Gunakan bidang dari profil
                         bidang = bidangKabid;
                     } else if (userRole === 'ketua-kader') {
-                        // Ketua Kader: Bisa pilih bidang dari dropdown
                         bidang = document.getElementById('selectBidang')?.value;
                         desa = userDesa;
                     } else {
-                        // Role lain: Pilih dari dropdown
                         bidang = document.getElementById('selectBidang')?.value;
                     }
 
-                    // ✅ HANDLE DESA
                     if (userRole === 'kabid') {
                         desa = document.getElementById('desaValue')?.value || '';
                     }
 
-                    // ✅ VALIDASI
                     if (!bidang) {
                         Swal.fire({
                             icon: 'warning',
@@ -1338,26 +1248,20 @@
             const selectedYear = '{{ $selectedYear }}';
 
             if (userRole === 'ketua-kader') {
-                // Ketua Kader: Export bidang tertentu di desanya
                 const url = `/admin/export/${encodeURIComponent(bidang)}/${userDesa}?year=${selectedYear}`;
                 window.location.href = url;
             } else if (userRole === "kabid") {
-                // ✅ KABID: Export bidangnya di desa tertentu atau semua desa
                 if (desa === 'all') {
-                    // Export semua desa untuk bidangnya
                     window.location.href =
                         `/admin/export-all-bidang-desa?year=${selectedYear}&bidang=${encodeURIComponent(bidang)}`;
                 } else {
-                    // Export desa tertentu untuk bidangnya
                     const url =
                         `/admin/export/${encodeURIComponent(bidang)}/${encodeURIComponent(desa)}?year=${selectedYear}`;
                     window.location.href = url;
                 }
             } else if (bidang === 'all' && userRole === 'ketua-posyandu') {
-                // Ketua Posyandu: Export semua bidang
                 window.location.href = `/admin/export-all/${desa}?year=${selectedYear}`;
             } else {
-                // Role lain: Export bidang tertentu di desa tertentu
                 const url = `/admin/export/${encodeURIComponent(bidang)}/${encodeURIComponent(desa)}?year=${selectedYear}`;
                 window.location.href = url;
             }

@@ -14,10 +14,6 @@ class UserCreatedNotification extends Notification
     public $userData;
     public $plainPassword;
     public $createdBy;
-
-    /**
-     * Create a new notification instance.
-     */
     public function __construct($userData, $plainPassword, $createdBy)
     {
         $this->userData = $userData;
@@ -25,21 +21,11 @@ class UserCreatedNotification extends Notification
         $this->createdBy = $createdBy;
     }
 
-    /**
-     * Get the notification's delivery channels.
-     *
-     * @return array<int, string>
-     */
     public function via(object $notifiable): array
     {
         return ['database'];
     }
 
-    /**
-     * Get the array representation of the notification.
-     *
-     * @return array<string, mixed>
-     */
     public function toDatabase(object $notifiable): array
     {
         $roleNames = [
@@ -63,13 +49,9 @@ class UserCreatedNotification extends Notification
         ];
     }
 
-    /**
-     * Get the array representation of the notification.
-     */
+
     public function toArray(object $notifiable): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 }

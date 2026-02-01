@@ -1,7 +1,5 @@
 <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-4 sm:p-6 lg:p-8">
-
-        {{-- WHATSAPP ALERT --}}
         @if (session('whatsapp_link'))
             <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
                 <div class="flex items-start">
@@ -34,8 +32,6 @@
                 </div>
             </div>
         @endif
-
-        {{-- ALERT SUCCESS --}}
         @if (session('success'))
             <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg mb-6" role="alert">
                 <div class="flex">
@@ -74,8 +70,6 @@
                 </div>
             </div>
         @endif
-
-        {{-- HEADER / FILTER --}}
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <h2 class="text-xl md:text-2xl font-bold text-gray-800">List Pengguna</h2>
 
@@ -84,8 +78,6 @@
                     class="px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600 text-center transition-colors duration-150">
                     <i class="bi bi-plus-circle-fill mr-2"></i>Tambah User
                 </a>
-
-                {{-- Filter --}}
                 <div class="flex flex-col md:flex-row gap-2 w-full md:w-auto">
                     <select wire:model.live="role" class="border-gray-300 rounded-md shadow-sm text-sm">
                         <option value="">Semua Role</option>
@@ -104,8 +96,6 @@
                             <i class="bi bi-search text-gray-400"></i>
                         </div>
                     </div>
-
-                    {{-- Filter Status (khusus Operator Desa) --}}
                     @if (auth()->user()->role === 'operator-desa')
                         <div class="w-full sm:w-48">
                             <select name="status"
@@ -130,8 +120,6 @@
                 </div>
             </div>
         </div>
-
-        {{-- LOADING --}}
         <div wire:loading class="mb-4">
             <div class="flex items-center justify-center p-4 bg-gray-50 rounded-lg">
                 <svg class="animate-spin h-5 w-5 text-pink-500 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none"
@@ -145,8 +133,6 @@
                 <span class="text-sm text-gray-600">Memuat data...</span>
             </div>
         </div>
-
-        {{-- DESKTOP VIEW: TABLE --}}
         <div class="hidden md:block overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
@@ -174,8 +160,6 @@
                             <td class="px-4 py-3 text-sm text-gray-500">
                                 {{ $loop->iteration + $users->firstItem() - 1 }}
                             </td>
-
-                            {{-- ✅ NAMA & INFO WILAYAH/POSYANDU --}}
                             <td class="px-4 py-3 whitespace-nowrap">
                                 <div class="font-medium text-gray-900">
                                     {{ $user->name }}
@@ -270,24 +254,13 @@
                                             </form>
                                         @endif
                                     @endif
-
-                                    {{-- UNTUK OPERATOR DESA: Kelola Kader --}}
                                     @if (auth()->user()->role === 'operator-desa')
                                         <div class="flex justify-between">
-                                            {{-- Detail --}}
-                                            {{-- <a href="{{ route('admin.users.show', $user) }}"
-                                                class="px-3 py-1 bg-blue-500 text-white rounded-md text-xs hover:bg-blue-600">
-                                                <i class="bi bi-eye"></i> Detail
-                                            </a> --}}
-
-                                            {{-- Reset Password --}}
                                             <button type="button"
                                                 onclick="openResetPasswordModal('{{ $user->id }}', '{{ $user->name }}')"
                                                 class="px-3 py-1 bg-yellow-500 text-white rounded-md text-xs hover:bg-yellow-600">
                                                 <i class="bi bi-key"></i> Reset
                                             </button>
-
-                                            {{-- Activate/Deactivate --}}
                                             @if ($user->is_active)
                                                 <button type="button"
                                                     onclick="openDeactivateModal('{{ $user->id }}', '{{ $user->name }}')"
@@ -309,20 +282,11 @@
                                         </div>
                                     @elseif(auth()->user()->role === 'admin-kabupaten')
                                         <div class="flex justify-between gap-3">
-                                            {{-- Detail --}}
-                                            {{-- <a href="{{ route('admin.users.show', $user) }}"
-                                                class="px-3 py-1 bg-blue-500 text-white rounded-md text-xs hover:bg-blue-600">
-                                                <i class="bi bi-eye"></i> Detail
-                                            </a> --}}
-
-                                            {{-- Reset Password --}}
                                             <button type="button"
                                                 onclick="openResetPasswordModalKabid('{{ $user->id }}', '{{ $user->name }}')"
                                                 class="w-full px-3 py-1 bg-yellow-500 text-white rounded-md text-xs hover:bg-yellow-600">
                                                 <i class="bi bi-key"></i> Reset
                                             </button>
-
-                                            {{-- Activate/Deactivate --}}
                                             @if ($user->is_active)
                                                 <button type="button"
                                                     onclick="openDeactivateModalKabid('{{ $user->id }}', '{{ $user->name }}')"
@@ -360,12 +324,9 @@
                 </tbody>
             </table>
         </div>
-
-        {{-- MOBILE VIEW: CARDS --}}
         <div class="md:hidden space-y-4">
             @forelse ($users as $user)
                 <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
-                    {{-- Card Header --}}
                     <div class="bg-gradient-to-r from-pink-50 to-purple-50 px-4 py-3 border-b border-gray-200">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center space-x-3">
@@ -377,7 +338,6 @@
                                     <h3 class="text-sm font-semibold text-gray-900">
                                         {{ $user->name }}
                                     </h3>
-                                    {{-- ✅ INFO WILAYAH/POSYANDU --}}
                                     <p class="text-xs text-gray-500">
                                         @if (in_array($user->role, ['masyarakat', 'kader', 'ketua-kader']))
                                             <i class="bi bi-geo-alt-fill mr-1"></i>
@@ -399,10 +359,7 @@
                             </span>
                         </div>
                     </div>
-
-                    {{-- Card Body --}}
                     <div class="px-4 py-3 space-y-3">
-                        {{-- Email & NIK --}}
                         <div class="flex items-start">
                             <div class="flex-shrink-0 w-20">
                                 <span class="text-xs font-medium text-gray-500">Email</span>
@@ -412,8 +369,6 @@
                                 <p class="text-xs text-gray-500 mt-1">NIK: {{ $user->nik ?? '-' }}</p>
                             </div>
                         </div>
-
-                        {{-- Role --}}
                         <div class="flex items-start">
                             <div class="flex-shrink-0 w-20">
                                 <span class="text-xs font-medium text-gray-500">Role</span>
@@ -431,8 +386,6 @@
                                 </span>
                             </div>
                         </div>
-
-                        {{-- Status --}}
                         <div class="flex items-start">
                             <div class="flex-shrink-0 w-20">
                                 <span class="text-xs font-medium text-gray-500">Status</span>
@@ -452,8 +405,6 @@
                             </div>
                         </div>
                     </div>
-
-                    {{-- Card Footer - Action Buttons --}}
                     <div class="bg-gray-50 px-4 py-3 border-t border-gray-200">
                         <div class="flex flex-col gap-2">
                             <a href="{{ route('admin.users.show', $user) }}"
@@ -511,8 +462,6 @@
                 </div>
             @endforelse
         </div>
-
-        {{-- Modal Reset Password --}}
         <div id="resetPasswordModal"
             class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
             <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
@@ -551,8 +500,6 @@
                 </div>
             </div>
         </div>
-
-        {{-- Modal Deactivate --}}
         <div id="deactivateModal"
             class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
             <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
@@ -585,8 +532,6 @@
                 </div>
             </div>
         </div>
-
-        {{-- Modal Reset Password --}}
         <div id="resetPasswordModalKabid"
             class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
             <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
@@ -625,8 +570,6 @@
                 </div>
             </div>
         </div>
-
-        {{-- Modal Deactivate --}}
         <div id="deactivateModalKabid"
             class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
             <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
@@ -659,8 +602,6 @@
                 </div>
             </div>
         </div>
-
-        {{-- PAGINATION --}}
         <div class="mt-6">
             {{ $users->links() }}
         </div>
@@ -688,7 +629,6 @@
                 document.getElementById('deactivateForm').reset();
             }
 
-            // Close modal when clicking outside
             window.onclick = function(event) {
                 const resetModal = document.getElementById('resetPasswordModal');
                 const deactivateModal = document.getElementById('deactivateModal');

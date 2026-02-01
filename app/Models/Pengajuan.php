@@ -27,17 +27,17 @@ class Pengajuan extends Model
         'verified_formulir_items',
         'verified_administrasi_items',
         'ttd_kader',
-        'tanggal_permohonan',        // ← BARU
-        'tindak_lanjut',             // ← BARU
-        'approved_by_ketua',         // ← BARU
-        'approved_by_ketua_id',      // ← BARU
-        'approved_by_ketua_at',      // ← BARU
-        'approved_by_kades',         // ← BARU
-        'approved_by_kades_id',      // ← BARU
-        'approved_by_kades_at',      // ← BARU
-        'foto_kunjungan',            // ← BARU
-        'revision_requested_at',     // ← BARU
-        'revision_count',            // ← BARU
+        'tanggal_permohonan',
+        'tindak_lanjut',
+        'approved_by_ketua',
+        'approved_by_ketua_id',
+        'approved_by_ketua_at',
+        'approved_by_kades',
+        'approved_by_kades_id',
+        'approved_by_kades_at',
+        'foto_kunjungan',
+        'revision_requested_at',
+        'revision_count',
         'auto_rejected',
         'tracking_code',
     ];
@@ -50,12 +50,12 @@ class Pengajuan extends Model
         'verified_formulir_items',
         'verified_administrasi_items',
         'ttd_kader' => 'boolean',
-        'foto_kunjungan' => 'array',           // ← BARU
-        'approved_by_ketua' => 'boolean',      // ← BARU
-        'approved_by_kades' => 'boolean',      // ← BARU
-        'tanggal_permohonan' => 'datetime',    // ← BARU
-        'approved_by_ketua_at' => 'datetime',  // ← BARU
-        'approved_by_kades_at' => 'datetime',  // ← BARU
+        'foto_kunjungan' => 'array',
+        'approved_by_ketua' => 'boolean',
+        'approved_by_kades' => 'boolean',
+        'tanggal_permohonan' => 'datetime',
+        'approved_by_ketua_at' => 'datetime',
+        'approved_by_kades_at' => 'datetime',
         'revision_requested_at' => 'datetime',
     ];
 
@@ -64,21 +64,15 @@ class Pengajuan extends Model
         parent::boot();
 
         static::creating(function ($pengajuan) {
-            // Jika tracking_code belum di-set, generate otomatis
             if (empty($pengajuan->tracking_code)) {
                 $pengajuan->tracking_code = self::generateTrackingCode();
             }
         });
     }
 
-    /**
-     * Generate unique tracking code
-     * Format: PGJ-YYYYMM-XXXXX
-     */
     private static function generateTrackingCode()
     {
         do {
-            // Format: PGJ-202501-AB123
             $code = 'PGJ-' . date('Ym') . '-' . strtoupper(Str::random(5));
         } while (self::where('tracking_code', $code)->exists());
 
@@ -121,13 +115,11 @@ class Pengajuan extends Model
 
     public function scopeArchived($query)
     {
-        // Pengajuan dianggap arsip jika statusnya sudah final (Disetujui/Ditolak)
         return $query->whereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
     }
 
     public function scopeActive($query)
     {
-        // Pengajuan masih aktif jika statusnya selain Disetujui atau Ditolak
         return $query->whereNotIn('status_pengajuan', ['Disetujui', 'Ditolak']);
     }
 

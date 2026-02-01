@@ -8,9 +8,6 @@ use Illuminate\Support\Str;
 
 class SystemSettingSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
         $settings = [

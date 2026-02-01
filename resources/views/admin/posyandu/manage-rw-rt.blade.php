@@ -27,7 +27,7 @@
                     <div class="flex items-start">
                         <i class="bi bi-info-circle-fill text-blue-500 mr-3 mt-0.5 text-xl"></i>
                         <div class="text-sm text-blue-700">
-                            <p class="font-semibold mb-2">ℹ️ Informasi Sistem RW/RT</p>
+                            <p class="font-semibold mb-2">Informasi Sistem RW/RT</p>
                             <ul class="list-disc list-inside space-y-1 ml-2">
                                 <li><strong>RW tersedia di kabupaten:</strong> RW01 sampai RW15 (total 15 RW)</li>
                                 <li><strong>RT tersedia di kabupaten:</strong> RT001 sampai RT053 (total 53 RT)</li>
@@ -56,14 +56,13 @@
                                 <div class="text-sm text-green-600 font-semibold">RT yang Dilayani Posyandu Ini</div>
                                 <button type="button" @click="$nextTick(() => {})"
                                     class="text-xs px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600">
-                                    🔄 Refresh
+                                    Refresh
                                 </button>
                             </div>
                             <div class="text-3xl font-bold text-green-700">
                                 <span x-text="getTotalSelectedRt()"></span>
                             </div>
                             <div class="text-xs text-green-500 mt-1">dari 53 RT yang ada di kabupaten</div>
-                            {{-- ✅ Debug Panel (hapus setelah fix) --}}
                             <div class="mt-3 p-2 bg-white rounded text-xs">
                                 <div class="font-mono text-gray-600">
                                     Debug:
@@ -168,7 +167,7 @@
                         <button type="submit" :disabled="selectedRwList.length === 0"
                             class="px-8 py-2.5 bg-pink-600 text-white rounded-md hover:bg-pink-700 disabled:bg-gray-300 disabled:cursor-not-allowed shadow-lg">
                             <i class="bi bi-save mr-2"></i>
-                            💾 Simpan Mapping RW/RT
+                            Simpan Mapping RW/RT
                         </button>
                     </div>
                 </form>
@@ -180,38 +179,32 @@
         <script>
             document.addEventListener('alpine:init', () => {
                 Alpine.data('rwRtManager', () => ({
-                    // ✅ Fixed options dari kabupaten (tidak bisa ditambah)
                     allRwOptions: Array.from({ length: 15 }, (_, i) => `RW${String(i + 1).padStart(2, '0')}`),
                     allRtOptions: Array.from({ length: 53 }, (_, i) => `RT${String(i + 1).padStart(3, '0')}`),
 
-                    // ✅ Data dari database
                     selectedRwList: @json($posyandu->rw_list ?? []),
                     rtMapping: @json($posyandu->rt_mapping ?? []),
 
                     init() {
-                        console.log('🟢 Alpine.js initialized');
+                        console.log('Alpine.js initialized');
                         console.log('Initial RW List:', this.selectedRwList);
                         console.log('Initial RT Mapping:', this.rtMapping);
 
-                        // Pastikan rtMapping punya array untuk setiap RW yang dipilih
                         this.selectedRwList.forEach(rw => {
                             if (!this.rtMapping[rw]) {
                                 this.rtMapping[rw] = [];
                             }
                         });
 
-                        // Watch selectedRwList untuk auto-init rtMapping
                         this.$watch('selectedRwList', (newVal, oldVal) => {
-                            console.log('📝 RW List changed:', newVal);
+                            console.log('RW List changed:', newVal);
 
-                            // Jika RW baru ditambahkan
                             newVal.forEach(rw => {
                                 if (!this.rtMapping[rw]) {
                                     this.rtMapping[rw] = [];
                                 }
                             });
 
-                            // Jika RW dihapus
                             if (oldVal) {
                                 oldVal.forEach(rw => {
                                     if (!newVal.includes(rw)) {
@@ -221,24 +214,21 @@
                             }
                         });
 
-                        // ✅ Watch rtMapping untuk debug
                         this.$watch('rtMapping', (newVal) => {
-                            console.log('📊 RT Mapping changed:', newVal);
+                            console.log('RT Mapping changed:', newVal);
                             console.log('Total RT:', this.getTotalSelectedRt());
                         }, { deep: true });
                     },
 
                     selectAllRt(rw) {
-                        console.log('✅ Select all RT for', rw);
+                        console.log('Select all RT for', rw);
                         this.rtMapping[rw] = [...this.allRtOptions];
-                        // ✅ Force reactivity
                         this.rtMapping = { ...this.rtMapping };
                     },
 
                     clearAllRt(rw) {
-                        console.log('❌ Clear all RT for', rw);
+                        console.log('Clear all RT for', rw);
                         this.rtMapping[rw] = [];
-                        // ✅ Force reactivity
                         this.rtMapping = { ...this.rtMapping };
                     },
 
@@ -249,13 +239,11 @@
 
                         const index = this.rtMapping[rw].indexOf(rt);
                         if (index > -1) {
-                            // RT sudah ada, hapus
                             this.rtMapping[rw].splice(index, 1);
-                            console.log('➖ Removed', rt, 'from', rw);
+                            console.log('Removed', rt, 'from', rw);
                         } else {
-                            // RT belum ada, tambah
                             this.rtMapping[rw].push(rt);
-                            console.log('➕ Added', rt, 'to', rw);
+                            console.log('Added', rt, 'to', rw);
                         }
                     },
 

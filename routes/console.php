@@ -10,8 +10,8 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('revisions:auto-reject')
-    ->hourly() // Jalan setiap jam
-    ->withoutOverlapping() // Prevent double execution
+    ->hourly()
+    ->withoutOverlapping()
     ->onSuccess(function () {
         Log::info('Auto-reject revisions completed successfully');
     })

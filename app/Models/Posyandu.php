@@ -30,50 +30,35 @@ class Posyandu extends Model
         'rt_mapping' => 'array',
     ];
 
-    /**
-     * ✅ Validasi apakah RW diperbolehkan di posyandu ini
-     */
     public function isRwAllowed($rw)
     {
         if (!$this->rw_list) {
-            return true; // Jika belum diset, allow semua
+            return true;
         }
 
         return in_array($rw, $this->rw_list);
     }
 
-    /**
-     * ✅ Get list RT untuk RW tertentu
-     */
     public function getRtListForRw($rw)
     {
         $mapping = $this->rt_mapping ?? [];
         return $mapping[$rw] ?? [];
     }
 
-    /**
-     * ✅ Validasi apakah RT valid untuk RW yang dipilih
-     */
     public function isRtValidForRw($rw, $rt)
     {
         if (!$this->rt_mapping || !isset($this->rt_mapping[$rw])) {
-            return true; // Jika belum diset, allow
+            return true;
         }
 
         return in_array($rt, $this->rt_mapping[$rw]);
     }
 
-    /**
-     * ✅ Get semua RW yang tersedia (max 15)
-     */
     public function getAvailableRwList()
     {
         return count($this->rw_list ?? []);
     }
 
-    /**
-     * ✅ Count total RT di posyandu ini (max 53)
-     */
     public function getTotalRtCount()
     {
         if (!$this->rt_mapping) {
@@ -88,9 +73,6 @@ class Posyandu extends Model
         return $total;
     }
 
-    /**
-     * ✅ Validasi constraint: max 15 RW, max 53 RT
-     */
     public function validateRwRtConstraints()
     {
         $errors = [];
@@ -106,15 +88,11 @@ class Posyandu extends Model
         return empty($errors) ? true : $errors;
     }
 
-    /**
-     * ✅ Scope: Filter user berdasarkan RW
-     */
     public function scopeByRw($query, string $rw)
     {
         return $query->whereJsonContains('rw_list', $rw);
     }
 
-    // Relations
     public function bidang()
     {
         return $this->belongsTo(BidangPengajuan::class, 'bidang_id', 'id');

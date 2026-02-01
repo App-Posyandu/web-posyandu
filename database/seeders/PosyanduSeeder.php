@@ -10,9 +10,6 @@ use Illuminate\Support\Facades\Schema;
 
 class PosyanduSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
         Schema::disableForeignKeyConstraints();
@@ -40,7 +37,6 @@ class PosyanduSeeder extends Seeder
             ],
         ];
 
-        // 3. Loop dan gunakan Model::create()
         foreach ($posyandus as $posyandu) {
             Posyandu::create($posyandu);
         }

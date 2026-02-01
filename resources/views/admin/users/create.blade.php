@@ -28,7 +28,6 @@
                     <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">Formulir Pengguna Baru</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                        {{-- Nama & No Telepon (Tidak Berubah) --}}
                         <div>
                             <x-input-label for="name" :value="__('Nama Lengkap')" />
                             <x-text-input id="name" class="block mt-1 w-full" type="text" name="name"
@@ -102,7 +101,6 @@
                             </div>
                         @endif
 
-                        {{-- Role --}}
                         <div
                             class="{{ in_array(auth()->user()->role, ['ketua-kader', 'admin-kecamatan', 'kader']) ? 'hidden' : '' }}">
                             <x-input-label for="role" :value="__('Role')" />
@@ -148,7 +146,6 @@
                                     <option value="kades">Kades</option>
                                     <option value="operator-desa">Operator Desa</option>
                                 @elseif ($currentUserRole === 'admin-kecamatan')
-                                    {{-- Admin Kecamatan tidak boleh membuat user apapun --}}
                                 @elseif ($currentUserRole === 'operator-desa')
                                     <option value="ketua-kader">Ketua Kader</option>
                                     <option value="kader">Kader</option>
@@ -159,7 +156,6 @@
                                 @endif
                             </select>
 
-                            {{-- ✅ Hidden input jika role di-disable (dari pilih-user) --}}
                             @if (isset($defaultRole))
                                 <input type="hidden" name="role" value="{{ $defaultRole }}">
                                 <p class="mt-1 text-xs text-gray-500">
@@ -172,7 +168,6 @@
                             <x-input-error :messages="$errors->get('role')" class="mt-2" />
                         </div>
 
-                        {{-- JENIS WILAYAH (KHUSUS KABID) --}}
                         <div class="{{ in_array(auth()->user()->role, ['admin', 'ketua-kader']) ? 'md:col-span-2' : '' }}"
                             id="jenis-wilayah-field" style="display: none;">
                             <x-input-label for="jenis_wilayah" :value="__('Jenis Wilayah')" />
@@ -186,10 +181,8 @@
                             <x-input-error :messages="$errors->get('jenis_wilayah')" class="mt-2" />
                         </div>
 
-                        {{-- ✅ HIDDEN INPUT UNTUK KABUPATEN --}}
                         <input type="hidden" id="kabupaten-hidden" name="kabupaten" value="">
 
-                        {{-- KABUPATEN COMBOBOX (HANYA UI) --}}
                         <div id="kabupaten-field" style="display: none;" class="md:col-span-2">
                             <div x-data="kabupatenCombobox()" @click.away="open = false" x-init="$watch('selectedKabupaten', value => {
                                 document.getElementById('kabupaten-hidden').value = value;
@@ -217,9 +210,7 @@
                             </div>
                         </div>
 
-                        {{-- KOTA COMBOBOX (HANYA UI) --}}
                         <div id="kota-field" style="display: none;" class="md:col-span-2">
-                            {{-- ... (Kode Combobox Kota Anda yang lama) ... --}}
                             <div x-data="kotaCombobox()" @click.away="open = false" x-init="$watch('selectedKota', value => {
                                 document.getElementById('kabupaten-hidden').value = value;
                             })"
@@ -289,7 +280,6 @@
                             </div>
                         </div>
 
-                        <!-- ✅ FIELD UNTUK KETUA KADER: Pilih Posyandu (dibuat oleh Kabid atau Admin Kecamatan) -->
                         <div id="posyandu-field" style="display: none;" class="md:col-span-2">
                             <x-input-label for="posyandu_id" :value="__('Pilih Posyandu')" />
                             <select id="posyandu_id" name="posyandu_id"
@@ -306,7 +296,6 @@
                             </p>
                         </div>
 
-                        <!-- ✅ FIELD UNTUK KADER: Pilih Bidang (posyandu otomatis dari Ketua Kader) -->
                         <div id="bidang-field" style="display: none;"
                             class="{{ in_array(auth()->user()->role, ['admin', 'operator-desa', 'ketua-kader']) ? 'md:col-span-2' : '' }}">
                             <x-input-label for="bidang_id" :value="__('Bidang Tugas')" />
@@ -324,18 +313,13 @@
                             </p>
                         </div>
 
-                        {{-- ✅ TAMBAHKAN SETELAH DROPDOWN POSYANDU/BIDANG, SEBELUM PASSWORD --}}
-                        {{-- HANYA UNTUK ROLE MASYARAKAT --}}
-
                         <div id="rw-rt-fields" style="display: none;" class="md:col-span-2 space-y-4">
-                            {{-- RW Dropdown --}}
                             <div>
                                 <x-input-label for="rw" :value="__('RW (Rukun Warga)')" />
                                 <span class="text-red-600">*</span>
                                 <select id="rw" name="rw"
                                     class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                                     <option value="" disabled selected>Pilih RW</option>
-                                    {{-- Will be populated by JavaScript --}}
                                 </select>
                                 <p class="text-xs text-gray-500 mt-1">
                                     <i class="bi bi-info-circle text-blue-500"></i>
@@ -344,14 +328,12 @@
                                 <x-input-error :messages="$errors->get('rw')" class="mt-2" />
                             </div>
 
-                            {{-- RT Dropdown --}}
                             <div>
                                 <x-input-label for="rt" :value="__('RT (Rukun Tetangga)')" />
                                 <span class="text-gray-500 text-sm">(Opsional)</span>
                                 <select id="rt" name="rt"
                                     class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                                     <option value="">-- Tidak ada/Tidak tahu --</option>
-                                    {{-- Will be populated by JavaScript --}}
                                 </select>
                                 <p class="text-xs text-gray-500 mt-1">
                                     <i class="bi bi-info-circle text-blue-500"></i>
@@ -400,13 +382,10 @@
 
     @push('scripts')
         <script>
-            // ✅ PASTIKAN ALPINE INIT DULU
             document.addEventListener('alpine:init', () => {
 
-                // Helper function untuk mencari ID/Code yang valid
                 const getRegionCode = (region) => region.id || region.code;
 
-                // 1. KABUPATEN COMBOBOX
                 Alpine.data('kabupatenCombobox', () => ({
                     open: false,
                     search: '',
@@ -414,7 +393,6 @@
                     kabupatens: @json($kabupatenList ?? []),
 
                     init() {
-                        // Debugging: Cek data pertama untuk memastikan struktur
                         if (this.kabupatens.length > 0) {
                             console.log('Sample Data Kabupaten:', this.kabupatens[0]);
                         }
@@ -438,7 +416,7 @@
                     },
 
                     selectKabupaten(kab) {
-                        const code = getRegionCode(kab); // Ambil ID atau Code
+                        const code = getRegionCode(kab);
 
                         this.selectedKabupaten = `${code}_${kab.name}`;
                         this.search = '';
@@ -446,7 +424,6 @@
 
                         document.getElementById('kabupaten-hidden').value = this.selectedKabupaten;
 
-                        // Dispatch code wilayah agar Kecamatan bisa fetch
                         console.log('Dispatching Region Code:', code);
                         this.$dispatch('region-selected', {
                             code: code
@@ -454,7 +431,6 @@
                     }
                 }));
 
-                // 2. KOTA COMBOBOX
                 Alpine.data('kotaCombobox', () => ({
                     open: false,
                     search: '',
@@ -487,7 +463,6 @@
                     }
                 }));
 
-                // 3. KECAMATAN COMBOBOX
                 Alpine.data('kecamatanCombobox', () => ({
                     open: false,
                     search: '',
@@ -514,11 +489,9 @@
                         document.getElementById('kecamatan-hidden').value = '';
 
                         try {
-                            // Fetch API
                             const response = await fetch(`/api/wilayah/kecamatan/${parentId}`);
                             const data = await response.json();
 
-                            // Normalisasi Data: Pastikan jadi Array
                             let list = [];
                             if (Array.isArray(data)) {
                                 list = data;
@@ -539,8 +512,6 @@
 
                     selectKecamatan(kec) {
                         const code = getRegionCode(kec);
-
-                        // Format: Code_Nama
                         const val = `${code}_${kec.name}`;
                         document.getElementById('kecamatan-hidden').value = val;
 
@@ -558,7 +529,6 @@
                 const rwSelect = document.getElementById('rw');
                 const rtSelect = document.getElementById('rt');
 
-                // ✅ Toggle RW/RT fields ketika role = masyarakat
                 function toggleRwRtFields() {
                     if (roleSelect.value === 'masyarakat') {
                         rwRtFields.style.display = 'block';
@@ -570,19 +540,15 @@
                         rwSelect.value = '';
                     }
                 }
-
-                // ✅ Fetch RW/RT ketika posyandu dipilih (untuk role masyarakat)
                 async function fetchRwRtOptions() {
                     if (roleSelect.value !== 'masyarakat' || !posyanduSelect.value) {
                         return;
                     }
 
                     try {
-                        // Fetch data posyandu
                         const response = await fetch(`/api/posyandu/${posyanduSelect.value}/rw-rt`);
                         const data = await response.json();
 
-                        // Populate RW dropdown
                         rwSelect.innerHTML = '<option value="" disabled selected>Pilih RW</option>';
                         if (data.rw_list && data.rw_list.length > 0) {
                             data.rw_list.forEach(rw => {
@@ -592,7 +558,6 @@
                                 rwSelect.appendChild(option);
                             });
                         } else {
-                            // Fallback: Generate RW01-RW15
                             for (let i = 1; i <= 15; i++) {
                                 const rw = `RW${String(i).padStart(2, '0')}`;
                                 const option = document.createElement('option');
@@ -601,8 +566,6 @@
                                 rwSelect.appendChild(option);
                             }
                         }
-
-                        // Store rt_mapping for later use
                         window.rtMapping = data.rt_mapping || {};
 
                     } catch (error) {
@@ -610,7 +573,6 @@
                     }
                 }
 
-                // ✅ Populate RT ketika RW dipilih
                 rwSelect.addEventListener('change', function() {
                     const selectedRw = this.value;
                     rtSelect.innerHTML = '<option value="">-- Tidak ada/Tidak tahu --</option>';
@@ -623,7 +585,6 @@
                             rtSelect.appendChild(option);
                         });
                     } else {
-                        // Fallback: Generate RT001-RT053
                         for (let i = 1; i <= 53; i++) {
                             const rt = `RT${String(i).padStart(3, '0')}`;
                             const option = document.createElement('option');
@@ -634,15 +595,12 @@
                     }
                 });
 
-                // Event listeners
                 roleSelect.addEventListener('change', toggleRwRtFields);
                 posyanduSelect.addEventListener('change', fetchRwRtOptions);
 
-                // Initial check
                 toggleRwRtFields();
             });
 
-            // ✅ TOGGLE FIELDS SETELAH DOM READY
             document.addEventListener('DOMContentLoaded', function() {
                 const roleSelect = document.getElementById('role');
                 const bidangField = document.getElementById('bidang-field');
@@ -659,7 +617,6 @@
                 const kecamatanSelect = document.getElementById('kecamatan_id');
 
                 function toggleFields() {
-                    // Hide all fields first
                     jenisWilayahField.style.display = 'none';
                     kabupatenField.style.display = 'none';
                     kotaField.style.display = 'none';
@@ -667,50 +624,39 @@
                     posyanduField.style.display = 'none';
                     bidangField.style.display = 'none';
 
-                    // Reset all required
                     jenisWilayahSelect.required = false;
-                    // kabupaten akan di-handle oleh hidden input
                     posyanduSelect.required = false;
                     bidangSelect.required = false;
 
                     const role = roleSelect.value;
                     const currentUserRole = '{{ auth()->user()->role }}';
 
-                    // ✅ KETUA POSYANDU: Pilih Jenis Wilayah + Kabupaten/Kota
                     if (role === 'ketua-posyandu' || role === 'admin-kabupaten') {
                         jenisWilayahField.style.display = 'block';
                         jenisWilayahSelect.required = true;
-                        // Kabupaten/Kota akan muncul setelah pilih jenis wilayah
                     }
-
-                    // ✅ KABID: Pilih Bidang + Kabupaten
                     if (role === 'kabid') {
                         bidangField.style.display = 'block';
                         bidangSelect.required = true;
 
-                        // Tampilkan pilihan jenis wilayah dulu
                         jenisWilayahField.style.display = 'block';
                         jenisWilayahSelect.required = true;
                     }
 
-                    // ✅ ADMIN KECAMATAN: Pilih Kabupaten + Kecamatan (dari API)
                     if (role === 'admin-kecamatan') {
                         jenisWilayahField.style.display = 'block';
                         jenisWilayahSelect.required = true;
                     }
 
-                    // ✅ KETUA KADER: Pilih Posyandu
                     if (role === 'ketua-kader') {
                         posyanduField.style.display = 'block';
                         posyanduSelect.required = true;
                     }
 
-                    // ✅ OPERATOR DESA: Pilih Posyandu yang sama dengan Ketua Kader
                     if (role === 'operator-desa') {
                         posyanduField.style.display = 'block';
                         posyanduSelect.required = true;
 
-                        // Jika dibuat oleh Ketua Kader, filter hanya posyandu ketua kader
                         if (currentUserRole === 'ketua-kader') {
                             const ketuaKaderPosyanduId = '{{ auth()->user()->posyandu_id }}';
                             posyanduSelect.value = ketuaKaderPosyanduId;
@@ -718,22 +664,18 @@
                         }
                     }
 
-                    // ✅ KADER: Pilih Bidang + Posyandu (conditional)
                     if (role === 'kader') {
                         bidangField.style.display = 'block';
                         bidangSelect.required = true;
 
-                        // ✅ OPERATOR DESA: Posyandu auto-inherit, hanya tampilkan Bidang
                         if (currentUserRole === 'operator-desa') {
-                            posyanduField.style.display = 'none'; // Hide karena auto-inherit
+                            posyanduField.style.display = 'none';
                             posyanduSelect.required = false;
                         }
-                        // Jika dibuat oleh Ketua Kader, posyandu auto-inherit
                         else if (currentUserRole === 'ketua-kader') {
                             posyanduField.style.display = 'none';
                             posyanduSelect.required = false;
                         }
-                        // Role lain (Admin, dll) harus pilih posyandu
                         else {
                             posyanduField.style.display = 'block';
                             posyanduSelect.required = true;
@@ -765,8 +707,6 @@
                 roleSelect.addEventListener('change', toggleFields);
                 jenisWilayahSelect.addEventListener('change', toggleWilayahField);
             });
-            // Replace bagian script import di create.blade.php (user) dengan ini:
-
             const currentUserRole = @json(auth()->user()->role);
             const roleTargets = {
                 'kader': ['masyarakat'],
@@ -811,9 +751,6 @@
                 showMainMenu();
             });
 
-            /**
-             * STEP 0: Pilih Role Target (jika lebih dari 1)
-             */
             function showRoleSelection(roles) {
                 const rolesHtml = roles.map(role => {
                     const label = roleLabels[role] || role;
@@ -853,17 +790,12 @@
                     }
                 });
             }
-
-            /**
-             * STEP 1: Menu Utama - Pilih Import atau Download Template
-             */
             function showMainMenu() {
                 const roleLabel = roleLabels[selectedRoleToCreate] || 'User';
                 let menuHTML = `
         <div class="space-y-6 text-center">
             <p class="text-gray-600 mb-6">Pilih aksi yang ingin dilakukan:</p>
 
-            <!-- Upload Import -->
             <div class="bg-gradient-to-r from-emerald-50 to-emerald-100 border-2 border-emerald-300 rounded-xl p-6 hover:shadow-lg transition-all cursor-pointer"
                  id="uploadOption">
                 <div class="flex  gap-4">
@@ -879,7 +811,6 @@
                 </div>
             </div>
 
-            <!-- Download Template -->
             <div class="bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-300 rounded-xl p-6 hover:shadow-lg transition-all cursor-pointer"
                  id="downloadOption">
                 <div class="flex items-center gap-4">
@@ -895,7 +826,6 @@
                 </div>
             </div>
 
-            <!-- Button Batal -->
             <div class="pt-4">
                 <button id="cancelMainMenu"
                     class="px-6 py-2.5 bg-gray-500 text-white hover:bg-gray-600 font-medium rounded-md shadow">
@@ -916,39 +846,27 @@
                         popup: 'rounded-2xl shadow-2xl p-6'
                     },
                     didOpen: () => {
-                        // Upload Option
                         document.getElementById('uploadOption').addEventListener('click', () => {
                             showUploadStep();
                         });
-
-                        // Download Template Option
                         document.getElementById('downloadOption').addEventListener('click', () => {
                             executeDownload();
                         });
-
-                        // Cancel
                         document.getElementById('cancelMainMenu').addEventListener('click', () => {
                             Swal.close();
                         });
                     }
                 });
             }
-
-            /**
-             * STEP 2: Upload File Excel
-             */
             function showUploadStep() {
                 let uploadHTML = `
         <div class="space-y-5 text-left">
-            <!-- Upload File -->
             <div>
                 <label class="block text-start font-semibold mb-2 text-gray-700">Upload File Excel:</label>
                 <input type="file" id="excelFile" accept=".xlsx,.xls"
                     class="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer border border-gray-300 rounded-md">
                 <p class="mt-2 text-xs text-gray-500">Format: .xlsx atau .xls</p>
             </div>
-
-            <!-- Info -->
             <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
                 <p class="text-sm text-blue-700">
                     <strong>Tips:</strong>
@@ -957,8 +875,6 @@
                     <br>• Password default: <code class="bg-white px-2 py-1 rounded">password123</code>
                 </p>
             </div>
-
-            <!-- Buttons -->
             <div class="flex justify-between gap-3 pt-4 border-t">
                 <button id="backToMainMenu"
                     class="px-4 py-2.5 bg-gray-200 text-gray-700 hover:bg-gray-300 font-medium rounded-md">
@@ -974,7 +890,6 @@
             </div>
         </div>
     `;
-
                 Swal.fire({
                     title: '<h2 class="text-xl font-bold text-gray-800 mb-2">Upload File Excel</h2>',
                     html: uploadHTML,
@@ -986,12 +901,9 @@
                         popup: 'rounded-2xl shadow-2xl p-6'
                     },
                     didOpen: () => {
-                        // Kembali ke menu utama
                         document.getElementById('backToMainMenu').addEventListener('click', () => {
                             showMainMenu();
                         });
-
-                        // Import Excel
                         document.getElementById('importExcelBtn').addEventListener('click', () => {
                             const file = document.getElementById('excelFile').files[0];
 
@@ -1004,8 +916,6 @@
                                 });
                                 return;
                             }
-
-                            // Show loading
                             Swal.fire({
                                 title: 'Uploading...',
                                 html: 'Sedang mengupload dan memproses file...',
@@ -1059,10 +969,6 @@
                     }
                 });
             }
-
-            /**
-             * Execute Download Template (langsung download tanpa pilih lokasi)
-             */
             function executeDownload() {
                 Swal.fire({
                     title: 'Generating Template',
@@ -1072,13 +978,9 @@
                         Swal.showLoading();
                     }
                 });
-
-                // Trigger download
                 const roleParam = selectedRoleToCreate ? `?role=${encodeURIComponent(selectedRoleToCreate)}` : '';
                 const url = "{{ route('admin.users.export.template') }}" + roleParam;
                 window.location.href = url;
-
-                // Show success message
                 setTimeout(() => {
                     const roleLabel = roleLabels[selectedRoleToCreate] || 'User';
                     const rowInfo = selectedRoleToCreate === 'kader'

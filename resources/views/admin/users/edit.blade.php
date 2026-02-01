@@ -16,8 +16,6 @@
         </div>
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
             <div class="p-6 sm:p-8 text-gray-900">
-
-                {{-- User Info Card - Read Only --}}
                 <div class="bg-gradient-to-r from-pink-50 to-purple-50 rounded-lg p-6 mb-6 border border-pink-200">
                     <div class="flex items-start gap-4">
                         <div class="flex-shrink-0">
@@ -86,7 +84,6 @@
                         </div>
                     </div>
                 @else
-                    {{-- Form Edit Status --}}
                     <form method="POST" action="{{ route('admin.users.update', $user) }}">
                         @csrf
                         @method('PATCH')
@@ -96,8 +93,6 @@
                                 <i class="bi bi-toggle-on text-pink-600"></i>
                                 Kelola Status Akun
                             </h2>
-
-                            {{-- Current Status Badge --}}
                             <div class="mb-6 p-4 bg-gray-50 rounded-lg">
                                 <div class="flex items-center justify-between">
                                     <div>
@@ -118,8 +113,6 @@
                                     </div>
                                 </div>
                             </div>
-
-                            {{-- Status Toggle --}}
                             <div class="mb-6">
                                 <label
                                     class="flex items-center justify-between p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors duration-150">
@@ -164,8 +157,6 @@
                                     <x-input-error :messages="$errors->get('reason')" class="mt-2" />
                                 </div>
                             </div>
-
-                            {{-- Warning Info --}}
                             <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
                                 <div class="flex">
                                     <div class="flex-shrink-0">
@@ -181,8 +172,6 @@
                                 </div>
                             </div>
                         </div>
-
-                        {{-- Action Buttons --}}
                         <div class="flex flex-col sm:flex-row items-center justify-between mt-6 gap-3">
                             <a href="{{ route('admin.users.index') }}"
                                 class="w-full sm:w-auto inline-flex items-center justify-center px-6 py-2.5 bg-gray-200 text-gray-800 rounded-md text-sm font-semibold hover:bg-gray-300 transition-colors duration-150">
@@ -198,8 +187,6 @@
                         </div>
                     </form>
                 @endif
-
-                {{-- Additional Info --}}
                 <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                     <div class="flex items-start">
                         <i class="bi bi-info-circle-fill text-blue-500 mr-3 mt-0.5"></i>

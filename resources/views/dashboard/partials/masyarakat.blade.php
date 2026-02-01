@@ -1,8 +1,6 @@
 @section('content')
     <div x-data="masyarakatDashboard" x-init="init()"
         class="flex flex-col gap-4 md:gap-6 px-4 sm:px-6 lg:px-8 w-full mx-auto">
-
-        {{-- Welcome Banner --}}
         <div class="bg-gradient-to-r from-pink-500 to-fuchsia-500 text-white rounded-lg md:rounded-2xl p-6 shadow-xl">
             <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div class="flex items-center gap-4">
@@ -19,8 +17,6 @@
                         <p class="text-indigo-100">Berikut adalah ringkasan pengajuan layanan Anda</p>
                     </div>
                 </div>
-
-                {{-- Tombol Tambah Ajuan --}}
                 <div class="w-full sm:w-auto">
                     <a href="{{ route('dashboard.partials.pilih-layanan') }}"
                         class="w-full sm:w-auto flex items-center justify-center px-6 py-3 bg-white text-pink-500 rounded-lg text-sm font-semibold hover:bg-indigo-50 transition-all duration-150 shadow-lg">
@@ -30,11 +26,8 @@
                 </div>
             </div>
         </div>
-
-        {{-- ✅ YEAR FILTER SECTION --}}
         <div class="bg-white overflow-hidden shadow-xl rounded-lg md:rounded-2xl p-4 md:p-6 w-full">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                {{-- Info Current Year --}}
                 <div class="flex items-center gap-3">
                     <div class="flex items-center justify-center w-12 h-12 bg-indigo-100 rounded-lg">
                         <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -55,8 +48,6 @@
                         </p>
                     </div>
                 </div>
-
-                {{-- Year Selector --}}
                 <div class="flex items-center gap-3">
                     <label for="yearFilter" class="text-sm font-medium text-gray-700 whitespace-nowrap">
                         Pilih Tahun:
@@ -97,7 +88,6 @@
             </div>
         </div>
 
-        {{-- MY STATISTICS (Ajuan Saya) --}}
         <div class="bg-white overflow-hidden shadow-xl rounded-lg md:rounded-2xl p-4 md:p-6 w-full">
             <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4">Pengajuan Saya</h2>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -154,37 +144,15 @@
                 </div>
             </div>
 
-            {{-- <div class="mt-4 pt-4 border-t border-gray-200">
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div class="text-center">
-                        <p class="text-2xl font-bold text-indigo-600" x-text="statistics.total"></p>
-                        <p class="text-xs text-gray-600">Total Pengajuan Desa</p>
-                    </div>
-                    <div class="text-center">
-                        <p class="text-2xl font-bold text-green-600" x-text="statistics.disetujui"></p>
-                        <p class="text-xs text-gray-600">Disetujui</p>
-                    </div>
-                    <div class="text-center">
-                        <p class="text-2xl font-bold text-yellow-600" x-text="statistics.diproses"></p>
-                        <p class="text-xs text-gray-600">Diproses</p>
-                    </div>
-                    <div class="text-center">
-                        <p class="text-2xl font-bold text-red-600" x-text="statistics.ditolak"></p>
-                        <p class="text-xs text-gray-600">Ditolak</p>
-                    </div>
-                </div>
-            </div> --}}
+
         </div>
 
-        {{-- List Pengajuan Saya --}}
         <div class="w-full">
             <div class="bg-white overflow-hidden shadow-xl rounded-lg md:rounded-2xl p-4 md:p-6 lg:p-8">
-                {{-- Header --}}
                 <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-4 md:mb-6">
                     <h2 class="text-xl md:text-2xl font-bold text-gray-800">Riwayat Pengajuan Saya</h2>
 
                     <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 md:gap-3 w-full md:w-auto">
-                        {{-- Filter Status --}}
                         <select x-model="filterStatus" @change="loadDashboardData()"
                             class="border-gray-300 rounded-md shadow-sm text-sm w-full sm:w-auto px-3 py-2">
                             <option value="">Semua Status</option>
@@ -193,7 +161,6 @@
                             <option value="Ditolak">Ditolak</option>
                         </select>
 
-                        {{-- Search Input --}}
                         <div class="relative w-full sm:w-auto">
                             <input type="text" x-model="searchQuery" @input.debounce.500ms="loadDashboardData()"
                                 placeholder="Cari pengajuan..."
@@ -201,7 +168,6 @@
                             <i class="bi bi-search absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400"></i>
                         </div>
 
-                        {{-- Reset Link --}}
                         <button x-show="searchQuery || filterStatus" @click="resetFilters()"
                             class="text-sm text-center sm:text-left text-gray-600 hover:text-gray-900 py-2 sm:py-0">
                             Reset
@@ -209,10 +175,8 @@
                     </div>
                 </div>
 
-                {{-- Table --}}
                 <div class="overflow-x-auto -mx-4 md:mx-0">
                     <div class="inline-block min-w-full align-middle">
-                        {{-- Loading State --}}
                         <div x-show="loading" class="text-center py-12">
                             <div class="inline-flex items-center gap-2 text-gray-600">
                                 <svg class="animate-spin h-8 w-8" fill="none" viewBox="0 0 24 24">
@@ -226,12 +190,10 @@
                             </div>
                         </div>
 
-                        {{-- Table Content --}}
                         <div x-show="!loading" x-html="tableHtml"></div>
                     </div>
                 </div>
 
-                {{-- Pagination --}}
                 <div class="mt-4 flex justify-between items-center text-xs md:text-sm text-gray-600">
                     <div x-html="paginationHtml"></div>
                 </div>
@@ -267,7 +229,6 @@
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('masyarakatDashboard', () => ({
-                // State
                 currentYear: {{ $currentYear }},
                 selectedYear: {{ $selectedYear }},
                 availableYears: @json($availableYears),
@@ -275,8 +236,6 @@
                 filterStatus: '',
                 loading: false,
                 isVerified: true,
-
-                // Data
                 bidangData: @json($chartData),
 
                 statistics: {
@@ -300,8 +259,6 @@
                 tableHtml: '',
                 paginationHtml: '',
                 chart: null,
-
-                // Methods
                 init() {
                     this.drawChart();
                     this.loadDashboardData();
@@ -321,7 +278,6 @@
                         const response = await fetch(`{{ route('dashboard') }}?${params}`);
                         const data = await response.json();
 
-                        // Update bidang data
                         this.bidangData = data.bidangData;
                         this.statistics = data.statistics;
                         this.myStats = data.myStats;
@@ -330,8 +286,6 @@
                         console.log(data)
 
                         this.paginationInfo = data.paginationInfo;
-
-                        // Update chart
                         this.updateChart();
 
                     } catch (error) {

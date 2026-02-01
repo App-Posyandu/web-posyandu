@@ -142,7 +142,7 @@
                     <!-- Warning jika over limit -->
                     <div x-show="getTotalRt() > 53" class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded">
                         <p class="text-red-700 font-semibold">
-                            ⚠️ Total RT melebihi batas! Anda harus mengurangi RT sebelum menyimpan.
+                            Total RT melebihi batas! Anda harus mengurangi RT sebelum menyimpan.
                         </p>
                     </div>
 
@@ -154,7 +154,7 @@
                         </a>
                         <button type="submit" :disabled="getTotalRt() > 53 || rwList.length > 15"
                             class="px-6 py-2 bg-pink-600 text-white rounded-md hover:bg-pink-700 disabled:bg-gray-300 disabled:cursor-not-allowed">
-                            💾 Simpan Mapping
+                            Simpan Mapping
                         </button>
                     </div>
                 </form>
@@ -170,7 +170,6 @@
                     rtMapping: @json($posyandu->rt_mapping ?? []),
 
                     init() {
-                        // Ensure rtMapping keys match rwList
                         this.rwList.forEach(rw => {
                             if (!this.rtMapping[rw]) {
                                 this.rtMapping[rw] = [];
