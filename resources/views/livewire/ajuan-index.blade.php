@@ -43,6 +43,8 @@
                             Menampilkan pengajuan yang memerlukan persetujuan Anda
                         @elseif(auth()->user()->role === 'kades')
                             Menampilkan pengajuan yang diajukan ke Desa
+                        @elseif(auth()->user()->role === 'bu-kades')
+                            Menampilkan pengajuan untuk monitoring (view dan export saja)
                         @elseif(auth()->user()->role === 'kader')
                             Menampilkan pengajuan yang perlu diverifikasi
                         @else
@@ -79,6 +81,18 @@
                             </div>
                         </div>
                     </div>
+                @elseif(auth()->user()->role === 'bu-kades')
+                    <div class="w-full bg-indigo-50 border-l-4 border-indigo-500 p-4 rounded-md">
+                        <div class="flex items-start">
+                            <i class="bi bi-info-circle-fill text-indigo-500 mr-3 mt-0.5"></i>
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-indigo-900">Mode Monitoring</p>
+                                <p class="text-xs text-indigo-700 mt-1">
+                                    Anda dapat melihat dan mencetak pengajuan, tetapi tidak dapat memberikan persetujuan atau tindak lanjut.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 @elseif(auth()->user()->role === 'kader')
                     <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-md">
                         <div class="flex items-start">
@@ -93,7 +107,7 @@
                         </div>
                     </div>
                 @endif
-                @if (in_array(auth()->user()->role, ['ketua-posyandu', 'kades', 'admin', 'ketua-kader']))
+                @if (in_array(auth()->user()->role, ['ketua-posyandu', 'kades', 'admin']))
                     <div class="mt-4 pt-4 border-t border-gray-200">
                         <p class="text-xs font-semibold text-gray-700 mb-2">Legenda Progress:</p>
                         <div class="flex flex-wrap gap-4 text-xs">
@@ -229,7 +243,7 @@
             </div>
         @endif
 
-        @if (auth()->user()->role === 'ketua-kader' && auth()->user()->posyandu)
+        @if (auth()->user()->role === 'ketua-posyandu' && auth()->user()->posyandu)
             <div class="mb-4 p-3 bg-pink-50 border-l-4 border-pink-500 rounded-lg">
                 <div class="flex items-start">
                     <i class="bi bi-info-circle-fill text-pink-500 mr-2 mt-0.5 flex-shrink-0"></i>

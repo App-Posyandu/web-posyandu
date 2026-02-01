@@ -482,7 +482,7 @@
                     const userKabupaten = "{{ auth()->user()->kabupaten ?? '' }}";
                     const bidangKabid = "{{ auth()->user()?->bidang?->nama_bidang ?? '' }}";
 
-                    if (userRole === 'ketua-kader') {
+                    if (userRole === 'ketua-posyandu') {
                         if (!userPosyanduDesa) {
                             Swal.fire({
                                 icon: 'warning',
@@ -498,7 +498,7 @@
                         return;
                     }
 
-                    if (userRole === 'kades') {
+                    if (userRole === 'kades' || userRole === 'bu-kades') {
                         if (!userDesa) {
                             Swal.fire({
                                 icon: 'warning',
@@ -543,7 +543,7 @@
                         return;
                     }
 
-                    if (['ketua-posyandu', 'admin-kabupaten', 'admin'].includes(userRole)) {
+                    if (['ketua-timpembina-posyandu', 'admin-kabupaten', 'admin'].includes(userRole)) {
                         window.location.href = `/admin/export-all-bidang-desa?year=${this.selectedYear}`;
                         return;
                     }
@@ -1204,7 +1204,7 @@
 
                     if (userRole === 'kabid') {
                         bidang = bidangKabid;
-                    } else if (userRole === 'ketua-kader') {
+                    } else if (userRole === 'ketua-posyandu') {
                         bidang = document.getElementById('selectBidang')?.value;
                         desa = userDesa;
                     } else {
@@ -1247,7 +1247,7 @@
         function exportData(bidang, desa) {
             const selectedYear = '{{ $selectedYear }}';
 
-            if (userRole === 'ketua-kader') {
+            if (userRole === 'ketua-posyandu') {
                 const url = `/admin/export/${encodeURIComponent(bidang)}/${userDesa}?year=${selectedYear}`;
                 window.location.href = url;
             } else if (userRole === "kabid") {
@@ -1259,7 +1259,7 @@
                         `/admin/export/${encodeURIComponent(bidang)}/${encodeURIComponent(desa)}?year=${selectedYear}`;
                     window.location.href = url;
                 }
-            } else if (bidang === 'all' && userRole === 'ketua-posyandu') {
+            } else if (bidang === 'all' && userRole === 'ketua-timpembina-posyandu') {
                 window.location.href = `/admin/export-all/${desa}?year=${selectedYear}`;
             } else {
                 const url = `/admin/export/${encodeURIComponent(bidang)}/${encodeURIComponent(desa)}?year=${selectedYear}`;

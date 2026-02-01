@@ -83,7 +83,7 @@
                             <x-input-error :messages="$errors->get('jenis_kelamin')" class="mt-2" />
                         </div>
 
-                        @if (in_array(auth()->user()->role, ['ketua-kader', 'admin-kecamatan']))
+                        @if (in_array(auth()->user()->role, ['ketua-posyandu', 'admin-kecamatan']))
                             <div>
                                 <x-input-label for="posyandu_id" :value="__('Posyandu (Opsional)')" />
                                 <select id="posyandu_id" name="posyandu_id"
@@ -102,7 +102,7 @@
                         @endif
 
                         <div
-                            class="{{ in_array(auth()->user()->role, ['ketua-kader', 'admin-kecamatan', 'kader']) ? 'hidden' : '' }}">
+                            class="{{ in_array(auth()->user()->role, ['ketua-posyandu', 'admin-kecamatan', 'kader']) ? 'hidden' : '' }}">
                             <x-input-label for="role" :value="__('Role')" />
                             <select id="role" name="role"
                                 class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
@@ -115,9 +115,9 @@
                                     <option value="admin-kabupaten"
                                         {{ isset($defaultRole) && $defaultRole === 'admin-kabupaten' ? 'selected' : '' }}>
                                         Admin Kabupaten</option>
-                                    <option value="ketua-posyandu"
-                                        {{ isset($defaultRole) && $defaultRole === 'ketua-posyandu' ? 'selected' : '' }}>
-                                        Ketua Posyandu</option>
+                                    <option value="ketua-timpembina-posyandu"
+                                        {{ isset($defaultRole) && $defaultRole === 'ketua-timpembina-posyandu' ? 'selected' : '' }}>
+                                        Ketua Tim Pembina Posyandu</option>
                                     <option value="kabid"
                                         {{ isset($defaultRole) && $defaultRole === 'kabid' ? 'selected' : '' }}>Kabid
                                     </option>
@@ -127,8 +127,11 @@
                                     <option value="kades"
                                         {{ isset($defaultRole) && $defaultRole === 'kades' ? 'selected' : '' }}>Kades
                                     </option>
-                                    <option value="ketua-kader"
-                                        {{ isset($defaultRole) && $defaultRole === 'ketua-kader' ? 'selected' : '' }}>Ketua
+                                    <option value="bu-kades"
+                                        {{ isset($defaultRole) && $defaultRole === 'bu-kades' ? 'selected' : '' }}>Bu Kades
+                                    </option>
+                                    <option value="ketua-posyandu"
+                                        {{ isset($defaultRole) && $defaultRole === 'ketua-posyandu' ? 'selected' : '' }}>Ketua
                                         Kader</option>
                                     <option value="operator-desa"
                                         {{ isset($defaultRole) && $defaultRole === 'operator-desa' ? 'selected' : '' }}>
@@ -140,16 +143,17 @@
                                         {{ isset($defaultRole) && $defaultRole === 'masyarakat' ? 'selected' : '' }}>
                                         Masyarakat</option>
                                 @elseif ($currentUserRole === 'admin-kabupaten')
-                                    <option value="ketua-posyandu">Ketua Posyandu</option>
+                                    <option value="ketua-timpembina-posyandu">Ketua Tim Pembina Posyandu</option>
                                     <option value="kabid">Kabid</option>
                                     <option value="admin-kecamatan">Admin Kecamatan</option>
                                     <option value="kades">Kades</option>
+                                    <option value="bu-kades">Bu Kades</option>
                                     <option value="operator-desa">Operator Desa</option>
                                 @elseif ($currentUserRole === 'admin-kecamatan')
                                 @elseif ($currentUserRole === 'operator-desa')
-                                    <option value="ketua-kader">Ketua Kader</option>
+                                    <option value="ketua-posyandu">Ketua Posyandu</option>
                                     <option value="kader">Kader</option>
-                                @elseif ($currentUserRole === 'ketua-kader')
+                                @elseif ($currentUserRole === 'ketua-posyandu')
                                     <option value="kader" @selected(true)>Kader</option>
                                 @elseif ($currentUserRole === 'kader')
                                     <option value="masyarakat" @selected(true)>Masyarakat</option>
@@ -168,7 +172,7 @@
                             <x-input-error :messages="$errors->get('role')" class="mt-2" />
                         </div>
 
-                        <div class="{{ in_array(auth()->user()->role, ['admin', 'ketua-kader']) ? 'md:col-span-2' : '' }}"
+                        <div class="{{ in_array(auth()->user()->role, ['admin', 'ketua-posyandu']) ? 'md:col-span-2' : '' }}"
                             id="jenis-wilayah-field" style="display: none;">
                             <x-input-label for="jenis_wilayah" :value="__('Jenis Wilayah')" />
                             <select id="jenis_wilayah" name="jenis_wilayah"
@@ -292,12 +296,12 @@
                                 @endforeach
                             </select>
                             <p class="mt-1 text-xs text-gray-500">
-                                Ketua Kader akan memimpin posyandu ini
+                                Ketua Posyandu akan memimpin posyandu ini
                             </p>
                         </div>
 
                         <div id="bidang-field" style="display: none;"
-                            class="{{ in_array(auth()->user()->role, ['admin', 'operator-desa', 'ketua-kader']) ? 'md:col-span-2' : '' }}">
+                            class="{{ in_array(auth()->user()->role, ['admin', 'operator-desa', 'ketua-posyandu']) ? 'md:col-span-2' : '' }}">
                             <x-input-label for="bidang_id" :value="__('Bidang Tugas')" />
                             <select id="bidang_id" name="bidang_id"
                                 class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
@@ -631,7 +635,7 @@
                     const role = roleSelect.value;
                     const currentUserRole = '{{ auth()->user()->role }}';
 
-                    if (role === 'ketua-posyandu' || role === 'admin-kabupaten') {
+                    if (role === 'ketua-timpembina-posyandu' || role === 'admin-kabupaten') {
                         jenisWilayahField.style.display = 'block';
                         jenisWilayahSelect.required = true;
                     }
@@ -648,7 +652,7 @@
                         jenisWilayahSelect.required = true;
                     }
 
-                    if (role === 'ketua-kader') {
+                    if (role === 'ketua-posyandu') {
                         posyanduField.style.display = 'block';
                         posyanduSelect.required = true;
                     }
@@ -657,7 +661,7 @@
                         posyanduField.style.display = 'block';
                         posyanduSelect.required = true;
 
-                        if (currentUserRole === 'ketua-kader') {
+                        if (currentUserRole === 'ketua-posyandu') {
                             const ketuaKaderPosyanduId = '{{ auth()->user()->posyandu_id }}';
                             posyanduSelect.value = ketuaKaderPosyanduId;
                             posyanduSelect.disabled = true;
@@ -672,7 +676,7 @@
                             posyanduField.style.display = 'none';
                             posyanduSelect.required = false;
                         }
-                        else if (currentUserRole === 'ketua-kader') {
+                        else if (currentUserRole === 'ketua-posyandu') {
                             posyanduField.style.display = 'none';
                             posyanduSelect.required = false;
                         }
@@ -710,22 +714,23 @@
             const currentUserRole = @json(auth()->user()->role);
             const roleTargets = {
                 'kader': ['masyarakat'],
-                'ketua-kader': ['kader'],
-                'operator-desa': ['ketua-kader', 'kader'],
+                'ketua-posyandu': ['kader'],
+                'operator-desa': ['ketua-posyandu', 'kader'],
                 'admin-kecamatan': [],
-                'admin-kabupaten': ['ketua-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'operator-desa'],
-                'admin': ['admin-kabupaten', 'ketua-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'ketua-kader', 'operator-desa', 'kader', 'masyarakat']
+                'admin-kabupaten': ['ketua-timpembina-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'bu-kades', 'operator-desa'],
+                'admin': ['admin-kabupaten', 'ketua-timpembina-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'bu-kades', 'ketua-posyandu', 'operator-desa', 'kader', 'masyarakat']
             };
             const roleLabels = {
                 'masyarakat': 'Masyarakat',
                 'kader': 'Kader',
-                'ketua-kader': 'Ketua Kader',
+                'ketua-posyandu': 'Ketua Posyandu',
                 'operator-desa': 'Operator Desa',
                 'admin-kecamatan': 'Admin Kecamatan',
                 'kabid': 'Kabid',
                 'admin-kabupaten': 'Admin Kabupaten',
-                'ketua-posyandu': 'Ketua Posyandu',
-                'kades': 'Kades'
+                'ketua-timpembina-posyandu': 'Ketua Tim Pembina Posyandu',
+                'kades': 'Kades',
+                'bu-kades': 'Bu Kades',
             };
             let selectedRoleToCreate = null;
 

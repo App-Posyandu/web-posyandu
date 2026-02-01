@@ -15,14 +15,25 @@ class SystemSettingController extends Controller
 
         $groupedSettings = $settings->groupBy('category');
 
+        $currentUser = Auth::user();
+        $canAccessRevision = in_array($currentUser->role, ['admin', 'admin-kabupaten']);
+
+        if (!$canAccessRevision && isset($groupedSettings['revision'])) {
+            $groupedSettings->forget('revision');
+        }
+
         return view('admin.settings.index', [
             'groupedSettings' => $groupedSettings,
             'settings' => $settings,
+            'canAccessRevision' => $canAccessRevision,
         ]);
     }
 
     public function update(Request $request)
     {
+        $currentUser = Auth::user();
+        $canAccessRevision = in_array($currentUser->role, ['admin', 'admin-kabupaten']);
+
         $validator = Validator::make($request->all(), [
             'settings' => 'required|array',
             'settings.*' => 'required',
@@ -34,6 +45,7 @@ class SystemSettingController extends Controller
                 ->withInput();
         }
 
+        $revisionSettings = ['revision_days', 'auto_reject_enabled'];
         $updatedCount = 0;
         $errors = [];
 
@@ -49,6 +61,11 @@ class SystemSettingController extends Controller
 
             if (!$setting) {
                 $errors[] = "Setting '{$key}' tidak ditemukan";
+                continue;
+            }
+
+            if (in_array($key, $revisionSettings) && !$canAccessRevision) {
+                $errors[] = "Anda tidak memiliki akses untuk mengubah pengaturan '{$setting->label}'";
                 continue;
             }
 

@@ -124,7 +124,7 @@ class UsersTemplateExport implements FromArray, WithHeadings, WithEvents, WithDr
                     'masyarakat' => 'MASYARAKAT',
                     'operator-desa' => 'OPERATOR DESA',
                     'kader' => 'KADER',
-                    'ketua-kader' => 'KETUA KADER',
+                    'ketua-posyandu' => 'Ketua Posyandu',
                     'admin-kecamatan' => 'ADMIN KECAMATAN',
                     'kabid' => 'KABID',
                     'admin-kabupaten' => 'ADMIN KABUPATEN'

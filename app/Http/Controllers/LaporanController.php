@@ -19,7 +19,7 @@ class LaporanController extends Controller
     {
         $user = Auth::user();
 
-        if (in_array($user->role, ['admin', 'ketua-posyandu', 'admin-kabupaten'])) {
+        if (in_array($user->role, ['admin', 'ketua-timpembina-posyandu', 'admin-kabupaten'])) {
             return true;
         }
 
@@ -49,7 +49,7 @@ class LaporanController extends Controller
             return true;
         }
 
-        if ($user->role === 'kades') {
+        if (in_array($user->role, ['kades', 'bu-kades'])) {
             if ($desa && $desa !== 'all' && $desa !== $user->desa) {
                 abort(403, 'Anda hanya dapat export data desa: ' . $user->desa);
             }
@@ -59,7 +59,7 @@ class LaporanController extends Controller
             return true;
         }
 
-        if ($user->role === 'ketua-kader') {
+        if ($user->role === 'ketua-posyandu') {
             $userPosyandu = $user->posyandu;
             if (!$userPosyandu) {
                 abort(403, 'Data posyandu tidak ditemukan.');
@@ -83,6 +83,10 @@ class LaporanController extends Controller
             $desa = $user->desa;
         }
 
+        if ($user->role === 'ketua-posyandu' && $user->posyandu_id) {
+            return Excel::download(new UsersExport('all', $desa, $user->posyandu_id), 'Laporan_Data_Pengajuan_Recap_All_' . strtoupper($desa) . '.xlsx');
+        }
+
         return Excel::download(new UsersExport('all', $desa), 'Laporan_Data_Pengajuan_Recap_All_' . strtoupper($desa) . '.xlsx');
     }
 
@@ -99,8 +103,14 @@ class LaporanController extends Controller
 
         $user = Auth::user();
 
-        if ($user->role === 'ketua-kader') {
+        if ($user->role === 'ketua-posyandu') {
             $desa = $user->posyandu->desa;
+            if ($user->posyandu_id) {
+                return Excel::download(
+                    new UsersExport($bidang, $desa, $user->posyandu_id),
+                    'Laporan_Data_Pengajuan_Recap_' . strtoupper($bidang) . '_' . strtoupper($desa) . '.xlsx'
+                );
+            }
         }
         
         if ($user->role === 'kades') {

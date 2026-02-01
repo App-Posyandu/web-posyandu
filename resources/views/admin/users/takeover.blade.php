@@ -192,7 +192,7 @@
                     openModal(id, name, isActiveStatus) {
                         this.targetName = name;
                         this.isActive = isActiveStatus;
-                        this.actionUrl = `{{ url('/ketua-kader/takeover') }}/${id}/reset`;
+                        this.actionUrl = `{{ url('/ketua-posyandu/takeover') }}/${id}/reset`;
                         this.isOpen = true;
                     },
 

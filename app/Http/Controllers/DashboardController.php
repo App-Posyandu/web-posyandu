@@ -20,9 +20,10 @@ class DashboardController extends Controller
             'kabid',
             'admin-kabupaten',
             'admin-kecamatan',
-            'ketua-kader',
-            'kades',
             'ketua-posyandu',
+            'kades',
+            'bu-kades',
+            'ketua-timpembina-posyandu',
             'operator-desa',
             'masyarakat'
         ];
@@ -65,10 +66,11 @@ class DashboardController extends Controller
 
             case 'admin-kabupaten':
             case 'kabid':
-            case 'ketua-kader':
-            case 'kades':
-            case 'admin-kecamatan':
             case 'ketua-posyandu':
+            case 'kades':
+            case 'bu-kades':
+            case 'admin-kecamatan':
+            case 'ketua-timpembina-posyandu':
             case 'admin':
                 break;
 
@@ -102,6 +104,9 @@ class DashboardController extends Controller
                     $actualCountsQuery->where('users.kabupaten', 'LIKE', '%' . $user->kabupaten . '%');
                     $desasQuery->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%'));
                 }
+                if ($showArchived) {
+                    $listQuery->whereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
+                }
                 break;
 
             case 'admin-kecamatan':
@@ -110,6 +115,9 @@ class DashboardController extends Controller
                     $statsQuery->whereHas('user', fn($q) => $q->where('kecamatan', 'LIKE', '%' . $user->kecamatan . '%'));
                     $actualCountsQuery->where('users.kecamatan', 'LIKE', '%' . $user->kecamatan . '%');
                     $desasQuery->whereHas('user', fn($q) => $q->where('kecamatan', 'LIKE', '%' . $user->kecamatan . '%'));
+                }
+                if ($showArchived) {
+                    $listQuery->whereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
                 }
                 break;
 
@@ -125,24 +133,8 @@ class DashboardController extends Controller
                     $statsQuery->where('bidang_id', $user->bidang_id);
                     $actualCountsQuery->where('pengajuans.bidang_id', $user->bidang_id);
                 }
-                break;
-
-            case 'ketua-kader':
-            case 'kades':
-                if ($user->posyandu_id) {
-                    $listQuery->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
-                    $statsQuery->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
-                    $actualCountsQuery->where('users.posyandu_id', $user->posyandu_id);
-                    $desasQuery->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
-                } elseif ($user->desa) {
-                    $listQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
-                    $statsQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
-                    $actualCountsQuery->where('users.desa', $user->desa);
-                    $desasQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
-                }
-
-                if (!$showArchived) {
-                    $listQuery->where('status_pengajuan', 'Diajukan ke Desa');
+                if ($showArchived) {
+                    $listQuery->whereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
                 }
                 break;
 
@@ -167,18 +159,57 @@ class DashboardController extends Controller
                                 ->where('status_pengajuan', 'Diproses');
                         })->orWhere('status_pengajuan', 'Sesuai');
                     });
+                } else {
+                    $listQuery->whereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
                 }
                 break;
 
+            case 'kades':
+            case 'bu-kades':
+                if ($user->posyandu_id) {
+                    $listQuery->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
+                    $statsQuery->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
+                    $actualCountsQuery->where('users.posyandu_id', $user->posyandu_id);
+                    $desasQuery->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
+                } elseif ($user->desa) {
+                    $listQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
+                    $statsQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
+                    $actualCountsQuery->where('users.desa', $user->desa);
+                    $desasQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
+                }
+
+                if (!$showArchived) {
+                    $listQuery->where('status_pengajuan', 'Diajukan ke Desa');
+                } else {
+                    $listQuery->whereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
+                }
+                break;
+
+            case 'ketua-timpembina-posyandu':
+                // Ketua Tim Pembina Posyandu tidak lagi di alur tahap 3
+                if ($user->posyandu_id) {
+                    $listQuery->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
+                    $statsQuery->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
+                    $actualCountsQuery->where('users.posyandu_id', $user->posyandu_id);
+                    $desasQuery->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
+                } elseif ($user->desa) {
+                    $listQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
+                    $statsQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
+                    $actualCountsQuery->where('users.desa', $user->desa);
+                    $desasQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
+                }
+
+                // Tidak ada pengajuan yang perlu ditindaklanjuti oleh Ketua Tim Pembina
+                $listQuery->whereRaw('1 = 0');
+                break;
+
             case 'admin':
+                if ($showArchived) {
+                    $listQuery->whereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
+                }
                 break;
         }
 
-        if ($showArchived) {
-            $listQuery->whereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
-        } else {
-            $listQuery->where('status_pengajuan', 'Diajukan ke Desa');
-        }
         if ($request->has('search') && $request->input('search') != '') {
             $searchTerm = $request->input('search');
             $listQuery->where(function ($q) use ($searchTerm) {
@@ -308,11 +339,11 @@ class DashboardController extends Controller
 
         $semuaDataTanpaFilter = (clone $query)->get();
 
-        if (in_array($user->role, ['ketua-kader', 'ketua-posyandu']) && $user->posyandu_id) {
+        if (in_array($user->role, ['ketua-posyandu', 'ketua-timpembina-posyandu']) && $user->posyandu_id) {
             $query->whereHas('user', function ($q) use ($user) {
                 $q->where('posyandu_id', $user->posyandu_id);
             });
-        } elseif ($user->role === 'kades') {
+        } elseif (in_array($user->role, ['kades', 'bu-kades'])) {
             $desaName = $user->posyandu->desa ?? $user->desa;
             $query->whereHas('user.posyandu', function ($q) use ($desaName) {
                 $q->where('desa', $desaName);

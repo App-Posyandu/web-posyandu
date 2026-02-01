@@ -20,17 +20,17 @@ class BukuSakuPolicy
 
     public function create(User $user): bool
     {
-        return in_array($user->role, ['kabid', 'admin', 'ketua-posyandu']);
+        return in_array($user->role, ['kabid', 'admin', 'ketua-timpembina-posyandu']);
     }
 
     public function update(User $user, BukuSaku $bukuSaku): bool
     {
-        return in_array($user->role, ['kabid', 'admin', 'ketua-posyandu']);
+        return in_array($user->role, ['kabid', 'admin', 'ketua-timpembina-posyandu']);
     }
 
     public function delete(User $user, BukuSaku $bukuSaku): bool
     {
-        return in_array($user->role, ['kabid', 'admin', 'ketua-posyandu']);
+        return in_array($user->role, ['kabid', 'admin', 'ketua-timpembina-posyandu']);
     }
 
     public function restore(User $user, BukuSaku $bukuSaku): bool

@@ -114,7 +114,7 @@
                                     Disetujui pada
                                     {{ $pengajuan->approved_by_ketua_at ? $pengajuan->approved_by_ketua_at->format('d M Y H:i') : '-' }}
                                 @else
-                                    Menunggu persetujuan ketua posyandu
+                                    Menunggu persetujuan Ketua Posyandu
                                 @endif
                             </p>
                         </div>

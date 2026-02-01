@@ -165,7 +165,7 @@
                                     {{ $user->name }}
                                 </div>
                                 <div class="text-gray-500 text-sm">
-                                    @if (in_array($user->role, ['masyarakat', 'kader', 'ketua-kader']))
+                                    @if (in_array($user->role, ['masyarakat', 'kader', 'ketua-posyandu']))
                                         <i class="bi bi-geo-alt-fill text-xs mr-1"></i>
                                         {{ $user->posyandu?->nama_posyandu ?? 'Belum Terdaftar' }}
                                     @elseif ($user->role === 'admin-kecamatan')
@@ -195,7 +195,7 @@
                             @if ($user->role === 'admin') bg-purple-100 text-purple-800
                             @elseif($user->role === 'kabid') bg-blue-100 text-blue-800
                             @elseif($user->role === 'admin-kecamatan') bg-indigo-100 text-indigo-800
-                            @elseif($user->role === 'ketua-kader') bg-green-100 text-green-800
+                            @elseif($user->role === 'ketua-posyandu') bg-green-100 text-green-800
                             @elseif($user->role === 'kader') bg-yellow-100 text-yellow-800
                             @else bg-gray-100 text-gray-800 @endif">
                                     {{ ucfirst(str_replace('-', ' ', $user->role)) }}
@@ -223,6 +223,13 @@
                                         <i class="bi bi-eye-fill mr-1"></i> Detail
                                     </a>
 
+                                    @if ($currentUser->role === 'kader' && $user->role === 'masyarakat' && $user->no_telepon)
+                                        <a href="{{ $this->generateWhatsAppLink($user) }}" target="_blank"
+                                            class="px-3 py-1 bg-green-500 text-white rounded-md text-xs text-center hover:bg-green-600 transition-colors duration-150">
+                                            <i class="bi bi-whatsapp mr-1"></i> Kirim WA
+                                        </a>
+                                    @endif
+
                                     @if ($currentUser->role === 'admin')
                                         <a href="{{ route('admin.users.edit', $user) }}"
                                             class="px-3 py-1 bg-yellow-500 text-white rounded-md text-xs text-center hover:bg-yellow-600 transition-colors duration-150">
@@ -235,8 +242,8 @@
                                             $canVerify = false;
                                             if (
                                                 ($currentUser->role === 'kader' && $user->role === 'masyarakat') ||
-                                                ($currentUser->role === 'ketua-kader' && $user->role === 'kader') ||
-                                                ($currentUser->role === 'kabid' && $user->role === 'ketua-kader') ||
+                                                ($currentUser->role === 'ketua-posyandu' && $user->role === 'kader') ||
+                                                ($currentUser->role === 'kabid' && $user->role === 'ketua-posyandu') ||
                                                 $currentUser->role === 'admin'
                                             ) {
                                                 $canVerify = true;
@@ -339,7 +346,7 @@
                                         {{ $user->name }}
                                     </h3>
                                     <p class="text-xs text-gray-500">
-                                        @if (in_array($user->role, ['masyarakat', 'kader', 'ketua-kader']))
+                                        @if (in_array($user->role, ['masyarakat', 'kader', 'ketua-posyandu']))
                                             <i class="bi bi-geo-alt-fill mr-1"></i>
                                             {{ $user->posyandu?->nama_posyandu ?? 'Belum Terdaftar' }}
                                         @elseif ($user->role === 'admin-kecamatan')
@@ -379,7 +386,7 @@
                             @if ($user->role === 'admin') bg-purple-100 text-purple-800
                             @elseif($user->role === 'kabid') bg-blue-100 text-blue-800
                             @elseif($user->role === 'admin-kecamatan') bg-indigo-100 text-indigo-800
-                            @elseif($user->role === 'ketua-kader') bg-green-100 text-green-800
+                            @elseif($user->role === 'ketua-posyandu') bg-green-100 text-green-800
                             @elseif($user->role === 'kader') bg-yellow-100 text-yellow-800
                             @else bg-gray-100 text-gray-800 @endif">
                                     {{ ucfirst(str_replace('-', ' ', $user->role)) }}
@@ -427,8 +434,8 @@
                                         $canVerify = false;
                                         if (
                                             ($currentUser->role === 'kader' && $user->role === 'masyarakat') ||
-                                            ($currentUser->role === 'ketua-kader' && $user->role === 'kader') ||
-                                            ($currentUser->role === 'kabid' && $user->role === 'ketua-kader') ||
+                                            ($currentUser->role === 'ketua-posyandu' && $user->role === 'kader') ||
+                                            ($currentUser->role === 'kabid' && $user->role === 'ketua-posyandu') ||
                                             $currentUser->role === 'admin'
                                         ) {
                                             $canVerify = true;

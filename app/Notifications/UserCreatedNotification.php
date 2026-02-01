@@ -31,7 +31,7 @@ class UserCreatedNotification extends Notification
         $roleNames = [
             'admin' => 'Administrator',
             'kabid' => 'Kepala Bidang',
-            'ketua-kader' => 'Ketua Kader',
+            'ketua-posyandu' => 'Ketua Posyandu',
             'kader' => 'Kader',
             'masyarakat' => 'Masyarakat'
         ];

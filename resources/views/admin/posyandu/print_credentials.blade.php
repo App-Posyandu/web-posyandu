@@ -388,9 +388,9 @@
             <li>Semua akun kader sudah <strong>terverifikasi</strong> dan <strong>aktif</strong>, siap digunakan untuk login</li>
             <li>Password default: <strong>password123</strong> (semua kader menggunakan password yang sama)</li>
             <li>Kader dapat login menggunakan <strong>email</strong> atau <strong>nomor telepon</strong> mereka</li>
-            <li>Ketua Kader <strong>wajib</strong> meminta setiap kader untuk mengganti password setelah login pertama kali</li>
-            <li>Ketua Kader dapat <strong>melengkapi data</strong> kader (NIK, tanggal lahir, dll) melalui sistem</li>
-            <li>Ketua Kader dapat <strong>reset password</strong> kader jika diperlukan melalui menu manajemen user</li>
+            <li>Ketua Posyandu <strong>wajib</strong> meminta setiap kader untuk mengganti password setelah login pertama kali</li>
+            <li>Ketua Posyandu dapat <strong>melengkapi data</strong> kader (NIK, tanggal lahir, dll) melalui sistem</li>
+            <li>Ketua Posyandu dapat <strong>reset password</strong> kader jika diperlukan melalui menu manajemen user</li>
             <li><strong>SIMPAN DOKUMEN INI DENGAN AMAN!</strong> Informasi credentials hanya ditampilkan sekali saat pembuatan posyandu</li>
         </ul>
         </div>

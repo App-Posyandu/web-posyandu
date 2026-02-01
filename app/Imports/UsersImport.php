@@ -53,11 +53,11 @@ class UsersImport implements ToModel, WithHeadingRow
     {
         $roleMap = [
             'kader' => ['masyarakat'],
-            'ketua-kader' => ['kader'],
-            'operator-desa' => ['ketua-kader', 'kader'],
+            'ketua-posyandu' => ['kader'],
+            'operator-desa' => ['ketua-posyandu', 'kader'],
             'admin-kecamatan' => [],
-            'admin-kabupaten' => ['ketua-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'operator-desa'],
-            'admin' => ['admin-kabupaten', 'ketua-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'ketua-kader', 'operator-desa', 'kader', 'masyarakat'],
+            'admin-kabupaten' => ['ketua-timpembina-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'operator-desa'],
+            'admin' => ['admin-kabupaten', 'ketua-timpembina-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'ketua-posyandu', 'operator-desa', 'kader', 'masyarakat'],
         ];
 
         return $roleMap[$role] ?? [];
@@ -73,7 +73,7 @@ class UsersImport implements ToModel, WithHeadingRow
                 $this->roleToCreate = $this->roleToCreate ?? 'masyarakat';
                 break;
 
-            case 'ketua-kader':
+            case 'ketua-posyandu':
                 $this->allowedPosyanduIds = [$this->importingUser->posyandu_id];
                 $this->roleToCreate = $this->roleToCreate ?? 'kader';
                 break;
@@ -85,7 +85,7 @@ class UsersImport implements ToModel, WithHeadingRow
                     ->where('kecamatan', $kecamatan)
                     ->pluck('id')
                     ->toArray();
-                $this->roleToCreate = $this->roleToCreate ?? 'ketua-kader';
+                $this->roleToCreate = $this->roleToCreate ?? 'ketua-posyandu';
                 break;
 
             case 'admin-kecamatan':
@@ -106,12 +106,12 @@ class UsersImport implements ToModel, WithHeadingRow
                 $this->allowedPosyanduIds = Posyandu::where('kabupaten_id', $this->importingUser->kabupaten_id)
                     ->pluck('id')
                     ->toArray();
-                $this->roleToCreate = $this->roleToCreate ?? 'ketua-kader';
+                $this->roleToCreate = $this->roleToCreate ?? 'ketua-posyandu';
                 break;
 
             case 'admin':
                 $this->allowedPosyanduIds = Posyandu::pluck('id')->toArray();
-                $this->roleToCreate = $this->roleToCreate ?? 'ketua-kader';
+                $this->roleToCreate = $this->roleToCreate ?? 'ketua-posyandu';
                 break;
 
             default:

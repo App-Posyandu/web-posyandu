@@ -40,14 +40,54 @@ class UserIndex extends Component
     {
         $roleMap = [
             'kader' => ['masyarakat'],
-            'ketua-kader' => ['kader'],
-            'operator-desa' => ['ketua-kader', 'kader'],
+            'ketua-posyandu' => ['kader'],
+            'operator-desa' => ['ketua-posyandu', 'kader'],
             'admin-kecamatan' => [],
-            'admin-kabupaten' => ['ketua-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'operator-desa'],
-            'admin' => ['admin-kabupaten', 'ketua-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'ketua-kader', 'operator-desa', 'kader', 'masyarakat'],
+            'admin-kabupaten' => ['ketua-timpembina-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'bu-kades', 'operator-desa'],
+            'admin' => ['admin-kabupaten', 'ketua-timpembina-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'bu-kades', 'ketua-posyandu', 'operator-desa', 'kader', 'masyarakat'],
         ];
 
         return $roleMap[$role] ?? [];
+    }
+
+    public function generateWhatsAppLink($user)
+    {
+        $currentUser = Auth::user();
+        
+        $message = "*Selamat Datang di Sistem Posyandu!*\n\n";
+        $message .= "Halo *{$user->name}*,\n\n";
+        $message .= "Akun Anda telah berhasil dibuat oleh *{$currentUser->name}*.\n\n";
+        $message .= "*Detail Akun Anda:*\n";
+        $message .= "━━━━━━━━━━━━━━━━━━\n";
+
+        if ($user->email) {
+            $message .= "Email: {$user->email}\n";
+        }
+
+        $message .= "Password: Sesuai yang diberikan\n";
+
+        if ($user->posyandu) {
+            $message .= "Posyandu: {$user->posyandu->nama_posyandu}\n";
+        }
+
+        if ($user->posyandu && $user->posyandu->desa) {
+            $message .= "Desa: {$user->posyandu->desa}\n";
+        }
+
+        $message .= "━━━━━━━━━━━━━━━━━━\n\n";
+        $message .= "*PENTING:*\n";
+        $message .= "• Segera login dengan akun ini\n";
+        $message .= "• Simpan informasi ini dengan aman\n";
+        $message .= "• Jangan bagikan password kepada siapapun\n\n";
+        $message .= "Silakan login di: " . route('login') . "\n\n";
+        $message .= "Terima kasih!";
+
+        $phone = preg_replace('/[^0-9]/', '', $user->no_telepon);
+        if (substr($phone, 0, 1) === '0') {
+            $phone = '62' . substr($phone, 1);
+        }
+
+        return 'https://wa.me/' . $phone . '?text=' . urlencode($message);
     }
 
     public function render()
@@ -64,7 +104,7 @@ class UserIndex extends Component
             $query->whereRaw('1 = 0');
         }
 
-        if (in_array($currentUser->role, ['kader', 'ketua-kader'])) {
+        if (in_array($currentUser->role, ['kader', 'ketua-posyandu'])) {
             $query->where('posyandu_id', $currentUser->posyandu_id);
         } elseif ($currentUser->role === 'operator-desa') {
             if ($currentUser->kecamatan) {

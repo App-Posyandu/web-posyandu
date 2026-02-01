@@ -37,7 +37,7 @@
                                 'admin',
                                 'kader',
                                 'admin-kabupaten',
-                                'ketua-kader',
+                                'ketua-posyandu',
                                 'operator-desa',
                             ]))
                             <x-dropdown-link :href="route('admin.users.index')">
@@ -45,17 +45,15 @@
                                 {{ __('Users') }}
                             </x-dropdown-link>
                         @endif
-
-                        {{-- Menu untuk Ketua Kader --}}
-                        @if (auth()->user()->role === 'ketua-kader')
-                            <x-dropdown-link :href="route('ketua-kader.takeover')"
-                                class="{{ request()->routeIs('ketua-kader.takeover*') ? 'active' : '' }}">
+                        @if (auth()->user()->role === 'ketua-posyandu')
+                            <x-dropdown-link :href="route('ketua-posyandu.takeover')"
+                                class="{{ request()->routeIs('ketua-posyandu.takeover*') ? 'active' : '' }}">
                                 <i class="bi bi-key-fill mr-2"></i>
                                 {{ __('Ambil Alih Kader') }}
                             </x-dropdown-link>
                         @endif
 
-                        @if (in_array(auth()->user()->role, ['admin', 'kabid', 'ketua-posyandu', 'admin-kabupaten', 'operator-desa']))
+                        @if (in_array(auth()->user()->role, ['admin', 'kabid', 'ketua-timpembina-posyandu', 'admin-kabupaten', 'operator-desa']))
                             <x-dropdown-link :href="route('admin.posyandu.index')">
                                 <i class="bi bi-building mr-2"></i>
                                 {{ __('Posyandu') }}
@@ -75,9 +73,7 @@
                             <i class="bi bi-clipboard-check mr-2"></i>
                             {{ __('Lihat Pengajuan') }}
                         </x-dropdown-link>
-
-                        {{-- ✅ MENU SETTINGS (Only for admin-kabupaten) --}}
-                        @if (in_array(auth()->user()->role, ['admin', 'admin-kabupaten', 'admin-kecamatan', 'operator-desa']))
+                        @if (in_array(auth()->user()->role, ['admin', 'admin-kabupaten']))
                             <div class="border-t border-gray-100 my-1"></div>
                             <x-dropdown-link :href="route('admin.settings.index')"
                                 class="{{ request()->routeIs('admin.settings.*') ? 'bg-pink-50 text-pink-600' : '' }}">
@@ -153,7 +149,7 @@
                         'admin',
                         'kader',
                         'admin-kabupaten',
-                        'ketua-kader',
+                        'ketua-posyandu',
                         'admin-kecamatan',
                         'operator-desa',
                     ]))
@@ -163,14 +159,14 @@
                     </a>
                 @endif
 
-                @if (auth()->user()->role === 'ketua-kader')
-                    <a href="{{ route('ketua-kader.takeover') }}"
-                        class="{{ request()->routeIs('ketua-kader.takeover*') ? 'border-pink-500 bg-pink-50' : 'border-transparent' }} block pl-3 pr-4 py-2 border-l-4 text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-pink-500 transition duration-150 ease-in-out">
+                @if (auth()->user()->role === 'ketua-posyandu')
+                    <a href="{{ route('ketua-posyandu.takeover') }}"
+                        class="{{ request()->routeIs('ketua-posyandu.takeover*') ? 'border-pink-500 bg-pink-50' : 'border-transparent' }} block pl-3 pr-4 py-2 border-l-4 text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-pink-500 transition duration-150 ease-in-out">
                         <i class="bi bi-key-fill mr-2"></i> Ambil Alih Kader
                     </a>
                 @endif
 
-                @if (in_array(auth()->user()->role, ['admin', 'kabid', 'ketua-posyandu', 'admin-kabupaten', 'operator-desa']))
+                @if (in_array(auth()->user()->role, ['admin', 'kabid', 'ketua-timpembina-posyandu', 'admin-kabupaten', 'operator-desa']))
                     <a href="{{ route('admin.posyandu.index') }}"
                         class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-pink-500 transition duration-150 ease-in-out">
                         <i class="bi bi-building mr-2"></i> Posyandu
@@ -190,8 +186,6 @@
                     class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-pink-500 transition duration-150 ease-in-out">
                     <i class="bi bi-clipboard-check mr-2"></i> Lihat Pengajuan
                 </a>
-
-                {{-- ✅ MENU SETTINGS MOBILE (Only for admin-kabupaten) --}}
                 @if (in_array(auth()->user()->role, ['admin', 'admin-kabupaten', 'admin-kecamatan', 'operator-desa']))
                     <div class="border-t border-gray-200 my-2"></div>
                     <a href="{{ route('admin.settings.index') }}"

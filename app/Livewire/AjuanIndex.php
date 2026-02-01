@@ -55,9 +55,10 @@ class AjuanIndex extends Component
             'kabid',
             'admin-kabupaten',
             'admin-kecamatan',
-            'ketua-kader',
-            'kades',
             'ketua-posyandu',
+            'kades',
+            'bu-kades',
+            'ketua-timpembina-posyandu',
             'operator-desa',
             'masyarakat'
         ];
@@ -111,6 +112,10 @@ class AjuanIndex extends Component
                     }
                     break;
 
+                case 'ketua-timpembina-posyandu':
+                    // Ketua Tim Pembina Posyandu tidak lagi di alur tahap 3
+                    $query->whereRaw('1 = 0');
+                    break;
                 case 'ketua-posyandu':
                     if ($user->posyandu_id) {
                         $query->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id))
@@ -134,7 +139,6 @@ class AjuanIndex extends Component
                             });
                     }
                     break;
-                case 'ketua-kader':
                 case 'kades':
                     if ($user->posyandu_id) {
                         $query->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id))

@@ -4,6 +4,7 @@ namespace App\Exports;
 
 use App\Models\Pengajuan;
 use App\Models\BidangPengajuan;
+use Illuminate\Support\Facades\Auth;
 
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -22,12 +23,16 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
     protected $bidang;
     protected $desa;
     protected $posyanduId;
+    protected $role;
+    protected $user;
 
     public function __construct($bidang = 'all', $desa = 'all', $posyanduId = null)
     {
         $this->bidang = $bidang;
         $this->desa = $desa;
         $this->posyanduId = $posyanduId;
+        $this->user = Auth::user();
+        $this->role = $this->user?->role;
     }
 
 
@@ -50,6 +55,52 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
             $query->whereHas('bidang', function ($q) {
                 $q->where('nama_bidang', $this->bidang);
             });
+        }
+        switch ($this->role) {
+            case 'ketua-posyandu':
+                if (!$this->posyanduId && $this->user->posyandu_id) {
+                    $userPosyanduId = $this->user->posyandu_id;
+                    $query->whereHas('user', fn($q) => $q->where('posyandu_id', $userPosyanduId));
+                }
+                $query->where(function ($q) {
+                    $q->where(function ($subQ) {
+                        $subQ->where('kunjungan_lapangan', true)
+                            ->where('approved_by_ketua', false)
+                            ->where('status_pengajuan', 'Diproses');
+                    })
+                    ->orWhere('status_pengajuan', 'Sesuai')
+                    ->orWhereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
+                });
+                break;
+
+            case 'kades':
+            case 'bu-kades':
+                if ($this->user->desa) {
+                    $userDesa = $this->user->desa;
+                    $query->whereHas('user', fn($q) => $q->where('desa', $userDesa));
+                }
+                $query->whereIn('status_pengajuan', ['Diajukan ke Desa', 'Disetujui', 'Ditolak']);
+                break;
+
+            case 'admin-kecamatan':
+                if ($this->user->kecamatan) {
+                    $query->whereHas('user', fn($q) => $q->where('kecamatan', 'LIKE', '%' . $this->user->kecamatan . '%'));
+                }
+                break;
+
+            case 'kabid':
+                if ($this->user->bidang_id) {
+                    $query->where('bidang_id', $this->user->bidang_id);
+                }
+                break;
+
+            case 'admin':
+            case 'admin-kabupaten':
+            case 'ketua-timpembina-posyandu':
+                break;
+
+            default:
+                break;
         }
 
         return $query->with(['user.posyandu', 'histories', 'bidang'])->get();

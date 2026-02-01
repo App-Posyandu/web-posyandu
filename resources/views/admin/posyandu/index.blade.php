@@ -72,9 +72,9 @@
                                     <li>Password default: <code class="bg-white px-2 py-1 rounded">password123</code></li>
                                     <li>Kader dapat login menggunakan <strong>email</strong> atau <strong>nomor
                                             telepon</strong></li>
-                                    <li>Ketua Kader dapat <strong>melengkapi data</strong> kader (NIK, tanggal lahir, dll)
+                                    <li>Ketua Posyandu dapat <strong>melengkapi data</strong> kader (NIK, tanggal lahir, dll)
                                     </li>
-                                    <li>Ketua Kader dapat <strong>reset password</strong> kader jika diperlukan</li>
+                                    <li>Ketua Posyandu dapat <strong>reset password</strong> kader jika diperlukan</li>
                                 </ul>
                             </div>
 
@@ -109,7 +109,7 @@
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold text-gray-800">List Posyandu</h2>
 
-                    @if (in_array(auth()->user()->role, ['admin', 'admin-kecamatan', 'admin-kabupaten', 'operator-desa']))
+                    @if (in_array(auth()->user()->role, ['admin', 'operator-desa']))
                         <a href="{{ route('admin.posyandu.create') }}"
                             class="px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600">
                             Tambah Posyandu
@@ -153,7 +153,7 @@
                                     Nama Posyandu
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Ketua Kader
+                                    Ketua Posyandu
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Lokasi
@@ -423,7 +423,7 @@
                 content += '- Simpan file ini dengan aman!\n';
                 content += '- Password default: password123\n';
                 content += '- Kader dapat login menggunakan email atau nomor telepon\n';
-                content += '- Ketua Kader wajib meminta kader untuk mengganti password\n';
+                content += '- Ketua Posyandu wajib meminta kader untuk mengganti password\n';
                 content += '\n';
                 content += '==============================================\n';
 

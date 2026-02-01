@@ -59,7 +59,7 @@ class AjuanController extends Controller
             'status' => 'Revisi Diminta',
             'catatan' => $request->catatan,
             'diubah_oleh' => Auth::id(),
-            'action_by_role' => in_array(Auth::user()->role, ['kader', 'ketua-posyandu', 'kades', 'ketua-kader'])
+            'action_by_role' => in_array(Auth::user()->role, ['kader', 'ketua-timpembina-posyandu', 'kades', 'ketua-posyandu'])
                 ? Auth::user()->role : null,
             'created_at' => now(),
         ]);
@@ -119,7 +119,7 @@ class AjuanController extends Controller
             ->whereNotNull('verified_at')
             ->orderBy('name');
 
-        if (in_array($user->role, ['kader', 'ketua-kader'])) {
+        if (in_array($user->role, ['kader', 'ketua-posyandu'])) {
             $query->where('posyandu_id', $user->posyandu_id);
         } elseif ($user->role === 'admin-kecamatan') {
             $query->where('kecamatan_id', $user->kecamatan_id);
@@ -973,7 +973,7 @@ class AjuanController extends Controller
     }
     public function cetak($id)
     {
-        $ajuan = Pengajuan::with(['user', 'bidang', 'histories.diubahOleh', 'latestHistory.diubahOleh'])->findOrFail($id);
+        $ajuan = Pengajuan::with(['user.posyandu', 'bidang', 'histories.diubahOleh', 'latestHistory.diubahOleh', 'ketuaPosyandu', 'kades'])->findOrFail($id);
 
         foreach (['verified_formulir_items', 'verified_administrasi_items', 'formulir_items', 'administrasi_items'] as $key) {
             if (is_string($ajuan->$key)) {
@@ -1223,7 +1223,7 @@ class AjuanController extends Controller
         $user = Auth::user();
         if (
             $user->id !== $pengajuan->user_id &&
-            !in_array($user->role, ['admin', 'kader', 'operator-desa', 'ketua-kader', 'ketua-posyandu'])
+            !in_array($user->role, ['admin', 'kader', 'operator-desa', 'ketua-posyandu', 'ketua-timpembina-posyandu'])
         ) {
             abort(403, 'Unauthorized');
         }

@@ -59,21 +59,35 @@
                     @csrf
                     @method('PUT')
 
+                    @if (!auth()->user()->role === 'admin' && !auth()->user()->role === 'admin-kabupaten')
+                        <div class="mb-6 bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-lg">
+                            <div class="flex items-start">
+                                <i class="bi bi-exclamation-triangle-fill text-yellow-500 mr-3 mt-0.5"></i>
+                                <div>
+                                    <p class="text-sm font-medium text-yellow-800">Akses Terbatas</p>
+                                    <p class="text-xs text-yellow-700 mt-1">Anda tidak memiliki akses untuk mengatur pengaturan sistem revisi & auto-reject. Hanya Admin Kabupaten dan Admin yang dapat mengakses fitur ini.</p>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
                     <div class="border-b border-gray-200 mb-6">
                         <nav class="-mb-px flex space-x-8">
                             @foreach ($groupedSettings as $category => $categorySettings)
-                                <button type="button" @click="activeTab = '{{ $category }}'"
-                                    :class="activeTab === '{{ $category }}' ? 'border-pink-500 text-pink-600' :
-                                        'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-                                    class="py-4 px-1 border-b-2 font-medium text-sm transition-colors">
-                                    @if ($category === 'revision')
-                                        <i class="bi bi-clock-history mr-2"></i>
-                                        Revisi & Auto-Reject
-                                    @else
-                                        <i class="bi bi-gear mr-2"></i>
-                                        {{ ucfirst($category) }}
-                                    @endif
-                                </button>
+                                @if ($category !== 'revision' || (auth()->user()->role === 'admin' || auth()->user()->role === 'admin-kabupaten'))
+                                    <button type="button" @click="activeTab = '{{ $category }}'"
+                                        :class="activeTab === '{{ $category }}' ? 'border-pink-500 text-pink-600' :
+                                            'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                                        class="py-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                                        @if ($category === 'revision')
+                                            <i class="bi bi-clock-history mr-2"></i>
+                                            Revisi & Auto-Reject
+                                        @else
+                                            <i class="bi bi-gear mr-2"></i>
+                                            {{ ucfirst($category) }}
+                                        @endif
+                                    </button>
+                                @endif
                             @endforeach
                         </nav>
                     </div>

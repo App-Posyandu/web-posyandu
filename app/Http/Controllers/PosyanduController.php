@@ -44,7 +44,7 @@ class PosyanduController extends Controller
 
     private function authorizeAccessToPosyandu($user, Posyandu $posyandu)
     {
-        if (in_array($user->role, ['admin', 'ketua-posyandu'])) {
+        if (in_array($user->role, ['admin', 'ketua-timpembina-posyandu'])) {
             return true;
         }
 
@@ -66,7 +66,7 @@ class PosyanduController extends Controller
             return true;
         }
 
-        if ($user->role === 'ketua-kader') {
+        if ($user->role === 'ketua-posyandu') {
             if ($posyandu->id !== $user->posyandu_id) {
                 abort(403, 'Anda hanya dapat mengelola posyandu Anda sendiri.');
             }
@@ -113,7 +113,7 @@ class PosyanduController extends Controller
                 ->where('desa', $currentUser->desa);
         } elseif ($currentUser->role === 'admin-kabupaten') {
             $query->where('kabupaten', $currentUser->kabupaten);
-        } elseif ($currentUser->role === 'ketua-kader') {
+        } elseif ($currentUser->role === 'ketua-posyandu') {
             $query->where('id', $currentUser->posyandu_id);
         } elseif ($currentUser->role === 'admin-kecamatan') {
             if ($currentUser->kecamatan_id) {
@@ -137,7 +137,7 @@ class PosyanduController extends Controller
                     ->orWhere('kabupaten', 'like', '%' . $request->search . '%')
                     ->orWhereHas('users', function ($subQ) use ($request) {
                         $subQ->where('name', 'like', '%' . $request->search . '%')
-                            ->where('role', 'ketua-kader');
+                            ->where('role', 'ketua-posyandu');
                     });
             });
         }
@@ -150,6 +150,10 @@ class PosyanduController extends Controller
     public function create()
     {
         $currentUser = Auth::user();
+
+        if (!in_array($currentUser->role, ['admin', 'operator-desa'])) {
+            abort(403, 'Anda tidak memiliki akses untuk membuat posyandu.');
+        }
 
         if ($currentUser->role === 'kabid' && $currentUser->kabupaten) {
             $kabupatens = null;
@@ -165,7 +169,7 @@ class PosyanduController extends Controller
             $fixedWilayah = null;
         }
 
-        $availableKetuas = User::where('role', 'ketua-kader')
+        $availableKetuas = User::where('role', 'ketua-posyandu')
             ->whereNull('posyandu_id')
             ->orderBy('name')
             ->get();
@@ -234,6 +238,12 @@ class PosyanduController extends Controller
 
     public function store(Request $request)
     {
+        $currentUser = Auth::user();
+
+        if (!in_array($currentUser->role, ['admin', 'operator-desa'])) {
+            abort(403, 'Anda tidak memiliki akses untuk membuat posyandu.');
+        }
+
         $request->validate([
             'nama_posyandu' => 'required|string|max:255',
             'kabupaten' => 'required|string',
@@ -433,7 +443,7 @@ class PosyanduController extends Controller
             if ($posyandu->id !== $user->posyandu_id) {
                 abort(403, 'Anda hanya bisa mengelola RW/RT di posyandu Anda sendiri.');
             }
-        } elseif ($user->role === 'ketua-kader') {
+        } elseif ($user->role === 'ketua-posyandu') {
             if ($posyandu->id !== $user->posyandu_id) {
                 abort(403, 'Anda hanya bisa mengelola RW/RT di posyandu Anda sendiri.');
             }
@@ -458,7 +468,7 @@ class PosyanduController extends Controller
             if ($posyandu->id !== $user->posyandu_id) {
                 abort(403, 'Unauthorized - Anda hanya bisa mengelola posyandu Anda sendiri.');
             }
-        } elseif ($user->role === 'ketua-kader') {
+        } elseif ($user->role === 'ketua-posyandu') {
             if ($posyandu->id !== $user->posyandu_id) {
                 abort(403, 'Unauthorized - Anda hanya bisa mengelola posyandu Anda sendiri.');
             }
@@ -626,9 +636,9 @@ class PosyanduController extends Controller
             'kabupatens_jateng'
         );
 
-        $currentKetua = $posyandu->users()->where('role', 'ketua-kader')->first();
+        $currentKetua = $posyandu->users()->where('role', 'ketua-posyandu')->first();
 
-        $unassignedKetuas = User::where('role', 'ketua-kader')
+        $unassignedKetuas = User::where('role', 'ketua-posyandu')
             ->whereNull('posyandu_id')
             ->orderBy('name')
             ->get();

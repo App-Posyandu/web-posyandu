@@ -66,33 +66,33 @@ class UserController extends Controller
                     ->where('posyandu_id', $currentUser->posyandu_id);
                 break;
             case 'kades':
-                $query->whereIn('role', ['admin-kabupaten', 'kabid', 'admin-kecamatan', 'ketua-kader', 'operator-desa', 'kader', 'masyarakat']);
+                $query->whereIn('role', ['admin-kabupaten', 'kabid', 'admin-kecamatan', 'ketua-posyandu', 'operator-desa', 'kader', 'masyarakat']);
                 if ($currentUser->posyandu_id) {
                     $query->whereHas('user', fn($q) => $q->where('posyandu_id', $currentUser->posyandu_id));
                 } elseif ($currentUser->desa) {
                     $query->whereHas('user', fn($q) => $q->where('desa', $currentUser->desa));
                 }
                 break;
-            case 'ketua-kader':
+            case 'ketua-posyandu':
                 $query->whereIn('role', ['operator-desa', 'kader', 'masyarakat'])
                     ->where('posyandu_id', $currentUser->posyandu_id);
                 break;
 
             case 'admin-kecamatan':
-                $query->whereIn('role', ['ketua-kader', 'operator-desa', 'kader', 'masyarakat']);
+                $query->whereIn('role', ['ketua-posyandu', 'operator-desa', 'kader', 'masyarakat']);
                 break;
 
             case 'kabid':
-                $query->whereIn('role', ['admin-kecamatan', 'ketua-kader', 'operator-desa', 'kader', 'masyarakat']);
+                $query->whereIn('role', ['admin-kecamatan', 'ketua-posyandu', 'operator-desa', 'kader', 'masyarakat']);
                 break;
 
             case 'admin-kabupaten':
-                $query->whereIn('role', ['kabid', 'ketua-posyandu', 'admin-kabupaten', 'admin-kecamatan', 'operator-desa', 'kades']);
+                $query->whereIn('role', ['kabid', 'ketua-timpembina-posyandu', 'admin-kabupaten', 'admin-kecamatan', 'operator-desa', 'kades']);
                 if ($currentUser->kabupaten) {
                     $query->where('kabupaten', 'LIKE', "%{$currentUser->kabupaten}%");
                 }
                 break;
-            case 'ketua-posyandu':
+            case 'ketua-timpembina-posyandu':
                 $query->whereIn('role', ['kabid', 'admin-kecamatan', 'operator-desa']);
                 break;
             case 'admin':
@@ -148,7 +148,7 @@ class UserController extends Controller
         $kabupatens = Kabupaten::orderBy('jenis')->orderBy('nama_kabupaten')->get();
         $kecamatans = collect();
 
-        if ($currentUser->role === 'ketua-kader') {
+        if ($currentUser->role === 'ketua-posyandu') {
             $posyandus = Posyandu::where('id', $currentUser->posyandu_id)->get();
         } elseif ($currentUser->role === 'operator-desa') {
             $posyandus = Posyandu::where('desa', $currentUser->posyandu->desa)
@@ -171,7 +171,7 @@ class UserController extends Controller
         $kabupatenList = [];
         $kotaList = [];
 
-        if (in_array($currentUser->role, ['admin', 'kabid', 'ketua-posyandu', 'admin-kabupaten', 'operator-desa', 'admin-kecamatan'])) {
+        if (in_array($currentUser->role, ['admin', 'kabid', 'ketua-timpembina-posyandu', 'admin-kabupaten', 'operator-desa', 'admin-kecamatan'])) {
             $wilayahData = $this->fetchWilayahData(
                 'regencies/' . self::PROVINCE_ID . '.json',
                 'kabupatens_jateng'
@@ -250,12 +250,12 @@ class UserController extends Controller
 
         $isInstantVerified = in_array($request->role, [
             'admin',
-            'ketua-posyandu',
+            'ketua-timpembina-posyandu',
             'kabid',
             'kades',
             'admin-kabupaten',
             'admin-kecamatan',
-            'ketua-kader',
+            'ketua-posyandu',
             'operator-desa'
         ]);
 
@@ -302,27 +302,27 @@ class UserController extends Controller
         $rolesMap = [
             'admin' => [
                 'admin-kabupaten',
-                'ketua-posyandu',
+                'ketua-timpembina-posyandu',
                 'kabid',
                 'admin-kecamatan',
-                'ketua-kader',
+                'ketua-posyandu',
                 'kades',
                 'operator-desa',
                 'kader',
                 'masyarakat',
                 'admin'
             ],
-            'ketua-posyandu' => [
+            'ketua-timpembina-posyandu' => [
                 'kabid',
                 'admin-kecamatan',
-                'ketua-kader',
+                'ketua-posyandu',
                 'kades',
                 'kader',
                 'masyarakat',
             ],
             'admin-kabupaten' => [
                 'kabid',
-                'ketua-posyandu',
+                'ketua-timpembina-posyandu',
                 'admin-kecamatan',
                 'kades',
                 'operator-desa',
@@ -330,14 +330,14 @@ class UserController extends Controller
             ],
             'kabid' => [
                 'admin-kecamatan',
-                'ketua-kader',
+                'ketua-posyandu',
                 'kader',
             ],
             'admin-kecamatan' => [
-                'ketua-kader',
+                'ketua-posyandu',
                 'kader',
             ],
-            'ketua-kader' => [
+            'ketua-posyandu' => [
                 'operator-desa',
                 'kader',
             ],
@@ -357,7 +357,7 @@ class UserController extends Controller
         $autoAssignMap = [
             'kader' => 'masyarakat',
             'operator-desa' => 'kader',
-            'ketua-kader' => 'kader',
+            'ketua-posyandu' => 'kader',
         ];
 
         if (isset($autoAssignMap[$currentRole]) && !$request->filled('role')) {
@@ -390,7 +390,7 @@ class UserController extends Controller
         ];
 
         $roleSpecificRules = [
-            'ketua-posyandu' => [
+            'ketua-timpembina-posyandu' => [
                 'jenis_wilayah' => ['required', 'in:kabupaten,kota'],
                 'kabupaten' => ['required', 'string'],
             ],
@@ -405,7 +405,7 @@ class UserController extends Controller
                 'kabupaten' => ['required', 'string'],
                 'kecamatan' => ['required', 'string'],
             ],
-            'ketua-kader' => [
+            'ketua-posyandu' => [
                 'posyandu_id' => ['required', 'uuid', 'exists:posyandus,id'],
             ],
             'operator-desa' => [
@@ -443,7 +443,7 @@ class UserController extends Controller
                 $data['kabupaten'] = $kabupatenName;
                 $data['jenis_wilayah'] = $request->jenis_wilayah ?? 'kabupaten';
                 break;
-            case 'ketua-posyandu':
+            case 'ketua-timpembina-posyandu':
                 $kabupatenValue = $request->kabupaten;
                 $kabupatenName = explode('_', $kabupatenValue)[1] ?? $kabupatenValue;
 
@@ -485,7 +485,7 @@ class UserController extends Controller
                 $data['jenis_wilayah'] = $request->jenis_wilayah ?? 'kabupaten';
                 break;
 
-            case 'ketua-kader':
+            case 'ketua-posyandu':
                 $posyanduId = $request->posyandu_id;
                 $posyandu = Posyandu::find($posyanduId);
 
@@ -514,7 +514,7 @@ class UserController extends Controller
             case 'kader':
                 $data['bidang_id'] = $request->bidang_id;
 
-                if ($currentUser->role === 'ketua-kader') {
+                if ($currentUser->role === 'ketua-posyandu') {
                     $data['posyandu_id'] = $currentUser->posyandu_id;
                     $data['kabupaten'] = $currentUser->kabupaten;
                     $data['kecamatan'] = $currentUser->kecamatan;
@@ -557,11 +557,11 @@ class UserController extends Controller
     private function shouldSendNotification(string $role): bool
     {
         return in_array($role, [
-            'ketua-posyandu',
+            'ketua-timpembina-posyandu',
             'kabid',
             'kades',
             'admin-kecamatan',
-            'ketua-kader',
+            'ketua-posyandu',
             'operator-desa'
         ]);
     }
@@ -587,7 +587,7 @@ class UserController extends Controller
 
         if ($request->input('source') === 'posyandu_create') {
             return redirect()->route('admin.posyandu.create')
-                ->with('success', 'User Ketua Kader berhasil dibuat! Silakan refresh halaman dan pilih dari dropdown.');
+                ->with('success', 'User Ketua Posyandu berhasil dibuat! Silakan refresh halaman dan pilih dari dropdown.');
         }
 
         if ($this->shouldSendNotification($request->role)) {
@@ -604,7 +604,7 @@ class UserController extends Controller
     {
         $roleNames = [
             'kabid' => 'Kepala Bidang',
-            'ketua-kader' => 'Ketua Kader',
+            'ketua-posyandu' => 'Ketua Posyandu',
             'admin-kecamatan' => 'Admin Kecamatan',
         ];
 
@@ -785,8 +785,8 @@ class UserController extends Controller
 
         if (
             ($currentUser->role === 'kader' && $user->role === 'masyarakat') ||
-            ($currentUser->role === 'ketua-kader' && $user->role === 'kader') ||
-            ($currentUser->role === 'kabid' && $user->role === 'ketua-kader') ||
+            ($currentUser->role === 'ketua-posyandu' && $user->role === 'kader') ||
+            ($currentUser->role === 'kabid' && $user->role === 'ketua-posyandu') ||
             ($currentUser->role === 'admin')
         ) {
             $user->update([
@@ -859,7 +859,7 @@ class UserController extends Controller
                     $query->where('id', $currentUser->posyandu_id);
                     break;
 
-                case 'ketua-kader':
+                case 'ketua-posyandu':
                     $query->where('id', $currentUser->posyandu_id);
                     break;
 
@@ -975,11 +975,11 @@ class UserController extends Controller
     {
         $roleMap = [
             'kader' => ['masyarakat'],
-            'ketua-kader' => ['kader'],
-            'operator-desa' => ['ketua-kader', 'kader'],
+            'ketua-posyandu' => ['kader'],
+            'operator-desa' => ['ketua-posyandu', 'kader'],
             'admin-kecamatan' => [],
-            'admin-kabupaten' => ['ketua-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'operator-desa'],
-            'admin' => ['admin-kabupaten', 'ketua-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'ketua-kader', 'operator-desa', 'kader', 'masyarakat'],
+            'admin-kabupaten' => ['ketua-timpembina-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'operator-desa'],
+            'admin' => ['admin-kabupaten', 'ketua-timpembina-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'ketua-posyandu', 'operator-desa', 'kader', 'masyarakat'],
         ];
 
         return $roleMap[$role] ?? [];
@@ -1094,7 +1094,7 @@ class UserController extends Controller
         }
 
         if (
-            !in_array($user->role, ['kabid', 'ketua-kader']) ||
+            !in_array($user->role, ['kabid', 'ketua-posyandu']) ||
             $user->kabupaten !== $currentUser->kabupaten
         ) {
             return redirect()->back()->with('error', 'Anda hanya bisa reset password user di kabupaten Anda');
@@ -1130,7 +1130,7 @@ class UserController extends Controller
             return redirect()->back()->with('error', 'Unauthorized');
         }
 
-        $allowedRoles = ['ketua-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'operator-desa'];
+        $allowedRoles = ['ketua-timpembina-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'operator-desa'];
 
         if (!in_array($user->role, $allowedRoles)) {
             return redirect()->back()->with('error', 'Anda tidak memiliki izin untuk menonaktifkan user ini');
@@ -1166,7 +1166,7 @@ class UserController extends Controller
             return redirect()->back()->with('error', 'Unauthorized');
         }
 
-        $allowedRoles = ['ketua-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'operator-desa'];
+        $allowedRoles = ['ketua-timpembina-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'operator-desa'];
 
         if (!in_array($user->role, $allowedRoles)) {
             return redirect()->back()->with('error', 'Anda tidak memiliki izin untuk mengaktifkan user ini');
@@ -1286,7 +1286,7 @@ class UserController extends Controller
     {
         $ketuaKader = Auth::user();
 
-        if ($ketuaKader->role !== 'ketua-kader') {
+        if ($ketuaKader->role !== 'ketua-posyandu') {
             abort(403);
         }
 
@@ -1303,7 +1303,7 @@ class UserController extends Controller
         $ketuaKader = Auth::user();
 
         if (
-            $ketuaKader->role !== 'ketua-kader' ||
+            $ketuaKader->role !== 'ketua-posyandu' ||
             $kader->posyandu_id !== $ketuaKader->posyandu_id ||
             $kader->is_active
         ) {

@@ -317,6 +317,112 @@
             .tracking-section {
                 page-break-inside: avoid;
             }
+
+            .page-break {
+                page-break-before: always;
+            }
+
+            .document-page {
+                page-break-after: always;
+            }
+
+            .document-page:last-child {
+                page-break-after: auto;
+            }
+        }
+
+        /* Styles for lampiran dokumen */
+        .lampiran-page {
+            page-break-before: always;
+        }
+
+        .lampiran-title {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .lampiran-title h2 {
+            font-size: 24px;
+            font-weight: bold;
+            color: #171717;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .lampiran-title p {
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .lampiran-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .lampiran-header h2 {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .lampiran-header p {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .doc-title {
+            display: none;
+        }
+
+        .image-container {
+            text-align: center;
+            padding: 10px;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+        }
+
+        .image-container img {
+            max-width: 100%;
+            max-height: 600px;
+            object-fit: contain;
+        }
+
+        .doc-label {
+            font-size: 14px;
+            font-weight: bold;
+            color: #374151;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            padding: 8px 16px;
+            background: #f3f4f6;
+            border-radius: 4px;
+        }
+
+        .no-image {
+            text-align: center;
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        .no-image-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+            opacity: 0.3;
+        }
+
+        .document-page {
+            padding: 20px 56px;
+        }
+
+        .lampiran-footer {
+            display: none;
         }
 
         @media (max-width: 640px) {
@@ -629,6 +735,59 @@
     <footer>
         <p>&copy; {{now()->year}} <span>SAPA POSYANDU</span> - Layanan Standar Minimal Pelayanan Posyandu Kabupaten Kebumen</p>
     </footer>
+
+    {{-- LAMPIRAN DOKUMEN ADMINISTRASI --}}
+    @php
+        $administrasiItems = $ajuan->administrasi_items ?? [];
+        $documentCounter = 1;
+    @endphp
+
+    @if (count($administrasiItems) > 0)
+        {{-- Halaman Judul Lampiran --}}
+        <div class="lampiran-page">
+            <div class="lampiran-title">
+                <h2>Lampiran Berkas</h2>
+                <p>Dokumen Administrasi Pengajuan</p>
+                <p style="margin-top: 5px;">Kode Tracking: {{ $ajuan->tracking_code ?? 'PGJ-000000-00000' }}</p>
+                <p style="margin-top: 5px;">Jumlah Dokumen: {{ count($administrasiItems) }} berkas</p>
+            </div>
+        </div>
+
+        @foreach ($administrasiItems as $key => $path)
+            @php
+                $label = $templateData['administrasi_items'][$key] ?? ucfirst(str_replace('_', ' ', $key));
+                $fullPath = storage_path('app/public/' . $path);
+                $imageBase64 = '';
+
+                if (file_exists($fullPath)) {
+                    $imageData = file_get_contents($fullPath);
+                    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                    $mimeType = finfo_file($finfo, $fullPath);
+                    finfo_close($finfo);
+
+                    $imageBase64 = 'data:' . $mimeType . ';base64,' . base64_encode($imageData);
+                }
+            @endphp
+
+            <div class="document-page page-break">
+                <div class="image-container">
+                    <div class="doc-label">{{ $label }}</div>
+                    @if ($imageBase64)
+                        <img src="{{ $imageBase64 }}" alt="{{ $label }}">
+                    @else
+                        <div class="no-image">
+                            <div class="no-image-icon">📄</div>
+                            <p>Dokumen tidak ditemukan atau tidak dapat ditampilkan</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            @php
+                $documentCounter++;
+            @endphp
+        @endforeach
+    @endif
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {

@@ -31,14 +31,14 @@
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Desa/Kelurahan
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ketua Kader</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ketua Posyandu</th>
                                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @forelse ($posyandus as $posyandu)
                                 @php
-                                    $ketua = $posyandu->users->firstWhere('role', 'ketua-kader');
+                                    $ketua = $posyandu->users->firstWhere('role', 'ketua-posyandu');
                                     $cleanDesa = explode('_', $posyandu->desa)[1] ?? $posyandu->desa;
                                 @endphp
                                 <tr>

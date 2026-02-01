@@ -29,7 +29,7 @@ class CheckRole
         }
 
         if ($user->role === 'kader' && is_null($user->verified_at)) {
-            return redirect()->route('dashboard')->with('error', 'Akun Anda belum diverifikasi oleh Ketua Kader.');
+            return redirect()->route('dashboard')->with('error', 'Akun Anda belum diverifikasi oleh Ketua Posyandu.');
         }
 
         return $next($request);

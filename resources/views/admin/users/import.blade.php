@@ -9,21 +9,21 @@
         $currentUser = Auth::user();
         $roleTargets = [
             'kader' => ['masyarakat'],
-            'ketua-kader' => ['kader'],
-            'operator-desa' => ['ketua-kader', 'kader'],
+            'ketua-posyandu' => ['kader'],
+            'operator-desa' => ['ketua-posyandu', 'kader'],
             'admin-kecamatan' => [],
-            'admin-kabupaten' => ['ketua-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'operator-desa'],
-            'admin' => ['admin-kabupaten', 'ketua-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'ketua-kader', 'operator-desa', 'kader', 'masyarakat']
+            'admin-kabupaten' => ['ketua-timpembina-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'bu-kades', 'operator-desa'],
+            'admin' => ['admin-kabupaten', 'ketua-timpembina-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'bu-kades', 'ketua-posyandu', 'operator-desa', 'kader', 'masyarakat']
         ];
         $roleLabels = [
             'masyarakat' => 'Masyarakat',
             'kader' => 'Kader',
-            'ketua-kader' => 'Ketua Kader',
+            'ketua-posyandu' => 'Ketua Posyandu',
             'operator-desa' => 'Operator Desa',
             'admin-kecamatan' => 'Admin Kecamatan',
             'kabid' => 'Kabid',
             'admin-kabupaten' => 'Admin Kabupaten',
-            'ketua-posyandu' => 'Ketua Posyandu',
+            'ketua-timpembina-posyandu' => 'Ketua Tim Pembina Posyandu',
             'kades' => 'Kades'
         ];
         $allowedRoles = $roleTargets[$currentUser->role] ?? [];
@@ -38,7 +38,7 @@
         <ul class="text-sm text-blue-800 space-y-2">
             <li><strong>Role Anda:</strong> {{ ucfirst(str_replace('-', ' ', $currentUser->role)) }}</li>
             <li><strong>Akan membuat user:</strong> <span class="font-semibold text-blue-600">{{ $roleToCreate }}</span></li>
-            @if($currentUser->role === 'ketua-kader')
+            @if($currentUser->role === 'ketua-posyandu')
                 <li><strong>Posyandu:</strong> {{ $currentUser->posyandu->nama_posyandu }}</li>
             @elseif($currentUser->role === 'operator-desa')
                 <li><strong>Desa:</strong> {{ $currentUser->posyandu->desa }}</li>
