@@ -344,7 +344,8 @@
                             @foreach ($ajuan->foto_kunjungan as $foto)
                                 <div class="relative group cursor-pointer"
                                     @click="showModal=true; fileUrl='{{ route('ajuan.foto-kunjungan', ['ajuan' => $ajuan, 'index' => $loop->index]) }}'; fileType='image';">
-                                    <img src="{{ route('ajuan.foto-kunjungan', ['ajuan' => $ajuan, 'index' => $loop->index]) }}" alt="Foto Kunjungan"
+                                    <img src="{{ route('ajuan.foto-kunjungan', ['ajuan' => $ajuan, 'index' => $loop->index]) }}"
+                                        alt="Foto Kunjungan"
                                         class="w-full h-32 object-cover rounded-lg border shadow-sm hover:scale-105 transition">
                                     <div
                                         class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition rounded-lg flex items-center justify-center">
@@ -406,7 +407,20 @@
             </div>
         </div>
 
-        @if (auth()->user()->role === 'kader' && $ajuan->status_pengajuan === 'Diproses')
+        @php
+            $canVerify = false;
+            if (auth()->user()->role === 'kader' && auth()->user()->bidang_id === $ajuan->bidang_id) {
+                $canVerify = true;
+            }
+            // Tambahkan kondisi Takeover untuk Ketua Kader
+            elseif (
+                auth()->user()->role === 'ketua-kader' &&
+                auth()->user()->posyandu_id === $ajuan->user->posyandu_id
+            ) {
+                $canVerify = true;
+            }
+        @endphp
+        @if ($canVerify && $ajuan->status_pengajuan === 'Diproses')
             <div class="w-full mx-8">
                 <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-4 md:p-8 mx-0 md:mx-8"
                     x-data="{
@@ -781,7 +795,8 @@
                         </div>
 
                         <div class="mb-6">
-                            <label class="block font-medium text-sm text-gray-700 mb-2">Tindak Lanjut Rekomendasi (Wajib)</label>
+                            <label class="block font-medium text-sm text-gray-700 mb-2">Tindak Lanjut Rekomendasi
+                                (Wajib)</label>
                             <textarea name="tindak_lanjut" id="tindaklanjut_kades" rows="4"
                                 class="block w-full border-gray-300 rounded-md shadow-sm"
                                 placeholder="Deskripsikan tindak lanjut yang perlu dilakukan..."></textarea>
@@ -829,6 +844,17 @@
                                 icon: 'warning',
                                 title: 'Perhatian!',
                                 text: 'Silakan pilih keputusan terlebih dahulu.',
+                                confirmButtonColor: '#dc2626'
+                            });
+                            return;
+                        }
+
+                        if(!catatan.trim() && (keputusan === 'revisi' || keputusan === 'tolak')) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Catatan Diperlukan!',
+                                text: 'Silakan berikan catatan untuk keputusan ' + (keputusan ===
+                                    'revisi' ? 'revisi' : 'tolak') + '.',
                                 confirmButtonColor: '#dc2626'
                             });
                             return;

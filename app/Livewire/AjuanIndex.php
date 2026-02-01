@@ -135,6 +135,18 @@ class AjuanIndex extends Component
                     }
                     break;
                 case 'ketua-kader':
+                    if ($user->posyandu_id) {
+                        $query->whereHas('user', function ($q) use ($user) {
+                            $q->where('posyandu_id', $user->posyandu_id);
+                        })
+                            ->where(function ($q) {
+                                $q->where('status_pengajuan', 'Diproses')
+                                    ->orWhere('status_pengajuan', 'Diajukan ke Desa');
+                            });
+                    } else {
+                        $query->whereRaw('1 = 0');
+                    }
+                    break;
                 case 'kades':
                     if ($user->posyandu_id) {
                         $query->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id))

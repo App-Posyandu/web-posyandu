@@ -80,7 +80,8 @@
 
                             {{-- Action Buttons --}}
                             <div class="mt-4 flex gap-3">
-                                <a href="{{ route('admin.posyandu.print-credentials', session('posyandu_id')) }}" target="_blank"
+                                <a href="{{ route('admin.posyandu.print-credentials', session('posyandu_id')) }}"
+                                    target="_blank"
                                     class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition flex items-center gap-2">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -182,11 +183,14 @@
                                         <div class="text-sm font-medium text-gray-900">{{ $posyandu->nama_posyandu }}</div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        @if ($posyandu->ketuaKader)
-                                            <div class="text-sm text-gray-900">{{ $posyandu->ketuaKader->name }}</div>
-                                            <div class="text-xs text-gray-500">{{ $posyandu->ketuaKader->email }}</div>
+                                        @php
+                                            $ketua = $posyandu->users->where('role', 'ketua-kader')->first();
+                                        @endphp
+                                        @if ($ketua)
+                                            <div class="text-sm text-gray-900 font-medium">{{ $ketua->name }}</div>
+                                            <div class="text-xs text-gray-500">{{ $ketua->email }}</div>
                                         @else
-                                            <span class="text-xs text-gray-400 italic">Belum ada</span>
+                                            <span class="text-xs text-gray-400 italic">Belum ada ketua</span>
                                         @endif
                                     </td>
                                     <td class="px-6 py-4">
@@ -229,11 +233,10 @@
                                             </a>
                                             <form method="POST"
                                                 action="{{ route('admin.posyandu.destroy', $posyandu) }}"
-                                                id="delete-form-{{ $posyandu->id }}"
-                                                class="inline">
+                                                id="delete-form-{{ $posyandu->id }}" class="inline">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="button" 
+                                                <button type="button"
                                                     onclick="confirmDeletePosyandu(event, '{{ $posyandu->id }}')"
                                                     class="px-3 py-2 bg-red-500 text-white text-xs font-semibold rounded hover:bg-red-600 transition">
                                                     Hapus

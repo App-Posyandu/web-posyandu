@@ -358,33 +358,132 @@
                             </p>
                         </div>
 
-                        <div id="rw-rt-fields" style="display: none;" class="md:col-span-2 space-y-4">
-                            <div>
-                                <x-input-label for="rw" :value="__('RW (Rukun Warga)')" />
-                                <span class="text-red-600">*</span>
-                                <select id="rw" name="rw"
-                                    class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                                    <option value="" disabled selected>Pilih RW</option>
-                                </select>
-                                <p class="text-xs text-gray-500 mt-1">
-                                    <i class="bi bi-info-circle text-blue-500"></i>
-                                    RW sesuai domisili user (Format: RW01, RW02, dst)
-                                </p>
-                                <x-input-error :messages="$errors->get('rw')" class="mt-2" />
-                            </div>
+                        <div id="rw-rt-fields" style="display: none;" class="md:col-span-2">
+                            <div
+                                class="p-6 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl">
+                                {{-- Info Banner --}}
+                                <div
+                                    class="flex items-start gap-3 mb-6 p-4 bg-white rounded-lg border-l-4 border-green-500 shadow-sm">
+                                    <div class="flex-shrink-0">
+                                        <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd"
+                                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                                                clip-rule="evenodd" />
+                                        </svg>
+                                    </div>
+                                    <div class="text-sm">
+                                        <p class="font-bold text-green-900 mb-1">Data Wilayah Otomatis</p>
+                                        <p class="text-green-800">
+                                            Data <strong>Kabupaten, Kecamatan, Desa, dan Posyandu</strong> sudah otomatis
+                                            diambil dari akun Kader.
+                                            Silakan pilih <strong>RW dan RT</strong> tempat tinggal masyarakat.
+                                        </p>
+                                    </div>
+                                </div>
 
-                            <div>
-                                <x-input-label for="rt" :value="__('RT (Rukun Tetangga)')" />
-                                <span class="text-gray-500 text-sm">(Opsional)</span>
-                                <select id="rt" name="rt"
-                                    class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                                    <option value="">-- Tidak ada/Tidak tahu --</option>
-                                </select>
-                                <p class="text-xs text-gray-500 mt-1">
-                                    <i class="bi bi-info-circle text-blue-500"></i>
-                                    RT jika diketahui (Format: RT001, RT002, dst)
-                                </p>
-                                <x-input-error :messages="$errors->get('rt')" class="mt-2" />
+                                {{-- Auto-filled Data Display --}}
+                                <div
+                                    class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 p-4 bg-white rounded-lg border border-green-200">
+                                    <div>
+                                        <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                                            Kabupaten</p>
+                                        <p class="text-sm font-bold text-gray-800">
+                                            {{ auth()->user()->kabupaten ?? 'Tidak Tersedia' }}
+                                        </p>
+                                    </div>
+
+                                    <div>
+                                        <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                                            Kecamatan</p>
+                                        <p class="text-sm font-bold text-gray-800">
+                                            {{ auth()->user()->kecamatan ?? 'Tidak Tersedia' }}
+                                        </p>
+                                    </div>
+
+                                    <div>
+                                        <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Desa
+                                        </p>
+                                        <p class="text-sm font-bold text-gray-800">
+                                            {{ auth()->user()->desa ?? 'Tidak Tersedia' }}
+                                        </p>
+                                    </div>
+
+                                    <div>
+                                        <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                                            Posyandu</p>
+                                        <p class="text-sm font-bold text-gray-800">
+                                            {{ auth()->user()->posyandu->nama_posyandu ?? 'Tidak Tersedia' }}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {{-- Hidden Inputs for Auto-fill Data --}}
+                                <input type="hidden" name="kabupaten" value="{{ auth()->user()->kabupaten }}">
+                                <input type="hidden" name="kabupaten_id" value="{{ auth()->user()->kabupaten_id }}">
+                                <input type="hidden" name="kecamatan" value="{{ auth()->user()->kecamatan }}">
+                                <input type="hidden" name="kecamatan_id" value="{{ auth()->user()->kecamatan_id }}">
+                                <input type="hidden" name="desa" value="{{ auth()->user()->desa }}">
+                                <input type="hidden" name="posyandu_id" value="{{ auth()->user()->posyandu_id }}">
+
+                                {{-- ✅ RW & RT Selection --}}
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {{-- RW Dropdown --}}
+                                    <div>
+                                        <x-input-label for="rw" class="font-semibold">
+                                            <span class="text-gray-700">RW (Rukun Warga)</span>
+                                            <span class="text-red-500">*</span>
+                                        </x-input-label>
+
+                                        <select id="rw" name="rw" required
+                                            onchange="handleRwChange(this.value)"
+                                            class="mt-1 block w-full border-2 border-gray-300 rounded-lg px-4 py-2.5 focus:border-green-500 focus:ring-2 focus:ring-green-200 transition">
+                                            <option value="">Pilih RW</option>
+                                            @if (auth()->user()->posyandu && auth()->user()->posyandu->rw_list)
+                                                @foreach (auth()->user()->posyandu->rw_list as $rw)
+                                                    <option value="{{ $rw }}"
+                                                        {{ old('rw') == $rw ? 'selected' : '' }}>
+                                                        {{ $rw }}
+                                                    </option>
+                                                @endforeach
+                                            @else
+                                                <option value="" disabled>Tidak ada RW tersedia</option>
+                                            @endif
+                                        </select>
+
+                                        <p class="mt-2 text-xs text-gray-600">
+                                            RW yang tersedia di Posyandu
+                                            {{ auth()->user()->posyandu->nama_posyandu ?? '' }}
+                                        </p>
+
+                                        <x-input-error :messages="$errors->get('rw')" class="mt-2" />
+                                    </div>
+
+                                    {{-- RT Dropdown --}}
+                                    <div>
+                                        <x-input-label for="rt" class="font-semibold">
+                                            <span class="text-gray-700">RT (Rukun Tetangga)</span>
+                                            <span class="text-red-500">*</span>
+                                        </x-input-label>
+
+                                        <select id="rt" name="rt" required disabled
+                                            class="mt-1 block w-full border-2 rounded-lg px-4 py-2.5 transition border-gray-200 bg-gray-50 cursor-not-allowed text-gray-400">
+                                            <option value="">Pilih RW terlebih dahulu</option>
+                                        </select>
+
+                                        <p id="rt-helper-text" class="mt-2 text-xs text-amber-600">
+                                            ⚠️ Silakan pilih RW terlebih dahulu
+                                        </p>
+
+                                        <x-input-error :messages="$errors->get('rt')" class="mt-2" />
+                                    </div>
+                                </div>
+
+                                {{-- Debug Info (Remove in production) --}}
+                                {{-- <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-xs" id="debug-info"
+                                    style="display: none;">
+                                    <p class="font-bold text-blue-900 mb-1">Debug Info:</p>
+                                    <div id="debug-content" class="text-blue-800 font-mono"></div>
+                                </div> --}}
                             </div>
                         </div>
 
@@ -678,84 +777,239 @@
                 }));
             });
 
+            // document.addEventListener('DOMContentLoaded', function() {
+            //     const roleSelect = document.getElementById('role');
+            //     const rwRtFields = document.getElementById('rw-rt-fields');
+            //     const posyanduSelect = document.getElementById('posyandu_id');
+            //     const rwSelect = document.getElementById('rw');
+            //     const rtSelect = document.getElementById('rt');
+
+            //     function toggleRwRtFields() {
+            //         if (roleSelect.value === 'masyarakat') {
+            //             rwRtFields.style.display = 'block';
+            //             rwSelect.required = true;
+            //         } else {
+            //             rwRtFields.style.display = 'none';
+            //             rwSelect.required = false;
+            //             rtSelect.value = '';
+            //             rwSelect.value = '';
+            //         }
+            //     }
+            //     async function fetchRwRtOptions() {
+            //         if (roleSelect.value !== 'masyarakat' || !posyanduSelect.value) {
+            //             return;
+            //         }
+
+            //         try {
+            //             const response = await fetch(`/api/posyandu/${posyanduSelect.value}/rw-rt`);
+            //             const data = await response.json();
+
+            //             rwSelect.innerHTML = '<option value="" disabled selected>Pilih RW</option>';
+            //             if (data.rw_list && data.rw_list.length > 0) {
+            //                 data.rw_list.forEach(rw => {
+            //                     const option = document.createElement('option');
+            //                     option.value = rw;
+            //                     option.textContent = rw;
+            //                     rwSelect.appendChild(option);
+            //                 });
+            //             } else {
+            //                 for (let i = 1; i <= 15; i++) {
+            //                     const rw = `RW${String(i).padStart(2, '0')}`;
+            //                     const option = document.createElement('option');
+            //                     option.value = rw;
+            //                     option.textContent = rw;
+            //                     rwSelect.appendChild(option);
+            //                 }
+            //             }
+            //             window.rtMapping = data.rt_mapping || {};
+
+            //         } catch (error) {
+            //             console.error('Error fetching RW/RT:', error);
+            //         }
+            //     }
+
+            //     rwSelect.addEventListener('change', function() {
+            //         const selectedRw = this.value;
+            //         rtSelect.innerHTML = '<option value="">-- Tidak ada/Tidak tahu --</option>';
+
+            //         if (window.rtMapping && window.rtMapping[selectedRw]) {
+            //             window.rtMapping[selectedRw].forEach(rt => {
+            //                 const option = document.createElement('option');
+            //                 option.value = rt;
+            //                 option.textContent = rt;
+            //                 rtSelect.appendChild(option);
+            //             });
+            //         } else {
+            //             for (let i = 1; i <= 53; i++) {
+            //                 const rt = `RT${String(i).padStart(3, '0')}`;
+            //                 const option = document.createElement('option');
+            //                 option.value = rt;
+            //                 option.textContent = rt;
+            //                 rtSelect.appendChild(option);
+            //             }
+            //         }
+            //     });
+
+            //     roleSelect.addEventListener('change', toggleRwRtFields);
+            //     posyanduSelect.addEventListener('change', fetchRwRtOptions);
+
+            //     toggleRwRtFields();
+            // });
+
+            const POSYANDU_RT_MAPPING = @json(auth()->user()->posyandu->rt_mapping ?? []);
+            const POSYANDU_RW_LIST = @json(auth()->user()->posyandu->rw_list ?? []);
+
+            console.log('=== KADER CREATE MASYARAKAT DEBUG ===');
+            console.log('Posyandu RW List:', POSYANDU_RW_LIST);
+            console.log('Posyandu RT Mapping:', POSYANDU_RT_MAPPING);
+            console.log('=====================================');
+
+            // ✅ HANDLE RW CHANGE
+            function handleRwChange(selectedRw) {
+                console.log('[RW Change] Selected RW:', selectedRw);
+
+                const rtSelect = document.getElementById('rt');
+                const rtHelperText = document.getElementById('rt-helper-text');
+                const debugInfo = document.getElementById('debug-info');
+                const debugContent = document.getElementById('debug-content');
+
+                if (!selectedRw || selectedRw === '') {
+                    console.log('[RW Change] No RW selected, disabling RT');
+
+                    // Reset RT dropdown
+                    rtSelect.disabled = true;
+                    rtSelect.className =
+                        'mt-1 block w-full border-2 rounded-lg px-4 py-2.5 transition border-gray-200 bg-gray-50 cursor-not-allowed text-gray-400';
+                    rtSelect.innerHTML = '<option value="">Pilih RW terlebih dahulu</option>';
+
+                    // Update helper text
+                    rtHelperText.className = 'mt-2 text-xs text-amber-600';
+                    rtHelperText.innerHTML = '⚠️ Silakan pilih RW terlebih dahulu';
+
+                    return;
+                }
+
+                // Get RT list for selected RW
+                const rtList = POSYANDU_RT_MAPPING[selectedRw];
+
+                console.log('[RW Change] RT List for ' + selectedRw + ':', rtList);
+
+                // Show debug info
+                debugInfo.style.display = 'block';
+                debugContent.innerHTML = `
+        Selected RW: ${selectedRw}<br>
+        RT Mapping exists: ${POSYANDU_RT_MAPPING.hasOwnProperty(selectedRw) ? 'Yes' : 'No'}<br>
+        RT List: ${rtList ? JSON.stringify(rtList) : 'null'}<br>
+        RT Count: ${rtList ? rtList.length : 0}
+    `;
+
+                if (!rtList || rtList.length === 0) {
+                    console.warn('[RW Change] No RT found for RW:', selectedRw);
+
+                    // Enable but show no data
+                    rtSelect.disabled = false;
+                    rtSelect.className =
+                        'mt-1 block w-full border-2 rounded-lg px-4 py-2.5 transition border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200';
+                    rtSelect.innerHTML = '<option value="">Tidak ada RT untuk RW ini</option>';
+
+                    rtHelperText.className = 'mt-2 text-xs text-red-600';
+                    rtHelperText.innerHTML = '❌ Tidak ada RT tersedia untuk RW ' + selectedRw;
+
+                    alert('Peringatan: Tidak ada RT yang tersedia untuk RW ' + selectedRw +
+                        '. Silakan hubungi administrator untuk mengatur RT di posyandu ini.');
+
+                    return;
+                }
+
+                // ✅ Populate RT dropdown
+                console.log('[RW Change] Populating RT dropdown with', rtList.length, 'items');
+
+                rtSelect.disabled = false;
+                rtSelect.className =
+                    'mt-1 block w-full border-2 rounded-lg px-4 py-2.5 transition border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200';
+
+                // Build options
+                let options = '<option value="">Pilih RT</option>';
+                rtList.forEach(rt => {
+                    const selected = '{{ old('rt') }}' === rt ? 'selected' : '';
+                    options += `<option value="${rt}" ${selected}>${rt}</option>`;
+                });
+
+                rtSelect.innerHTML = options;
+
+                // Update helper text
+                rtHelperText.className = 'mt-2 text-xs text-green-600';
+                rtHelperText.innerHTML = `✓ ${rtList.length} RT tersedia untuk RW ${selectedRw}`;
+
+                console.log('[RW Change] RT dropdown populated successfully');
+            }
+
+            // ✅ INITIALIZE ON PAGE LOAD
             document.addEventListener('DOMContentLoaded', function() {
-                const roleSelect = document.getElementById('role');
-                const rwRtFields = document.getElementById('rw-rt-fields');
-                const posyanduSelect = document.getElementById('posyandu_id');
+                console.log('[DOMContentLoaded] Initializing RW/RT handler');
+
                 const rwSelect = document.getElementById('rw');
                 const rtSelect = document.getElementById('rt');
 
-                function toggleRwRtFields() {
-                    if (roleSelect.value === 'masyarakat') {
+                if (!rwSelect || !rtSelect) {
+                    console.error('[DOMContentLoaded] RW or RT select not found!');
+                    return;
+                }
+
+                // ✅ Check if old RW value exists (from validation error)
+                const oldRw = '{{ old('rw') }}';
+                if (oldRw) {
+                    console.log('[DOMContentLoaded] Old RW value found:', oldRw);
+                    rwSelect.value = oldRw;
+                    handleRwChange(oldRw);
+                }
+
+                console.log('[DOMContentLoaded] RW/RT handler initialized successfully');
+            });
+
+            // ✅ SHOW RW/RT FIELDS FOR MASYARAKAT
+            document.addEventListener('DOMContentLoaded', function() {
+                const roleSelect = document.getElementById('role');
+                const rwRtFields = document.getElementById('rw-rt-fields');
+
+                if (!roleSelect || !rwRtFields) return;
+
+                function handleRoleChange() {
+                    const selectedRole = roleSelect.value;
+                    const currentUserRole = '{{ auth()->user()->role }}';
+
+                    console.log('[Role Change] Selected:', selectedRole, 'Current User:', currentUserRole);
+
+                    // Show RW/RT fields for Masyarakat when created by Kader
+                    if (selectedRole === 'masyarakat' && currentUserRole === 'kader') {
                         rwRtFields.style.display = 'block';
-                        rwSelect.required = true;
+                        console.log('[Role Change] RW/RT fields shown');
                     } else {
                         rwRtFields.style.display = 'none';
-                        rwSelect.required = false;
-                        rtSelect.value = '';
-                        rwSelect.value = '';
-                    }
-                }
-                async function fetchRwRtOptions() {
-                    if (roleSelect.value !== 'masyarakat' || !posyanduSelect.value) {
-                        return;
-                    }
-
-                    try {
-                        const response = await fetch(`/api/posyandu/${posyanduSelect.value}/rw-rt`);
-                        const data = await response.json();
-
-                        rwSelect.innerHTML = '<option value="" disabled selected>Pilih RW</option>';
-                        if (data.rw_list && data.rw_list.length > 0) {
-                            data.rw_list.forEach(rw => {
-                                const option = document.createElement('option');
-                                option.value = rw;
-                                option.textContent = rw;
-                                rwSelect.appendChild(option);
-                            });
-                        } else {
-                            for (let i = 1; i <= 15; i++) {
-                                const rw = `RW${String(i).padStart(2, '0')}`;
-                                const option = document.createElement('option');
-                                option.value = rw;
-                                option.textContent = rw;
-                                rwSelect.appendChild(option);
-                            }
-                        }
-                        window.rtMapping = data.rt_mapping || {};
-
-                    } catch (error) {
-                        console.error('Error fetching RW/RT:', error);
+                        console.log('[Role Change] RW/RT fields hidden');
                     }
                 }
 
-                rwSelect.addEventListener('change', function() {
-                    const selectedRw = this.value;
-                    rtSelect.innerHTML = '<option value="">-- Tidak ada/Tidak tahu --</option>';
+                roleSelect.addEventListener('change', handleRoleChange);
 
-                    if (window.rtMapping && window.rtMapping[selectedRw]) {
-                        window.rtMapping[selectedRw].forEach(rt => {
-                            const option = document.createElement('option');
-                            option.value = rt;
-                            option.textContent = rt;
-                            rtSelect.appendChild(option);
-                        });
-                    } else {
-                        for (let i = 1; i <= 53; i++) {
-                            const rt = `RT${String(i).padStart(3, '0')}`;
-                            const option = document.createElement('option');
-                            option.value = rt;
-                            option.textContent = rt;
-                            rtSelect.appendChild(option);
-                        }
-                    }
+                // Trigger on page load
+                handleRoleChange();
+            });
+
+            // ✅ HELPER: Log RT Mapping to Console (for debugging)
+            function debugRtMapping() {
+                console.log('=== RT MAPPING DEBUG ===');
+                console.log('Full RT Mapping:', POSYANDU_RT_MAPPING);
+
+                Object.keys(POSYANDU_RT_MAPPING).forEach(rw => {
+                    console.log(`${rw}:`, POSYANDU_RT_MAPPING[rw]);
                 });
 
-                roleSelect.addEventListener('change', toggleRwRtFields);
-                posyanduSelect.addEventListener('change', fetchRwRtOptions);
+                console.log('=======================');
+            }
 
-                toggleRwRtFields();
-            });
+            // Call debug function
+            debugRtMapping();
 
             document.addEventListener('DOMContentLoaded', function() {
                 const roleSelect = document.getElementById('role');
