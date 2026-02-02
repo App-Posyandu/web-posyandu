@@ -694,9 +694,12 @@ class AjuanController extends Controller
         $user = Auth::user();
         $targetUser = $ajuan->user;
 
-        if ($user->role === 'ketua-posyandu') {
+        if ($user->role === 'ketua-timpembina-posyandu') {
+            // Ketua Tim Pembina Posyandu can verify any submission
+            // No additional authorization needed for step 3
+        } elseif ($user->role === 'ketua-posyandu') {
             if ($ajuan->user->posyandu_id !== $user->posyandu_id) {
-                abort(403, 'Ketua Kader hanya bisa takeover pengajuan di Posyandunya sendiri.');
+                abort(403, 'Ketua Posyandu hanya bisa takeover pengajuan di Posyandunya sendiri.');
             }
         } else {
             $this->authorize('verify', $ajuan);
@@ -706,23 +709,18 @@ class AjuanController extends Controller
         $statusHistory = '';
         $catatanHistory = $request->catatan;
 
-        if ($user->role === 'kader') {
+        if (in_array($user->role, ['kader', 'ketua-posyandu'])) {
 
             if ($step == 1) {
                 $keputusan = $request->input('keputusan');
 
                 $request->validate([
                     'keputusan' => 'required|in:lanjut,revisi,tolak',
+                    'catatan' => 'required|string|min:10',
+                ], [
+                    'catatan.required' => 'Catatan wajib diisi.',
+                    'catatan.min' => 'Catatan minimal 10 karakter.',
                 ]);
-
-                if (in_array($keputusan, ['revisi', 'tolak'])) {
-                    $request->validate([
-                        'catatan' => 'required|string|min:10',
-                    ], [
-                        'catatan.required' => 'Catatan wajib diisi jika memilih revisi atau tolak.',
-                        'catatan.min' => 'Catatan minimal 10 karakter.',
-                    ]);
-                }
 
                 if ($keputusan === 'tolak') {
                     $ajuan->update([
@@ -856,32 +854,41 @@ class AjuanController extends Controller
             }
         }
 
-        if ($user->role === 'ketua-posyandu') {
+        // Step 3: Ketua Tim Pembina Posyandu Approval
+        if ($user->role === 'ketua-timpembina-posyandu') {
             if ($step == 3) {
                 $request->validate([
-                    'keputusan' => 'required|in:ditindaklanjuti,tidak-ditindaklanjuti',
-                    'catatan' => 'nullable|string|min:15|required_if:keputusan,tidak-ditindaklanjuti',
+                    'keputusan' => 'required|in:diajukan,tidak-diajukan',
+                    'catatan' => 'required|string|min:15',
                 ], [
                     'keputusan.required' => 'Keputusan harus dipilih.',
-                    'catatan.required_if' => 'Catatan wajib diisi jika menolak.',
+                    'catatan.required' => 'Catatan wajib diisi.',
+                    'catatan.min' => 'Catatan minimal 15 karakter.',
                 ]);
 
-                if ($request->keputusan === 'ditindaklanjuti') {
+                if ($request->keputusan === 'diajukan') {
                     $ajuan->update([
-                        'status_pengajuan' => 'Sesuai',
+                        'status_pengajuan' => 'Diproses',
+                        'approved_by_timpembina' => true,
+                        'approved_by_timpembina_id' => $user->id,
+                        'approved_by_timpembina_at' => now(),
+                        // Langsung submit ke desa saat ketua tim pembina approve
+                        'submitted_to_desa' => true,
+                        'submitted_to_desa_at' => now(),
+                        // Legacy support
                         'approved_by_ketua' => true,
                         'approved_by_ketua_id' => $user->id,
                         'approved_by_ketua_at' => now(),
                     ]);
 
-                    $statusHistory = 'Disetujui Ketua Posyandu';
-                    $catatanHistory = $request->catatan ?? 'Pengajuan disetujui dan siap diajukan ke Pemdes.';
+                    $statusHistory = 'Disetujui Ketua Tim Pembina Posyandu';
+                    $catatanHistory = $request->catatan ?? 'Pengajuan disetujui dan diteruskan ke Pemdes.';
                 } else {
                     $ajuan->update([
                         'status_pengajuan' => 'Ditolak',
                     ]);
 
-                    $statusHistory = 'Ditolak Ketua Posyandu';
+                    $statusHistory = 'Ditolak Ketua Tim Pembina Posyandu';
                     $catatanHistory = $request->catatan;
                 }
 
@@ -890,7 +897,7 @@ class AjuanController extends Controller
                     'status' => $statusHistory,
                     'catatan' => $catatanHistory,
                     'diubah_oleh' => $user->id,
-                    'action_by_role' => 'ketua-posyandu',
+                    'action_by_role' => 'ketua-timpembina-posyandu',
                     'created_at' => now(),
                 ]);
 
@@ -907,16 +914,17 @@ class AjuanController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role !== 'ketua-posyandu') {
+        if ($user->role !== 'ketua-timpembina-posyandu') {
             abort(403);
         }
 
-        if ($ajuan->status_pengajuan !== 'Sesuai') {
+        if (!$ajuan->approved_by_timpembina || $ajuan->status_pengajuan !== 'Diproses') {
             return redirect()->back()->with('error', 'Pengajuan belum siap dikirim ke Pemdes.');
         }
 
         $ajuan->update([
-            'status_pengajuan' => 'Diajukan ke Desa',
+            'submitted_to_desa' => true,
+            'submitted_to_desa_at' => now(),
         ]);
 
         History::create([
@@ -924,7 +932,7 @@ class AjuanController extends Controller
             'status' => 'Diajukan ke Pemdes',
             'catatan' => 'Pengajuan diteruskan ke Kepala Desa untuk persetujuan akhir.',
             'diubah_oleh' => $user->id,
-            'action_by_role' => 'ketua-posyandu',
+            'action_by_role' => 'ketua-timpembina-posyandu',
             'created_at' => now(),
         ]);
 
@@ -940,14 +948,15 @@ class AjuanController extends Controller
         }
 
         $request->validate([
-            'keputusan' => 'required|in:diajukan,tidak-diajukan',
+            'keputusan' => 'required|in:ditindaklanjuti,tidak-ditindaklanjuti',
             'tindak_lanjut' => 'nullable|string|min:15',
-            'catatan' => 'nullable|string|required_if:keputusan,tidak-diajukan',
+            'catatan' => 'required|string|min:10',
         ], [
-            'catatan.required_if' => 'Catatan wajib diisi jika menolak.',
+            'catatan.required' => 'Catatan wajib diisi.',
+            'catatan.min' => 'Catatan minimal 10 karakter.',
         ]);
 
-        if ($request->keputusan === 'diajukan') {
+        if ($request->keputusan === 'ditindaklanjuti') {
             $ajuan->update([
                 'status_pengajuan' => 'Disetujui',
                 'approved_by_kades' => true,

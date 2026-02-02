@@ -99,13 +99,7 @@
                                     <i class="bi bi-x-circle-fill mr-1"></i>
                                     Ditolak
                                 </span>
-                            @elseif ($ajuan->status_pengajuan == 'Sesuai')
-                                <span
-                                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                    <i class="bi bi-check-circle mr-1"></i>
-                                    Sesuai
-                                </span>
-                            @elseif ($ajuan->status_pengajuan == 'Diajukan ke Desa')
+                            @elseif ($ajuan->submitted_to_desa)
                                 <span
                                     class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                                     <i class="bi bi-send-fill mr-1"></i>

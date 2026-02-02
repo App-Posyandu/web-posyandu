@@ -70,7 +70,7 @@
                             $steps = [
                                 ['name' => 'Verifikasi', 'completed' => $ajuan->sudah_verifikasi],
                                 ['name' => 'Kunjungan', 'completed' => $ajuan->kunjungan_lapangan],
-                                ['name' => 'Ketua Posyandu', 'completed' => $ajuan->approved_by_ketua],
+                                ['name' => 'Ketua Tim Pembina Posyandu', 'completed' => $ajuan->approved_by_timpembina],
                                 ['name' => 'Kepala Desa', 'completed' => $ajuan->approved_by_kades],
                             ];
                         @endphp
@@ -265,10 +265,7 @@
                             @elseif ($ajuan->status_pengajuan == 'Ditolak')
                                 <span
                                     class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Ditolak</span>
-                            @elseif ($ajuan->status_pengajuan == 'Sesuai')
-                                <span
-                                    class="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Sesuai</span>
-                            @elseif ($ajuan->status_pengajuan == 'Diajukan ke Desa')
+                            @elseif ($ajuan->submitted_to_desa)
                                 <span
                                     class="px-3 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">Diajukan
                                     ke Desa</span>
@@ -573,10 +570,10 @@
 
                                     <div class="mt-4">
                                         <label for="catatan_step1"
-                                            class="block font-medium text-sm text-gray-700 mb-2">Catatan</label>
+                                            class="block font-medium text-sm text-gray-700 mb-2">Catatan (Wajib)</label>
                                         <textarea id="catatan_step1" name="catatan" rows="3" {{ $ajuan->sudah_verifikasi ? 'disabled' : '' }}
                                             class="block w-full border-gray-300 rounded-md shadow-sm"
-                                            placeholder="Berikan catatan jika ada revisi atau penolakan...">{{ $step1History?->catatan }}</textarea>
+                                            placeholder="Berikan catatan verifikasi... (Wajib diisi)">{{ $step1History?->catatan }}</textarea>
                                         @error('catatan')
                                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                         @enderror
@@ -688,10 +685,10 @@
                         @endif
                     </div>
 
-                    @if ($ajuan->kunjungan_lapangan && !$ajuan->approved_by_ketua)
+                    @if ($ajuan->kunjungan_lapangan && !$ajuan->approved_by_timpembina)
                         <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4">
                             <p class="text-sm text-yellow-800">
-                                Kunjungan lapangan telah selesai. Menunggu persetujuan dari <strong>Ketua Posyandu</strong>.
+                                Kunjungan lapangan telah selesai. Menunggu persetujuan dari <strong>Ketua Tim Pembina Posyandu</strong>.
                             </p>
                         </div>
                     @endif
@@ -699,10 +696,10 @@
             </div>
         @endif
 
-        @if (auth()->user()->role === 'ketua-posyandu' && $ajuan->kunjungan_lapangan && !$ajuan->approved_by_ketua)
+        @if (auth()->user()->role === 'ketua-timpembina-posyandu' && $ajuan->kunjungan_lapangan && !$ajuan->approved_by_timpembina)
             <div class="w-full mx-8">
                 <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-4 md:p-8 mx-0 md:mx-8">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Persetujuan Ketua Posyandu</h2>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Persetujuan Ketua Tim Pembina Posyandu</h2>
 
                     <form method="POST" action="{{ route('ajuan.verify', $ajuan) }}" id="form-keputusan-ketua">
                         @csrf
@@ -720,15 +717,16 @@
                             <select name="keputusan" id="keputusan_step3" required
                                 class="block w-full border-gray-300 rounded-md shadow-sm">
                                 <option value="">Pilih Keputusan</option>
-                                <option value="ditindaklanjuti">Ditindaklanjuti (Lanjutkan ke Pemdes)</option>
-                                <option value="tidak-ditindaklanjuti">Tidak Ditindaklanjuti</option>
+                                <option value="diajukan">Diajukan (Lanjutkan ke Pemdes)</option>
+                                <option value="tidak-diajukan">Tidak Diajukan</option>
                             </select>
                         </div>
 
                         <div class="mb-6">
-                            <label class="block font-medium text-sm text-gray-700 mb-2">Catatan</label>
+                            <label class="block font-medium text-sm text-gray-700 mb-2">Catatan (Wajib)</label>
                             <textarea id="catatan_step3" name="catatan" rows="4"
-                                class="block w-full border-gray-300 rounded-md shadow-sm"></textarea>
+                                class="block w-full border-gray-300 rounded-md shadow-sm"
+                                placeholder="Berikan catatan keputusan... (Wajib diisi)"></textarea>
                         </div>
 
                         <div class="flex justify-end">
@@ -742,7 +740,7 @@
             </div>
         @endif
 
-        @if (auth()->user()->role === 'ketua-posyandu' && $ajuan->status_pengajuan === 'Sesuai')
+        @if (auth()->user()->role === 'ketua-timpembina-posyandu' && $ajuan->approved_by_timpembina && !$ajuan->submitted_to_desa)
             <div class="w-full mx-8">
                 <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-4 md:p-8 mx-0 md:mx-8">
                     <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Kirim ke Pemdes</h2>
@@ -770,7 +768,7 @@
             </div>
         @endif
 
-        @if (auth()->user()->role === 'kades' && $ajuan->status_pengajuan === 'Diajukan ke Desa')
+        @if (auth()->user()->role === 'kades' && $ajuan->submitted_to_desa && $ajuan->status_pengajuan === 'Diproses')
             <div class="w-full mx-8">
                 <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-4 md:p-8 mx-0 md:mx-8">
                     <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Persetujuan Kepala Desa</h2>
@@ -788,8 +786,8 @@
                             <select name="keputusan" id="keputusan_kades" required
                                 class="block w-full border-gray-300 rounded-md shadow-sm">
                                 <option value="">Pilih Keputusan</option>
-                                <option value="diajukan">Diajukan (Lanjutkan ke Pemdes)</option>
-                                <option value="tidak-diajukan">Tidak Diajukan</option>
+                                <option value="ditindaklanjuti">Ditindaklanjuti</option>
+                                <option value="tidak-ditindaklanjuti">Tidak Ditindaklanjuti</option>
                             </select>
                         </div>
 
@@ -805,16 +803,16 @@
                         </div>
 
                         <div class="mb-6">
-                            <label class="block font-medium text-sm text-gray-700 mb-2">Catatan (Opsional)</label>
+                            <label class="block font-medium text-sm text-gray-700 mb-2">Catatan (Wajib)</label>
                             <textarea name="catatan" id="catatan_kades" rows="4"
-                                class="block w-full border-gray-300 rounded-md shadow-sm"></textarea>
+                                class="block w-full border-gray-300 rounded-md shadow-sm"
+                                placeholder="Berikan catatan untuk keputusan ini..."></textarea>
+                            @error('catatan')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
                         </div>
 
                         <div class="flex justify-end gap-2">
-                            <a href="/ajuan/cetak/{{ $ajuan->id }}" target="_blank"
-                                class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-                                <i class="bi bi-printer-fill mr-2"></i> Cetak
-                            </a>
                             <button type="submit" id="submit-kades"
                                 class="px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700">
                                 Simpan Keputusan Akhir
@@ -848,25 +846,11 @@
                             return;
                         }
 
-                        if(!catatan.trim() && (keputusan === 'revisi' || keputusan === 'tolak')) {
+                        if(!catatan.trim()) {
                             Swal.fire({
                                 icon: 'warning',
                                 title: 'Catatan Diperlukan!',
-                                text: 'Silakan berikan catatan untuk keputusan ' + (keputusan ===
-                                    'revisi' ? 'revisi' : 'tolak') + '.',
-                                confirmButtonColor: '#dc2626'
-                            });
-                            return;
-                        }
-
-                        if ((keputusan === 'revisi' || keputusan === 'tidak-ditindaklanjuti' || keputusan ===
-                                'tidak-diajukan') && !catatan.trim()) {
-                            Swal.fire({
-                                icon: 'warning',
-                                title: 'Catatan Diperlukan!',
-                                text: 'Silakan berikan catatan untuk keputusan ' + (keputusan ===
-                                    'revisi' ? 'revisi' : keputusan === 'tidak-ditindaklanjuti' ?
-                                    'tidak-ditindaklanjuti' : 'tidak-diajukan') + '.',
+                                text: 'Catatan wajib diisi untuk semua keputusan.',
                                 confirmButtonColor: '#dc2626'
                             });
                             return;
@@ -992,14 +976,11 @@
                             return;
                         }
 
-                        if ((keputusan === 'revisi' || keputusan === 'tidak-ditindaklanjuti' || keputusan ===
-                                'tidak-diajukan') && !catatan.trim()) {
+                        if (!catatan.trim()) {
                             Swal.fire({
                                 icon: 'warning',
                                 title: 'Catatan Diperlukan!',
-                                text: 'Silakan berikan catatan untuk keputusan ' + (keputusan ===
-                                    'revisi' ? 'revisi' : keputusan === 'tidak-ditindaklanjuti' ?
-                                    'tidak ditindaklanjuti' : 'tidak diajukan') + '.',
+                                text: 'Catatan wajib diisi untuk semua keputusan.',
                                 confirmButtonColor: '#dc2626'
                             });
                             return;
@@ -1007,16 +988,16 @@
 
                         let title, text, icon, confirmButtonText;
 
-                        if (keputusan === 'ditindaklanjuti') {
-                            title = 'Tidak lanjuti Pengajuan?';
-                            text = 'Pengajuan akan ditindaklanjuti dan dilanjutkan ke pemdes.';
+                        if (keputusan === 'diajukan') {
+                            title = 'Ajukan Pengajuan?';
+                            text = 'Pengajuan akan diajukan dan dilanjutkan ke Kepala Desa.';
                             icon = 'info';
-                            confirmButtonText = 'Ya, Lanjutkan';
-                        } else if (keputusan === 'tidak-ditindaklanjuti') {
-                            title = 'Tidak ditindaklanjuti Pengajuan?';
+                            confirmButtonText = 'Ya, Ajukan';
+                        } else if (keputusan === 'tidak-diajukan') {
+                            title = 'Tidak Ajukan Pengajuan?';
                             text = 'Pengajuan akan ditolak. Tindakan ini tidak dapat dibatalkan.';
                             icon = 'warning';
-                            confirmButtonText = 'Ya, Tidak Ditindaklanjuti';
+                            confirmButtonText = 'Ya, Tidak Diajukan';
                         }
 
                         Swal.fire({
@@ -1122,14 +1103,11 @@
                             return;
                         }
 
-                        if ((keputusan === 'revisi' || keputusan === 'tidak-ditindaklanjuti' || keputusan ===
-                                'tidak-diajukan') && !catatan.trim()) {
+                        if (!catatan.trim()) {
                             Swal.fire({
                                 icon: 'warning',
                                 title: 'Catatan Diperlukan!',
-                                text: 'Silakan berikan catatan untuk keputusan ' + (keputusan ===
-                                    'revisi' ? 'revisi' : keputusan === 'tidak-ditindaklanjuti' ?
-                                    'tidak-ditindaklanjuti' : 'tidak-diajukan') + '.',
+                                text: 'Catatan wajib diisi untuk semua keputusan.',
                                 confirmButtonColor: '#dc2626'
                             });
                             return;
@@ -1137,16 +1115,16 @@
 
                         let title, text, icon, confirmButtonText;
 
-                        if (keputusan === 'diajukan') {
-                            title = 'Ajukan Pengajuan?';
-                            text = 'Pengajuan akan diajukan dan disetujui.';
+                        if (keputusan === 'ditindaklanjuti') {
+                            title = 'Tindak Lanjuti Pengajuan?';
+                            text = 'Pengajuan akan ditindaklanjuti dan disetujui.';
                             icon = 'info';
-                            confirmButtonText = 'Ya, Lanjutkan';
-                        } else if (keputusan === 'tidak-diajukan') {
-                            title = 'Tidak ajukan Pengajuan?';
+                            confirmButtonText = 'Ya, Tindak Lanjuti';
+                        } else if (keputusan === 'tidak-ditindaklanjuti') {
+                            title = 'Tidak Tindak Lanjuti Pengajuan?';
                             text = 'Pengajuan akan ditolak. Tindakan ini tidak dapat dibatalkan.';
                             icon = 'warning';
-                            confirmButtonText = 'Ya, Tidak diajukan';
+                            confirmButtonText = 'Ya, Tidak Ditindaklanjuti';
                         }
 
                         Swal.fire({

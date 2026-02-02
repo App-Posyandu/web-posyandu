@@ -223,19 +223,12 @@
                                         <i class="bi bi-eye-fill mr-1"></i> Detail
                                     </a>
 
-<<<<<<< HEAD
                                     @if ($currentUser->role === 'kader' && $user->role === 'masyarakat' && $user->no_telepon)
                                         <a href="{{ $this->generateWhatsAppLink($user) }}" target="_blank"
                                             class="px-3 py-1 bg-green-500 text-white rounded-md text-xs text-center hover:bg-green-600 transition-colors duration-150">
                                             <i class="bi bi-whatsapp mr-1"></i> Kirim WA
                                         </a>
                                     @endif
-=======
-                                    <a href="{{ $this->getWhatsAppLink($user->id) }}" target="_blank"
-                                        class="px-3 py-1 bg-green-500 text-white rounded-md text-xs text-center hover:bg-green-600 transition-colors">
-                                        <i class="bi bi-whatsapp mr-1"></i> WA Login
-                                    </a>
->>>>>>> cc1c49af8c215191eb7e881f308dd4656871174f
 
                                     @if ($currentUser->role === 'admin')
                                         <a href="{{ route('admin.users.edit', $user) }}"

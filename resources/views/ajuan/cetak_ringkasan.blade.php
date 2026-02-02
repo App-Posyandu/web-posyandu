@@ -367,9 +367,9 @@
             <p><strong>Kota Kebumen, </strong>
                 {{ \Carbon\Carbon::parse($ajuan->tanggal_permohonan ?? $ajuan->created_at)->format('d F Y') }}
             </p>
-            @if ($ajuan->approved_by_ketua_at)
-                <p><strong>Tanggal Persetujuan Ketua: </strong>
-                    {{ \Carbon\Carbon::parse($ajuan->approved_by_ketua_at)->format('d F Y') }}
+            @if ($ajuan->approved_by_timpembina_at)
+                <p><strong>Tanggal Persetujuan Ketua Tim Pembina Posyandu: </strong>
+                    {{ \Carbon\Carbon::parse($ajuan->approved_by_timpembina_at)->format('d F Y') }}
                 </p>
             @endif
             @if ($ajuan->approved_by_kades_at)
@@ -381,12 +381,12 @@
 
         <table class="signature-table">
             <tr class="signature-content">
-                <td>Ketua Posyandu</td>
+                <td>Ketua Tim Pembina Posyandu</td>
                 <td>Pemohon Layanan</td>
             </tr>
             <tr class="signature-content">
                 <td>
-                    @if ($ajuan->approved_by_ketua)
+                    @if ($ajuan->approved_by_timpembina)
                         @if ($checkBase64)
                             <img src="{{ $checkBase64 }}" alt="Approved" class="check">
                         @endif
@@ -400,8 +400,8 @@
             </tr>
             <tr class="signature-content">
                 <td>
-                    @if ($ajuan->approved_by_ketua)
-                        {{ $ajuan->ketuaPosyandu?->name ?? 'Ketua Posyandu' }}
+                    @if ($ajuan->approved_by_timpembina)
+                        {{ $ajuan->ketuaTimpembina?->name ?? 'Ketua Tim Pembina Posyandu' }}
                     @else
                         (...........................)
                     @endif

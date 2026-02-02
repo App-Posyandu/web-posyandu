@@ -65,10 +65,10 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
                 $query->where(function ($q) {
                     $q->where(function ($subQ) {
                         $subQ->where('kunjungan_lapangan', true)
-                            ->where('approved_by_ketua', false)
+                            ->where('approved_by_timpembina', false)
                             ->where('status_pengajuan', 'Diproses');
                     })
-                    ->orWhere('status_pengajuan', 'Sesuai')
+                    ->orWhere('approved_by_timpembina', true)
                     ->orWhereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
                 });
                 break;
@@ -79,7 +79,10 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
                     $userDesa = $this->user->desa;
                     $query->whereHas('user', fn($q) => $q->where('desa', $userDesa));
                 }
-                $query->whereIn('status_pengajuan', ['Diajukan ke Desa', 'Disetujui', 'Ditolak']);
+                $query->where(function ($q) {
+                    $q->where('submitted_to_desa', true)
+                        ->orWhereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
+                });
                 break;
 
             case 'admin-kecamatan':

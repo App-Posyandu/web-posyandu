@@ -153,11 +153,8 @@ class DashboardController extends Controller
 
                 if (!$showArchived) {
                     $listQuery->where(function ($q) {
-                        $q->where(function ($subQ) {
-                            $subQ->where('kunjungan_lapangan', true)
-                                ->where('approved_by_ketua', false)
-                                ->where('status_pengajuan', 'Diproses');
-                        })->orWhere('status_pengajuan', 'Sesuai');
+                        $q->where('status_pengajuan', 'Diproses')
+                            ->orWhere('submitted_to_desa', true);
                     });
                 } else {
                     $listQuery->whereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
@@ -179,14 +176,15 @@ class DashboardController extends Controller
                 }
 
                 if (!$showArchived) {
-                    $listQuery->where('status_pengajuan', 'Diajukan ke Desa');
+                    $listQuery->where('submitted_to_desa', true)
+                        ->where('status_pengajuan', 'Diproses');
                 } else {
                     $listQuery->whereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
                 }
                 break;
 
             case 'ketua-timpembina-posyandu':
-                // Ketua Tim Pembina Posyandu tidak lagi di alur tahap 3
+                // Ketua Tim Pembina Posyandu - tahap 3 approval
                 if ($user->posyandu_id) {
                     $listQuery->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
                     $statsQuery->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
@@ -199,8 +197,16 @@ class DashboardController extends Controller
                     $desasQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
                 }
 
-                // Tidak ada pengajuan yang perlu ditindaklanjuti oleh Ketua Tim Pembina
-                $listQuery->whereRaw('1 = 0');
+                if (!$showArchived) {
+                    // Aktif: pengajuan yang menunggu persetujuan (kunjungan selesai, belum di-approve)
+                    $listQuery->where('kunjungan_lapangan', true)
+                        ->where('approved_by_timpembina', false)
+                        ->where('status_pengajuan', 'Diproses');
+                } else {
+                    // Arsip: WAJIB approved_by_timpembina DAN submitted_to_desa = true
+                    $listQuery->where('approved_by_timpembina', true)
+                        ->where('submitted_to_desa', true);
+                }
                 break;
 
             case 'admin':

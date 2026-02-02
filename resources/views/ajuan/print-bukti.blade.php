@@ -89,13 +89,26 @@
                         </div>
                         <div>
                             <p class="text-sm text-gray-600 mb-1">Status Saat Ini:</p>
-                            <span
-                                class="inline-block px-3 py-1 rounded-full text-sm font-semibold
-                                @if ($pengajuan->status_pengajuan === 'Disetujui') bg-green-100 text-green-800
-                                @elseif($pengajuan->status_pengajuan === 'Ditolak') bg-red-100 text-red-800
-                                @elseif(in_array($pengajuan->status_pengajuan, ['Sesuai', 'Diajukan ke Desa'])) bg-blue-100 text-blue-800
-                                @else bg-yellow-100 text-yellow-800 @endif">
-                                {{ $pengajuan->status_pengajuan }}
+                            @php
+                                if ($pengajuan->status_pengajuan === 'Disetujui') {
+                                    $statusClass = 'bg-green-100 text-green-800';
+                                    $statusText = 'Disetujui';
+                                } elseif ($pengajuan->status_pengajuan === 'Ditolak') {
+                                    $statusClass = 'bg-red-100 text-red-800';
+                                    $statusText = 'Ditolak';
+                                } elseif ($pengajuan->submitted_to_desa) {
+                                    $statusClass = 'bg-purple-100 text-purple-800';
+                                    $statusText = 'Diajukan ke Desa';
+                                } elseif ($pengajuan->approved_by_timpembina) {
+                                    $statusClass = 'bg-blue-100 text-blue-800';
+                                    $statusText = 'Disetujui Tim Pembina';
+                                } else {
+                                    $statusClass = 'bg-yellow-100 text-yellow-800';
+                                    $statusText = 'Diproses';
+                                }
+                            @endphp
+                            <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold {{ $statusClass }}">
+                                {{ $statusText }}
                             </span>
                         </div>
                     </div>

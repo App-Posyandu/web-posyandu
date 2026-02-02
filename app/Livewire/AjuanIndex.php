@@ -71,9 +71,21 @@ class AjuanIndex extends Component
 
         if ($this->showArchived) {
             switch ($user->role) {
+                case 'masyarakat':
+                    // Masyarakat lihat arsip: semua pengajuan milik sendiri yang sudah selesai
+                    $query->where('user_id', $user->id)
+                        ->whereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
+                    break;
                 case 'ketua-posyandu':
-                    $query->whereIn('status_pengajuan', ['Sesuai', 'Diajukan ke Desa', 'Disetujui', 'Ditolak'])
-                        ->where('approved_by_ketua', true);
+                    $query->where(function ($q) {
+                        $q->whereIn('status_pengajuan', ['Disetujui', 'Ditolak'])
+                            ->orWhere('submitted_to_desa', true);
+                    });
+                    break;
+                case 'ketua-timpembina-posyandu':
+                    // Arsip: WAJIB approved_by_timpembina DAN submitted_to_desa = true
+                    $query->where('approved_by_timpembina', true)
+                        ->where('submitted_to_desa', true);
                     break;
                 case 'kades':
                     $query->whereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
@@ -113,39 +125,33 @@ class AjuanIndex extends Component
                     break;
 
                 case 'ketua-timpembina-posyandu':
-                    // Ketua Tim Pembina Posyandu tidak lagi di alur tahap 3
-                    $query->whereRaw('1 = 0');
+                    // Menampilkan pengajuan yang menunggu persetujuan (kunjungan selesai, belum di-approve)
+                    $query->where('kunjungan_lapangan', true)
+                        ->where('approved_by_timpembina', false)
+                        ->where('status_pengajuan', 'Diproses');
                     break;
                 case 'ketua-posyandu':
                     if ($user->posyandu_id) {
-                        $query->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id))
+                        $query->whereHas('user', function ($q) use ($user) {
+                            $q->where('posyandu_id', $user->posyandu_id);
+                        })
                             ->where(function ($q) {
-                                $q->where(function ($subQ) {
-                                    $subQ->where('kunjungan_lapangan', true)
-                                        ->where('approved_by_ketua', false)
-                                        ->where('status_pengajuan', 'Diproses');
-                                })
-                                    ->orWhere('status_pengajuan', 'Sesuai');
+                                $q->where('status_pengajuan', 'Diproses')
+                                    ->orWhere('submitted_to_desa', true);
                             });
-                    } elseif ($user->desa) {
-                        $query->whereHas('user', fn($q) => $q->where('desa', $user->desa))
-                            ->where(function ($q) {
-                                $q->where(function ($subQ) {
-                                    $subQ->where('kunjungan_lapangan', true)
-                                        ->where('approved_by_ketua', false)
-                                        ->where('status_pengajuan', 'Diproses');
-                                })
-                                    ->orWhere('status_pengajuan', 'Sesuai');
-                            });
+                    } else {
+                        $query->whereRaw('1 = 0');
                     }
                     break;
                 case 'kades':
                     if ($user->posyandu_id) {
                         $query->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id))
-                            ->where('status_pengajuan', 'Diajukan ke Desa');
+                            ->where('submitted_to_desa', true)
+                            ->where('status_pengajuan', 'Diproses');
                     } elseif ($user->desa) {
                         $query->whereHas('user', fn($q) => $q->where('desa', $user->desa))
-                            ->where('status_pengajuan', 'Diajukan ke Desa');
+                            ->where('submitted_to_desa', true)
+                            ->where('status_pengajuan', 'Diproses');
                     }
                     break;
 

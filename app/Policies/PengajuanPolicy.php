@@ -55,7 +55,8 @@ class PengajuanPolicy
         }
 
         if ($user->role === 'kades') {
-            return $pengajuan->status_pengajuan === 'Diajukan ke Desa';
+            return $pengajuan->submitted_to_desa === true
+                && $pengajuan->status_pengajuan === 'Diproses';
         }
 
         return false;

@@ -17,6 +17,7 @@ return new class extends Migration
             $table->enum('action_by_role', [
                 'kader',
                 'ketua-posyandu',
+                'ketua-timpembina-posyandu',
                 'kades',
                 'system'
             ])->nullable();

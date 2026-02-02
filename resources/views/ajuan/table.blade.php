@@ -53,12 +53,7 @@
                                     class="px-1 md:px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
                                     Ditolak
                                 </span>
-                            @elseif ($ajuan->status_pengajuan == 'Sesuai')
-                                <span
-                                    class="px-1 md:px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                                    Sesuai
-                                </span>
-                            @elseif ($ajuan->status_pengajuan == 'Diajukan ke Desa')
+                            @elseif ($ajuan->submitted_to_desa)
                                 <span
                                     class="px-1 md:px-3 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
                                     Diajukan ke Desa
@@ -167,36 +162,52 @@
                             <i class="bi bi-printer-fill mr-1"></i> Cetak
                         </a>
                         @if (auth()->user()->role === 'ketua-posyandu' && $ajuan->status_pengajuan === 'Diproses')
-                            <a href="{{ route('ajuan.show', $ajuan) }}"
-                                class="px-3 py-1 bg-orange-500 text-white rounded-md text-xs hover:bg-orange-600 transition">
-                                <i class="bi bi-shield-shaded mr-1"></i> Takeover & Verifikasi
-                            </a>
+                            @if (!$ajuan->sudah_verifikasi)
+                                <a href="{{ route('ajuan.show', $ajuan) }}"
+                                    class="px-3 py-1 bg-orange-500 text-white rounded-md text-xs hover:bg-orange-600 transition">
+                                    <i class="bi bi-shield-shaded mr-1"></i> Takeover & Verifikasi
+                                </a>
+                            @elseif (!$ajuan->kunjungan_lapangan)
+                                <a href="{{ route('ajuan.show', $ajuan) }}"
+                                    class="px-3 py-1 bg-purple-500 text-white rounded-md text-xs hover:bg-purple-600 transition">
+                                    <i class="bi bi-arrow-right-circle-fill mr-1"></i> Tindak Lanjut
+                                </a>
+                            @else
+                                <a href="{{ route('ajuan.show', $ajuan) }}"
+                                    class="flex items-center px-3 py-1 bg-blue-500 text-white rounded-md text-xs hover:bg-blue-600">
+                                    <i class="bi bi-eye-fill mr-1"></i> Detail
+                                </a>
+                            @endif
+                        @elseif (auth()->user()->role === 'ketua-timpembina-posyandu' && $ajuan->status_pengajuan === 'Diproses')
+                            @if (!$ajuan->approved_by_timpembina)
+                                <a href="{{ route('ajuan.show', $ajuan) }}"
+                                    class="px-3 py-1 bg-purple-500 text-white rounded-md text-xs hover:bg-purple-600 transition">
+                                    <i class="bi bi-arrow-right-circle-fill mr-1"></i> Tindak Lanjut
+                                </a>
+                            @else
+                                <a href="{{ route('ajuan.show', $ajuan) }}"
+                                    class="flex items-center px-3 py-1 bg-blue-500 text-white rounded-md text-xs hover:bg-blue-600">
+                                    <i class="bi bi-eye-fill mr-1"></i> Detail
+                                </a>
+                            @endif
+                        @elseif (auth()->user()->role === 'kades' && $ajuan->submitted_to_desa)
+                            @if ($ajuan->status_pengajuan === 'Diproses')
+                                <a href="{{ route('ajuan.show', $ajuan) }}"
+                                    class="px-3 py-1 bg-purple-500 text-white rounded-md text-xs hover:bg-purple-600 transition">
+                                    <i class="bi bi-arrow-right-circle-fill mr-1"></i> Tindak Lanjut
+                                </a>
+                            @else
+                                <a href="{{ route('ajuan.show', $ajuan) }}"
+                                    class="flex items-center px-3 py-1 bg-blue-500 text-white rounded-md text-xs hover:bg-blue-600">
+                                    <i class="bi bi-eye-fill mr-1"></i> Detail
+                                </a>
+                            @endif
                         @else
                             <a href="{{ route('ajuan.show', $ajuan) }}"
                                 class="flex items-center px-3 py-1 bg-blue-500 text-white rounded-md text-xs hover:bg-blue-600">
                                 <i class="bi bi-eye-fill mr-1"></i> Detail
                             </a>
                         @endif
-                        <div class="flex items-center gap-2">
-                            <div class="relative" x-data="{ open: false }">
-                                <button @click="open = !open" class="text-gray-600 hover:text-gray-900">
-                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                        <path
-                                            d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z">
-                                        </path>
-                                    </svg>
-                                </button>
-
-                                <div x-show="open" @click.away="open = false" x-transition
-                                    class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border"
-                                    style="display: none;">
-                                    <a href="{{ route('ajuan.cetak-dokumen', $ajuan->id) }}" target="_blank"
-                                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                        <i class="bi bi-files mr-2"></i> Cetak Dokumen
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
                     </td>
                 </tr>
             @empty
@@ -284,11 +295,7 @@
                             <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
                                 Ditolak
                             </span>
-                        @elseif ($ajuan->status_pengajuan == 'Sesuai')
-                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                                Sesuai
-                            </span>
-                        @elseif ($ajuan->status_pengajuan == 'Diajukan ke Desa')
+                        @elseif ($ajuan->submitted_to_desa)
                             <span class="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
                                 Diajukan ke Desa
                             </span>
@@ -323,11 +330,68 @@
             </div>
 
             <div class="bg-gray-50 px-4 py-3 border-t border-gray-200 flex gap-2">
-                <a href="{{ route('ajuan.show', $ajuan) }}"
-                    class="flex-1 flex items-center justify-center px-3 py-2 bg-blue-500 text-white rounded-md text-xs font-medium hover:bg-blue-600 transition-colors duration-150">
-                    <i class="bi bi-eye-fill mr-1"></i>
-                    Detail
-                </a>
+                @if (auth()->user()->role === 'ketua-posyandu' && $ajuan->status_pengajuan === 'Diproses')
+                    @if (!$ajuan->sudah_verifikasi)
+                        {{-- Step 1 belum selesai: Takeover & Verifikasi --}}
+                        <a href="{{ route('ajuan.show', $ajuan) }}"
+                            class="flex-1 flex items-center justify-center px-3 py-2 bg-orange-500 text-white rounded-md text-xs font-medium hover:bg-orange-600 transition-colors duration-150">
+                            <i class="bi bi-shield-shaded mr-1"></i>
+                            Takeover
+                        </a>
+                    @elseif (!$ajuan->kunjungan_lapangan)
+                        {{-- Step 1 selesai, Step 2 belum: Tindak Lanjut --}}
+                        <a href="{{ route('ajuan.show', $ajuan) }}"
+                            class="flex-1 flex items-center justify-center px-3 py-2 bg-purple-500 text-white rounded-md text-xs font-medium hover:bg-purple-600 transition-colors duration-150">
+                            <i class="bi bi-arrow-right-circle-fill mr-1"></i>
+                            Tindak Lanjut
+                        </a>
+                    @else
+                        {{-- Step 2 selesai: Detail --}}
+                        <a href="{{ route('ajuan.show', $ajuan) }}"
+                            class="flex-1 flex items-center justify-center px-3 py-2 bg-blue-500 text-white rounded-md text-xs font-medium hover:bg-blue-600 transition-colors duration-150">
+                            <i class="bi bi-eye-fill mr-1"></i>
+                            Detail
+                        </a>
+                    @endif
+                @elseif (auth()->user()->role === 'ketua-timpembina-posyandu' && $ajuan->status_pengajuan === 'Diproses')
+                    @if (!$ajuan->approved_by_timpembina)
+                        {{-- Step 3 belum selesai: Tindak Lanjut --}}
+                        <a href="{{ route('ajuan.show', $ajuan) }}"
+                            class="flex-1 flex items-center justify-center px-3 py-2 bg-purple-500 text-white rounded-md text-xs font-medium hover:bg-purple-600 transition-colors duration-150">
+                            <i class="bi bi-arrow-right-circle-fill mr-1"></i>
+                            Tindak Lanjut
+                        </a>
+                    @else
+                        {{-- Step 3 selesai (sudah submit ke desa): Detail --}}
+                        <a href="{{ route('ajuan.show', $ajuan) }}"
+                            class="flex-1 flex items-center justify-center px-3 py-2 bg-blue-500 text-white rounded-md text-xs font-medium hover:bg-blue-600 transition-colors duration-150">
+                            <i class="bi bi-eye-fill mr-1"></i>
+                            Detail
+                        </a>
+                    @endif
+                @elseif (auth()->user()->role === 'kades' && $ajuan->submitted_to_desa)
+                    @if ($ajuan->status_pengajuan === 'Diproses')
+                        {{-- Sudah diajukan ke desa, belum disetujui kades: Tindak Lanjut --}}
+                        <a href="{{ route('ajuan.show', $ajuan) }}"
+                            class="flex-1 flex items-center justify-center px-3 py-2 bg-purple-500 text-white rounded-md text-xs font-medium hover:bg-purple-600 transition-colors duration-150">
+                            <i class="bi bi-arrow-right-circle-fill mr-1"></i>
+                            Tindak Lanjut
+                        </a>
+                    @else
+                        {{-- Sudah disetujui/ditolak kades: Detail --}}
+                        <a href="{{ route('ajuan.show', $ajuan) }}"
+                            class="flex-1 flex items-center justify-center px-3 py-2 bg-blue-500 text-white rounded-md text-xs font-medium hover:bg-blue-600 transition-colors duration-150">
+                            <i class="bi bi-eye-fill mr-1"></i>
+                            Detail
+                        </a>
+                    @endif
+                @else
+                    <a href="{{ route('ajuan.show', $ajuan) }}"
+                        class="flex-1 flex items-center justify-center px-3 py-2 bg-blue-500 text-white rounded-md text-xs font-medium hover:bg-blue-600 transition-colors duration-150">
+                        <i class="bi bi-eye-fill mr-1"></i>
+                        Detail
+                    </a>
+                @endif
                 <a href="/ajuan/cetak/{{ $ajuan->id }}" target="_blank"
                     class="flex-1 flex items-center justify-center px-3 py-2 bg-green-500 text-white rounded-md text-xs font-medium hover:bg-green-600 transition-colors duration-150">
                     <i class="bi bi-printer-fill mr-1"></i>
