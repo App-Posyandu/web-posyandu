@@ -4,7 +4,6 @@ use App\Http\Controllers\AjuanController;
 use App\Http\Controllers\BukuSakuController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GoogleLoginController;
-use App\Http\Controllers\KecamatanController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PosyanduController;
@@ -378,7 +377,6 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::middleware(['role:kabid,admin-kecamatan,ketua-posyandu,ketua-timpembina-posyandu,operator-desa,admin-kabupaten,admin,kades,bu-kades'])->prefix('admin')->name('admin.')->group(function () {
-        Route::resource('kecamatan', KecamatanController::class);
 
         Route::middleware('role:admin,operator-desa')->group(function () {
             Route::get('posyandu/create', [PosyanduController::class, 'create'])->name('posyandu.create');

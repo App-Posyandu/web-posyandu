@@ -58,10 +58,6 @@
                                 <i class="bi bi-building mr-2"></i>
                                 {{ __('Posyandu') }}
                             </x-dropdown-link>
-                            <x-dropdown-link :href="route('admin.kecamatan.index')">
-                                <i class="bi bi-geo-alt mr-2"></i>
-                                {{ __('Kecamatan') }}
-                            </x-dropdown-link>
                         @endif
 
                         <x-dropdown-link :href="route('buku_saku.index')">
@@ -170,10 +166,6 @@
                     <a href="{{ route('admin.posyandu.index') }}"
                         class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-pink-500 transition duration-150 ease-in-out">
                         <i class="bi bi-building mr-2"></i> Posyandu
-                    </a>
-                    <a href="{{ route('admin.kecamatan.index') }}"
-                        class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-pink-500 transition duration-150 ease-in-out">
-                        <i class="bi bi-geo-alt mr-2"></i> Kecamatan
                     </a>
                 @endif
 
