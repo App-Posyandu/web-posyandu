@@ -59,7 +59,7 @@ class AjuanController extends Controller
             'status' => 'Revisi Diminta',
             'catatan' => $request->catatan,
             'diubah_oleh' => Auth::id(),
-            'action_by_role' => in_array(Auth::user()->role, ['kader', 'ketua-timpembina-posyandu', 'kades', 'ketua-posyandu'])
+            'action_by_role' => in_array(Auth::user()->role, ['kader', 'ketua-posyandu', 'kades', 'ketua-timpembina-posyandu'])
                 ? Auth::user()->role : null,
             'created_at' => now(),
         ]);
@@ -116,7 +116,6 @@ class AjuanController extends Controller
 
         $query = User::with(['posyandu'])
             ->where('role', 'masyarakat')
-            ->whereNotNull('verified_at')
             ->orderBy('name');
 
         if (in_array($user->role, ['kader', 'ketua-posyandu'])) {
@@ -695,7 +694,13 @@ class AjuanController extends Controller
         $user = Auth::user();
         $targetUser = $ajuan->user;
 
-        $this->authorize('verify', $ajuan);
+        if ($user->role === 'ketua-posyandu') {
+            if ($ajuan->user->posyandu_id !== $user->posyandu_id) {
+                abort(403, 'Ketua Kader hanya bisa takeover pengajuan di Posyandunya sendiri.');
+            }
+        } else {
+            $this->authorize('verify', $ajuan);
+        }
 
         $step = $request->input('verification_step');
         $statusHistory = '';
@@ -734,7 +739,7 @@ class AjuanController extends Controller
                         'status' => 'Ditolak - Posyandu Salah',
                         'catatan' => $request->catatan,
                         'diubah_oleh' => $user->id,
-                        'action_by_role' => 'kader',
+                        'action_by_role' => $user->role,
                         'created_at' => now(),
                     ]);
 
@@ -760,7 +765,7 @@ class AjuanController extends Controller
                         'status' => 'Revisi Diminta',
                         'catatan' => $request->catatan,
                         'diubah_oleh' => $user->id,
-                        'action_by_role' => 'kader',
+                        'action_by_role' => $user->role,
                         'created_at' => now(),
                     ]);
 
@@ -798,7 +803,7 @@ class AjuanController extends Controller
                         'status' => $statusHistory,
                         'catatan' => $catatanHistory,
                         'diubah_oleh' => $user->id,
-                        'action_by_role' => 'kader',
+                        'action_by_role' => $user->role,
                         'created_at' => now()
                     ]);
 
@@ -841,7 +846,7 @@ class AjuanController extends Controller
                     'status' => $statusHistory,
                     'catatan' => $catatanHistory,
                     'diubah_oleh' => $user->id,
-                    'action_by_role' => 'kader',
+                    'action_by_role' => $user->role,
                     'created_at' => now(),
                 ]);
 
@@ -973,7 +978,7 @@ class AjuanController extends Controller
     }
     public function cetak($id)
     {
-        $ajuan = Pengajuan::with(['user.posyandu', 'bidang', 'histories.diubahOleh', 'latestHistory.diubahOleh', 'ketuaPosyandu', 'kades'])->findOrFail($id);
+        $ajuan = Pengajuan::with(['user', 'bidang', 'histories.diubahOleh', 'latestHistory.diubahOleh'])->findOrFail($id);
 
         foreach (['verified_formulir_items', 'verified_administrasi_items', 'formulir_items', 'administrasi_items'] as $key) {
             if (is_string($ajuan->$key)) {
