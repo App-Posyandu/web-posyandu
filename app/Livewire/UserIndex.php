@@ -40,13 +40,8 @@ class UserIndex extends Component
     {
         $roleMap = [
             'kader' => ['masyarakat'],
-<<<<<<< HEAD
             'ketua-posyandu' => ['kader'],
-            'operator-desa' => ['ketua-posyandu', 'kader'],
-=======
-            'ketua-kader' => ['kader'],
-            'operator-desa' => ['ketua-kader', 'kader', 'masyarakat'],
->>>>>>> cc1c49af8c215191eb7e881f308dd4656871174f
+            'operator-desa' => ['ketua-posyandu', 'kader', 'masyarakat'],
             'admin-kecamatan' => [],
             'admin-kabupaten' => ['ketua-timpembina-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'bu-kades', 'operator-desa'],
             'admin' => ['admin-kabupaten', 'ketua-timpembina-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'bu-kades', 'ketua-posyandu', 'operator-desa', 'kader', 'masyarakat'],
@@ -55,7 +50,6 @@ class UserIndex extends Component
         return $roleMap[$role] ?? [];
     }
 
-<<<<<<< HEAD
     public function generateWhatsAppLink($user)
     {
         $currentUser = Auth::user();
@@ -87,37 +81,6 @@ class UserIndex extends Component
         $message .= "• Jangan bagikan password kepada siapapun\n\n";
         $message .= "Silakan login di: " . route('login') . "\n\n";
         $message .= "Terima kasih!";
-=======
-    public function getWhatsAppLink($userId)
-    {
-        $user = User::with(['posyandu', 'bidang'])->find($userId);
-        if (!$user) return '#';
-
-        $createdBy = Auth::user();
-
-        // Logika pesan yang sama dengan UserController
-        $roleNames = [
-            'kabid' => 'Kepala Bidang',
-            'ketua-kader' => 'Ketua Kader',
-            'admin-kecamatan' => 'Admin Kecamatan',
-        ];
-
-        $roleName = $roleNames[$user->role] ?? $user->role;
-        $posyandu = $user->posyandu ? $user->posyandu->nama_posyandu : '-';
-        $bidang = $user->bidang ? $user->bidang->nama_bidang : '-';
-
-        $message = "*Sistem Posyandu - Detail Login*\n\n";
-        $message .= "Halo *{$user->name}*,\n\n";
-        $message .= "Berikut adalah informasi akun Anda:\n";
-        $message .= "━━━━━━━━━━━━━━━━━━\n";
-        if ($user->email) $message .= "📧 Email: {$user->email}\n";
-        $message .= "Role: {$roleName}\n";
-        if ($user->role === 'kader' && $bidang !== '-') $message .= "Bidang: {$bidang}\n";
-        if ($posyandu !== '-') $message .= "Posyandu: {$posyandu}\n";
-        $message .= "━━━━━━━━━━━━━━━━━━\n\n";
-        $message .= "Silakan login di: " . route('login') . "\n";
-        $message .= "Jika lupa password, silakan hubungi admin.";
->>>>>>> cc1c49af8c215191eb7e881f308dd4656871174f
 
         $phone = preg_replace('/[^0-9]/', '', $user->no_telepon);
         if (substr($phone, 0, 1) === '0') {

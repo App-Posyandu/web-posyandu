@@ -346,7 +346,7 @@ class UserController extends Controller
                 'kader',
             ],
             'operator-desa' => [
-                'ketua-kader',
+                'ketua-posyandu',
                 'kader'
             ],
             'kader' => [

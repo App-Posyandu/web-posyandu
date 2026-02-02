@@ -1076,16 +1076,13 @@
                         kecamatanField.style.display = 'block';
                         // kecamatanSelect.required = true;
 
-<<<<<<< HEAD
                         if (currentUserRole === 'ketua-posyandu') {
                             const ketuaKaderPosyanduId = '{{ auth()->user()->posyandu_id }}';
                             posyanduSelect.value = ketuaKaderPosyanduId;
                             posyanduSelect.disabled = true;
                         }
-=======
                         desaField.style.display = 'block';
                         // desaSelect.required = true;
->>>>>>> cc1c49af8c215191eb7e881f308dd4656871174f
                     }
 
                     if (role === 'kader') {
@@ -1095,12 +1092,8 @@
                         if (currentUserRole === 'operator-desa') {
                             posyanduField.style.display = 'none';
                             posyanduSelect.required = false;
-<<<<<<< HEAD
                         }
                         else if (currentUserRole === 'ketua-posyandu') {
-=======
-                        } else if (currentUserRole === 'ketua-kader') {
->>>>>>> cc1c49af8c215191eb7e881f308dd4656871174f
                             posyanduField.style.display = 'none';
                             posyanduSelect.required = false;
                         } else {
@@ -1140,15 +1133,8 @@
                 'ketua-posyandu': ['kader'],
                 'operator-desa': ['ketua-posyandu', 'kader'],
                 'admin-kecamatan': [],
-<<<<<<< HEAD
                 'admin-kabupaten': ['ketua-timpembina-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'bu-kades', 'operator-desa'],
                 'admin': ['admin-kabupaten', 'ketua-timpembina-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'bu-kades', 'ketua-posyandu', 'operator-desa', 'kader', 'masyarakat']
-=======
-                'admin-kabupaten': ['ketua-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'operator-desa'],
-                'admin': ['admin-kabupaten', 'ketua-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'ketua-kader',
-                    'operator-desa', 'kader', 'masyarakat'
-                ]
->>>>>>> cc1c49af8c215191eb7e881f308dd4656871174f
             };
             const roleLabels = {
                 'masyarakat': 'Masyarakat',

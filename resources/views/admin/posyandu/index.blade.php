@@ -184,7 +184,7 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         @php
-                                            $ketua = $posyandu->users->where('role', 'ketua-kader')->first();
+                                            $ketua = $posyandu->users->where('role', 'ketua-posyandu')->first();
                                         @endphp
                                         @if ($ketua)
                                             <div class="text-sm text-gray-900 font-medium">{{ $ketua->name }}</div>

@@ -412,9 +412,8 @@
             if (auth()->user()->role === 'kader' && auth()->user()->bidang_id === $ajuan->bidang_id) {
                 $canVerify = true;
             }
-            // Tambahkan kondisi Takeover untuk Ketua Kader
             elseif (
-                auth()->user()->role === 'ketua-kader' &&
+                auth()->user()->role === 'ketua-posyandu' &&
                 auth()->user()->posyandu_id === $ajuan->user->posyandu_id
             ) {
                 $canVerify = true;

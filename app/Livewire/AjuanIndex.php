@@ -139,22 +139,6 @@ class AjuanIndex extends Component
                             });
                     }
                     break;
-<<<<<<< HEAD
-=======
-                case 'ketua-kader':
-                    if ($user->posyandu_id) {
-                        $query->whereHas('user', function ($q) use ($user) {
-                            $q->where('posyandu_id', $user->posyandu_id);
-                        })
-                            ->where(function ($q) {
-                                $q->where('status_pengajuan', 'Diproses')
-                                    ->orWhere('status_pengajuan', 'Diajukan ke Desa');
-                            });
-                    } else {
-                        $query->whereRaw('1 = 0');
-                    }
-                    break;
->>>>>>> cc1c49af8c215191eb7e881f308dd4656871174f
                 case 'kades':
                     if ($user->posyandu_id) {
                         $query->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id))

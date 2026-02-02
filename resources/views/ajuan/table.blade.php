@@ -166,7 +166,7 @@
                             class="flex items-center px-3 py-1 bg-green-500 text-white rounded-md text-xs hover:bg-green-600">
                             <i class="bi bi-printer-fill mr-1"></i> Cetak
                         </a>
-                        @if (auth()->user()->role === 'ketua-kader' && $ajuan->status_pengajuan === 'Diproses')
+                        @if (auth()->user()->role === 'ketua-posyandu' && $ajuan->status_pengajuan === 'Diproses')
                             <a href="{{ route('ajuan.show', $ajuan) }}"
                                 class="px-3 py-1 bg-orange-500 text-white rounded-md text-xs hover:bg-orange-600 transition">
                                 <i class="bi bi-shield-shaded mr-1"></i> Takeover & Verifikasi
