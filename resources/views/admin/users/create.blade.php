@@ -150,6 +150,7 @@
                                     <option value="bu-kades">Bu Kades</option>
                                     <option value="operator-desa">Operator Desa</option>
                                 @elseif ($currentUserRole === 'admin-kecamatan')
+
                                 @elseif ($currentUserRole === 'operator-desa')
                                     <option value="ketua-posyandu">Ketua Posyandu</option>
                                     <option value="kader">Kader</option>
@@ -185,7 +186,6 @@
                             <x-input-error :messages="$errors->get('jenis_wilayah')" class="mt-2" />
                         </div>
 
-                        <input type="hidden" id="kabupaten-hidden" name="kabupaten" value="">
 
                         <div id="kabupaten-field" style="display: none;" class="md:col-span-2">
                             <div x-data="kabupatenCombobox()" @click.away="open = false" x-init="$watch('selectedKabupaten', value => {
@@ -193,6 +193,7 @@
                             })"
                                 class="relative">
                                 <x-input-label for="kabupaten" :value="__('Pilih Kabupaten')" />
+                                <input type="hidden" id="kabupaten-hidden" name="kabupaten" :value="selectedKabupaten">
                                 <div class="relative">
                                     <input type="text" x-model="search" @focus="open = true" @input="open = true"
                                         :placeholder="getKabupatenName(selectedKabupaten) || 'Cari Kabupaten...'"
@@ -241,16 +242,16 @@
                         </div>
 
                         <div id="kecamatan-field" style="display: none;" class="md:col-span-2">
-                            <input type="hidden" name="kecamatan" id="kecamatan-hidden">
 
                             <div x-data="kecamatanCombobox()" @region-selected.window="fetchKecamatan($event.detail.code)"
                                 @click.away="open = false" class="relative">
 
                                 <x-input-label for="kecamatan" :value="__('Pilih Kecamatan')" />
+                                <input type="hidden" name="kecamatan" id="kecamatan-hidden" :value="selectedKecamatan">
 
                                 <div class="relative">
                                     <input type="text" x-model="search" @focus="open = true" @input="open = true"
-                                        :placeholder="selectedKecamatanName || 'Cari Kecamatan...'"
+                                        :placeholder="getKecamatanName(selectedKecamatan) || 'Cari Kecamatan...'"
                                         class="block mt-1 w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                         :disabled="loading" autocomplete="off">
 
@@ -274,11 +275,55 @@
                                         x-for="kec in kecamatanList.filter(k => (k.name || '').toLowerCase().includes(search.toLowerCase()))"
                                         :key="kec.id || kec.code">
                                         <div @click="selectKecamatan(kec)"
-                                            class="px-4 py-2 cursor-pointer hover:bg-indigo-50" x-text="kec.name"></div>
+                                            class="px-4 py-2 cursor-pointer hover:bg-indigo-50" x-text="kec.name">
+                                        </div>
                                     </template>
 
                                     <div x-show="kecamatanList.length === 0" class="px-4 py-2 text-gray-500 text-sm">
                                         Tidak ada data kecamatan / Silakan pilih Kabupaten dulu
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="desa-field" style="display: none;" class="md:col-span-2">
+
+                            <div x-data="desaCombobox()" @kecamatan-selected.window="fetchDesa($event.detail.code)"
+                                @click.away="open = false" class="relative">
+
+                                <x-input-label for="desa" :value="__('Pilih Desa')" />
+                                <input type="hidden" name="desa" id="desa-hidden" :value="selectedDesa">
+
+                                <div class="relative">
+                                    <input type="text" x-model="search" @focus="open = true" @input="open = true"
+                                        :placeholder="getDesaName(selectedDesa) || 'Cari Desa...'"
+                                        class="block mt-1 w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        :disabled="loading" autocomplete="off">
+
+                                    <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
+                                        <svg x-show="loading" class="animate-spin h-5 w-5 text-indigo-500"
+                                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10"
+                                                stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor"
+                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                            </path>
+                                        </svg>
+                                    </div>
+                                </div>
+
+                                <div x-show="open && !loading"
+                                    class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto"
+                                    style="display: none;">
+
+                                    <template
+                                        x-for="desa in desaList.filter(d => (d.name || '').toLowerCase().includes(search.toLowerCase()))"
+                                        :key="desa.id || desa.code">
+                                        <div @click="selectDesa(desa)" class="px-4 py-2 cursor-pointer hover:bg-indigo-50"
+                                            x-text="desa.name"></div>
+                                    </template>
+
+                                    <div x-show="desaList.length === 0" class="px-4 py-2 text-gray-500 text-sm">
+                                        Tidak ada data desa / Silakan pilih Kabupaten dulu
                                     </div>
                                 </div>
                             </div>
@@ -317,33 +362,132 @@
                             </p>
                         </div>
 
-                        <div id="rw-rt-fields" style="display: none;" class="md:col-span-2 space-y-4">
-                            <div>
-                                <x-input-label for="rw" :value="__('RW (Rukun Warga)')" />
-                                <span class="text-red-600">*</span>
-                                <select id="rw" name="rw"
-                                    class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                                    <option value="" disabled selected>Pilih RW</option>
-                                </select>
-                                <p class="text-xs text-gray-500 mt-1">
-                                    <i class="bi bi-info-circle text-blue-500"></i>
-                                    RW sesuai domisili user (Format: RW01, RW02, dst)
-                                </p>
-                                <x-input-error :messages="$errors->get('rw')" class="mt-2" />
-                            </div>
+                        <div id="rw-rt-fields" style="display: none;" class="md:col-span-2">
+                            <div
+                                class="p-6 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl">
+                                {{-- Info Banner --}}
+                                <div
+                                    class="flex items-start gap-3 mb-6 p-4 bg-white rounded-lg border-l-4 border-green-500 shadow-sm">
+                                    <div class="flex-shrink-0">
+                                        <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd"
+                                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                                                clip-rule="evenodd" />
+                                        </svg>
+                                    </div>
+                                    <div class="text-sm">
+                                        <p class="font-bold text-green-900 mb-1">Data Wilayah Otomatis</p>
+                                        <p class="text-green-800">
+                                            Data <strong>Kabupaten, Kecamatan, Desa, dan Posyandu</strong> sudah otomatis
+                                            diambil dari akun Kader.
+                                            Silakan pilih <strong>RW dan RT</strong> tempat tinggal masyarakat.
+                                        </p>
+                                    </div>
+                                </div>
 
-                            <div>
-                                <x-input-label for="rt" :value="__('RT (Rukun Tetangga)')" />
-                                <span class="text-gray-500 text-sm">(Opsional)</span>
-                                <select id="rt" name="rt"
-                                    class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                                    <option value="">-- Tidak ada/Tidak tahu --</option>
-                                </select>
-                                <p class="text-xs text-gray-500 mt-1">
-                                    <i class="bi bi-info-circle text-blue-500"></i>
-                                    RT jika diketahui (Format: RT001, RT002, dst)
-                                </p>
-                                <x-input-error :messages="$errors->get('rt')" class="mt-2" />
+                                {{-- Auto-filled Data Display --}}
+                                <div
+                                    class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 p-4 bg-white rounded-lg border border-green-200">
+                                    <div>
+                                        <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                                            Kabupaten</p>
+                                        <p class="text-sm font-bold text-gray-800">
+                                            {{ auth()->user()->kabupaten ?? 'Tidak Tersedia' }}
+                                        </p>
+                                    </div>
+
+                                    <div>
+                                        <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                                            Kecamatan</p>
+                                        <p class="text-sm font-bold text-gray-800">
+                                            {{ auth()->user()->kecamatan ?? 'Tidak Tersedia' }}
+                                        </p>
+                                    </div>
+
+                                    <div>
+                                        <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Desa
+                                        </p>
+                                        <p class="text-sm font-bold text-gray-800">
+                                            {{ auth()->user()->desa ?? 'Tidak Tersedia' }}
+                                        </p>
+                                    </div>
+
+                                    <div>
+                                        <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                                            Posyandu</p>
+                                        <p class="text-sm font-bold text-gray-800">
+                                            {{ auth()->user()->posyandu->nama_posyandu ?? 'Tidak Tersedia' }}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {{-- Hidden Inputs for Auto-fill Data --}}
+                                <input type="hidden" name="kabupaten" value="{{ auth()->user()->kabupaten }}">
+                                <input type="hidden" name="kabupaten_id" value="{{ auth()->user()->kabupaten_id }}">
+                                <input type="hidden" name="kecamatan" value="{{ auth()->user()->kecamatan }}">
+                                <input type="hidden" name="kecamatan_id" value="{{ auth()->user()->kecamatan_id }}">
+                                <input type="hidden" name="desa" value="{{ auth()->user()->desa }}">
+                                <input type="hidden" name="posyandu_id" value="{{ auth()->user()->posyandu_id }}">
+
+                                {{-- ✅ RW & RT Selection --}}
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {{-- RW Dropdown --}}
+                                    <div>
+                                        <x-input-label for="rw" class="font-semibold">
+                                            <span class="text-gray-700">RW (Rukun Warga)</span>
+                                            <span class="text-red-500">*</span>
+                                        </x-input-label>
+
+                                        <select id="rw" name="rw" required
+                                            onchange="handleRwChange(this.value)"
+                                            class="mt-1 block w-full border-2 border-gray-300 rounded-lg px-4 py-2.5 focus:border-green-500 focus:ring-2 focus:ring-green-200 transition">
+                                            <option value="">Pilih RW</option>
+                                            @if (auth()->user()->posyandu && auth()->user()->posyandu->rw_list)
+                                                @foreach (auth()->user()->posyandu->rw_list as $rw)
+                                                    <option value="{{ $rw }}"
+                                                        {{ old('rw') == $rw ? 'selected' : '' }}>
+                                                        {{ $rw }}
+                                                    </option>
+                                                @endforeach
+                                            @else
+                                                <option value="" disabled>Tidak ada RW tersedia</option>
+                                            @endif
+                                        </select>
+
+                                        <p class="mt-2 text-xs text-gray-600">
+                                            RW yang tersedia di Posyandu
+                                            {{ auth()->user()->posyandu->nama_posyandu ?? '' }}
+                                        </p>
+
+                                        <x-input-error :messages="$errors->get('rw')" class="mt-2" />
+                                    </div>
+
+                                    {{-- RT Dropdown --}}
+                                    <div>
+                                        <x-input-label for="rt" class="font-semibold">
+                                            <span class="text-gray-700">RT (Rukun Tetangga)</span>
+                                            <span class="text-red-500">*</span>
+                                        </x-input-label>
+
+                                        <select id="rt" name="rt" required disabled
+                                            class="mt-1 block w-full border-2 rounded-lg px-4 py-2.5 transition border-gray-200 bg-gray-50 cursor-not-allowed text-gray-400">
+                                            <option value="">Pilih RW terlebih dahulu</option>
+                                        </select>
+
+                                        <p id="rt-helper-text" class="mt-2 text-xs text-amber-600">
+                                            ⚠️ Silakan pilih RW terlebih dahulu
+                                        </p>
+
+                                        <x-input-error :messages="$errors->get('rt')" class="mt-2" />
+                                    </div>
+                                </div>
+
+                                {{-- Debug Info (Remove in production) --}}
+                                {{-- <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-xs" id="debug-info"
+                                    style="display: none;">
+                                    <p class="font-bold text-blue-900 mb-1">Debug Info:</p>
+                                    <div id="debug-content" class="text-blue-800 font-mono"></div>
+                                </div> --}}
                             </div>
                         </div>
 
@@ -397,6 +541,22 @@
                     kabupatens: @json($kabupatenList ?? []),
 
                     init() {
+                        @if (auth()->user()->kabupaten)
+                            // Cari data kabupaten berdasarkan nama untuk mendapatkan kodenya
+                            const initialKab = this.kabupatens.find(k => k.name ===
+                                '{{ auth()->user()->kabupaten }}');
+                            if (initialKab) {
+                                const code = initialKab.id || initialKab.code;
+                                this.selectedKabupaten = `${code}_${initialKab.name}`;
+
+                                // Beritahu komponen lain bahwa kabupaten sudah terpilih secara otomatis
+                                this.$nextTick(() => {
+                                    this.$dispatch('region-selected', {
+                                        code: code
+                                    });
+                                });
+                            }
+                        @endif
                         if (this.kabupatens.length > 0) {
                             console.log('Sample Data Kabupaten:', this.kabupatens[0]);
                         }
@@ -472,43 +632,59 @@
                     search: '',
                     loading: false,
                     kecamatanList: [],
-                    selectedKecamatanRaw: '{{ old('kecamatan') }}',
-                    selectedKecamatanName: '',
+                    selectedKecamatan: '{{ old('kecamatan') }}',
 
                     init() {
-                        if (this.selectedKecamatanRaw) {
-                            this.selectedKecamatanName = this.selectedKecamatanRaw.split('_').slice(1).join(
-                                '_');
-                            document.getElementById('kecamatan-hidden').value = this.selectedKecamatanRaw;
+                        this.$el.addEventListener('region-selected', (e) => {
+                            this.fetchKecamatan(e.detail.code);
+                        }, {
+                            window: true
+                        });
+                        if (this.kecamatanList.length > 0) {
+                            console.log('Sample Data Kecamatan:', this.kecamatanList[0]);
                         }
+
+                        if (this.selectedKecamatan) {
+                            let code = this.selectedKecamatan.split('_')[0];
+                            this.$dispatch('region-selected', {
+                                code: code
+                            });
+                        }
+                    },
+
+                    getKecamatanName(value) {
+                        if (!value) return '';
+                        let fullName = value.split('_').slice(1).join('_');
+                        return fullName.replace('Kecamatan ', '');
+                    },
+
+                    getDisplayName(name) {
+                        return name ? name.replace('Kecamatan ', '') : '';
                     },
 
                     async fetchKecamatan(parentId) {
                         if (!parentId) return;
+                        this.loading = true;
 
                         console.log('Fetching Kecamatan for Parent:', parentId);
-                        this.loading = true;
                         this.kecamatanList = [];
-                        this.selectedKecamatanName = '';
+                        this.selectedKecamatan = '';
                         document.getElementById('kecamatan-hidden').value = '';
 
                         try {
-                            const response = await fetch(`/api/wilayah/kecamatan/${parentId}`);
+                            const response = await fetch(
+                                `{{ route('api.kecamatan') }}?kab_id=${parentId}`);
+                            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
                             const data = await response.json();
+                            this.kecamatanList = data.data ?? [];
 
-                            let list = [];
-                            if (Array.isArray(data)) {
-                                list = data;
-                            } else if (data && Array.isArray(data.data)) {
-                                list = data.data;
+                            if (this.kecamatanList.length === 0) {
+                                alert('Tidak ada data kecamatan untuk wilayah ini.');
                             }
-
-                            this.kecamatanList = list;
-                            console.log('Kecamatan Loaded:', this.kecamatanList);
-
                         } catch (error) {
-                            console.error('Gagal mengambil data kecamatan:', error);
-                            this.kecamatanList = [];
+                            console.error('Error fetching kecamatan:', error);
+                            alert('Gagal memuat data kecamatan.');
                         } finally {
                             this.loading = false;
                         }
@@ -517,93 +693,327 @@
                     selectKecamatan(kec) {
                         const code = getRegionCode(kec);
                         const val = `${code}_${kec.name}`;
+                        this.selectedKecamatan = val;
                         document.getElementById('kecamatan-hidden').value = val;
 
-                        this.selectedKecamatanName = kec.name;
+                        // this.selectedKecamatan = kec.name;
+                        this.search = '';
+                        this.open = false;
+                        this.$dispatch('kecamatan-selected', {
+                            code: code
+                        });
+                    }
+                }));
+
+                Alpine.data('desaCombobox', () => ({
+                    open: false,
+                    search: '',
+                    loading: false,
+                    desaList: [],
+                    selectedDesa: '{{ old('desa') }}',
+
+                    init() {
+                        this.$el.addEventListener('kecamatan-selected', (e) => {
+                            this.fetchDesa(e.detail.code);
+                        }, {
+                            window: true
+                        });
+                        if (this.desaList.length > 0) {
+                            console.log('Sample Data Desa:', this.desaList[0]);
+                        }
+
+                        // if (this.selectedDesa) {
+                        //     let code = this.selectedDesa.split('_')[0];
+                        //     this.$dispatch('kecamatan-selected', {
+                        //         code: code
+                        //     });
+                        // }
+                    },
+
+                    getDesaName(value) {
+                        if (!value) return '';
+                        let fullName = value.split('_').slice(1).join('_');
+                        return fullName.replace('Desa ', '');
+                    },
+
+                    getDisplayName(name) {
+                        return name ? name.replace('Desa ', '') : '';
+                    },
+
+
+                    async fetchDesa(parentId) {
+                        if (!parentId) return;
+
+                        console.log('Fetching Desa for Parent:', parentId);
+                        this.loading = true;
+                        this.desaList = [];
+                        this.selectedDesa = '';
+                        document.getElementById('desa-hidden').value = '';
+
+                        try {
+                            const response = await fetch(`{{ route('api.desa') }}?kec_id=${parentId}`);
+                            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+                            const data = await response.json();
+                            this.desaList = data.data ?? [];
+
+                            if (this.desaList.length === 0) {
+                                alert('Tidak ada data desa untuk kecamatan ini.');
+                            }
+
+                        } catch (error) {
+                            console.error('Gagal mengambil data desa:', error);
+                            this.desaList = [];
+                        } finally {
+                            this.loading = false;
+                        }
+                    },
+
+                    selectDesa(desa) {
+                        const code = getRegionCode(desa);
+                        const val = `${code}_${desa.name}`;
+                        this.selectedDesa = val;
+                        document.getElementById('desa-hidden').value = val;
+
                         this.search = '';
                         this.open = false;
                     }
                 }));
             });
 
+            // document.addEventListener('DOMContentLoaded', function() {
+            //     const roleSelect = document.getElementById('role');
+            //     const rwRtFields = document.getElementById('rw-rt-fields');
+            //     const posyanduSelect = document.getElementById('posyandu_id');
+            //     const rwSelect = document.getElementById('rw');
+            //     const rtSelect = document.getElementById('rt');
+
+            //     function toggleRwRtFields() {
+            //         if (roleSelect.value === 'masyarakat') {
+            //             rwRtFields.style.display = 'block';
+            //             rwSelect.required = true;
+            //         } else {
+            //             rwRtFields.style.display = 'none';
+            //             rwSelect.required = false;
+            //             rtSelect.value = '';
+            //             rwSelect.value = '';
+            //         }
+            //     }
+            //     async function fetchRwRtOptions() {
+            //         if (roleSelect.value !== 'masyarakat' || !posyanduSelect.value) {
+            //             return;
+            //         }
+
+            //         try {
+            //             const response = await fetch(`/api/posyandu/${posyanduSelect.value}/rw-rt`);
+            //             const data = await response.json();
+
+            //             rwSelect.innerHTML = '<option value="" disabled selected>Pilih RW</option>';
+            //             if (data.rw_list && data.rw_list.length > 0) {
+            //                 data.rw_list.forEach(rw => {
+            //                     const option = document.createElement('option');
+            //                     option.value = rw;
+            //                     option.textContent = rw;
+            //                     rwSelect.appendChild(option);
+            //                 });
+            //             } else {
+            //                 for (let i = 1; i <= 15; i++) {
+            //                     const rw = `RW${String(i).padStart(2, '0')}`;
+            //                     const option = document.createElement('option');
+            //                     option.value = rw;
+            //                     option.textContent = rw;
+            //                     rwSelect.appendChild(option);
+            //                 }
+            //             }
+            //             window.rtMapping = data.rt_mapping || {};
+
+            //         } catch (error) {
+            //             console.error('Error fetching RW/RT:', error);
+            //         }
+            //     }
+
+            //     rwSelect.addEventListener('change', function() {
+            //         const selectedRw = this.value;
+            //         rtSelect.innerHTML = '<option value="">-- Tidak ada/Tidak tahu --</option>';
+
+            //         if (window.rtMapping && window.rtMapping[selectedRw]) {
+            //             window.rtMapping[selectedRw].forEach(rt => {
+            //                 const option = document.createElement('option');
+            //                 option.value = rt;
+            //                 option.textContent = rt;
+            //                 rtSelect.appendChild(option);
+            //             });
+            //         } else {
+            //             for (let i = 1; i <= 53; i++) {
+            //                 const rt = `RT${String(i).padStart(3, '0')}`;
+            //                 const option = document.createElement('option');
+            //                 option.value = rt;
+            //                 option.textContent = rt;
+            //                 rtSelect.appendChild(option);
+            //             }
+            //         }
+            //     });
+
+            //     roleSelect.addEventListener('change', toggleRwRtFields);
+            //     posyanduSelect.addEventListener('change', fetchRwRtOptions);
+
+            //     toggleRwRtFields();
+            // });
+
+            const POSYANDU_RT_MAPPING = @json(auth()->user()->posyandu->rt_mapping ?? []);
+            const POSYANDU_RW_LIST = @json(auth()->user()->posyandu->rw_list ?? []);
+
+            console.log('=== KADER CREATE MASYARAKAT DEBUG ===');
+            console.log('Posyandu RW List:', POSYANDU_RW_LIST);
+            console.log('Posyandu RT Mapping:', POSYANDU_RT_MAPPING);
+            console.log('=====================================');
+
+            // ✅ HANDLE RW CHANGE
+            function handleRwChange(selectedRw) {
+                console.log('[RW Change] Selected RW:', selectedRw);
+
+                const rtSelect = document.getElementById('rt');
+                const rtHelperText = document.getElementById('rt-helper-text');
+                const debugInfo = document.getElementById('debug-info');
+                const debugContent = document.getElementById('debug-content');
+
+                if (!selectedRw || selectedRw === '') {
+                    console.log('[RW Change] No RW selected, disabling RT');
+
+                    // Reset RT dropdown
+                    rtSelect.disabled = true;
+                    rtSelect.className =
+                        'mt-1 block w-full border-2 rounded-lg px-4 py-2.5 transition border-gray-200 bg-gray-50 cursor-not-allowed text-gray-400';
+                    rtSelect.innerHTML = '<option value="">Pilih RW terlebih dahulu</option>';
+
+                    // Update helper text
+                    rtHelperText.className = 'mt-2 text-xs text-amber-600';
+                    rtHelperText.innerHTML = '⚠️ Silakan pilih RW terlebih dahulu';
+
+                    return;
+                }
+
+                // Get RT list for selected RW
+                const rtList = POSYANDU_RT_MAPPING[selectedRw];
+
+                console.log('[RW Change] RT List for ' + selectedRw + ':', rtList);
+
+                // Show debug info
+                debugInfo.style.display = 'block';
+                debugContent.innerHTML = `
+        Selected RW: ${selectedRw}<br>
+        RT Mapping exists: ${POSYANDU_RT_MAPPING.hasOwnProperty(selectedRw) ? 'Yes' : 'No'}<br>
+        RT List: ${rtList ? JSON.stringify(rtList) : 'null'}<br>
+        RT Count: ${rtList ? rtList.length : 0}
+    `;
+
+                if (!rtList || rtList.length === 0) {
+                    console.warn('[RW Change] No RT found for RW:', selectedRw);
+
+                    // Enable but show no data
+                    rtSelect.disabled = false;
+                    rtSelect.className =
+                        'mt-1 block w-full border-2 rounded-lg px-4 py-2.5 transition border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200';
+                    rtSelect.innerHTML = '<option value="">Tidak ada RT untuk RW ini</option>';
+
+                    rtHelperText.className = 'mt-2 text-xs text-red-600';
+                    rtHelperText.innerHTML = '❌ Tidak ada RT tersedia untuk RW ' + selectedRw;
+
+                    alert('Peringatan: Tidak ada RT yang tersedia untuk RW ' + selectedRw +
+                        '. Silakan hubungi administrator untuk mengatur RT di posyandu ini.');
+
+                    return;
+                }
+
+                // ✅ Populate RT dropdown
+                console.log('[RW Change] Populating RT dropdown with', rtList.length, 'items');
+
+                rtSelect.disabled = false;
+                rtSelect.className =
+                    'mt-1 block w-full border-2 rounded-lg px-4 py-2.5 transition border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200';
+
+                // Build options
+                let options = '<option value="">Pilih RT</option>';
+                rtList.forEach(rt => {
+                    const selected = '{{ old('rt') }}' === rt ? 'selected' : '';
+                    options += `<option value="${rt}" ${selected}>${rt}</option>`;
+                });
+
+                rtSelect.innerHTML = options;
+
+                // Update helper text
+                rtHelperText.className = 'mt-2 text-xs text-green-600';
+                rtHelperText.innerHTML = `✓ ${rtList.length} RT tersedia untuk RW ${selectedRw}`;
+
+                console.log('[RW Change] RT dropdown populated successfully');
+            }
+
+            // ✅ INITIALIZE ON PAGE LOAD
             document.addEventListener('DOMContentLoaded', function() {
-                const roleSelect = document.getElementById('role');
-                const rwRtFields = document.getElementById('rw-rt-fields');
-                const posyanduSelect = document.getElementById('posyandu_id');
+                console.log('[DOMContentLoaded] Initializing RW/RT handler');
+
                 const rwSelect = document.getElementById('rw');
                 const rtSelect = document.getElementById('rt');
 
-                function toggleRwRtFields() {
-                    if (roleSelect.value === 'masyarakat') {
+                if (!rwSelect || !rtSelect) {
+                    console.error('[DOMContentLoaded] RW or RT select not found!');
+                    return;
+                }
+
+                // ✅ Check if old RW value exists (from validation error)
+                const oldRw = '{{ old('rw') }}';
+                if (oldRw) {
+                    console.log('[DOMContentLoaded] Old RW value found:', oldRw);
+                    rwSelect.value = oldRw;
+                    handleRwChange(oldRw);
+                }
+
+                console.log('[DOMContentLoaded] RW/RT handler initialized successfully');
+            });
+
+            // ✅ SHOW RW/RT FIELDS FOR MASYARAKAT
+            document.addEventListener('DOMContentLoaded', function() {
+                const roleSelect = document.getElementById('role');
+                const rwRtFields = document.getElementById('rw-rt-fields');
+
+                if (!roleSelect || !rwRtFields) return;
+
+                function handleRoleChange() {
+                    const selectedRole = roleSelect.value;
+                    const currentUserRole = '{{ auth()->user()->role }}';
+
+                    console.log('[Role Change] Selected:', selectedRole, 'Current User:', currentUserRole);
+
+                    // Show RW/RT fields for Masyarakat when created by Kader
+                    if (selectedRole === 'masyarakat' && currentUserRole === 'kader') {
                         rwRtFields.style.display = 'block';
-                        rwSelect.required = true;
+                        console.log('[Role Change] RW/RT fields shown');
                     } else {
                         rwRtFields.style.display = 'none';
-                        rwSelect.required = false;
-                        rtSelect.value = '';
-                        rwSelect.value = '';
-                    }
-                }
-                async function fetchRwRtOptions() {
-                    if (roleSelect.value !== 'masyarakat' || !posyanduSelect.value) {
-                        return;
-                    }
-
-                    try {
-                        const response = await fetch(`/api/posyandu/${posyanduSelect.value}/rw-rt`);
-                        const data = await response.json();
-
-                        rwSelect.innerHTML = '<option value="" disabled selected>Pilih RW</option>';
-                        if (data.rw_list && data.rw_list.length > 0) {
-                            data.rw_list.forEach(rw => {
-                                const option = document.createElement('option');
-                                option.value = rw;
-                                option.textContent = rw;
-                                rwSelect.appendChild(option);
-                            });
-                        } else {
-                            for (let i = 1; i <= 15; i++) {
-                                const rw = `RW${String(i).padStart(2, '0')}`;
-                                const option = document.createElement('option');
-                                option.value = rw;
-                                option.textContent = rw;
-                                rwSelect.appendChild(option);
-                            }
-                        }
-                        window.rtMapping = data.rt_mapping || {};
-
-                    } catch (error) {
-                        console.error('Error fetching RW/RT:', error);
+                        console.log('[Role Change] RW/RT fields hidden');
                     }
                 }
 
-                rwSelect.addEventListener('change', function() {
-                    const selectedRw = this.value;
-                    rtSelect.innerHTML = '<option value="">-- Tidak ada/Tidak tahu --</option>';
+                roleSelect.addEventListener('change', handleRoleChange);
 
-                    if (window.rtMapping && window.rtMapping[selectedRw]) {
-                        window.rtMapping[selectedRw].forEach(rt => {
-                            const option = document.createElement('option');
-                            option.value = rt;
-                            option.textContent = rt;
-                            rtSelect.appendChild(option);
-                        });
-                    } else {
-                        for (let i = 1; i <= 53; i++) {
-                            const rt = `RT${String(i).padStart(3, '0')}`;
-                            const option = document.createElement('option');
-                            option.value = rt;
-                            option.textContent = rt;
-                            rtSelect.appendChild(option);
-                        }
-                    }
+                // Trigger on page load
+                handleRoleChange();
+            });
+
+            // ✅ HELPER: Log RT Mapping to Console (for debugging)
+            function debugRtMapping() {
+                console.log('=== RT MAPPING DEBUG ===');
+                console.log('Full RT Mapping:', POSYANDU_RT_MAPPING);
+
+                Object.keys(POSYANDU_RT_MAPPING).forEach(rw => {
+                    console.log(`${rw}:`, POSYANDU_RT_MAPPING[rw]);
                 });
 
-                roleSelect.addEventListener('change', toggleRwRtFields);
-                posyanduSelect.addEventListener('change', fetchRwRtOptions);
+                console.log('=======================');
+            }
 
-                toggleRwRtFields();
-            });
+            // Call debug function
+            debugRtMapping();
 
             document.addEventListener('DOMContentLoaded', function() {
                 const roleSelect = document.getElementById('role');
@@ -614,23 +1024,28 @@
                 const kabupatenField = document.getElementById('kabupaten-field');
                 const kotaField = document.getElementById('kota-field');
                 const kecamatanField = document.getElementById('kecamatan-field');
+                const desaField = document.getElementById('desa-field');
                 const posyanduField = document.getElementById('posyandu-field');
                 const posyanduSelect = document.getElementById('posyandu_id');
 
-                const kabupatenSelect = document.getElementById('kabupaten_id');
-                const kecamatanSelect = document.getElementById('kecamatan_id');
+                // const kabupatenSelect = document.getElementById('kabupaten_id');
+                // const kecamatanSelect = document.getElementById('kecamatan_id');
+                // const desaSelect = document.getElementById('desa_id');
 
                 function toggleFields() {
                     jenisWilayahField.style.display = 'none';
                     kabupatenField.style.display = 'none';
                     kotaField.style.display = 'none';
                     kecamatanField.style.display = 'none';
+                    desaField.style.display = 'none';
                     posyanduField.style.display = 'none';
                     bidangField.style.display = 'none';
 
                     jenisWilayahSelect.required = false;
                     posyanduSelect.required = false;
                     bidangSelect.required = false;
+                    // desaSelect.required = false;
+                    // kecamatanSelect.required = false;
 
                     const role = roleSelect.value;
                     const currentUserRole = '{{ auth()->user()->role }}';
@@ -648,8 +1063,8 @@
                     }
 
                     if (role === 'admin-kecamatan') {
-                        jenisWilayahField.style.display = 'block';
-                        jenisWilayahSelect.required = true;
+                        kecamatanField.style.display = 'block';
+                        // kecamatanSelect.required = true;
                     }
 
                     if (role === 'ketua-posyandu') {
@@ -658,14 +1073,19 @@
                     }
 
                     if (role === 'operator-desa') {
-                        posyanduField.style.display = 'block';
-                        posyanduSelect.required = true;
+                        kecamatanField.style.display = 'block';
+                        // kecamatanSelect.required = true;
 
+<<<<<<< HEAD
                         if (currentUserRole === 'ketua-posyandu') {
                             const ketuaKaderPosyanduId = '{{ auth()->user()->posyandu_id }}';
                             posyanduSelect.value = ketuaKaderPosyanduId;
                             posyanduSelect.disabled = true;
                         }
+=======
+                        desaField.style.display = 'block';
+                        // desaSelect.required = true;
+>>>>>>> cc1c49af8c215191eb7e881f308dd4656871174f
                     }
 
                     if (role === 'kader') {
@@ -675,12 +1095,15 @@
                         if (currentUserRole === 'operator-desa') {
                             posyanduField.style.display = 'none';
                             posyanduSelect.required = false;
+<<<<<<< HEAD
                         }
                         else if (currentUserRole === 'ketua-posyandu') {
+=======
+                        } else if (currentUserRole === 'ketua-kader') {
+>>>>>>> cc1c49af8c215191eb7e881f308dd4656871174f
                             posyanduField.style.display = 'none';
                             posyanduSelect.required = false;
-                        }
-                        else {
+                        } else {
                             posyanduField.style.display = 'block';
                             posyanduSelect.required = true;
                         }
@@ -717,8 +1140,15 @@
                 'ketua-posyandu': ['kader'],
                 'operator-desa': ['ketua-posyandu', 'kader'],
                 'admin-kecamatan': [],
+<<<<<<< HEAD
                 'admin-kabupaten': ['ketua-timpembina-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'bu-kades', 'operator-desa'],
                 'admin': ['admin-kabupaten', 'ketua-timpembina-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'bu-kades', 'ketua-posyandu', 'operator-desa', 'kader', 'masyarakat']
+=======
+                'admin-kabupaten': ['ketua-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'operator-desa'],
+                'admin': ['admin-kabupaten', 'ketua-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'ketua-kader',
+                    'operator-desa', 'kader', 'masyarakat'
+                ]
+>>>>>>> cc1c49af8c215191eb7e881f308dd4656871174f
             };
             const roleLabels = {
                 'masyarakat': 'Masyarakat',
@@ -795,6 +1225,7 @@
                     }
                 });
             }
+
             function showMainMenu() {
                 const roleLabel = roleLabels[selectedRoleToCreate] || 'User';
                 let menuHTML = `
@@ -863,6 +1294,7 @@
                     }
                 });
             }
+
             function showUploadStep() {
                 let uploadHTML = `
         <div class="space-y-5 text-left">
@@ -974,6 +1406,7 @@
                     }
                 });
             }
+
             function executeDownload() {
                 Swal.fire({
                     title: 'Generating Template',
@@ -988,9 +1421,9 @@
                 window.location.href = url;
                 setTimeout(() => {
                     const roleLabel = roleLabels[selectedRoleToCreate] || 'User';
-                    const rowInfo = selectedRoleToCreate === 'kader'
-                        ? 'Jumlah baris = 6 per Posyandu'
-                        : 'Jumlah baris = Jumlah Posyandu terdaftar';
+                    const rowInfo = selectedRoleToCreate === 'kader' ?
+                        'Jumlah baris = 6 per Posyandu' :
+                        'Jumlah baris = Jumlah Posyandu terdaftar';
                     Swal.fire({
                         icon: 'success',
                         title: 'Template Sedang Diunduh',

@@ -81,7 +81,7 @@
                 <div class="flex flex-col md:flex-row gap-2 w-full md:w-auto">
                     <select wire:model.live="role" class="border-gray-300 rounded-md shadow-sm text-sm">
                         <option value="">Semua Role</option>
-                        @foreach($allowedRoles as $roleOption)
+                        @foreach ($allowedRoles as $roleOption)
                             <option value="{{ $roleOption }}">
                                 {{ ucfirst(str_replace('-', ' ', $roleOption)) }}
                             </option>
@@ -168,10 +168,10 @@
                                     @if (in_array($user->role, ['masyarakat', 'kader', 'ketua-posyandu']))
                                         <i class="bi bi-geo-alt-fill text-xs mr-1"></i>
                                         {{ $user->posyandu?->nama_posyandu ?? 'Belum Terdaftar' }}
-                                    @elseif ($user->role === 'admin-kecamatan')
+                                    @elseif ($user->kecamatan)
                                         <i class="bi bi-pin-map-fill text-xs mr-1"></i>
                                         Kec. {{ $user->kecamatan ?? '-' }}
-                                    @elseif ($user->role === 'kabid')
+                                    @elseif ($user->kabupaten)
                                         <i class="bi bi-building text-xs mr-1"></i>
                                         {{ $user->kabupaten ?? '-' }}
                                     @else
@@ -223,12 +223,19 @@
                                         <i class="bi bi-eye-fill mr-1"></i> Detail
                                     </a>
 
+<<<<<<< HEAD
                                     @if ($currentUser->role === 'kader' && $user->role === 'masyarakat' && $user->no_telepon)
                                         <a href="{{ $this->generateWhatsAppLink($user) }}" target="_blank"
                                             class="px-3 py-1 bg-green-500 text-white rounded-md text-xs text-center hover:bg-green-600 transition-colors duration-150">
                                             <i class="bi bi-whatsapp mr-1"></i> Kirim WA
                                         </a>
                                     @endif
+=======
+                                    <a href="{{ $this->getWhatsAppLink($user->id) }}" target="_blank"
+                                        class="px-3 py-1 bg-green-500 text-white rounded-md text-xs text-center hover:bg-green-600 transition-colors">
+                                        <i class="bi bi-whatsapp mr-1"></i> WA Login
+                                    </a>
+>>>>>>> cc1c49af8c215191eb7e881f308dd4656871174f
 
                                     @if ($currentUser->role === 'admin')
                                         <a href="{{ route('admin.users.edit', $user) }}"
@@ -301,8 +308,8 @@
                                                     <i class="bi bi-x-circle"></i> Nonaktifkan
                                                 </button>
                                             @else
-                                                <form action="{{ route('admin.users.reactivate-kabid', $user) }}" class="w-full"
-                                                    method="POST" class="inline">
+                                                <form action="{{ route('admin.users.reactivate-kabid', $user) }}"
+                                                    class="w-full" method="POST" class="inline">
                                                     @csrf
                                                     @method('PATCH')
                                                     <button type="submit"
@@ -544,7 +551,8 @@
             <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
                 <div class="mt-3">
                     <h3 class="text-lg font-medium text-gray-900 mb-4">Reset Password</h3>
-                    <p class="text-sm text-gray-600 mb-4">Reset password untuk: <strong id="resetUserNameKabid"></strong>
+                    <p class="text-sm text-gray-600 mb-4">Reset password untuk: <strong
+                            id="resetUserNameKabid"></strong>
                     </p>
 
                     <form id="resetPasswordFormKabid" method="POST">
@@ -582,7 +590,8 @@
             <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
                 <div class="mt-3">
                     <h3 class="text-lg font-medium text-gray-900 mb-4">Nonaktifkan Kader</h3>
-                    <p class="text-sm text-gray-600 mb-4">Nonaktifkan: <strong id="deactivateUserNameKabid"></strong></p>
+                    <p class="text-sm text-gray-600 mb-4">Nonaktifkan: <strong id="deactivateUserNameKabid"></strong>
+                    </p>
 
                     <form id="deactivateFormKabid" method="POST">
                         @csrf

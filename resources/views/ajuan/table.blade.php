@@ -161,14 +161,22 @@
                         </div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium flex space-x-2">
-                        <a href="{{ route('ajuan.show', $ajuan) }}"
-                            class="flex items-center px-3 py-1 bg-blue-500 text-white rounded-md text-xs hover:bg-blue-600">
-                            <i class="bi bi-eye-fill mr-1"></i> Detail
-                        </a>
+
                         <a href="/ajuan/cetak/{{ $ajuan->id }}" target="_blank"
                             class="flex items-center px-3 py-1 bg-green-500 text-white rounded-md text-xs hover:bg-green-600">
                             <i class="bi bi-printer-fill mr-1"></i> Cetak
                         </a>
+                        @if (auth()->user()->role === 'ketua-kader' && $ajuan->status_pengajuan === 'Diproses')
+                            <a href="{{ route('ajuan.show', $ajuan) }}"
+                                class="px-3 py-1 bg-orange-500 text-white rounded-md text-xs hover:bg-orange-600 transition">
+                                <i class="bi bi-shield-shaded mr-1"></i> Takeover & Verifikasi
+                            </a>
+                        @else
+                            <a href="{{ route('ajuan.show', $ajuan) }}"
+                                class="flex items-center px-3 py-1 bg-blue-500 text-white rounded-md text-xs hover:bg-blue-600">
+                                <i class="bi bi-eye-fill mr-1"></i> Detail
+                            </a>
+                        @endif
                         <div class="flex items-center gap-2">
                             <div class="relative" x-data="{ open: false }">
                                 <button @click="open = !open" class="text-gray-600 hover:text-gray-900">
