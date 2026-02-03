@@ -1,7 +1,7 @@
 @extends('dashboard.layouts.dashboard')
 @section('title', 'Add Users')
 @section('content')
-    {{-- SweetAlert for session errors --}}
+
     @if (session('error'))
         <script>
             document.addEventListener('DOMContentLoaded', function() {
@@ -15,7 +15,6 @@
         </script>
     @endif
 
-    {{-- SweetAlert for validation errors --}}
     @if ($errors->any())
         <script>
             document.addEventListener('DOMContentLoaded', function() {
@@ -32,7 +31,6 @@
         </script>
     @endif
 
-    {{-- SweetAlert for special errors (ketua posyandu limit) --}}
     @if (session('swal_error'))
         <script>
             document.addEventListener('DOMContentLoaded', function() {
@@ -245,12 +243,9 @@
                             </div>
                         </div>
 
-                        {{-- Hidden kabupaten field for admin-kabupaten (auto-filled from logged-in user) --}}
                         @if (auth()->user()->role === 'admin-kabupaten')
                             <input type="hidden" id="admin-kabupaten-kabupaten" name="admin_kabupaten_kabupaten"
                                 value="{{ auth()->user()->kabupaten }}" disabled>
-
-                            {{-- Display kabupaten label for admin-kabupaten --}}
                             <div id="kabupaten-display-field" style="display: none;" class="md:col-span-2">
                                 <x-input-label for="kabupaten-display" :value="__('Kabupaten')" />
                                 <div
@@ -396,7 +391,6 @@
                             <p class="mt-1 text-xs text-gray-500">
                                 Ketua Posyandu akan memimpin posyandu ini
                             </p>
-                            {{-- Hidden fields for auto-fill from posyandu (disabled by default, enabled via JS) --}}
                             <input type="hidden" id="posyandu_kabupaten" name="posyandu_kabupaten_val" disabled>
                             <input type="hidden" id="posyandu_kabupaten_id" name="posyandu_kabupaten_id_val" disabled>
                             <input type="hidden" id="posyandu_kecamatan" name="posyandu_kecamatan_val" disabled>
@@ -580,7 +574,6 @@
 
     @push('scripts')
         <script>
-            // Indonesian validation messages for required fields
             document.addEventListener('DOMContentLoaded', function() {
                 const validationMessages = {
                     'name': 'Silakan isi nama lengkap',
@@ -599,7 +592,6 @@
                     'rt': 'Silakan pilih RT'
                 };
 
-                // Apply Indonesian validation messages
                 Object.keys(validationMessages).forEach(fieldName => {
                     const field = document.querySelector(`[name="${fieldName}"]`);
                     if (field) {
@@ -633,7 +625,6 @@
                             if (initialKab) {
                                 const code = initialKab.id || initialKab.code;
                                 this.selectedKabupaten = `${code}_${initialKab.name}`;
-                                // Only dispatch if kecamatan field is visible (not for ketua-posyandu/kader roles)
                                 this.$nextTick(() => {
                                     const kecamatanField = document.getElementById(
                                         'kecamatan-field');
@@ -651,7 +642,6 @@
 
                         if (this.selectedKabupaten) {
                             const kecamatanField = document.getElementById('kecamatan-field');
-                            // Only dispatch if kecamatan field is visible
                             if (kecamatanField && kecamatanField.style.display !== 'none') {
                                 let code = this.selectedKabupaten.split('_')[0];
                                 this.$dispatch('region-selected', {
@@ -845,7 +835,6 @@
                     async fetchDesa(parentId) {
                         if (!parentId) return;
 
-                        // Only fetch if desa field is visible
                         const desaField = document.getElementById('desa-field');
                         if (!desaField || desaField.style.display === 'none') {
                             console.log('[fetchDesa] Skipped - desa field not visible');
@@ -987,7 +976,6 @@
                 const rwSelect = document.getElementById('rw');
                 const rtSelect = document.getElementById('rt');
 
-                // Kader hidden fields
                 const kaderKabupaten = document.getElementById('kader_kabupaten');
                 const kaderKabupatenId = document.getElementById('kader_kabupaten_id');
                 const kaderKecamatan = document.getElementById('kader_kecamatan');
@@ -995,7 +983,6 @@
                 const kaderDesa = document.getElementById('kader_desa');
                 const kaderPosyanduId = document.getElementById('kader_posyandu_id');
 
-                // Alpine combobox hidden fields (conflict nama — harus di-disable saat masyarakat)
                 const alpineKabupaten = document.getElementById('kabupaten-hidden');
                 const alpineKecamatan = document.getElementById('kecamatan-hidden');
                 const alpineDesa = document.getElementById('desa-hidden');
@@ -1008,17 +995,16 @@
 
                     console.log('[Role Change] Selected:', selectedRole, 'Current User:', currentUserRole);
 
-                    // Show RW/RT fields for Masyarakat when created by Kader
                     if (selectedRole === 'masyarakat' && currentUserRole === 'kader') {
                         rwRtFields.style.display = 'block';
-                        // Enable required validation when fields are visible
+
                         if (rwSelect) rwSelect.setAttribute('required', 'required');
                         if (rtSelect) rtSelect.setAttribute('required', 'required');
-                        // Disable Alpine combobox hidden fields (nilainya kosong, jangan dikirim)
+
                         if (alpineKabupaten) alpineKabupaten.disabled = true;
                         if (alpineKecamatan) alpineKecamatan.disabled = true;
                         if (alpineDesa) alpineDesa.disabled = true;
-                        // Enable kader hidden fields (yang punya nilai dari auth()->user())
+
                         if (kaderKabupaten) kaderKabupaten.disabled = false;
                         if (kaderKabupatenId) kaderKabupatenId.disabled = false;
                         if (kaderKecamatan) kaderKecamatan.disabled = false;
@@ -1028,14 +1014,14 @@
                         console.log('[Role Change] RW/RT shown, kader enabled, alpine disabled');
                     } else {
                         rwRtFields.style.display = 'none';
-                        // Disable required validation when fields are hidden
+
                         if (rwSelect) rwSelect.removeAttribute('required');
                         if (rtSelect) rtSelect.removeAttribute('required');
-                        // Enable Alpine combobox hidden fields kembali
+
                         if (alpineKabupaten) alpineKabupaten.disabled = false;
                         if (alpineKecamatan) alpineKecamatan.disabled = false;
                         if (alpineDesa) alpineDesa.disabled = false;
-                        // Disable kader hidden fields
+
                         if (kaderKabupaten) kaderKabupaten.disabled = true;
                         if (kaderKabupatenId) kaderKabupatenId.disabled = true;
                         if (kaderKecamatan) kaderKecamatan.disabled = true;
@@ -1047,12 +1033,9 @@
                 }
 
                 roleSelect.addEventListener('change', handleRoleChange);
-
-                // Trigger on page load
                 handleRoleChange();
             });
 
-            // ✅ HELPER: Log RT Mapping to Console (for debugging)
             function debugRtMapping() {
                 console.log('=== RT MAPPING DEBUG ===');
                 console.log('Full RT Mapping:', POSYANDU_RT_MAPPING);
@@ -1064,7 +1047,6 @@
                 console.log('=======================');
             }
 
-            // Call debug function
             debugRtMapping();
 
             document.addEventListener('DOMContentLoaded', function() {
@@ -1080,7 +1062,6 @@
                 const posyanduField = document.getElementById('posyandu-field');
                 const posyanduSelect = document.getElementById('posyandu_select');
 
-                // Kader hidden fields (for creating masyarakat)
                 const kaderKabupaten = document.getElementById('kader_kabupaten');
                 const kaderKabupatenId = document.getElementById('kader_kabupaten_id');
                 const kaderKecamatan = document.getElementById('kader_kecamatan');
@@ -1088,7 +1069,6 @@
                 const kaderDesa = document.getElementById('kader_desa');
                 const kaderPosyanduId = document.getElementById('kader_posyandu_id');
 
-                // Posyandu select hidden fields (for operator-desa creating ketua-posyandu)
                 const posyanduKabupaten = document.getElementById('posyandu_kabupaten');
                 const posyanduKabupatenId = document.getElementById('posyandu_kabupaten_id');
                 const posyanduKecamatan = document.getElementById('posyandu_kecamatan');
@@ -1145,18 +1125,15 @@
                     posyanduField.style.display = 'none';
                     bidangField.style.display = 'none';
 
-                    // Disable all location hidden fields by default
                     disableKaderFields();
                     disablePosyanduFields();
 
-                    // Disable admin-kabupaten hidden kabupaten field by default
                     const adminKabupatenKabupaten = document.getElementById('admin-kabupaten-kabupaten');
                     if (adminKabupatenKabupaten) {
                         adminKabupatenKabupaten.disabled = true;
                         adminKabupatenKabupaten.name = 'admin_kabupaten_kabupaten_val';
                     }
 
-                    // Hide kabupaten display field by default
                     const kabupatenDisplayField = document.getElementById('kabupaten-display-field');
                     if (kabupatenDisplayField) {
                         kabupatenDisplayField.style.display = 'none';
@@ -1171,16 +1148,13 @@
                     const role = roleSelect.value;
                     const currentUserRole = '{{ auth()->user()->role }}';
 
-                    // For admin-kabupaten creating users: auto-fill kabupaten from logged-in user
                     if (currentUserRole === 'admin-kabupaten') {
-                        // Enable hidden kabupaten field and show display field for roles that need it
                         if (role === 'ketua-timpembina-posyandu' || role === 'kabid' || role === 'admin-kecamatan' ||
                             role === 'kades' || role === 'bu-kades' || role === 'operator-desa') {
                             if (adminKabupatenKabupaten) {
                                 adminKabupatenKabupaten.disabled = false;
                                 adminKabupatenKabupaten.name = 'kabupaten';
                             }
-                            // Show kabupaten display field
                             if (kabupatenDisplayField) {
                                 kabupatenDisplayField.style.display = 'block';
                             }
@@ -1200,19 +1174,14 @@
                     }
 
                     if (role === 'admin-kecamatan') {
-                        // Show kecamatan for admin-kecamatan
                         kecamatanField.style.display = 'block';
-                        // Show kabupaten only if not admin-kabupaten
                         if (currentUserRole !== 'admin-kabupaten') {
                             kabupatenField.style.display = 'block';
                         }
                     }
-
-                    // Kades and Bu-Kades: show kecamatan and desa
                     if (role === 'kades' || role === 'bu-kades') {
                         kecamatanField.style.display = 'block';
                         desaField.style.display = 'block';
-                        // Show kabupaten only if not admin-kabupaten
                         if (currentUserRole !== 'admin-kabupaten') {
                             kabupatenField.style.display = 'block';
                         }
@@ -1226,7 +1195,6 @@
                     if (role === 'operator-desa') {
                         kecamatanField.style.display = 'block';
                         desaField.style.display = 'block';
-                        // Show kabupaten only if not admin-kabupaten
                         if (currentUserRole !== 'admin-kabupaten') {
                             kabupatenField.style.display = 'block';
                         }
@@ -1243,7 +1211,6 @@
                         bidangSelect.required = true;
 
                         if (currentUserRole === 'operator-desa') {
-                            // Operator-desa can select posyandu for kader
                             posyanduField.style.display = 'block';
                             posyanduSelect.required = true;
                         } else if (currentUserRole === 'ketua-posyandu') {
@@ -1255,7 +1222,6 @@
                         }
                     }
 
-                    // Masyarakat: kader hidden fields harus enabled, alpine hidden fields disabled
                     if (role === 'masyarakat' && currentUserRole === 'kader') {
                         enableKaderFields();
                         const alpKab = document.getElementById('kabupaten-hidden');
@@ -1266,20 +1232,16 @@
                         if (alpDes) alpDes.disabled = true;
                     }
 
-                    // Auto-fetch kecamatan for admin-kabupaten when selecting roles that need it
                     autoFetchKecamatanForAdminKabupaten(role);
                 }
 
-                // Function to auto-fetch kecamatan data for admin-kabupaten
                 function autoFetchKecamatanForAdminKabupaten(role) {
                     const currentUserRole = '{{ auth()->user()->role }}';
                     if (currentUserRole !== 'admin-kabupaten') return;
 
-                    // Roles that need kecamatan fetching
                     const rolesNeedingKecamatan = ['admin-kecamatan', 'kades', 'bu-kades', 'operator-desa'];
                     if (!rolesNeedingKecamatan.includes(role)) return;
 
-                    // Get kabupaten_id from the kabupaten list based on admin-kabupaten's kabupaten name
                     const adminKabupatenName = '{{ auth()->user()->kabupaten }}';
                     const kabupatenList = @json($kabupatenList ?? []);
 
@@ -1289,7 +1251,6 @@
                         console.log('[Auto-fetch Kecamatan] Admin-kabupaten selected role:', role,
                             'Fetching kecamatan for:', code);
 
-                        // Dispatch event to fetch kecamatan
                         window.dispatchEvent(new CustomEvent('region-selected', {
                             detail: {
                                 code: code
@@ -1322,7 +1283,6 @@
                 roleSelect.addEventListener('change', toggleFields);
                 jenisWilayahSelect.addEventListener('change', toggleWilayahField);
 
-                // Auto-fill kabupaten, kecamatan, desa when posyandu is selected (for ketua-posyandu and kader roles)
                 posyanduSelect.addEventListener('change', function() {
                     const selectedOption = this.options[this.selectedIndex];
                     const selectedRole = roleSelect.value;
@@ -1334,8 +1294,6 @@
                         const kecamatan = selectedOption.getAttribute('data-kecamatan');
                         const kecamatanId = selectedOption.getAttribute('data-kecamatan-id');
                         const desa = selectedOption.getAttribute('data-desa');
-
-                        // Set hidden field values and enable them with correct names
                         const kabupatenField = document.getElementById('posyandu_kabupaten');
                         const kabupatenIdField = document.getElementById('posyandu_kabupaten_id');
                         const kecamatanField = document.getElementById('posyandu_kecamatan');
