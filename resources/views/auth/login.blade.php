@@ -49,58 +49,14 @@
                                             buku panduan untuk membantu Anda menggunakan sistem ini.
                                         </p>
 
-                                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                                            <div class="flex items-center justify-between mb-3">
-                                                <div class="flex items-center space-x-2">
-                                                    <svg class="w-8 h-8 text-red-500" fill="currentColor"
-                                                        viewBox="0 0 20 20">
-                                                        <path
-                                                            d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z">
-                                                        </path>
-                                                    </svg>
-                                                    <div>
-                                                        <p class="text-sm font-semibold text-gray-900">
-                                                            Panduan_SAPA_POSYANDU.pdf
-                                                        </p>
-                                                        <p class="text-xs text-gray-500">Buku panduan lengkap sistem</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div class="relative w-full" style="height: 400px;">
-                                                <iframe
-                                                    src="https://drive.google.com/file/d/18TIpDP-BjaseFDf0q32GpEMyzM7E_wJi/preview"
-                                                    class="w-full h-full rounded border border-gray-300"
-                                                    allow="autoplay">
-                                                </iframe>
+                                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200" id="guidebookContainer">
+                                            <div class="flex items-center justify-center">
+                                                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
                                             </div>
                                         </div>
 
-                                        <div class="mt-4 flex items-center justify-center space-x-3">
-                                            <a href="https://drive.google.com/uc?export=download&id=18TIpDP-BjaseFDf0q32GpEMyzM7E_wJi"
-                                                target="_blank"
-                                                class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition">
-                                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor"
-                                                    viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        stroke-width="2"
-                                                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-                                                    </path>
-                                                </svg>
-                                                Download Panduan
-                                            </a>
-                                            <a href="https://drive.google.com/file/d/18TIpDP-BjaseFDf0q32GpEMyzM7E_wJi/view"
-                                                target="_blank"
-                                                class="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-md transition">
-                                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor"
-                                                    viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        stroke-width="2"
-                                                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14">
-                                                    </path>
-                                                </svg>
-                                                Buka di Tab Baru
-                                            </a>
+                                        <div class="mt-4 flex items-center justify-center space-x-3" id="guidebookActions">
+                                            <!-- Actions will be populated here -->
                                         </div>
 
                                         <div class="mt-4 flex items-center">
@@ -306,11 +262,11 @@
             );
         }
 
-        if (session('track_error')) {
+        @if (session('track_error'))
             document.addEventListener('DOMContentLoaded', function() {
                 Alpine.store('activeTab', 'track');
             });
-        }
+        @endif
 
         const hasSeenGuide = localStorage.getItem('hasSeenGuide');
 
@@ -335,6 +291,108 @@
 
             document.getElementById('guideModal').classList.add('hidden');
         }
+
+        // Load guidebook from database
+        async function loadGuidebook() {
+            try {
+                const response = await fetch('{{ route('api.guidebook') }}');
+                const data = await response.json();
+
+                const container = document.getElementById('guidebookContainer');
+                const actionsDiv = document.getElementById('guidebookActions');
+
+                if (data.status === 'no_guidebook') {
+                    container.innerHTML = `
+                        <div class="flex items-center justify-center p-6">
+                            <div class="text-center">
+                                <svg class="w-12 h-12 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                </svg>
+                                <p class="text-gray-500 text-sm">Guidebook belum ditetapkan</p>
+                            </div>
+                        </div>
+                    `;
+                    actionsDiv.innerHTML = '';
+                    return;
+                }
+
+                if (data.status === 'success' && data.data) {
+                    const guidebook = data.data;
+                    
+                    container.innerHTML = `
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"></path>
+                                </svg>
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-900">${escapeHtml(guidebook.title)}</p>
+                                    <p class="text-xs text-gray-500">${escapeHtml(guidebook.description || 'Buku panduan sistem')}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="relative w-full" style="height: 400px;">
+                            <iframe
+                                src="${guidebook.file_path}"
+                                class="w-full h-full rounded border border-gray-300"
+                                allow="autoplay">
+                            </iframe>
+                        </div>
+                    `;
+
+                    actionsDiv.innerHTML = `
+                        <a href="${guidebook.download_url}"
+                            download
+                            target="_blank"
+                            class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            Download Panduan
+                        </a>
+                        <a href="${guidebook.file_path}"
+                            target="_blank"
+                            class="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-md transition">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                            </svg>
+                            Buka di Tab Baru
+                        </a>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading guidebook:', error);
+                document.getElementById('guidebookContainer').innerHTML = `
+                    <div class="flex items-center justify-center p-6">
+                        <div class="text-center">
+                            <svg class="w-12 h-12 text-red-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <p class="text-gray-500 text-sm">Gagal memuat guidebook</p>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Helper function to escape HTML
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        // Load guidebook when modal opens
+        document.addEventListener('DOMContentLoaded', function() {
+            loadGuidebook();
+        });
+
         document.getElementById('guideModal')?.addEventListener('click', function(e) {
             if (e.target === this) {
                 closeGuideModal();

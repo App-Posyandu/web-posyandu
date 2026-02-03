@@ -1,22 +1,51 @@
 @extends('dashboard.layouts.dashboard')
 @section('title', 'Add Users')
 @section('content')
+    {{-- SweetAlert for session errors --}}
+    @if (session('error'))
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: @json(session('error')),
+                    confirmButtonColor: '#ef4444'
+                });
+            });
+        </script>
+    @endif
+    
+    {{-- SweetAlert for validation errors --}}
     @if ($errors->any())
-        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            <strong>Validation Errors:</strong>
-            <ul class="list-disc list-inside">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const errors = @json($errors->all());
+                const errorList = errors.map(err => `• ${err}`).join('<br>');
+                
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error Validasi',
+                    html: errorList,
+                    confirmButtonColor: '#ef4444'
+                });
+            });
+        </script>
     @endif
 
-    @if (session('error'))
-        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            {{ session('error') }}
-        </div>
+    {{-- SweetAlert for special errors (ketua posyandu limit) --}}
+    @if (session('swal_error'))
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: @json(session('swal_error.title')),
+                    text: @json(session('swal_error.text')),
+                    confirmButtonColor: '#ef4444'
+                });
+            });
+        </script>
     @endif
+    
     <div class="w-full mx-auto sm:px-6 lg:px-8">
         <div class="bg-white shadow-sm sm:rounded-lg">
             <div class="p-8 text-gray-900">
@@ -215,6 +244,24 @@
                             </div>
                         </div>
 
+                        {{-- Hidden kabupaten field for admin-kabupaten (auto-filled from logged-in user) --}}
+                        @if (auth()->user()->role === 'admin-kabupaten')
+                            <input type="hidden" id="admin-kabupaten-kabupaten" name="admin_kabupaten_kabupaten" 
+                                value="{{ auth()->user()->kabupaten }}" disabled>
+                            
+                            {{-- Display kabupaten label for admin-kabupaten --}}
+                            <div id="kabupaten-display-field" style="display: none;" class="md:col-span-2">
+                                <x-input-label for="kabupaten-display" :value="__('Kabupaten')" />
+                                <div class="block mt-1 w-full px-3 py-2 border border-gray-300 bg-gray-100 rounded-md shadow-sm text-gray-700">
+                                    {{ str_replace('KABUPATEN ', '', strtoupper(auth()->user()->kabupaten)) }}
+                                </div>
+                                <p class="mt-1 text-xs text-gray-500">
+                                    <i class="bi bi-info-circle"></i>
+                                    Kabupaten otomatis diisi sesuai dengan wilayah Anda
+                                </p>
+                            </div>
+                        @endif
+
                         <div id="kota-field" style="display: none;" class="md:col-span-2">
                             <div x-data="kotaCombobox()" @click.away="open = false" x-init="$watch('selectedKota', value => {
                                 document.getElementById('kabupaten-hidden').value = value;
@@ -330,12 +377,17 @@
                         </div>
 
                         <div id="posyandu-field" style="display: none;" class="md:col-span-2">
-                            <x-input-label for="posyandu_id" :value="__('Pilih Posyandu')" />
-                            <select id="posyandu_id" name="posyandu_id"
+                            <x-input-label for="posyandu_select" :value="__('Pilih Posyandu')" />
+                            <select id="posyandu_select" name="posyandu_id"
                                 class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                                 <option value="" disabled selected>Pilih Posyandu</option>
                                 @foreach ($posyandus as $posyandu)
-                                    <option value="{{ $posyandu->id }}">
+                                    <option value="{{ $posyandu->id }}"
+                                        data-kabupaten="{{ $posyandu->kabupaten }}"
+                                        data-kabupaten-id="{{ $posyandu->kabupaten_id }}"
+                                        data-kecamatan="{{ $posyandu->kecamatan }}"
+                                        data-kecamatan-id="{{ $posyandu->kecamatan_id }}"
+                                        data-desa="{{ $posyandu->desa }}">
                                         {{ $posyandu->nama_posyandu }} - {{ $posyandu->kecamatan }}
                                     </option>
                                 @endforeach
@@ -343,6 +395,12 @@
                             <p class="mt-1 text-xs text-gray-500">
                                 Ketua Posyandu akan memimpin posyandu ini
                             </p>
+                            {{-- Hidden fields for auto-fill from posyandu (disabled by default, enabled via JS) --}}
+                            <input type="hidden" id="posyandu_kabupaten" name="posyandu_kabupaten_val" disabled>
+                            <input type="hidden" id="posyandu_kabupaten_id" name="posyandu_kabupaten_id_val" disabled>
+                            <input type="hidden" id="posyandu_kecamatan" name="posyandu_kecamatan_val" disabled>
+                            <input type="hidden" id="posyandu_kecamatan_id" name="posyandu_kecamatan_id_val" disabled>
+                            <input type="hidden" id="posyandu_desa" name="posyandu_desa_val" disabled>
                         </div>
 
                         <div id="bidang-field" style="display: none;"
@@ -365,7 +423,6 @@
                         <div id="rw-rt-fields" style="display: none;" class="md:col-span-2">
                             <div
                                 class="p-6 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl">
-                                {{-- Info Banner --}}
                                 <div
                                     class="flex items-start gap-3 mb-6 p-4 bg-white rounded-lg border-l-4 border-green-500 shadow-sm">
                                     <div class="flex-shrink-0">
@@ -384,8 +441,6 @@
                                         </p>
                                     </div>
                                 </div>
-
-                                {{-- Auto-filled Data Display --}}
                                 <div
                                     class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 p-4 bg-white rounded-lg border border-green-200">
                                     <div>
@@ -421,17 +476,14 @@
                                     </div>
                                 </div>
 
-                                {{-- Hidden Inputs for Auto-fill Data --}}
-                                <input type="hidden" name="kabupaten" value="{{ auth()->user()->kabupaten }}">
-                                <input type="hidden" name="kabupaten_id" value="{{ auth()->user()->kabupaten_id }}">
-                                <input type="hidden" name="kecamatan" value="{{ auth()->user()->kecamatan }}">
-                                <input type="hidden" name="kecamatan_id" value="{{ auth()->user()->kecamatan_id }}">
-                                <input type="hidden" name="desa" value="{{ auth()->user()->desa }}">
-                                <input type="hidden" name="posyandu_id" value="{{ auth()->user()->posyandu_id }}">
+                                <input type="hidden" id="kader_kabupaten" name="kabupaten" value="{{ auth()->user()->kabupaten }}">
+                                <input type="hidden" id="kader_kabupaten_id" name="kabupaten_id" value="{{ auth()->user()->kabupaten_id }}">
+                                <input type="hidden" id="kader_kecamatan" name="kecamatan" value="{{ auth()->user()->kecamatan }}">
+                                <input type="hidden" id="kader_kecamatan_id" name="kecamatan_id" value="{{ auth()->user()->kecamatan_id }}">
+                                <input type="hidden" id="kader_desa" name="desa" value="{{ auth()->user()->desa }}">
+                                <input type="hidden" id="kader_posyandu_id" name="posyandu_id" value="{{ auth()->user()->posyandu_id }}">
 
-                                {{-- ✅ RW & RT Selection --}}
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {{-- RW Dropdown --}}
                                     <div>
                                         <x-input-label for="rw" class="font-semibold">
                                             <span class="text-gray-700">RW (Rukun Warga)</span>
@@ -461,8 +513,6 @@
 
                                         <x-input-error :messages="$errors->get('rw')" class="mt-2" />
                                     </div>
-
-                                    {{-- RT Dropdown --}}
                                     <div>
                                         <x-input-label for="rt" class="font-semibold">
                                             <span class="text-gray-700">RT (Rukun Tetangga)</span>
@@ -475,19 +525,12 @@
                                         </select>
 
                                         <p id="rt-helper-text" class="mt-2 text-xs text-amber-600">
-                                            ⚠️ Silakan pilih RW terlebih dahulu
+                                            Silakan pilih RW terlebih dahulu
                                         </p>
 
                                         <x-input-error :messages="$errors->get('rt')" class="mt-2" />
                                     </div>
                                 </div>
-
-                                {{-- Debug Info (Remove in production) --}}
-                                {{-- <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-xs" id="debug-info"
-                                    style="display: none;">
-                                    <p class="font-bold text-blue-900 mb-1">Debug Info:</p>
-                                    <div id="debug-content" class="text-blue-800 font-mono"></div>
-                                </div> --}}
                             </div>
                         </div>
 
@@ -530,6 +573,42 @@
 
     @push('scripts')
         <script>
+            // Indonesian validation messages for required fields
+            document.addEventListener('DOMContentLoaded', function() {
+                const validationMessages = {
+                    'name': 'Silakan isi nama lengkap',
+                    'no_telepon': 'Silakan isi nomor WhatsApp',
+                    'alamat': 'Silakan isi alamat',
+                    'nik': 'Silakan isi NIK',
+                    'tempat_lahir': 'Silakan isi tempat lahir',
+                    'tanggal_lahir': 'Silakan pilih tanggal lahir',
+                    'jenis_kelamin': 'Silakan pilih jenis kelamin',
+                    'role': 'Silakan pilih role',
+                    'password': 'Silakan isi password',
+                    'password_confirmation': 'Silakan isi konfirmasi password',
+                    'bidang_id': 'Silakan pilih bidang tugas',
+                    'posyandu_id': 'Silakan pilih posyandu',
+                    'rw': 'Silakan pilih RW',
+                    'rt': 'Silakan pilih RT'
+                };
+
+                // Apply Indonesian validation messages
+                Object.keys(validationMessages).forEach(fieldName => {
+                    const field = document.querySelector(`[name="${fieldName}"]`);
+                    if (field) {
+                        field.addEventListener('invalid', function() {
+                            this.setCustomValidity(validationMessages[fieldName]);
+                        });
+                        field.addEventListener('input', function() {
+                            this.setCustomValidity('');
+                        });
+                        field.addEventListener('change', function() {
+                            this.setCustomValidity('');
+                        });
+                    }
+                });
+            });
+
             document.addEventListener('alpine:init', () => {
 
                 const getRegionCode = (region) => region.id || region.code;
@@ -542,18 +621,19 @@
 
                     init() {
                         @if (auth()->user()->kabupaten)
-                            // Cari data kabupaten berdasarkan nama untuk mendapatkan kodenya
                             const initialKab = this.kabupatens.find(k => k.name ===
                                 '{{ auth()->user()->kabupaten }}');
                             if (initialKab) {
                                 const code = initialKab.id || initialKab.code;
                                 this.selectedKabupaten = `${code}_${initialKab.name}`;
-
-                                // Beritahu komponen lain bahwa kabupaten sudah terpilih secara otomatis
+                                // Only dispatch if kecamatan field is visible (not for ketua-posyandu/kader roles)
                                 this.$nextTick(() => {
-                                    this.$dispatch('region-selected', {
-                                        code: code
-                                    });
+                                    const kecamatanField = document.getElementById('kecamatan-field');
+                                    if (kecamatanField && kecamatanField.style.display !== 'none') {
+                                        this.$dispatch('region-selected', {
+                                            code: code
+                                        });
+                                    }
                                 });
                             }
                         @endif
@@ -562,10 +642,14 @@
                         }
 
                         if (this.selectedKabupaten) {
-                            let code = this.selectedKabupaten.split('_')[0];
-                            this.$dispatch('region-selected', {
-                                code: code
-                            });
+                            const kecamatanField = document.getElementById('kecamatan-field');
+                            // Only dispatch if kecamatan field is visible
+                            if (kecamatanField && kecamatanField.style.display !== 'none') {
+                                let code = this.selectedKabupaten.split('_')[0];
+                                this.$dispatch('region-selected', {
+                                    code: code
+                                });
+                            }
                         }
                     },
 
@@ -664,6 +748,14 @@
 
                     async fetchKecamatan(parentId) {
                         if (!parentId) return;
+                        
+                        // Only fetch if kecamatan field is visible
+                        const kecamatanField = document.getElementById('kecamatan-field');
+                        if (!kecamatanField || kecamatanField.style.display === 'none') {
+                            console.log('[fetchKecamatan] Skipped - kecamatan field not visible');
+                            return;
+                        }
+                        
                         this.loading = true;
 
                         console.log('Fetching Kecamatan for Parent:', parentId);
@@ -680,11 +772,21 @@
                             this.kecamatanList = data.data ?? [];
 
                             if (this.kecamatanList.length === 0) {
-                                alert('Tidak ada data kecamatan untuk wilayah ini.');
+                                Swal.fire({
+                                    icon: 'info',
+                                    title: 'Data Kosong',
+                                    text: 'Tidak ada data kecamatan untuk wilayah ini.',
+                                    confirmButtonColor: '#3b82f6'
+                                });
                             }
                         } catch (error) {
                             console.error('Error fetching kecamatan:', error);
-                            alert('Gagal memuat data kecamatan.');
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal Memuat Data',
+                                text: 'Gagal memuat data kecamatan. Periksa koneksi internet Anda.',
+                                confirmButtonColor: '#ef4444'
+                            });
                         } finally {
                             this.loading = false;
                         }
@@ -695,8 +797,6 @@
                         const val = `${code}_${kec.name}`;
                         this.selectedKecamatan = val;
                         document.getElementById('kecamatan-hidden').value = val;
-
-                        // this.selectedKecamatan = kec.name;
                         this.search = '';
                         this.open = false;
                         this.$dispatch('kecamatan-selected', {
@@ -721,13 +821,6 @@
                         if (this.desaList.length > 0) {
                             console.log('Sample Data Desa:', this.desaList[0]);
                         }
-
-                        // if (this.selectedDesa) {
-                        //     let code = this.selectedDesa.split('_')[0];
-                        //     this.$dispatch('kecamatan-selected', {
-                        //         code: code
-                        //     });
-                        // }
                     },
 
                     getDesaName(value) {
@@ -744,6 +837,13 @@
                     async fetchDesa(parentId) {
                         if (!parentId) return;
 
+                        // Only fetch if desa field is visible
+                        const desaField = document.getElementById('desa-field');
+                        if (!desaField || desaField.style.display === 'none') {
+                            console.log('[fetchDesa] Skipped - desa field not visible');
+                            return;
+                        }
+
                         console.log('Fetching Desa for Parent:', parentId);
                         this.loading = true;
                         this.desaList = [];
@@ -758,7 +858,12 @@
                             this.desaList = data.data ?? [];
 
                             if (this.desaList.length === 0) {
-                                alert('Tidak ada data desa untuk kecamatan ini.');
+                                Swal.fire({
+                                    icon: 'info',
+                                    title: 'Data Kosong',
+                                    text: 'Tidak ada data desa untuk kecamatan ini.',
+                                    confirmButtonColor: '#3b82f6'
+                                });
                             }
 
                         } catch (error) {
@@ -780,86 +885,6 @@
                     }
                 }));
             });
-
-            // document.addEventListener('DOMContentLoaded', function() {
-            //     const roleSelect = document.getElementById('role');
-            //     const rwRtFields = document.getElementById('rw-rt-fields');
-            //     const posyanduSelect = document.getElementById('posyandu_id');
-            //     const rwSelect = document.getElementById('rw');
-            //     const rtSelect = document.getElementById('rt');
-
-            //     function toggleRwRtFields() {
-            //         if (roleSelect.value === 'masyarakat') {
-            //             rwRtFields.style.display = 'block';
-            //             rwSelect.required = true;
-            //         } else {
-            //             rwRtFields.style.display = 'none';
-            //             rwSelect.required = false;
-            //             rtSelect.value = '';
-            //             rwSelect.value = '';
-            //         }
-            //     }
-            //     async function fetchRwRtOptions() {
-            //         if (roleSelect.value !== 'masyarakat' || !posyanduSelect.value) {
-            //             return;
-            //         }
-
-            //         try {
-            //             const response = await fetch(`/api/posyandu/${posyanduSelect.value}/rw-rt`);
-            //             const data = await response.json();
-
-            //             rwSelect.innerHTML = '<option value="" disabled selected>Pilih RW</option>';
-            //             if (data.rw_list && data.rw_list.length > 0) {
-            //                 data.rw_list.forEach(rw => {
-            //                     const option = document.createElement('option');
-            //                     option.value = rw;
-            //                     option.textContent = rw;
-            //                     rwSelect.appendChild(option);
-            //                 });
-            //             } else {
-            //                 for (let i = 1; i <= 15; i++) {
-            //                     const rw = `RW${String(i).padStart(2, '0')}`;
-            //                     const option = document.createElement('option');
-            //                     option.value = rw;
-            //                     option.textContent = rw;
-            //                     rwSelect.appendChild(option);
-            //                 }
-            //             }
-            //             window.rtMapping = data.rt_mapping || {};
-
-            //         } catch (error) {
-            //             console.error('Error fetching RW/RT:', error);
-            //         }
-            //     }
-
-            //     rwSelect.addEventListener('change', function() {
-            //         const selectedRw = this.value;
-            //         rtSelect.innerHTML = '<option value="">-- Tidak ada/Tidak tahu --</option>';
-
-            //         if (window.rtMapping && window.rtMapping[selectedRw]) {
-            //             window.rtMapping[selectedRw].forEach(rt => {
-            //                 const option = document.createElement('option');
-            //                 option.value = rt;
-            //                 option.textContent = rt;
-            //                 rtSelect.appendChild(option);
-            //             });
-            //         } else {
-            //             for (let i = 1; i <= 53; i++) {
-            //                 const rt = `RT${String(i).padStart(3, '0')}`;
-            //                 const option = document.createElement('option');
-            //                 option.value = rt;
-            //                 option.textContent = rt;
-            //                 rtSelect.appendChild(option);
-            //             }
-            //         }
-            //     });
-
-            //     roleSelect.addEventListener('change', toggleRwRtFields);
-            //     posyanduSelect.addEventListener('change', fetchRwRtOptions);
-
-            //     toggleRwRtFields();
-            // });
-
             const POSYANDU_RT_MAPPING = @json(auth()->user()->posyandu->rt_mapping ?? []);
             const POSYANDU_RW_LIST = @json(auth()->user()->posyandu->rw_list ?? []);
 
@@ -868,7 +893,6 @@
             console.log('Posyandu RT Mapping:', POSYANDU_RT_MAPPING);
             console.log('=====================================');
 
-            // ✅ HANDLE RW CHANGE
             function handleRwChange(selectedRw) {
                 console.log('[RW Change] Selected RW:', selectedRw);
 
@@ -880,25 +904,19 @@
                 if (!selectedRw || selectedRw === '') {
                     console.log('[RW Change] No RW selected, disabling RT');
 
-                    // Reset RT dropdown
                     rtSelect.disabled = true;
                     rtSelect.className =
                         'mt-1 block w-full border-2 rounded-lg px-4 py-2.5 transition border-gray-200 bg-gray-50 cursor-not-allowed text-gray-400';
                     rtSelect.innerHTML = '<option value="">Pilih RW terlebih dahulu</option>';
-
-                    // Update helper text
                     rtHelperText.className = 'mt-2 text-xs text-amber-600';
                     rtHelperText.innerHTML = '⚠️ Silakan pilih RW terlebih dahulu';
 
                     return;
                 }
-
-                // Get RT list for selected RW
                 const rtList = POSYANDU_RT_MAPPING[selectedRw];
 
                 console.log('[RW Change] RT List for ' + selectedRw + ':', rtList);
 
-                // Show debug info
                 debugInfo.style.display = 'block';
                 debugContent.innerHTML = `
         Selected RW: ${selectedRw}<br>
@@ -909,8 +927,6 @@
 
                 if (!rtList || rtList.length === 0) {
                     console.warn('[RW Change] No RT found for RW:', selectedRw);
-
-                    // Enable but show no data
                     rtSelect.disabled = false;
                     rtSelect.className =
                         'mt-1 block w-full border-2 rounded-lg px-4 py-2.5 transition border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200';
@@ -919,20 +935,21 @@
                     rtHelperText.className = 'mt-2 text-xs text-red-600';
                     rtHelperText.innerHTML = '❌ Tidak ada RT tersedia untuk RW ' + selectedRw;
 
-                    alert('Peringatan: Tidak ada RT yang tersedia untuk RW ' + selectedRw +
-                        '. Silakan hubungi administrator untuk mengatur RT di posyandu ini.');
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'RT Tidak Tersedia',
+                        html: 'Tidak ada RT yang tersedia untuk <strong>RW ' + selectedRw + '</strong>.<br>Silakan hubungi administrator untuk mengatur RT di posyandu ini.',
+                        confirmButtonColor: '#f59e0b'
+                    });
 
                     return;
                 }
-
-                // ✅ Populate RT dropdown
                 console.log('[RW Change] Populating RT dropdown with', rtList.length, 'items');
 
                 rtSelect.disabled = false;
                 rtSelect.className =
                     'mt-1 block w-full border-2 rounded-lg px-4 py-2.5 transition border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200';
 
-                // Build options
                 let options = '<option value="">Pilih RT</option>';
                 rtList.forEach(rt => {
                     const selected = '{{ old('rt') }}' === rt ? 'selected' : '';
@@ -941,14 +958,11 @@
 
                 rtSelect.innerHTML = options;
 
-                // Update helper text
                 rtHelperText.className = 'mt-2 text-xs text-green-600';
                 rtHelperText.innerHTML = `✓ ${rtList.length} RT tersedia untuk RW ${selectedRw}`;
 
                 console.log('[RW Change] RT dropdown populated successfully');
             }
-
-            // ✅ INITIALIZE ON PAGE LOAD
             document.addEventListener('DOMContentLoaded', function() {
                 console.log('[DOMContentLoaded] Initializing RW/RT handler');
 
@@ -959,8 +973,6 @@
                     console.error('[DOMContentLoaded] RW or RT select not found!');
                     return;
                 }
-
-                // ✅ Check if old RW value exists (from validation error)
                 const oldRw = '{{ old('rw') }}';
                 if (oldRw) {
                     console.log('[DOMContentLoaded] Old RW value found:', oldRw);
@@ -970,11 +982,19 @@
 
                 console.log('[DOMContentLoaded] RW/RT handler initialized successfully');
             });
-
-            // ✅ SHOW RW/RT FIELDS FOR MASYARAKAT
             document.addEventListener('DOMContentLoaded', function() {
                 const roleSelect = document.getElementById('role');
                 const rwRtFields = document.getElementById('rw-rt-fields');
+                const rwSelect = document.getElementById('rw');
+                const rtSelect = document.getElementById('rt');
+
+                // Kader hidden fields
+                const kaderKabupaten = document.getElementById('kader_kabupaten');
+                const kaderKabupatenId = document.getElementById('kader_kabupaten_id');
+                const kaderKecamatan = document.getElementById('kader_kecamatan');
+                const kaderKecamatanId = document.getElementById('kader_kecamatan_id');
+                const kaderDesa = document.getElementById('kader_desa');
+                const kaderPosyanduId = document.getElementById('kader_posyandu_id');
 
                 if (!roleSelect || !rwRtFields) return;
 
@@ -987,10 +1007,30 @@
                     // Show RW/RT fields for Masyarakat when created by Kader
                     if (selectedRole === 'masyarakat' && currentUserRole === 'kader') {
                         rwRtFields.style.display = 'block';
-                        console.log('[Role Change] RW/RT fields shown');
+                        // Enable required validation when fields are visible
+                        if (rwSelect) rwSelect.setAttribute('required', 'required');
+                        if (rtSelect) rtSelect.setAttribute('required', 'required');
+                        // Enable kader hidden fields
+                        if (kaderKabupaten) kaderKabupaten.disabled = false;
+                        if (kaderKabupatenId) kaderKabupatenId.disabled = false;
+                        if (kaderKecamatan) kaderKecamatan.disabled = false;
+                        if (kaderKecamatanId) kaderKecamatanId.disabled = false;
+                        if (kaderDesa) kaderDesa.disabled = false;
+                        if (kaderPosyanduId) kaderPosyanduId.disabled = false;
+                        console.log('[Role Change] RW/RT fields shown, kader hidden fields enabled');
                     } else {
                         rwRtFields.style.display = 'none';
-                        console.log('[Role Change] RW/RT fields hidden');
+                        // Disable required validation when fields are hidden
+                        if (rwSelect) rwSelect.removeAttribute('required');
+                        if (rtSelect) rtSelect.removeAttribute('required');
+                        // Disable kader hidden fields
+                        if (kaderKabupaten) kaderKabupaten.disabled = true;
+                        if (kaderKabupatenId) kaderKabupatenId.disabled = true;
+                        if (kaderKecamatan) kaderKecamatan.disabled = true;
+                        if (kaderKecamatanId) kaderKecamatanId.disabled = true;
+                        if (kaderDesa) kaderDesa.disabled = true;
+                        if (kaderPosyanduId) kaderPosyanduId.disabled = true;
+                        console.log('[Role Change] RW/RT fields hidden, kader hidden fields disabled');
                     }
                 }
 
@@ -1026,11 +1066,48 @@
                 const kecamatanField = document.getElementById('kecamatan-field');
                 const desaField = document.getElementById('desa-field');
                 const posyanduField = document.getElementById('posyandu-field');
-                const posyanduSelect = document.getElementById('posyandu_id');
+                const posyanduSelect = document.getElementById('posyandu_select');
 
-                // const kabupatenSelect = document.getElementById('kabupaten_id');
-                // const kecamatanSelect = document.getElementById('kecamatan_id');
-                // const desaSelect = document.getElementById('desa_id');
+                // Kader hidden fields (for creating masyarakat)
+                const kaderKabupaten = document.getElementById('kader_kabupaten');
+                const kaderKabupatenId = document.getElementById('kader_kabupaten_id');
+                const kaderKecamatan = document.getElementById('kader_kecamatan');
+                const kaderKecamatanId = document.getElementById('kader_kecamatan_id');
+                const kaderDesa = document.getElementById('kader_desa');
+                const kaderPosyanduId = document.getElementById('kader_posyandu_id');
+
+                // Posyandu select hidden fields (for operator-desa creating ketua-posyandu)
+                const posyanduKabupaten = document.getElementById('posyandu_kabupaten');
+                const posyanduKabupatenId = document.getElementById('posyandu_kabupaten_id');
+                const posyanduKecamatan = document.getElementById('posyandu_kecamatan');
+                const posyanduKecamatanId = document.getElementById('posyandu_kecamatan_id');
+                const posyanduDesa = document.getElementById('posyandu_desa');
+
+                function disableKaderFields() {
+                    if (kaderKabupaten) kaderKabupaten.disabled = true;
+                    if (kaderKabupatenId) kaderKabupatenId.disabled = true;
+                    if (kaderKecamatan) kaderKecamatan.disabled = true;
+                    if (kaderKecamatanId) kaderKecamatanId.disabled = true;
+                    if (kaderDesa) kaderDesa.disabled = true;
+                    if (kaderPosyanduId) kaderPosyanduId.disabled = true;
+                }
+
+                function enableKaderFields() {
+                    if (kaderKabupaten) kaderKabupaten.disabled = false;
+                    if (kaderKabupatenId) kaderKabupatenId.disabled = false;
+                    if (kaderKecamatan) kaderKecamatan.disabled = false;
+                    if (kaderKecamatanId) kaderKecamatanId.disabled = false;
+                    if (kaderDesa) kaderDesa.disabled = false;
+                    if (kaderPosyanduId) kaderPosyanduId.disabled = false;
+                }
+
+                function disablePosyanduFields() {
+                    if (posyanduKabupaten) { posyanduKabupaten.disabled = true; posyanduKabupaten.name = 'posyandu_kabupaten_val'; }
+                    if (posyanduKabupatenId) { posyanduKabupatenId.disabled = true; posyanduKabupatenId.name = 'posyandu_kabupaten_id_val'; }
+                    if (posyanduKecamatan) { posyanduKecamatan.disabled = true; posyanduKecamatan.name = 'posyandu_kecamatan_val'; }
+                    if (posyanduKecamatanId) { posyanduKecamatanId.disabled = true; posyanduKecamatanId.name = 'posyandu_kecamatan_id_val'; }
+                    if (posyanduDesa) { posyanduDesa.disabled = true; posyanduDesa.name = 'posyandu_desa_val'; }
+                }
 
                 function toggleFields() {
                     jenisWilayahField.style.display = 'none';
@@ -1041,6 +1118,23 @@
                     posyanduField.style.display = 'none';
                     bidangField.style.display = 'none';
 
+                    // Disable all location hidden fields by default
+                    disableKaderFields();
+                    disablePosyanduFields();
+
+                    // Disable admin-kabupaten hidden kabupaten field by default
+                    const adminKabupatenKabupaten = document.getElementById('admin-kabupaten-kabupaten');
+                    if (adminKabupatenKabupaten) {
+                        adminKabupatenKabupaten.disabled = true;
+                        adminKabupatenKabupaten.name = 'admin_kabupaten_kabupaten_val';
+                    }
+
+                    // Hide kabupaten display field by default
+                    const kabupatenDisplayField = document.getElementById('kabupaten-display-field');
+                    if (kabupatenDisplayField) {
+                        kabupatenDisplayField.style.display = 'none';
+                    }
+
                     jenisWilayahSelect.required = false;
                     posyanduSelect.required = false;
                     bidangSelect.required = false;
@@ -1049,6 +1143,22 @@
 
                     const role = roleSelect.value;
                     const currentUserRole = '{{ auth()->user()->role }}';
+
+                    // For admin-kabupaten creating users: auto-fill kabupaten from logged-in user
+                    if (currentUserRole === 'admin-kabupaten') {
+                        // Enable hidden kabupaten field and show display field for roles that need it
+                        if (role === 'ketua-timpembina-posyandu' || role === 'kabid' || role === 'admin-kecamatan' || 
+                            role === 'kades' || role === 'bu-kades' || role === 'operator-desa') {
+                            if (adminKabupatenKabupaten) {
+                                adminKabupatenKabupaten.disabled = false;
+                                adminKabupatenKabupaten.name = 'kabupaten';
+                            }
+                            // Show kabupaten display field
+                            if (kabupatenDisplayField) {
+                                kabupatenDisplayField.style.display = 'block';
+                            }
+                        }
+                    }
 
                     if (role === 'ketua-timpembina-posyandu' || role === 'admin-kabupaten') {
                         jenisWilayahField.style.display = 'block';
@@ -1063,8 +1173,22 @@
                     }
 
                     if (role === 'admin-kecamatan') {
+                        // Show kecamatan for admin-kecamatan
                         kecamatanField.style.display = 'block';
-                        // kecamatanSelect.required = true;
+                        // Show kabupaten only if not admin-kabupaten
+                        if (currentUserRole !== 'admin-kabupaten') {
+                            kabupatenField.style.display = 'block';
+                        }
+                    }
+
+                    // Kades and Bu-Kades: show kecamatan and desa
+                    if (role === 'kades' || role === 'bu-kades') {
+                        kecamatanField.style.display = 'block';
+                        desaField.style.display = 'block';
+                        // Show kabupaten only if not admin-kabupaten
+                        if (currentUserRole !== 'admin-kabupaten') {
+                            kabupatenField.style.display = 'block';
+                        }
                     }
 
                     if (role === 'ketua-posyandu') {
@@ -1074,15 +1198,17 @@
 
                     if (role === 'operator-desa') {
                         kecamatanField.style.display = 'block';
-                        // kecamatanSelect.required = true;
+                        desaField.style.display = 'block';
+                        // Show kabupaten only if not admin-kabupaten
+                        if (currentUserRole !== 'admin-kabupaten') {
+                            kabupatenField.style.display = 'block';
+                        }
 
                         if (currentUserRole === 'ketua-posyandu') {
                             const ketuaKaderPosyanduId = '{{ auth()->user()->posyandu_id }}';
                             posyanduSelect.value = ketuaKaderPosyanduId;
                             posyanduSelect.disabled = true;
                         }
-                        desaField.style.display = 'block';
-                        // desaSelect.required = true;
                     }
 
                     if (role === 'kader') {
@@ -1090,8 +1216,9 @@
                         bidangSelect.required = true;
 
                         if (currentUserRole === 'operator-desa') {
-                            posyanduField.style.display = 'none';
-                            posyanduSelect.required = false;
+                            // Operator-desa can select posyandu for kader
+                            posyanduField.style.display = 'block';
+                            posyanduSelect.required = true;
                         }
                         else if (currentUserRole === 'ketua-posyandu') {
                             posyanduField.style.display = 'none';
@@ -1100,6 +1227,34 @@
                             posyanduField.style.display = 'block';
                             posyanduSelect.required = true;
                         }
+                    }
+
+                    // Auto-fetch kecamatan for admin-kabupaten when selecting roles that need it
+                    autoFetchKecamatanForAdminKabupaten(role);
+                }
+
+                // Function to auto-fetch kecamatan data for admin-kabupaten
+                function autoFetchKecamatanForAdminKabupaten(role) {
+                    const currentUserRole = '{{ auth()->user()->role }}';
+                    if (currentUserRole !== 'admin-kabupaten') return;
+                    
+                    // Roles that need kecamatan fetching
+                    const rolesNeedingKecamatan = ['admin-kecamatan', 'kades', 'bu-kades', 'operator-desa'];
+                    if (!rolesNeedingKecamatan.includes(role)) return;
+                    
+                    // Get kabupaten_id from the kabupaten list based on admin-kabupaten's kabupaten name
+                    const adminKabupatenName = '{{ auth()->user()->kabupaten }}';
+                    const kabupatenList = @json($kabupatenList ?? []);
+                    
+                    const kabupaten = kabupatenList.find(k => k.name === adminKabupatenName);
+                    if (kabupaten) {
+                        const code = kabupaten.id || kabupaten.code;
+                        console.log('[Auto-fetch Kecamatan] Admin-kabupaten selected role:', role, 'Fetching kecamatan for:', code);
+                        
+                        // Dispatch event to fetch kecamatan
+                        window.dispatchEvent(new CustomEvent('region-selected', { 
+                            detail: { code: code }
+                        }));
                     }
                 }
 
@@ -1126,6 +1281,56 @@
 
                 roleSelect.addEventListener('change', toggleFields);
                 jenisWilayahSelect.addEventListener('change', toggleWilayahField);
+
+                // Auto-fill kabupaten, kecamatan, desa when posyandu is selected (for ketua-posyandu and kader roles)
+                posyanduSelect.addEventListener('change', function() {
+                    const selectedOption = this.options[this.selectedIndex];
+                    const selectedRole = roleSelect.value;
+                    
+                    if (selectedOption && selectedOption.value && (selectedRole === 'ketua-posyandu' || selectedRole === 'kader')) {
+                        const kabupaten = selectedOption.getAttribute('data-kabupaten');
+                        const kabupatenId = selectedOption.getAttribute('data-kabupaten-id');
+                        const kecamatan = selectedOption.getAttribute('data-kecamatan');
+                        const kecamatanId = selectedOption.getAttribute('data-kecamatan-id');
+                        const desa = selectedOption.getAttribute('data-desa');
+
+                        // Set hidden field values and enable them with correct names
+                        const kabupatenField = document.getElementById('posyandu_kabupaten');
+                        const kabupatenIdField = document.getElementById('posyandu_kabupaten_id');
+                        const kecamatanField = document.getElementById('posyandu_kecamatan');
+                        const kecamatanIdField = document.getElementById('posyandu_kecamatan_id');
+                        const desaFieldHidden = document.getElementById('posyandu_desa');
+
+                        // Set values
+                        kabupatenField.value = kabupaten || '';
+                        kabupatenIdField.value = kabupatenId || '';
+                        kecamatanField.value = kecamatan || '';
+                        kecamatanIdField.value = kecamatanId || '';
+                        desaFieldHidden.value = desa || '';
+
+                        // Enable fields and set correct names
+                        kabupatenField.disabled = false;
+                        kabupatenField.name = 'kabupaten';
+                        kabupatenIdField.disabled = false;
+                        kabupatenIdField.name = 'kabupaten_id';
+                        kecamatanField.disabled = false;
+                        kecamatanField.name = 'kecamatan';
+                        kecamatanIdField.disabled = false;
+                        kecamatanIdField.name = 'kecamatan_id';
+                        desaFieldHidden.disabled = false;
+                        desaFieldHidden.name = 'desa';
+
+                        console.log('[Posyandu Change] Auto-fill location data:', {
+                            kabupaten: kabupaten,
+                            kabupatenId: kabupatenId,
+                            kecamatan: kecamatan,
+                            kecamatanId: kecamatanId,
+                            desa: desa,
+                            posyanduId: selectedOption.value,
+                            role: selectedRole
+                        });
+                    }
+                });
             });
             const currentUserRole = @json(auth()->user()->role);
             const roleTargets = {

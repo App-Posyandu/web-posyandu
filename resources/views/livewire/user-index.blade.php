@@ -1,5 +1,58 @@
-<div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-4 sm:p-6 lg:p-8">
+<div class="w-full mx-auto sm:px-6 lg:px-8">
+    {{-- SweetAlert for success messages --}}
+    @if (session('swal_success'))
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                Swal.fire({
+                    icon: 'success',
+                    title: @json(session('swal_success.title')),
+                    text: @json(session('swal_success.text')),
+                    confirmButtonColor: '#10b981'
+                });
+            });
+        </script>
+    @endif
+
+    @if (session('swal_error'))
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: @json(session('swal_error.title')),
+                    text: @json(session('swal_error.text')),
+                    confirmButtonColor: '#ef4444'
+                });
+            });
+        </script>
+    @endif
+
+    @if (session('success'))
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil',
+                    text: @json(session('success')),
+                    confirmButtonColor: '#10b981'
+                });
+            });
+        </script>
+    @endif
+
+    @if (session('error'))
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal',
+                    text: @json(session('error')),
+                    confirmButtonColor: '#ef4444'
+                });
+            });
+        </script>
+    @endif
+
+    <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8">
         @if (session('whatsapp_link'))
             <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
                 <div class="flex items-start">
@@ -33,27 +86,9 @@
             </div>
         @endif
         @if (session('success'))
-            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg mb-6" role="alert">
-                <div class="flex">
-                    <i class="bi bi-check-circle-fill mr-3 mt-1"></i>
-                    <div>
-                        <p class="font-bold">Berhasil</p>
-                        <p class="text-sm">{{ session('success') }}</p>
-                    </div>
-                </div>
-            </div>
         @endif
 
         @if (session('error'))
-            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg mb-6" role="alert">
-                <div class="flex">
-                    <i class="bi bi-exclamation-triangle-fill mr-3 mt-1"></i>
-                    <div>
-                        <p class="font-bold">Gagal</p>
-                        <p class="text-sm">{{ session('error') }}</p>
-                    </div>
-                </div>
-            </div>
         @endif
 
         @if (auth()->user()->role === 'operator-desa')
@@ -235,6 +270,15 @@
                                             class="px-3 py-1 bg-yellow-500 text-white rounded-md text-xs text-center hover:bg-yellow-600 transition-colors duration-150">
                                             <i class="bi bi-pencil-fill mr-1"></i> Ubah
                                         </a>
+                                        <form id="delete-form-table-{{ $user->id }}" action="{{ route('admin.users.destroy', $user) }}" method="POST" style="display: inline;">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="button"
+                                                onclick="confirmDeleteUser('{{ $user->id }}', '{{ $user->name }}')"
+                                                class="w-full px-3 py-1 bg-red-500 text-white rounded-md text-xs text-center hover:bg-red-600 transition-colors duration-150">
+                                                <i class="bi bi-trash mr-1"></i> Hapus
+                                            </button>
+                                        </form>
                                     @endif
 
                                     @if (is_null($user->verified_at) && in_array($user->role, ['masyarakat', 'kader']))
@@ -275,12 +319,12 @@
                                                     <i class="bi bi-x-circle"></i> Nonaktifkan
                                                 </button>
                                             @else
-                                                <form action="{{ route('admin.users.reactivate', $user) }}"
+                                                <form id="reactivate-form-{{ $user->id }}" action="{{ route('admin.users.reactivate', $user) }}"
                                                     method="POST" class="inline">
                                                     @csrf
                                                     @method('PATCH')
-                                                    <button type="submit"
-                                                        onclick="return confirm('Aktifkan kembali {{ $user->name }}?')"
+                                                    <button type="button"
+                                                        onclick="confirmReactivate('{{ $user->id }}', '{{ $user->name }}', '{{ $user->role === 'ketua-posyandu' ? 'Ketua Posyandu' : 'Kader' }}')"
                                                         class="px-3 py-1 bg-green-500 text-white rounded-md text-xs hover:bg-green-600">
                                                         <i class="bi bi-check-circle"></i> Aktifkan
                                                     </button>
@@ -301,12 +345,12 @@
                                                     <i class="bi bi-x-circle"></i> Nonaktifkan
                                                 </button>
                                             @else
-                                                <form action="{{ route('admin.users.reactivate-kabid', $user) }}"
+                                                <form id="reactivate-form-kabid-{{ $user->id }}" action="{{ route('admin.users.reactivate-kabid', $user) }}"
                                                     class="w-full" method="POST" class="inline">
                                                     @csrf
                                                     @method('PATCH')
-                                                    <button type="submit"
-                                                        onclick="return confirm('Aktifkan kembali {{ $user->name }}?')"
+                                                    <button type="button"
+                                                        onclick="confirmReactivateKabid('{{ $user->id }}', '{{ $user->name }}')"
                                                         class="w-full px-3 py-1 bg-green-500 text-white rounded-md text-xs hover:bg-green-600">
                                                         <i class="bi bi-check-circle"></i> Aktifkan
                                                     </button>
@@ -427,6 +471,16 @@
                                         <i class="bi bi-pencil-fill mr-1"></i>
                                         Ubah
                                     </a>
+                                    <form id="delete-form-card-{{ $user->id }}" action="{{ route('admin.users.destroy', $user) }}" method="POST" style="display: inline;">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="button"
+                                            onclick="confirmDeleteUser('{{ $user->id }}', '{{ $user->name }}')"
+                                            class="flex-1 flex items-center justify-center px-3 py-2 bg-red-500 text-white rounded-md text-sm font-medium hover:bg-red-600 transition-colors duration-150">
+                                            <i class="bi bi-trash mr-1"></i>
+                                            Hapus
+                                        </button>
+                                    </form>
                                 @endif
 
                                 @if (is_null($user->verified_at) && in_array($user->role, ['masyarakat', 'kader']))
@@ -638,6 +692,23 @@
                 document.getElementById('deactivateForm').reset();
             }
 
+            function confirmReactivate(userId, userName, roleLabel) {
+                Swal.fire({
+                    title: 'Aktifkan Kembali?',
+                    text: `Apakah Anda yakin ingin mengaktifkan kembali ${roleLabel} ${userName}?`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#10b981',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'Ya, Aktifkan',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        document.getElementById(`reactivate-form-${userId}`).submit();
+                    }
+                });
+            }
+
             window.onclick = function(event) {
                 const resetModal = document.getElementById('resetPasswordModal');
                 const deactivateModal = document.getElementById('deactivateModal');
@@ -673,7 +744,47 @@
                 document.getElementById('deactivateFormKabid').reset();
             }
 
-            // Close modal when clicking outside
+            function confirmReactivateKabid(userId, userName) {
+                Swal.fire({
+                    title: 'Aktifkan Kembali?',
+                    text: `Apakah Anda yakin ingin mengaktifkan kembali ${userName}?`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#10b981',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'Ya, Aktifkan',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        document.getElementById(`reactivate-form-kabid-${userId}`).submit();
+                    }
+                });
+            }
+
+            function confirmDeleteUser(userId, userName) {
+                Swal.fire({
+                    title: 'Hapus Pengguna?',
+                    text: `Apakah Anda yakin ingin menghapus pengguna "${userName}"? Tindakan ini tidak dapat dibatalkan.`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#ef4444',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'Ya, Hapus',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const formTable = document.getElementById(`delete-form-table-${userId}`);
+                        const formCard = document.getElementById(`delete-form-card-${userId}`);
+                        
+                        if (formTable) {
+                            formTable.submit();
+                        } else if (formCard) {
+                            formCard.submit();
+                        }
+                    }
+                });
+            }
+
             window.onclick = function(event) {
                 const resetModal = document.getElementById('resetPasswordModalKabid');
                 const deactivateModal = document.getElementById('deactivateModalKabid');

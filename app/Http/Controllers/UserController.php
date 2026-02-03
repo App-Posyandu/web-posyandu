@@ -62,7 +62,7 @@ class UserController extends Controller
                 break;
 
             case 'operator-desa':
-                $query->where('role', 'kader')
+                $query->whereIn('role', ['ketua-posyandu', 'kader'])
                     ->where('posyandu_id', $currentUser->posyandu_id);
                 break;
             case 'kades':
@@ -229,6 +229,43 @@ class UserController extends Controller
         }
 
         $request->validate($validationRules);
+        if ($request->role === 'ketua-posyandu' && $request->filled('posyandu_id')) {
+            $existingActiveKetua = User::where('role', 'ketua-posyandu')
+                ->where('posyandu_id', $request->posyandu_id)
+                ->where('is_active', true)
+                ->first();
+
+            if ($existingActiveKetua) {
+                $posyanduName = Posyandu::find($request->posyandu_id)?->nama_posyandu ?? 'Posyandu ini';
+                return redirect()->back()
+                    ->with('swal_error', [
+                        'title' => 'Ketua Posyandu Sudah Ada',
+                        'text' => "Tidak dapat membuat Ketua Posyandu baru karena sudah ada Ketua Posyandu aktif ({$existingActiveKetua->name}) di {$posyanduName}. Nonaktifkan terlebih dahulu Ketua Posyandu yang aktif sebelum menambahkan yang baru."
+                    ])
+                    ->withInput();
+            }
+        }
+
+        // Check for existing active kader in the same bidang and posyandu
+        if ($request->role === 'kader' && $request->filled('bidang_id') && $request->filled('posyandu_id')) {
+            $existingActiveKader = User::where('role', 'kader')
+                ->where('posyandu_id', $request->posyandu_id)
+                ->where('bidang_id', $request->bidang_id)
+                ->where('is_active', true)
+                ->first();
+
+            if ($existingActiveKader) {
+                $bidang = \App\Models\BidangPengajuan::find($request->bidang_id);
+                $bidangName = $bidang?->nama_bidang ?? 'bidang ini';
+                $posyanduName = Posyandu::find($request->posyandu_id)?->nama_posyandu ?? 'posyandu ini';
+                return redirect()->back()
+                    ->with('swal_error', [
+                        'title' => 'Kader Bidang Sudah Ada',
+                        'text' => "Tidak dapat membuat Kader baru karena sudah ada Kader aktif ({$existingActiveKader->name}) di bidang {$bidangName} pada {$posyanduName}. Nonaktifkan terlebih dahulu Kader yang aktif di bidang tersebut sebelum menambahkan yang baru."
+                    ])
+                    ->withInput();
+            }
+        }
 
         if ($request->role === 'masyarakat' && $request->filled('posyandu_id')) {
             $posyandu = Posyandu::find($request->posyandu_id);
@@ -404,7 +441,14 @@ class UserController extends Controller
                 'kabupaten' => ['required', 'string'],
             ],
             'kades' => [
-                'posyandu_id' => ['required', 'uuid', 'exists:posyandus,id'],
+                'kabupaten' => ['required', 'string'],
+                'kecamatan' => ['required', 'string'],
+                'desa' => ['required', 'string'],
+            ],
+            'bu-kades' => [
+                'kabupaten' => ['required', 'string'],
+                'kecamatan' => ['required', 'string'],
+                'desa' => ['required', 'string'],
             ],
             'admin-kecamatan' => [
                 'kabupaten' => ['required', 'string'],
@@ -420,7 +464,9 @@ class UserController extends Controller
             ],
             'kader' => [
                 'bidang_id' => ['required', 'uuid', 'exists:bidang_pengajuans,id'],
-                'posyandu_id' => ['nullable', 'uuid', 'exists:posyandus,id'],
+                'posyandu_id' => $currentUser->role === 'ketua-posyandu' 
+                    ? ['nullable', 'uuid', 'exists:posyandus,id']
+                    : ['required', 'uuid', 'exists:posyandus,id'],
             ],
         ];
 
@@ -468,16 +514,21 @@ class UserController extends Controller
                 $data['jenis_wilayah'] = $request->jenis_wilayah ?? 'kabupaten';
                 break;
             case 'kades':
-                $posyanduId = $request->posyandu_id;
-                $posyandu = Posyandu::find($posyanduId);
+            case 'bu-kades':
+                // Get kabupaten from hidden field (admin-kabupaten) or form input
+                $kabupatenValue = $request->kabupaten;
+                $kabupatenName = explode('_', $kabupatenValue)[1] ?? $kabupatenValue;
 
-                if ($posyandu) {
-                    $data['posyandu_id'] = $posyanduId;
-                    $data['kabupaten'] = $posyandu->kabupaten;
-                    $data['kecamatan'] = $posyandu->kecamatan;
-                    $data['desa'] = $posyandu->desa;
-                    $data['jenis_wilayah'] = $currentUser->jenis_wilayah ?? null;
-                }
+                $kecamatanValue = $request->kecamatan;
+                $kecamatanName = explode('_', $kecamatanValue)[1] ?? $kecamatanValue;
+
+                $desaValue = $request->desa;
+                $desaName = explode('_', $desaValue)[1] ?? $desaValue;
+
+                $data['kabupaten'] = $kabupatenName;
+                $data['kecamatan'] = $kecamatanName;
+                $data['desa'] = $desaName;
+                $data['jenis_wilayah'] = $currentUser->jenis_wilayah ?? 'kabupaten';
                 break;
 
             case 'admin-kecamatan':
@@ -530,11 +581,17 @@ class UserController extends Controller
                     $data['desa'] = $currentUser->desa;
                     $data['jenis_wilayah'] = $currentUser->jenis_wilayah;
                 } elseif ($currentUser->role === 'operator-desa') {
-                    $data['posyandu_id'] = $currentUser->posyandu_id;
-                    $data['kabupaten'] = $currentUser->kabupaten;
-                    $data['kecamatan'] = $currentUser->kecamatan;
-                    $data['desa'] = $currentUser->desa;
-                    $data['jenis_wilayah'] = $currentUser->jenis_wilayah;
+                    // Operator-desa selects posyandu from dropdown
+                    if ($request->filled('posyandu_id')) {
+                        $posyandu = Posyandu::find($request->posyandu_id);
+                        if ($posyandu) {
+                            $data['posyandu_id'] = $posyandu->id;
+                            $data['kabupaten'] = $posyandu->kabupaten;
+                            $data['kecamatan'] = $posyandu->kecamatan;
+                            $data['desa'] = $posyandu->desa;
+                            $data['jenis_wilayah'] = $currentUser->jenis_wilayah;
+                        }
+                    }
                 } else {
                     if ($request->filled('posyandu_id')) {
                         $posyandu = Posyandu::find($request->posyandu_id);
@@ -685,42 +742,68 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
-        $request->validate([
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'nik' => ['nullable', 'string', 'digits:16', Rule::unique(User::class)->ignore($user->id)],
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique(User::class)->ignore($user->id)],
+            'no_telepon' => ['nullable', 'string', 'max:20'],
+            'tempat_lahir' => ['nullable', 'string', 'max:255'],
+            'tanggal_lahir' => ['nullable', 'date'],
+            'jenis_kelamin' => ['nullable', 'string', 'in:Laki-laki,Perempuan'],
+            'alamat' => ['nullable', 'string'],
             'is_active' => ['nullable', 'boolean'],
-            'reason' => ['required', 'string', 'max:255'],
+            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
         ]);
 
         $currentUser = Auth::user();
         $newStatus = $request->has('is_active') ? 1 : 0;
         $oldStatus = $user->is_active;
 
+        $data = [
+            'name' => $validated['name'],
+            'nik' => $validated['nik'] ?? null,
+            'email' => $validated['email'],
+            'no_telepon' => $validated['no_telepon'] ?? null,
+            'tempat_lahir' => $validated['tempat_lahir'] ?? null,
+            'tanggal_lahir' => $validated['tanggal_lahir'] ?? null,
+            'jenis_kelamin' => $validated['jenis_kelamin'] ?? null,
+            'alamat' => $validated['alamat'] ?? null,
+            'is_active' => $newStatus,
+        ];
+
+        if ($newStatus === 0) {
+            $data['deactivated_at'] = now();
+            $data['deactivated_by'] = $currentUser->id;
+            $data['deactivation_reason'] = $request->input('reason', '-');
+        } else {
+            $data['deactivated_at'] = null;
+            $data['deactivated_by'] = null;
+            $data['deactivation_reason'] = null;
+        }
+
+        if (!empty($validated['password'])) {
+            $data['password'] = Hash::make($validated['password']);
+        }
+
+        $user->update($data);
+
+        // Catat history jika status berubah
         if ($newStatus !== $oldStatus) {
             $actionType = $newStatus ? 'activated' : 'deactivated';
             $statusText = $newStatus ? 'diaktifkan' : 'dinonaktifkan';
-            $user->update([
-                'is_active' => $newStatus,
-                'deactivated_at' => $newStatus ? null : now(),
-                'deactivated_by' => $newStatus ? null : $currentUser->id,
-                'deactivation_reason' => $newStatus ? null : $request->reason,
-            ]);
-
             UserHistory::create([
                 'user_id' => $user->id,
                 'action_by' => $currentUser->id,
                 'action_type' => $actionType,
-                'description' => "User {$statusText} oleh {$currentUser->name}. Alasan: " . ($request->reason ?? '-'),
+                'description' => "User {$statusText} oleh {$currentUser->name}.",
                 'old_data' => json_encode(['is_active' => $oldStatus]),
                 'new_data' => json_encode(['is_active' => $newStatus]),
             ]);
-
-            return redirect()
-                ->route('admin.users.index')
-                ->with('success', "Status user {$user->name} berhasil {$statusText}.");
         }
 
         return redirect()
-            ->back()
-            ->with('info', 'Tidak ada perubahan status yang dilakukan.');
+            ->route('admin.users.index')
+            ->with('success', "Data user {$user->name} berhasil diperbarui.");
     }
 
     public function importPage()
@@ -780,9 +863,26 @@ class UserController extends Controller
         }
     }
 
+    public function destroy(User $user)
+    {
+        // Hanya admin yang bisa menghapus user
+        if (Auth::user()->role !== 'admin') {
+            abort(403, 'Unauthorized: Hanya admin yang dapat menghapus user.');
+        }
 
+        // Cegah admin menghapus dirinya sendiri
+        if (Auth::id() === $user->id) {
+            return redirect()->route('admin.users.index')
+                ->with('error', 'Anda tidak dapat menghapus akun diri sendiri.');
+        }
 
-    public function destroy(string $id) {}
+        // Hapus user
+        $userName = $user->name;
+        $user->delete();
+
+        return redirect()->route('admin.users.index')
+            ->with('success', "User '{$userName}' berhasil dihapus.");
+    }
 
     public function verify(User $user)
     {
@@ -1064,12 +1164,14 @@ class UserController extends Controller
     {
         $currentUser = Auth::user();
 
+
         if ($currentUser->role !== 'operator-desa') {
             return redirect()->back()->with('error', 'Unauthorized');
         }
 
-        if ($user->role !== 'kader' || $user->posyandu_id !== $currentUser->posyandu_id) {
-            return redirect()->back()->with('error', 'Anda hanya bisa reset password kader di posyandu Anda');
+        $allowedRoles = ['kader', 'ketua-posyandu'];
+        if (!in_array($user->role, $allowedRoles) || (string)$user->posyandu_id !== (string)$currentUser->posyandu_id) {
+            return redirect()->back()->with('error', 'Anda hanya bisa reset password kader atau ketua di posyandu Anda');
         }
 
         $request->validate([
@@ -1226,11 +1328,24 @@ class UserController extends Controller
         $currentUser = Auth::user();
 
         if ($currentUser->role !== 'operator-desa') {
-            return redirect()->back()->with('error', 'Unauthorized');
+            return redirect()->back()->with('swal_error', [
+                'title' => 'Tidak Diizinkan',
+                'text' => 'Anda tidak memiliki akses untuk melakukan aksi ini.'
+            ]);
         }
 
-        if ($user->role !== 'kader' || $user->posyandu_id !== $currentUser->posyandu_id) {
-            return redirect()->back()->with('error', 'Anda hanya bisa nonaktifkan kader di posyandu Anda');
+        $allowedRoles = ['kader', 'ketua-posyandu'];
+        if (!in_array($user->role, $allowedRoles)) {
+            return redirect()->back()->with('swal_error', [
+                'title' => 'Role Tidak Valid',
+                'text' => 'Anda hanya bisa menonaktifkan kader atau ketua posyandu.'
+            ]);
+        }
+        if ($user->desa !== $currentUser->desa || $user->kecamatan !== $currentUser->kecamatan) {
+            return redirect()->back()->with('swal_error', [
+                'title' => 'Lokasi Tidak Valid',
+                'text' => 'Anda hanya bisa menonaktifkan user di desa Anda.'
+            ]);
         }
 
         $request->validate([
@@ -1244,6 +1359,8 @@ class UserController extends Controller
             'deactivation_reason' => $request->reason,
         ]);
 
+        $roleLabel = $user->role === 'ketua-posyandu' ? 'Ketua Posyandu' : 'Kader';
+
         UserHistory::create([
             'user_id' => $user->id,
             'action_by' => $currentUser->id,
@@ -1253,7 +1370,10 @@ class UserController extends Controller
             'new_data' => json_encode(['is_active' => false, 'reason' => $request->reason]),
         ]);
 
-        return redirect()->back()->with('success', 'Kader berhasil dinonaktifkan.');
+        return redirect()->back()->with('swal_success', [
+            'title' => 'Berhasil Dinonaktifkan',
+            'text' => "{$roleLabel} {$user->name} berhasil dinonaktifkan."
+        ]);
     }
 
     public function reactivateKader(User $user)
@@ -1261,11 +1381,66 @@ class UserController extends Controller
         $currentUser = Auth::user();
 
         if ($currentUser->role !== 'operator-desa') {
-            return redirect()->back()->with('error', 'Unauthorized');
+            return redirect()->back()->with('swal_error', [
+                'title' => 'Tidak Diizinkan',
+                'text' => 'Anda tidak memiliki akses untuk melakukan aksi ini.'
+            ]);
         }
 
-        if ($user->role !== 'kader' || $user->posyandu_id !== $currentUser->posyandu_id) {
-            return redirect()->back()->with('error', 'Anda hanya bisa aktifkan kader di posyandu Anda');
+        $allowedRoles = ['kader', 'ketua-posyandu'];
+        if (!in_array($user->role, $allowedRoles)) {
+            return redirect()->back()->with('swal_error', [
+                'title' => 'Role Tidak Valid',
+                'text' => 'Anda hanya bisa mengaktifkan kader atau ketua posyandu.'
+            ]);
+        }
+
+        if ($user->desa !== $currentUser->desa || $user->kecamatan !== $currentUser->kecamatan) {
+            return redirect()->back()->with('swal_error', [
+                'title' => 'Lokasi Tidak Valid',
+                'text' => 'Anda hanya bisa mengaktifkan user di desa Anda.'
+            ]);
+        }
+
+        // Check for existing active ketua-posyandu
+        if ($user->role === 'ketua-posyandu') {
+            if ($user->posyandu_id) {
+                $existingActiveKetua = User::where('role', 'ketua-posyandu')
+                    ->where('posyandu_id', $user->posyandu_id)
+                    ->where('is_active', true)
+                    ->where('id', '!=', $user->id)
+                    ->first();
+
+
+                if ($existingActiveKetua) {
+                    $posyanduName = $user->posyandu?->nama_posyandu ?? 'posyandu ini';
+                    return redirect()->back()->with('swal_error', [
+                        'title' => 'Ketua Posyandu Sudah Ada',
+                        'text' => "Tidak dapat mengaktifkan Ketua Posyandu karena sudah ada Ketua Posyandu aktif ({$existingActiveKetua->name}) di {$posyanduName}. Nonaktifkan terlebih dahulu Ketua Posyandu yang aktif."
+                    ]);
+                }
+            } else {
+                \Log::warning('Ketua posyandu has no posyandu_id', ['user_id' => $user->id]);
+            }
+        }
+
+        // Check for existing active kader in the same bidang and posyandu
+        if ($user->role === 'kader' && $user->bidang_id && $user->posyandu_id) {
+            $existingActiveKader = User::where('role', 'kader')
+                ->where('posyandu_id', $user->posyandu_id)
+                ->where('bidang_id', $user->bidang_id)
+                ->where('is_active', true)
+                ->where('id', '!=', $user->id)
+                ->first();
+
+            if ($existingActiveKader) {
+                $bidangName = $user->bidang?->nama_bidang ?? 'bidang ini';
+                $posyanduName = $user->posyandu?->nama_posyandu ?? 'posyandu ini';
+                return redirect()->back()->with('swal_error', [
+                    'title' => 'Kader Bidang Sudah Ada',
+                    'text' => "Tidak dapat mengaktifkan Kader karena sudah ada Kader aktif ({$existingActiveKader->name}) di bidang {$bidangName} pada {$posyanduName}. Nonaktifkan terlebih dahulu Kader yang aktif di bidang tersebut."
+                ]);
+            }
         }
 
         $user->update([
@@ -1274,6 +1449,8 @@ class UserController extends Controller
             'deactivated_by' => null,
             'deactivation_reason' => null,
         ]);
+
+        $roleLabel = $user->role === 'ketua-posyandu' ? 'Ketua Posyandu' : 'Kader';
 
         UserHistory::create([
             'user_id' => $user->id,
@@ -1284,7 +1461,10 @@ class UserController extends Controller
             'new_data' => json_encode(['is_active' => true]),
         ]);
 
-        return redirect()->back()->with('success', 'Kader berhasil diaktifkan kembali.');
+        return redirect()->back()->with('swal_success', [
+            'title' => 'Berhasil Diaktifkan',
+            'text' => "{$roleLabel} {$user->name} berhasil diaktifkan kembali."
+        ]);
     }
 
     public function takeoverIndex()

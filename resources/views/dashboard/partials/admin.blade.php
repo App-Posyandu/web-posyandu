@@ -1028,10 +1028,12 @@
         const userDesa = "{{ Auth::user()?->posyandu?->desa ?? '' }}";
         const bidangKabid = "{{ Auth::user()?->bidang?->nama_bidang ?? '' }}";
 
-        document.getElementById('exportExcelBtn').addEventListener('click', function() {
-            let bidangSelectHTML = "";
+        const exportExcelBtn = document.getElementById('exportExcelBtn');
+        if (exportExcelBtn) {
+            exportExcelBtn.addEventListener('click', function() {
+                let bidangSelectHTML = "";
 
-            if (userRole !== 'kabid') {
+                if (userRole !== 'kabid') {
                 bidangSelectHTML = `
             <div class="flex flex-col justify-start">
                 <label class="block text-start font-semibold mb-1 text-gray-700">Pilih Bidang:</label>
@@ -1243,6 +1245,7 @@
                 }
             });
         });
+        }
 
         function exportData(bidang, desa) {
             const selectedYear = '{{ $selectedYear }}';

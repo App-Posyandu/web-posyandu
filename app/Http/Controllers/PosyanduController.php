@@ -631,6 +631,20 @@ class PosyanduController extends Controller
 
     public function edit(Posyandu $posyandu)
     {
+        $user = Auth::user();
+    
+        if (!in_array($user->role, ['admin', 'operator-desa'])) {
+            abort(403, 'Anda tidak memiliki akses untuk mengedit posyandu.');
+        }
+
+        if ($user->role === 'operator-desa') {
+            if ($posyandu->kabupaten !== $user->kabupaten || 
+                $posyandu->kecamatan !== $user->kecamatan || 
+                $posyandu->desa !== $user->desa) {
+                abort(403, 'Anda hanya dapat mengedit posyandu di desa Anda.');
+            }
+        }
+        
         $kabupatens = $this->fetchWilayahData(
             'regencies/' . self::PROVINCE_ID . '.json',
             'kabupatens_jateng'
@@ -653,6 +667,22 @@ class PosyanduController extends Controller
 
     public function update(Request $request, Posyandu $posyandu)
     {
+        $user = Auth::user();
+        
+        // Only admin and operator-desa can update posyandu
+        if (!in_array($user->role, ['admin', 'operator-desa'])) {
+            abort(403, 'Anda tidak memiliki akses untuk mengupdate posyandu.');
+        }
+        
+        // operator-desa can only update posyandu in their desa
+        if ($user->role === 'operator-desa') {
+            if ($posyandu->kabupaten !== $user->kabupaten || 
+                $posyandu->kecamatan !== $user->kecamatan || 
+                $posyandu->desa !== $user->desa) {
+                abort(403, 'Anda hanya dapat mengupdate posyandu di desa Anda.');
+            }
+        }
+        
         $request->validate([
             'nama_posyandu' => 'required|string|max:255',
             'kabupaten' => 'required|string',
@@ -715,6 +745,22 @@ class PosyanduController extends Controller
 
     public function destroy(Posyandu $posyandu)
     {
+        $user = Auth::user();
+        
+        // Only admin and operator-desa can delete posyandu
+        if (!in_array($user->role, ['admin', 'operator-desa'])) {
+            abort(403, 'Anda tidak memiliki akses untuk menghapus posyandu.');
+        }
+        
+        // operator-desa can only delete posyandu in their desa
+        if ($user->role === 'operator-desa') {
+            if ($posyandu->kabupaten !== $user->kabupaten || 
+                $posyandu->kecamatan !== $user->kecamatan || 
+                $posyandu->desa !== $user->desa) {
+                abort(403, 'Anda hanya dapat menghapus posyandu di desa Anda.');
+            }
+        }
+        
         if ($posyandu->users()->count() > 0) {
             return redirect()->back()->with('error', 'Posyandu tidak bisa dihapus karena masih terhubung dengan data user.');
         }

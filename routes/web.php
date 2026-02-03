@@ -276,6 +276,14 @@ Route::post('/track-submission', [AjuanController::class, 'track'])
 Route::get('/lacak-pengajuan', [AjuanController::class, 'trackShow'])
     ->name('ajuan.track.show');
 
+// Public API endpoint untuk guidebook di halaman login
+Route::get('/api/guidebook', [BukuSakuController::class, 'getGuidebookForLogin'])
+    ->name('api.guidebook');
+
+// Public route untuk stream guidebook file (tanpa authentication)
+Route::get('/api/guidebook/{bukuSaku}/file', [BukuSakuController::class, 'streamGuidebookFile'])
+    ->name('api.guidebook.stream-file');
+
 Route::middleware(['auth'])->group(function () {
     Route::get('/ajuan/{ajuan}/print-bukti', [AjuanController::class, 'printBukti'])
         ->name('ajuan.print-bukti');
@@ -353,6 +361,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('buku_saku', BukuSakuController::class);
     Route::get('/buku_saku/{bukuSaku}/stream', [BukuSakuController::class, 'stream'])->name('buku_saku.stream');
     Route::get('/buku_saku/{bukuSaku}/file', [BukuSakuController::class, 'streamFile'])->name('buku_saku.stream-file');
+    Route::post('/buku_saku/{bukuSaku}/remove-guidebook', [BukuSakuController::class, 'removeGuidebook'])->name('buku_saku.remove-guidebook');
+    Route::post('/buku_saku/upload-guidebook', [BukuSakuController::class, 'uploadGuidebook'])->name('buku_saku.upload-guidebook');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

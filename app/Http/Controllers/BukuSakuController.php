@@ -132,4 +132,92 @@ class BukuSakuController extends Controller
             'Content-Disposition' => 'inline; filename="' . basename($path) . '"'
         ]);
     }
+
+    public function removeGuidebook(BukuSaku $bukuSaku)
+    {
+        $this->authorize('update', $bukuSaku);
+
+        $bukuSaku->update(['is_guidebook' => false]);
+
+        return redirect()->route('buku_saku.index')->with('success', 'Dokumen tidak lagi menjadi Guidebook untuk halaman login.');
+    }
+
+    public function getGuidebookForLogin()
+    {
+        $guidebook = BukuSaku::guidebook()->first();
+
+        if (!$guidebook) {
+            return response()->json([
+                'status' => 'no_guidebook',
+                'message' => 'Tidak ada guidebook yang ditetapkan',
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'id' => $guidebook->id,
+                'title' => $guidebook->title,
+                'description' => $guidebook->description,
+                'file_path' => route('api.guidebook.stream-file', $guidebook),
+                'download_url' => route('api.guidebook.stream-file', $guidebook),
+            ]
+        ]);
+    }
+
+    public function streamGuidebookFile(BukuSaku $bukuSaku): StreamedResponse|RedirectResponse
+    {
+        // Hanya stream jika document adalah guidebook (public)
+        if (!$bukuSaku->is_guidebook) {
+            abort(403, 'Unauthorized');
+        }
+
+        if (!Storage::disk('public')->exists($bukuSaku->file_path)) {
+            abort(404, 'File Buku Saku tidak ditemukan.');
+        }
+
+        $path = $bukuSaku->file_path;
+        $stream = Storage::disk('public')->readStream($path);
+
+        return response()->stream(function () use ($stream) {
+            fpassthru($stream);
+        }, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . basename($path) . '"'
+        ]);
+    }
+
+    public function uploadGuidebook(Request $request)
+    {
+        $this->authorize('create', BukuSaku::class);
+        $user = Auth::user();
+        
+        $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'file' => ['required', 'file', 'mimes:pdf', 'max:10240'],
+        ]);
+
+        // Delete old guidebook and its file
+        $oldGuidebook = BukuSaku::guidebook()->first();
+        if ($oldGuidebook) {
+            if (Storage::disk('public')->exists($oldGuidebook->file_path)) {
+                Storage::disk('public')->delete($oldGuidebook->file_path);
+            }
+            $oldGuidebook->delete();
+        }
+
+        // Upload new guidebook
+        $path = $request->file('file')->store('buku_saku', 'public');
+
+        BukuSaku::create([
+            'user_id' => $user->id,
+            'title' => $request->title,
+            'description' => $request->description,
+            'file_path' => $path,
+            'is_guidebook' => true,
+        ]);
+
+        return redirect()->route('buku_saku.index')->with('success', 'Guidebook berhasil diperbarui. Panduan baru akan ditampilkan di halaman login.');
+    }
 }

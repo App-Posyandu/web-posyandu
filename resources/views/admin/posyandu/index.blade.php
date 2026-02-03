@@ -1,8 +1,8 @@
 @extends('dashboard.layouts.dashboard')
 @section('title', 'Manajemen Posyandu')
 @section('content')
-    <div class="w-full mx-auto sm:px-6 lg:px-4">
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+    <div class="w-full mx-auto sm:px-6 lg:px-8">
+        <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8">
             @if (session('created_kaders'))
                 <div
                     class="mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl shadow-lg p-6">
@@ -115,7 +115,12 @@
                             class="px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600">
                             Tambah Posyandu
                         </a>
-                    @else
+                    @elseif (auth()->user()->role === 'admin-kabupaten')
+                        <div class="text-sm text-gray-500">
+                            <i class="bi bi-eye mr-1"></i>
+                            Menampilkan semua posyandu di <strong>{{ auth()->user()->kabupaten ?? '-' }}</strong>
+                        </div>
+                    @elseif (auth()->user()->role === 'ketua-posyandu')
                         <div class="text-sm text-gray-500">
                             <i class="bi bi-info-circle mr-1"></i>
                             Anda mengelola: <strong>{{ auth()->user()->posyandu->nama_posyandu ?? '-' }}</strong>
@@ -137,6 +142,19 @@
                                     <li>Anda bertanggung jawab untuk setup <strong>RW/RT</strong> yang dilayani posyandu
                                     </li>
                                     <li>Setelah setup RW/RT, user dapat memilih RW/RT saat registrasi</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                @elseif (auth()->user()->role === 'admin-kabupaten')
+                    <div class="mb-6 bg-purple-50 border-l-4 border-purple-500 p-4 rounded">
+                        <div class="flex items-start">
+                            <i class="bi bi-info-circle-fill text-purple-500 mr-3 mt-0.5"></i>
+                            <div class="text-sm text-purple-700">
+                                <p class="font-semibold mb-1">Informasi untuk Admin Kabupaten</p>
+                                <ul class="list-disc list-inside space-y-1 ml-2">
+                                    <li>Anda dapat <strong>melihat</strong> semua posyandu yang ada di kabupaten Anda</li>
+                                    <li>Untuk <strong>mengelola</strong> posyandu (edit/hapus), silakan hubungi Operator Desa terkait</li>
                                 </ul>
                             </div>
                         </div>
@@ -222,26 +240,44 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
                                         <div class="flex items-center justify-center gap-2 flex-wrap">
+                                            @php
+                                                $ketuaPosyandu = $posyandu->users->firstWhere('role', 'ketua-posyandu');
+                                                $operatorPosyandu = $posyandu->users->firstWhere('role', 'operator-desa');
+                                                $kaders = $posyandu->users->where('role', 'kader')->values();
+                                                $posyanduData = [
+                                                    'nama' => $posyandu->nama_posyandu,
+                                                    'kabupaten' => $posyandu->kabupaten,
+                                                    'kecamatan' => $posyandu->kecamatan,
+                                                    'desa' => $posyandu->desa,
+                                                    'rw_list' => $posyandu->rw_list ?? [],
+                                                    'rt_mapping' => $posyandu->rt_mapping ?? [],
+                                                    'ketua' => $ketuaPosyandu ? ['name' => $ketuaPosyandu->name, 'email' => $ketuaPosyandu->email] : null,
+                                                    'operator' => $operatorPosyandu ? ['name' => $operatorPosyandu->name, 'email' => $operatorPosyandu->email] : null,
+                                                    'kaders' => $kaders->map(fn($k) => ['name' => $k->name, 'email' => $k->email, 'bidang' => $k->bidang->nama_bidang ?? '-'])->toArray(),
+                                                ];
+                                            @endphp
                                             <button type="button"
-                                                onclick="showDetailPosyandu('{{ $posyandu->nama_posyandu }}', '{{ $posyandu->desa }}', {{ json_encode($posyandu->rw_list ?? []) }}, {{ json_encode($posyandu->rt_mapping ?? []) }})"
+                                                onclick='showDetailPosyandu(@json($posyanduData))'
                                                 class="px-3 py-2 bg-green-500 text-white text-xs font-semibold rounded hover:bg-green-600 transition">
                                                 Lihat
                                             </button>
-                                            <a href="{{ route('admin.posyandu.edit', $posyandu) }}"
-                                                class="px-3 py-2 bg-blue-500 text-white text-xs font-semibold rounded hover:bg-blue-600 transition">
-                                                Edit
-                                            </a>
-                                            <form method="POST"
-                                                action="{{ route('admin.posyandu.destroy', $posyandu) }}"
-                                                id="delete-form-{{ $posyandu->id }}" class="inline">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="button"
-                                                    onclick="confirmDeletePosyandu(event, '{{ $posyandu->id }}')"
-                                                    class="px-3 py-2 bg-red-500 text-white text-xs font-semibold rounded hover:bg-red-600 transition">
-                                                    Hapus
-                                                </button>
-                                            </form>
+                                            @if (in_array(auth()->user()->role, ['admin', 'operator-desa']))
+                                                <a href="{{ route('admin.posyandu.edit', $posyandu) }}"
+                                                    class="px-3 py-2 bg-blue-500 text-white text-xs font-semibold rounded hover:bg-blue-600 transition">
+                                                    Edit
+                                                </a>
+                                                <form method="POST"
+                                                    action="{{ route('admin.posyandu.destroy', $posyandu) }}"
+                                                    id="delete-form-{{ $posyandu->id }}" class="inline">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="button"
+                                                        onclick="confirmDeletePosyandu(event, '{{ $posyandu->id }}')"
+                                                        class="px-3 py-2 bg-red-500 text-white text-xs font-semibold rounded hover:bg-red-600 transition">
+                                                        Hapus
+                                                    </button>
+                                                </form>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>
@@ -336,36 +372,106 @@
     </div>
     @push('scripts')
         <script>
-            function showDetailPosyandu(nama, desa, rwList, rtMapping) {
-                let contentHtml = `<div class="text-left mt-4">
-        <p class="text-sm text-gray-600 mb-4 italic text-center">Wilayah pelayanan di Desa <strong>${desa}</strong></p>
-        <div class="grid grid-cols-1 gap-3" style="max-height: 400px; overflow-y: auto; padding: 5px;">`;
+            function showDetailPosyandu(data) {
+                const { nama, kabupaten, kecamatan, desa, rw_list: rwList, rt_mapping: rtMapping, ketua, operator, kaders } = data;
+                
+                let contentHtml = `<div class="text-left mt-4" style="max-height: 500px; overflow-y: auto; padding: 5px;">
+                    
+                    <!-- Lokasi -->
+                    <div class="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <h4 class="font-semibold text-blue-800 mb-2 flex items-center gap-2">
+                            <i class="bi bi-geo-alt-fill"></i> Lokasi
+                        </h4>
+                        <div class="grid grid-cols-3 gap-2 text-sm">
+                            <div>
+                                <span class="text-gray-500">Kabupaten:</span>
+                                <p class="font-medium text-gray-800">${kabupaten || '-'}</p>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Kecamatan:</span>
+                                <p class="font-medium text-gray-800">${kecamatan || '-'}</p>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Desa:</span>
+                                <p class="font-medium text-gray-800">${desa || '-'}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4 p-3 bg-purple-50 rounded-lg border border-purple-200">
+                        <h4 class="font-semibold text-purple-800 mb-3 flex items-center gap-2">
+                            <i class="bi bi-people-fill"></i> Struktur Posyandu
+                        </h4>
+                        <div class="mb-3">
+                            <span class="inline-block px-2 py-0.5 bg-pink-500 text-white text-xs rounded font-medium mb-1">Ketua Posyandu</span>
+                            ${ketua ? `
+                                <div class="ml-2 text-sm">
+                                    <p class="font-medium text-gray-800">${ketua.name}</p>
+                                    <p class="text-gray-500 text-xs">${ketua.email}</p>
+                                </div>
+                            ` : '<p class="ml-2 text-sm text-gray-400 italic">Belum ada</p>'}
+                        </div>
+                        
+                        <!-- Operator Desa -->
+                        <div class="mb-3">
+                            <span class="inline-block px-2 py-0.5 bg-indigo-500 text-white text-xs rounded font-medium mb-1">Operator Desa</span>
+                            ${operator ? `
+                                <div class="ml-2 text-sm">
+                                    <p class="font-medium text-gray-800">${operator.name}</p>
+                                    <p class="text-gray-500 text-xs">${operator.email}</p>
+                                </div>
+                            ` : '<p class="ml-2 text-sm text-gray-400 italic">Belum ada</p>'}
+                        </div>
+                        
+                        <!-- Kader -->
+                        <div>
+                            <span class="inline-block px-2 py-0.5 bg-green-500 text-white text-xs rounded font-medium mb-2">Kader (${kaders.length})</span>
+                            ${kaders.length > 0 ? `
+                                <div class="ml-2 grid grid-cols-2 gap-2">
+                                    ${kaders.map(k => `
+                                        <div class="text-sm p-2 bg-white rounded border">
+                                            <p class="font-medium text-gray-800">${k.name}</p>
+                                            <p class="text-gray-500 text-xs">${k.email}</p>
+                                            <span class="inline-block mt-1 px-1.5 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">${k.bidang}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : '<p class="ml-2 text-sm text-gray-400 italic">Belum ada kader</p>'}
+                        </div>
+                    </div>
+
+                    <!-- Wilayah RW/RT -->
+                    <div class="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <h4 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                            <i class="bi bi-house-door-fill"></i> Wilayah Pelayanan
+                        </h4>
+                        <div class="grid grid-cols-1 gap-2">`;
 
                 if (rwList && rwList.length > 0) {
                     rwList.forEach(rw => {
                         const rts = rtMapping[rw] || [];
                         contentHtml += `
-                <div class="border rounded-lg p-3 bg-gray-50 border-gray-200">
-                    <div class="flex items-center gap-2 mb-2 border-b pb-1">
-                        <span class="bg-pink-500 text-white px-2 py-0.5 rounded text-xs font-bold">${rw}</span>
-                        <span class="text-xs font-semibold text-gray-500 uppercase">Rukun Warga</span>
-                    </div>
-                    <div class="flex flex-wrap gap-2">
-                        ${rts.map(rt => `<span class="bg-white border border-gray-300 text-gray-700 px-2 py-1 rounded text-xs shadow-sm">${rt}</span>`).join('')}
-                        ${rts.length === 0 ? '<span class="text-xs text-gray-400 italic">Tidak ada RT</span>' : ''}
-                    </div>
-                </div>`;
+                            <div class="border rounded-lg p-2 bg-white border-gray-200">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="bg-pink-500 text-white px-2 py-0.5 rounded text-xs font-bold">${rw}</span>
+                                    <span class="text-xs text-gray-500">→</span>
+                                    <div class="flex flex-wrap gap-1">
+                                        ${rts.map(rt => `<span class="bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded text-xs">${rt}</span>`).join('')}
+                                        ${rts.length === 0 ? '<span class="text-xs text-gray-400 italic">Tidak ada RT</span>' : ''}
+                                    </div>
+                                </div>
+                            </div>`;
                     });
                 } else {
-                    contentHtml += `<div class="text-center py-8 text-gray-500">Belum ada data RW/RT terdaftar.</div>`;
+                    contentHtml += `<div class="text-center py-4 text-gray-500 text-sm">Belum ada data RW/RT terdaftar.</div>`;
                 }
 
-                contentHtml += `</div></div>`;
+                contentHtml += `</div></div></div>`;
 
                 Swal.fire({
-                    title: `<span class="text-xl font-bold text-gray-800">Detail: ${nama}</span>`,
+                    title: `<span class="text-xl font-bold text-gray-800">${nama}</span>`,
                     html: contentHtml,
-                    width: '600px',
+                    width: '700px',
                     confirmButtonText: 'Tutup',
                     confirmButtonColor: '#ec4899',
                     customClass: {

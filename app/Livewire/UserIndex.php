@@ -41,7 +41,7 @@ class UserIndex extends Component
         $roleMap = [
             'kader' => ['masyarakat'],
             'ketua-posyandu' => ['kader'],
-            'operator-desa' => ['ketua-posyandu', 'kader', 'masyarakat'],
+            'operator-desa' => ['ketua-posyandu', 'kader'],
             'admin-kecamatan' => [],
             'admin-kabupaten' => ['ketua-timpembina-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'bu-kades', 'operator-desa'],
             'admin' => ['admin-kabupaten', 'ketua-timpembina-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'bu-kades', 'ketua-posyandu', 'operator-desa', 'kader', 'masyarakat'],
