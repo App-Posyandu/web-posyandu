@@ -5,12 +5,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Cetak Pengajuan - SAPA POSYANDU</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
-        integrity="sha512-KP4tN0s8M1j4XXW0d7xFt9U3QkH8sy0sYwr3HPt1iQrXrRjPOON8p6HQSGCt8yX6Vft0LO0iJ2OKgKBl4d8KQ=="
-        crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/js/all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+
     <style>
-        /* ========== RESET & BASE STYLING ========== */
         * {
             margin: 0;
             padding: 0;
@@ -22,7 +19,6 @@
         body {
             height: 100%;
         }
-
         body {
             display: flex;
             flex-direction: column;
@@ -30,19 +26,15 @@
             background-color: #ffffff;
             color: #171717;
         }
-
         a {
             text-decoration: none;
             color: inherit;
         }
-
         h1,
         h2,
         h3 {
             font-weight: bold;
         }
-
-        /* ========== HEADER ========== */
         header {
             background-color: #ffffff;
             border-bottom: 1px solid #e5e7eb;
@@ -57,13 +49,11 @@
 
         header table tr {
             width: 100%;
-            margin: 0 0 8px 0
         }
 
         .left-cell {
             width: 70%;
         }
-
 
         .logo-group {
             display: flex;
@@ -88,7 +78,7 @@
         .header-title {
             text-align: center;
             flex-grow: 1;
-            margin-top: 4px;
+            margin-top: 1px;
         }
 
         .header-title h1 {
@@ -103,20 +93,79 @@
             text-transform: uppercase;
             color: #171717;
             font-size: 1rem;
-            margin: 4px 0 0;
+            margin: 1px 0 0;
             font-weight: 500;
         }
 
-        /* ========== MAIN (FLEX FILLER) ========== */
+        .tracking-section {
+            background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
+            border: 2px solid #ec4899;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 16px 0 24px 0;
+            text-align: center;
+        }
+
+        .tracking-label {
+            font-size: 12px;
+            color: #9333ea;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .tracking-code-box {
+            background: white;
+            border: 2px dashed #ec4899;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin: 8px auto;
+            max-width: 400px;
+        }
+
+        .tracking-code {
+            font-family: 'Courier New', monospace;
+            font-size: 24px;
+            font-weight: 700;
+            color: #be123c;
+            letter-spacing: 2px;
+        }
+
+        .tracking-info {
+            font-size: 11px;
+            color: #be123c;
+            margin-top: 8px;
+            font-weight: 500;
+        }
+
+        .qr-section {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px dashed #ec4899;
+        }
+
+        .qr-code-container {
+            background: white;
+            padding: 8px;
+            border-radius: 8px;
+            display: inline-block;
+            margin: 8px auto;
+        }
+
+        .qr-instructions {
+            font-size: 10px;
+            color: #be123c;
+            margin-top: 6px;
+        }
+
         main {
             flex: 1;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 12px 56px;
-            /* height: 72%; */
         }
-
 
         .container {
             background-color: #ffffff;
@@ -135,7 +184,6 @@
 
         .info-section table {
             width: 100%;
-            margin: 24px 0;
         }
 
         .info-section table tr {
@@ -144,6 +192,7 @@
 
         .info-section table tr td {
             width: 50%;
+            padding: 2px 0;
         }
 
         .info-section h3 {
@@ -154,7 +203,6 @@
         .info-section p {
             font-size: 14px;
             color: #4b5563;
-            margin-top: 4px;
         }
 
         .content {
@@ -170,19 +218,19 @@
             font-size: 16px;
             font-weight: 600;
             color: #111827;
-            margin-bottom: -24px;
         }
 
-        //Table Content
         .table-content {
             width: 100%;
-            margin: 40px 0;
+            margin: 0;
+            padding: 0;
             border-collapse: collapse;
         }
 
         .table-content td {
             vertical-align: middle;
             padding: 2px 0;
+            font-size: 12px
         }
 
         .table-content td.cell-left {
@@ -199,13 +247,13 @@
         }
 
         .img-check {
-            height: 24px;
-            width: 24px;
+            height: 20px;
+            width: 20px;
         }
 
         .signature-table {
             width: 100%;
-            margin-top: 40px;
+            margin-top: 12px;
             border-collapse: collapse;
             text-align: center;
         }
@@ -219,29 +267,38 @@
 
         .signature-content td img.check {
             display: inline-block;
-            height: 96px;
-            width: 96px;
+            height: 80px;
+            width: 80px;
         }
 
         .persyaratan-administrasi {
             width: 100%;
-            margin: 40px 0;
             border-collapse: collapse;
         }
 
         .persyaratan-administrasi td {
             vertical-align: middle;
-            padding: 2px 0;
-            width: 50%;
+            padding: 4px 0;
         }
 
+        .date-approval {
+            text-align: right;
+            font-size: 14px;
+            color: #374151;
+        }
 
+        .date-approval p {
+        }
 
-        /* ========== FOOTER (STAYS AT BOTTOM USING FLEX) ========== */
+        .section-divider {
+            border-top: 2px solid #e5e7eb;
+            margin: 4px 0;
+        }
+
         footer {
             background-color: #ffffff;
             border-top: 1px solid #e5e7eb;
-            padding: 16px;
+            padding: 8px;
             text-align: center;
             font-size: 0.875rem;
             color: #6b7280;
@@ -252,7 +309,122 @@
             color: #111827;
         }
 
-        /* ========== RESPONSIVE ========== */
+        @media print {
+            body {
+                background: white;
+            }
+
+            .tracking-section {
+                page-break-inside: avoid;
+            }
+
+            .page-break {
+                page-break-before: always;
+            }
+
+            .document-page {
+                page-break-after: always;
+            }
+
+            .document-page:last-child {
+                page-break-after: auto;
+            }
+        }
+
+        /* Styles for lampiran dokumen */
+        .lampiran-page {
+            page-break-before: always;
+        }
+
+        .lampiran-title {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .lampiran-title h2 {
+            font-size: 24px;
+            font-weight: bold;
+            color: #171717;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .lampiran-title p {
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .lampiran-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .lampiran-header h2 {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .lampiran-header p {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .doc-title {
+            display: none;
+        }
+
+        .image-container {
+            text-align: center;
+            padding: 10px;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+        }
+
+        .image-container img {
+            max-width: 100%;
+            max-height: 600px;
+            object-fit: contain;
+        }
+
+        .doc-label {
+            font-size: 14px;
+            font-weight: bold;
+            color: #374151;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            padding: 8px 16px;
+            background: #f3f4f6;
+            border-radius: 4px;
+        }
+
+        .no-image {
+            text-align: center;
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        .no-image-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+            opacity: 0.3;
+        }
+
+        .document-page {
+            padding: 20px 56px;
+        }
+
+        .lampiran-footer {
+            display: none;
+        }
+
         @media (max-width: 640px) {
             header {
                 flex-direction: column;
@@ -270,6 +442,10 @@
 
             .card {
                 padding: 24px;
+            }
+
+            .tracking-code {
+                font-size: 18px;
             }
         }
     </style>
@@ -300,6 +476,7 @@
             $checkBase64 = 'data:image/png;base64,' . base64_encode($checkData);
         }
     @endphp
+
     <header>
         <table>
             <tr>
@@ -331,63 +508,85 @@
                 <table>
                     <tr>
                         <td>
-                            <h3>Nama </h3>
+                            <h3>Kode Tracking Pengajuan</h3>
+                        </td>
+                        <td>: {{ $ajuan->tracking_code ?? 'PGJ-000000-00000' }}</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <h3>Nama Pemohon</h3>
                         </td>
                         <td>: {{ $ajuan->user->name }}</td>
                     </tr>
                     <tr>
                         <td>
-                            <h3>Alamat </h3>
+                            <h3>Alamat</h3>
                         </td>
                         <td>: {{ $ajuan->user->alamat }}</td>
                     </tr>
                     <tr>
                         <td>
-                            <h3>No Hp </h3>
+                            <h3>No Hp</h3>
                         </td>
-                        <td>: {{ $ajuan->user->no_telepon ?? '082134532110' }}</td>
+                        <td>: {{ $ajuan->user->no_telepon ?? '-' }}</td>
                     </tr>
                     <tr>
                         <td>
-                            <h3>Nama Posyandu </h3>
+                            <h3>Nama Posyandu</h3>
                         </td>
                         <td>: {{ $ajuan->user?->posyandu?->nama_posyandu ?? 'Nama Posyandu' }}</td>
                     </tr>
                     <tr>
                         <td>
-                            <h3>Desa/Kelurahan </h3>
+                            <h3>RW / RT</h3>
+                        </td>
+                        <td>: RW {{ $ajuan->user?->rw ?? '-' }} / RT {{ $ajuan->user?->rt ?? '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <h3>Desa/Kelurahan</h3>
                         </td>
                         <td>: {{ $ajuan->user?->posyandu?->desa ?? 'Desa' }}</td>
                     </tr>
                     <tr>
                         <td>
-                            <h3>Kecamatan </h3>
+                            <h3>Kecamatan</h3>
                         </td>
                         <td>: {{ $ajuan->user?->posyandu?->kecamatan ?? 'Kecamatan' }}</td>
                     </tr>
                 </table>
-                {{-- table content yang diajukan --}}
-                <h4 class="sub-title">Detail permohonan dipilih</h4>
+
+                <div class="section-divider"></div>
+
+                @if ($ajuan->deskripsi_pengajuan)
+                    <h4 class="sub-title">Deskripsi Permohonan</h4>
+                    <div class="description-box">
+                        <p>{{ $ajuan->deskripsi_pengajuan }}</p>
+                    </div>
+                @endif
+
+                <h4 class="sub-title">Detail Permohonan Dipilih</h4>
                 <table class="table-content">
                     @forelse ($ajuan->formulir_items as $item)
                         <tr>
                             <td class="cell-left">{{ $item }}</td>
                             <td>
                                 @if ($checkBase64)
-                                    <img src="{{ $checkBase64 }}" alt="Logo Check" class="img-check">
+                                    <img src="{{ $checkBase64 }}" alt="Checked" class="img-check">
                                 @endif
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td>Tidak ada permohonan yang dipilih</td>
+                            <td colspan="2">Tidak ada permohonan yang dipilih</td>
                         </tr>
                     @endforelse
                 </table>
 
-                {{-- Persyatan Administrasi --}}
-                <h4 class="sub-title">Detail Permohonan yang Diajukan</h4>
-                <table class="persyaratan-administrasi table-content">
+                <div class="section-divider"></div>
+
+                <h4 class="sub-title">Verifikasi Permohonan</h4>
+                <table class="table-content">
                     @forelse ($ajuan->formulir_items ?? [] as $item)
                         <tr>
                             <td class="cell-left">{{ $item }}</td>
@@ -408,14 +607,14 @@
 
                                 @if ($ajuan->sudah_verifikasi && in_array($item, $verifiedItems))
                                     @if ($checkBase64)
-                                        <img src="{{ $checkBase64 }}" alt="Logo Check" class="img-check">
+                                        <img src="{{ $checkBase64 }}" alt="Verified" class="img-check">
                                     @endif
                                 @endif
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td>Tidak ada permohonan yang dipilih</td>
+                            <td colspan="2">Tidak ada permohonan yang dipilih</td>
                         </tr>
                     @endforelse
                 </table>
@@ -443,42 +642,65 @@
                             <td>
                                 @if ($ajuan->sudah_verifikasi && array_key_exists($key, $verifiedDocs))
                                     @if ($checkBase64)
-                                        <img src="{{ $checkBase64 }}" alt="Logo Check" class="img-check">
+                                        <img src="{{ $checkBase64 }}" alt="Verified" class="img-check">
                                     @endif
                                 @endif
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td>Tidak ada dokumen yang diunggah</td>
+                            <td colspan="2">Tidak ada dokumen yang diunggah</td>
                         </tr>
                     @endforelse
                 </table>
 
-                {{-- Tanda Tangan --}}
+                @if ($ajuan->tindak_lanjut)
+                    <div class="section-divider"></div>
+                    <h4 class="sub-title">Tindak Lanjut Rekomendasi</h4>
+                    <div class="description-box">
+                        <p>{{ $ajuan->tindak_lanjut }}</p>
+                    </div>
+                @endif
+
+                <div class="date-approval">
+                    <p><strong>Kota Kebumen, </strong>
+                        {{ \Carbon\Carbon::parse($ajuan->tanggal_permohonan ?? $ajuan->created_at)->format('d F Y') }}
+                    </p>
+                    @if ($ajuan->approved_by_timpembina_at)
+                        <p><strong>Tanggal Persetujuan Ketua Tim Pembina Posyandu: </strong>
+                            {{ \Carbon\Carbon::parse($ajuan->approved_by_timpembina_at)->format('d F Y') }}
+                        </p>
+                    @endif
+                    @if ($ajuan->approved_by_kades_at)
+                        <p><strong>Tanggal Persetujuan Kades: </strong>
+                            {{ \Carbon\Carbon::parse($ajuan->approved_by_kades_at)->format('d F Y') }}
+                        </p>
+                    @endif
+                </div>
+
                 <table class="signature-table">
                     <tr class="signature-content">
-                        <td>Pengurus/Kader Posyandu</td>
+                        <td>Ketua Tim Pembina Posyandu</td>
                         <td>Pemohon Layanan</td>
                     </tr>
                     <tr class="signature-content">
                         <td>
-                            @if ($ajuan->ttd_kader)
+                            @if ($ajuan->approved_by_timpembina)
                                 @if ($checkBase64)
-                                    <img src="{{ $checkBase64 }}" alt="Logo Check" class="check">
+                                    <img src="{{ $checkBase64 }}" alt="Approved" class="check">
                                 @endif
                             @endif
                         </td>
                         <td>
                             @if ($checkBase64)
-                                <img src="{{ $checkBase64 }}" alt="Logo Check" class="check">
+                                <img src="{{ $checkBase64 }}" alt="Signed" class="check">
                             @endif
                         </td>
                     </tr>
                     <tr class="signature-content">
                         <td>
-                            @if ($ajuan->ttd_kader)
-                                {{ $ajuan->latestHistory?->diubahOleh?->name ?? 'Kader' }}
+                            @if ($ajuan->approved_by_timpembina)
+                                {{ $ajuan->ketuaTimpembina?->name ?? 'Ketua Tim Pembina Posyandu' }}
                             @else
                                 (...........................)
                             @endif
@@ -486,15 +708,107 @@
                         <td>{{ $ajuan->user->name }}</td>
                     </tr>
                 </table>
+
+                @if ($ajuan->approved_by_kades)
+                    <table class="signature-table" style="margin-top: 16px;">
+                        <tr class="signature-content">
+                            <td colspan="2">Kepala Desa</td>
+                        </tr>
+                        <tr class="signature-content">
+                            <td colspan="2">
+                                @if ($checkBase64)
+                                    <img src="{{ $checkBase64 }}" alt="Approved by Kades" class="check">
+                                @endif
+                            </td>
+                        </tr>
+                        <tr class="signature-content">
+                            <td colspan="2">
+                                {{ $ajuan->kades?->name ?? 'Kepala Desa' }}
+                            </td>
+                        </tr>
+                    </table>
+                @endif
             </div>
         </div>
     </main>
 
     <footer>
-        <p>
-            &copy; {{ date('Y') }} <span>SAPA POSYANDU</span>. Sistem Aplikasi Pos Pelayanan Terpadu.
-        </p>
+        <p>&copy; {{now()->year}} <span>SAPA POSYANDU</span> - Layanan Standar Minimal Pelayanan Posyandu Kabupaten Kebumen</p>
     </footer>
+
+    {{-- LAMPIRAN DOKUMEN ADMINISTRASI --}}
+    @php
+        $administrasiItems = $ajuan->administrasi_items ?? [];
+        $documentCounter = 1;
+    @endphp
+
+    @if (count($administrasiItems) > 0)
+        {{-- Halaman Judul Lampiran --}}
+        <div class="lampiran-page">
+            <div class="lampiran-title">
+                <h2>Lampiran Berkas</h2>
+                <p>Dokumen Administrasi Pengajuan</p>
+                <p style="margin-top: 5px;">Kode Tracking: {{ $ajuan->tracking_code ?? 'PGJ-000000-00000' }}</p>
+                <p style="margin-top: 5px;">Jumlah Dokumen: {{ count($administrasiItems) }} berkas</p>
+            </div>
+        </div>
+
+        @foreach ($administrasiItems as $key => $path)
+            @php
+                $label = $templateData['administrasi_items'][$key] ?? ucfirst(str_replace('_', ' ', $key));
+                $fullPath = storage_path('app/public/' . $path);
+                $imageBase64 = '';
+
+                if (file_exists($fullPath)) {
+                    $imageData = file_get_contents($fullPath);
+                    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                    $mimeType = finfo_file($finfo, $fullPath);
+                    finfo_close($finfo);
+
+                    $imageBase64 = 'data:' . $mimeType . ';base64,' . base64_encode($imageData);
+                }
+            @endphp
+
+            <div class="document-page page-break">
+                <div class="image-container">
+                    <div class="doc-label">{{ $label }}</div>
+                    @if ($imageBase64)
+                        <img src="{{ $imageBase64 }}" alt="{{ $label }}">
+                    @else
+                        <div class="no-image">
+                            <div class="no-image-icon">📄</div>
+                            <p>Dokumen tidak ditemukan atau tidak dapat ditampilkan</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            @php
+                $documentCounter++;
+            @endphp
+        @endforeach
+    @endif
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const trackingCode = "{{ $ajuan->tracking_code ?? '' }}";
+            const trackingUrl = "{{ route('ajuan.track.show', ['code' => $ajuan->tracking_code ?? 'INVALID']) }}";
+            const qrCanvas = document.getElementById('qrcode');
+
+            if (qrCanvas && trackingCode) {
+                QRCode.toCanvas(qrCanvas, trackingUrl, {
+                    width: 120,
+                    margin: 1,
+                    color: {
+                        dark: '#be123c',
+                        light: '#ffffff'
+                    }
+                }, function(error) {
+                    if (error) console.error('QR Code generation error:', error);
+                });
+            }
+        });
+    </script>
 </body>
 
 </html>

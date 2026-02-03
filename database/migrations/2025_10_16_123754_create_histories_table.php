@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('histories', function (Blueprint $table) {
@@ -17,13 +14,17 @@ return new class extends Migration
             $table->string('status');
             $table->text('catatan')->nullable();
             $table->foreignUuid('diubah_oleh')->nullable()->constrained('users', 'id')->nullOnDelete();
+            $table->enum('action_by_role', [
+                'kader',
+                'ketua-posyandu',
+                'ketua-timpembina-posyandu',
+                'kades',
+                'system'
+            ])->nullable();
             $table->timestamp('created_at');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('histories');

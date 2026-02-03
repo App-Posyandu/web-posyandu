@@ -11,28 +11,13 @@ use Illuminate\Support\Facades\Gate;
 
 class AuthServiceProvider extends ServiceProvider
 {
-
-    // protected $policies = [
-    //     Pengajuan::class => AjuanPolicy::class,
-    //     BukuSaku::class => BukuSakuPolicy::class,
-    // ];
-
-    /**
-     * Register services.
-     */
     public function register(): void
     {
-        //
     }
-
-    /**
-     * Bootstrap services.
-     */
     public function boot(): void
     {
         Gate::define('viewAjuan', [AjuanPolicy::class, 'viewAjuan']);
         Gate::define('verify', [AjuanPolicy::class, 'verify']);
-
         Gate::define('viewAny', [BukuSakuPolicy::class, 'viewAny']);
         Gate::define('viewBukuSaku', [BukuSakuPolicy::class, 'viewBukuSaku']);
         Gate::define('create', [BukuSakuPolicy::class, 'create']);

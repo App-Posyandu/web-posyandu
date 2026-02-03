@@ -8,14 +8,24 @@
             <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Pembuatan Akun</h2>
         @endif
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+        @if ($errors->any())
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                <strong>Validation Errors:</strong>
+                <ul class="list-disc list-inside">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
-            {{-- <div>
-                <x-input-label class="text-sm md:text-lg" for="nik" :value="__('NIK')" />
-                <x-text-input id="nik" class="block mt-1 w-full" type="text" name="nik" :value="old('nik')"
-                    autofocus placeholder="Masukkan NIK" maxlength="16" />
-                <x-input-error :messages="$errors->get('nik')" class="mt-2" />
-            </div> --}}
+        @if (session('error'))
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                {{ session('error') }}
+            </div>
+        @endif
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
 
             <div>
                 <x-input-label class="text-sm md:text-lg" for="name" :value="__('Nama')" />
@@ -40,14 +50,6 @@
                 @endif
                 <x-input-error :messages="$errors->get('email')" class="mt-2" />
             </div>
-
-            {{-- <div class="md:col-span-2">
-                <x-input-label class="text-sm md:text-lg" for="alamat" :value="__('Alamat')" />
-                <textarea id="alamat" name="alamat"
-                    class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                    rows="3" placeholder="Masukkan Alamat Lengkap">{{ old('alamat') }}</textarea>
-                <x-input-error :messages="$errors->get('alamat')" class="mt-2" />
-            </div> --}}
 
             <div>
                 <x-input-label class="text-sm md:text-lg" for="tempat_lahir" :value="__('Tempat Lahir')" />
@@ -82,7 +84,6 @@
                 <x-input-error :messages="$errors->get('no_telepon')" class="mt-2" />
             </div>
 
-            {{-- Combobox Kabupaten --}}
             <div x-data="{ open: false, search: '' }" @click.away="open = false" class="relative">
                 <x-input-label class="text-sm md:text-lg" for="kabupaten" :value="__('Kabupaten')" />
                 <input type="hidden" name="kabupaten" :value="selectedKabupaten">
@@ -117,7 +118,6 @@
                 <x-input-error :messages="$errors->get('kabupaten')" class="mt-2" />
             </div>
 
-            {{-- Combobox Kecamatan --}}
             <div x-data="{ open: false, search: '' }" @click.away="open=false" class="relative">
                 <x-input-label class="text-sm md:text-lg" for="kecamatan" :value="__('Kecamatan')" />
                 <input type="hidden" name="kecamatan" :value="selectedKecamatan">
@@ -159,7 +159,6 @@
                 <x-input-error :messages="$errors->get('kecamatan')" class="mt-2" />
             </div>
 
-            {{-- Combobox Desa --}}
             <div x-data="{ open: false, search: '' }" @click.away="open = false" class="relative">
                 <x-input-label class="text-sm md:text-lg" for="desa" :value="__('Desa/Kelurahan')" />
                 <input type="hidden" name="desa" :value="selectedDesa">
@@ -182,7 +181,7 @@
                     <template x-for="desa in desaList.filter(d => d.name.toLowerCase().includes(search.toLowerCase()))"
                         :key="desa.code">
                         <div @click="selectedDesa = `${desa.code}_${desa.name}`; selectedDesaName = desa.name; search = ''; open = false; fetchPosyandu()"
-                            {{-- <-- PERBAIKI DI SINI --}} class="px-4 py-2 cursor-pointer hover:bg-indigo-50"
+                            class="px-4 py-2 cursor-pointer hover:bg-indigo-50"
                             :class="{ 'bg-indigo-100': selectedDesa === `${desa.code}_${desa.name}` }"
                             x-text="desa.name">
                         </div>
@@ -199,7 +198,6 @@
                 <x-input-error :messages="$errors->get('desa')" class="mt-2" />
             </div>
 
-            {{-- ✅ COMBOBOX POSYANDU DENGAN SELECT2 (SEARCHABLE + CREATE NEW) --}}
             <div x-data="{ open: false, search: '', creating: false }" @click.away="open = false" class="relative">
                 <x-input-label class="text-sm md:text-lg" for="posyandu" :value="__('Nama Posyandu')" />
                 <input type="hidden" name="posyandu_id" :value="selectedPosyandu">
@@ -244,44 +242,7 @@
                 <p class="mt-1 text-xs text-gray-500">Ketik untuk mencari atau buat posyandu baru.</p>
                 <x-input-error :messages="$errors->get('posyandu_id')" class="mt-2" />
             </div>
-            {{--
-            <div x-data="{ fileName: '' }">
-                <x-input-label class="text-sm md:text-lg" for="ktp" :value="__('KTP')" />
-                <label for="ktp"
-                    class="mt-1 flex justify-between items-center px-4 py-2 bg-white text-gray-500 rounded-md shadow-sm border border-gray-300 cursor-pointer hover:text-gray-700">
-                    <span x-text="fileName || 'Unggah KTP'"></span>
-                    <i class="bi bi-cloud-upload text-pink-500 text-lg"></i>
-                </label>
-                <input id="ktp" class="hidden" type="file" name="ktp" accept="image/*,application/pdf"
-                    @change="fileName = $event.target.files[0].name" />
-                <x-input-error :messages="$errors->get('ktp')" class="mt-2" />
-            </div>
-
-            <div x-data="{ fileName: '' }">
-                <x-input-label class="text-sm md:text-lg" for="kk" :value="__('KK')" />
-                <label for="kk"
-                    class="mt-1 flex justify-between items-center px-4 py-2 bg-white text-gray-500 rounded-md shadow-sm border border-gray-300 cursor-pointer hover:text-gray-700">
-                    <span x-text="fileName || 'Unggah KK'"></span>
-                    <i class="bi bi-cloud-upload text-pink-500 text-lg"></i>
-                </label>
-                <input id="kk" class="hidden" type="file" name="kk" accept="image/*,application/pdf"
-                    @change="fileName = $event.target.files[0].name" />
-                <x-input-error :messages="$errors->get('kk')" class="mt-2" />
-            </div> --}}
-
-            <div class="md:col-span-2">
-                <x-input-label class="text-sm md:text-lg" for="role" :value="__('Role')" />
-                <select id="role" name="role"
-                    class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                    required>
-                    <option value="" disabled selected>Pilih role</option>
-                    <option value="masyarakat" @selected(old('role') == 'masyarakat')>Masyarakat</option>
-                    <option value="kader" @selected(old('role') == 'kader')>Kader</option>
-                </select>
-                <x-input-error :messages="$errors->get('role')" class="mt-2" />
-            </div>
-
-            {{-- ✅ DROPDOWN BIDANG (HANYA MUNCUL JIKA ROLE = KADER) --}}
+            
             <div id="bidang-field" style="display: none;" class="md:col-span-2">
                 <x-input-label class="text-sm md:text-lg" for="bidang_id" :value="__('Bidang Tugas')" />
                 <select id="bidang_id" name="bidang_id"
@@ -295,6 +256,55 @@
                 </select>
                 <p class="mt-1 text-xs text-gray-500">Kader hanya bisa mengelola 1 bidang.</p>
                 <x-input-error :messages="$errors->get('bidang_id')" class="mt-2" />
+            </div>
+            
+            <div x-show="selectedPosyandu" x-transition class="md:col-span-2">
+                <x-input-label for="rw" :value="__('RW (Rukun Warga)')" />
+                <span class="text-red-600">*</span>
+                <select id="rw" name="rw" required
+                    class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                    x-model="selectedRw" @change="fetchRtList()">
+                    <option value="" disabled selected>Pilih RW</option>
+                    <template x-for="rw in availableRw" :key="rw">
+                        <option :value="rw" x-text="rw"></option>
+                    </template>
+                </select>
+                <p class="text-xs text-gray-500 mt-1">
+                    <i class="bi bi-info-circle text-blue-500"></i>
+                    Pilih RW sesuai domisili Anda (RW yang dilayani posyandu ini)
+                </p>
+                <x-input-error :messages="$errors->get('rw')" class="mt-2" />
+            </div>
+
+            <div x-show="selectedRw" x-transition class="md:col-span-2">
+                <x-input-label for="rt" :value="__('RT (Rukun Tetangga)')" />
+                <span class="text-gray-500 text-sm">(Opsional)</span>
+                <select id="rt" name="rt"
+                    class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                    x-model="selectedRt">
+                    <option value="">-- Tidak ada/Tidak tahu --</option>
+                    <template x-for="rt in availableRt" :key="rt">
+                        <option :value="rt" x-text="rt"></option>
+                    </template>
+                </select>
+                <p class="text-xs text-gray-500 mt-1">
+                    <i class="bi bi-info-circle text-blue-500"></i>
+                    Pilih RT jika tahu (RT yang dilayani di RW Anda)
+                </p>
+                <x-input-error :messages="$errors->get('rt')" class="mt-2" />
+            </div>
+
+            <div x-show="selectedPosyandu && availableRw.length === 0" x-transition class="md:col-span-2">
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+                    <div class="flex">
+                        <i class="bi bi-exclamation-triangle text-yellow-400 mr-3"></i>
+                        <div class="text-sm text-yellow-700">
+                            <p class="font-semibold">Posyandu belum setup RW/RT</p>
+                            <p class="mt-1">Posyandu yang Anda pilih belum memiliki mapping RW/RT. Silakan hubungi
+                                Operator Desa atau pilih posyandu lain.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="md:col-span-2">
@@ -332,10 +342,14 @@
                 kecamatanList: [],
                 desaList: [],
                 posyanduList: [],
+                availableRw: [],
+                availableRt: [],
                 selectedKabupaten: '',
                 selectedKecamatan: '',
                 selectedDesa: '',
                 selectedPosyandu: '',
+                selectedRw: '',
+                selectedRt: '',
                 selectedRole: '{{ old('role') }}',
                 loadingKecamatan: false,
                 loadingDesa: false,
@@ -373,9 +387,13 @@
                     this.selectedKecamatan = '';
                     this.selectedDesa = '';
                     this.selectedPosyandu = '';
+                    this.selectedRw = '';
+                    this.selectedRt = '';
                     this.kecamatanList = [];
                     this.desaList = [];
                     this.posyanduList = [];
+                    this.availableRw = [];
+                    this.availableRt = [];
                     this.fetchKecamatan(kab.code);
                 },
 
@@ -383,24 +401,40 @@
                     this.selectedKecamatan = `${kec.code}_${kec.name}`;
                     this.selectedDesa = '';
                     this.selectedPosyandu = '';
+                    this.selectedRw = '';
+                    this.selectedRt = '';
                     this.desaList = [];
                     this.posyanduList = [];
+                    this.availableRw = [];
+                    this.availableRt = [];
                     this.fetchDesa(kec.code);
                 },
 
                 selectDesa(desa) {
                     this.selectedDesa = `${desa.code}_${desa.name}`;
                     this.selectedPosyandu = '';
+                    this.selectedRw = '';
+                    this.selectedRt = '';
                     this.posyanduList = [];
+                    this.availableRw = [];
+                    this.availableRt = [];
                     this.fetchPosyandu();
                 },
 
                 selectPosyandu(posyandu) {
                     this.selectedPosyandu = posyandu.id;
+                    this.selectedRw = '';
+                    this.selectedRt = '';
+                    this.fetchRwList(posyandu.id);
                 },
 
                 createNewPosyandu(name) {
                     this.selectedPosyandu = name;
+                    this.availableRw = [];
+                    this.availableRt = [];
+                    alert(
+                        'Posyandu baru belum memiliki mapping RW/RT. Admin akan setup setelah Anda mendaftar.'
+                    );
                 },
 
                 async fetchKecamatan() {
@@ -430,7 +464,6 @@
                         const kecId = this.selectedKecamatan.split('_')[0];
                         const response = await fetch(`{{ url('/api/wilayah/desa') }}/${kecId}`);
                         const data = await response.json();
-                        console.log('Desa response:', data);
                         this.desaList = Array.isArray(data) ? data : (data.data ?? []);
                     }
                     this.loadingDesa = false;
@@ -450,7 +483,6 @@
 
                         const response = await fetch(url);
                         const data = await response.json();
-                        console.log(response)
                         this.posyanduList = Array.isArray(data) ? data : [];
                     } catch (error) {
                         console.error('Error loading posyandu:', error);
@@ -458,25 +490,64 @@
                     } finally {
                         this.loadingPosyandu = false;
                     }
+                },
+                async fetchRwList(posyanduId = null) {
+                    const id = posyanduId || this.selectedPosyandu;
+                    if (!id) return;
+
+                    try {
+                        const posyandu = this.posyanduList.find(p => p.id === id);
+
+                        if (posyandu && posyandu.rw_list && Array.isArray(posyandu.rw_list)) {
+                            this.availableRw = posyandu.rw_list;
+                        } else {
+                            const response = await fetch(`/api/posyandu/${id}/rw-rt`);
+                            const data = await response.json();
+
+                            if (data.success) {
+                                this.availableRw = data.data.rw_list || [];
+                            } else {
+                                this.availableRw = [];
+                            }
+                        }
+
+                        this.selectedRw = '';
+                        this.availableRt = [];
+                    } catch (error) {
+                        console.error('Error loading RW:', error);
+                        this.availableRw = [];
+                    }
+                },
+
+                async fetchRtList() {
+                    if (!this.selectedRw || !this.selectedPosyandu) return;
+
+                    try {
+                        const posyandu = this.posyanduList.find(p => p.id === this
+                        .selectedPosyandu);
+
+                        if (posyandu && posyandu.rt_mapping && posyandu.rt_mapping[this
+                            .selectedRw]) {
+                            this.availableRt = posyandu.rt_mapping[this.selectedRw];
+                        } else {
+                            const response = await fetch(
+                                `/api/posyandu/${this.selectedPosyandu}/rw-rt`);
+                            const data = await response.json();
+
+                            if (data.success && data.data.rt_mapping) {
+                                this.availableRt = data.data.rt_mapping[this.selectedRw] || [];
+                            } else {
+                                this.availableRt = [];
+                            }
+                        }
+
+                        this.selectedRt = '';
+                    } catch (error) {
+                        console.error('Error loading RT:', error);
+                        this.availableRt = [];
+                    }
                 }
             }));
-            const roleSelect = document.getElementById('role');
-            const bidangField = document.getElementById('bidang-field');
-            const bidangSelect = document.getElementById('bidang_id');
-
-            function toggleBidangField() {
-                if (roleSelect.value === 'kader') {
-                    bidangField.style.display = 'block';
-                    bidangSelect.required = true;
-                } else {
-                    bidangField.style.display = 'none';
-                    bidangSelect.required = false;
-                    bidangSelect.value = '';
-                }
-            }
-
-            roleSelect.addEventListener('change', toggleBidangField);
-            toggleBidangField();
         });
     </script>
 </x-guest-layout>

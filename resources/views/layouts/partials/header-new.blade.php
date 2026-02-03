@@ -1,8 +1,6 @@
 <header class="w-full top-0 z-50 bg-white md:bg-transparent" x-data="{ mobileMenuOpen: false }">
     <div class="max-w-screen-2xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center">
-
-            {{-- Logo Section --}}
             <div class="flex-shrink-0">
                 <a href="/" class="flex items-center gap-2 sm:gap-4">
                     <img src="{{ asset('assets/image/logo/logo_sapaposyandu.png') }}" alt="Logo Sapaposyandu"
@@ -18,8 +16,6 @@
                     </div>
                 </a>
             </div>
-
-            {{-- Desktop Menu --}}
             <div class="hidden md:flex items-center gap-3 lg:gap-5">
                 @include('dashboard.partials.notification-dropdown')
 
@@ -32,32 +28,75 @@
                         </button>
                     </x-slot>
                     <x-slot name="content">
-                        <x-dropdown-link :href="route('dashboard')">{{ __('Beranda') }}</x-dropdown-link>
+                        <x-dropdown-link :href="route('dashboard')">
+                            <i class="bi bi-house-door mr-2"></i>
+                            {{ __('Beranda') }}
+                        </x-dropdown-link>
 
-                        @if (in_array(auth()->user()->role, ['admin', 'kader', 'kabid', 'ketua-kader']))
-                            <x-dropdown-link :href="route('admin.users.index')">{{ __('Users') }}</x-dropdown-link>
+                        @if (in_array(auth()->user()->role, [
+                                'admin',
+                                'kader',
+                                'admin-kabupaten',
+                                'ketua-posyandu',
+                                'operator-desa',
+                            ]))
+                            <x-dropdown-link :href="route('admin.users.index')">
+                                <i class="bi bi-people mr-2"></i>
+                                {{ __('Users') }}
+                            </x-dropdown-link>
+                        @endif
+                        @if (auth()->user()->role === 'ketua-posyandu')
+                            <x-dropdown-link :href="route('ketua-posyandu.takeover')"
+                                class="{{ request()->routeIs('ketua-posyandu.takeover*') ? 'active' : '' }}">
+                                <i class="bi bi-key-fill mr-2"></i>
+                                {{ __('Ambil Alih Kader') }}
+                            </x-dropdown-link>
                         @endif
 
-                        @if (in_array(auth()->user()->role, ['admin', 'kabid']))
-                            <x-dropdown-link :href="route('admin.posyandu.index')">{{ __('Posyandu') }}</x-dropdown-link>
+                        @if (in_array(auth()->user()->role, ['admin', 'kabid', 'ketua-timpembina-posyandu', 'admin-kabupaten', 'operator-desa']))
+                            <x-dropdown-link :href="route('admin.posyandu.index')">
+                                <i class="bi bi-building mr-2"></i>
+                                {{ __('Posyandu') }}
+                            </x-dropdown-link>
                         @endif
 
-                        <x-dropdown-link :href="route('buku_saku.index')">{{ __('Dokumen') }}</x-dropdown-link>
-                        <x-dropdown-link :href="route('ajuan.index')">{{ __('Lihat Pengajuan') }}</x-dropdown-link>
-                        <x-dropdown-link :href="route('profile.edit')">{{ __('Profile') }}</x-dropdown-link>
+                        <x-dropdown-link :href="route('buku_saku.index')">
+                            <i class="bi bi-file-earmark-text mr-2"></i>
+                            {{ __('Dokumen') }}
+                        </x-dropdown-link>
+
+                        <x-dropdown-link :href="route('ajuan.index')">
+                            <i class="bi bi-clipboard-check mr-2"></i>
+                            {{ __('Lihat Pengajuan') }}
+                        </x-dropdown-link>
+                        @if (in_array(auth()->user()->role, ['admin', 'admin-kabupaten']))
+                            <div class="border-t border-gray-100 my-1"></div>
+                            <x-dropdown-link :href="route('admin.settings.index')"
+                                class="{{ request()->routeIs('admin.settings.*') ? 'bg-pink-50 text-pink-600' : '' }}">
+                                <i class="bi bi-gear-fill mr-2"></i>
+                                {{ __('Pengaturan Sistem') }}
+                            </x-dropdown-link>
+                        @endif
+
+                        <div class="border-t border-gray-100 my-1"></div>
+
+                        <x-dropdown-link :href="route('profile.edit')">
+                            <i class="bi bi-person-circle mr-2"></i>
+                            {{ __('Profile') }}
+                        </x-dropdown-link>
 
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <x-dropdown-link :href="route('logout')"
-                                onclick="event.preventDefault(); this.closest('form').submit();">
+                                onclick="event.preventDefault(); this.closest('form').submit();"
+                                class="text-red-600 hover:text-red-800 hover:bg-red-50">
+                                <i class="bi bi-box-arrow-right mr-2"></i>
                                 {{ __('Log Out') }}
                             </x-dropdown-link>
                         </form>
                     </x-slot>
                 </x-dropdown>
             </div>
-
-            {{-- Mobile Menu Button --}}
             <div class="flex md:hidden items-center gap-3">
                 @include('dashboard.partials.notification-dropdown')
 
@@ -73,8 +112,6 @@
                 </button>
             </div>
         </div>
-
-        {{-- Mobile Menu Dropdown --}}
         <div x-show="mobileMenuOpen" x-transition:enter="transition ease-out duration-200"
             x-transition:enter-start="opacity-0 transform -translate-y-2"
             x-transition:enter-end="opacity-100 transform translate-y-0"
@@ -83,7 +120,6 @@
             x-transition:leave-end="opacity-0 transform -translate-y-2"
             class="md:hidden mt-4 pb-3 border-t border-gray-200" style="display: none;">
 
-            {{-- User Info --}}
             <div class="pt-4 pb-3 border-b border-gray-200">
                 <div class="flex items-center px-4">
                     <div class="flex-shrink-0">
@@ -99,21 +135,34 @@
                 </div>
             </div>
 
-            {{-- Mobile Menu Links --}}
             <div class="pt-2 pb-3 space-y-1">
                 <a href="{{ route('dashboard') }}"
                     class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-pink-500 transition duration-150 ease-in-out">
                     <i class="bi bi-house-door mr-2"></i> Beranda
                 </a>
 
-                @if (in_array(auth()->user()->role, ['admin', 'kader', 'kabid', 'ketua-kader']))
+                @if (in_array(auth()->user()->role, [
+                        'admin',
+                        'kader',
+                        'admin-kabupaten',
+                        'ketua-posyandu',
+                        'admin-kecamatan',
+                        'operator-desa',
+                    ]))
                     <a href="{{ route('admin.users.index') }}"
                         class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-pink-500 transition duration-150 ease-in-out">
                         <i class="bi bi-people mr-2"></i> Users
                     </a>
                 @endif
 
-                @if (auth()->user()->role === 'kabid')
+                @if (auth()->user()->role === 'ketua-posyandu')
+                    <a href="{{ route('ketua-posyandu.takeover') }}"
+                        class="{{ request()->routeIs('ketua-posyandu.takeover*') ? 'border-pink-500 bg-pink-50' : 'border-transparent' }} block pl-3 pr-4 py-2 border-l-4 text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-pink-500 transition duration-150 ease-in-out">
+                        <i class="bi bi-key-fill mr-2"></i> Ambil Alih Kader
+                    </a>
+                @endif
+
+                @if (in_array(auth()->user()->role, ['admin', 'kabid', 'ketua-timpembina-posyandu', 'admin-kabupaten', 'operator-desa']))
                     <a href="{{ route('admin.posyandu.index') }}"
                         class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-pink-500 transition duration-150 ease-in-out">
                         <i class="bi bi-building mr-2"></i> Posyandu
@@ -129,6 +178,14 @@
                     class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-pink-500 transition duration-150 ease-in-out">
                     <i class="bi bi-clipboard-check mr-2"></i> Lihat Pengajuan
                 </a>
+                @if (in_array(auth()->user()->role, ['admin', 'admin-kabupaten', 'admin-kecamatan', 'operator-desa']))
+                    <div class="border-t border-gray-200 my-2"></div>
+                    <a href="{{ route('admin.settings.index') }}"
+                        class="{{ request()->routeIs('admin.settings.*') ? 'border-pink-500 bg-pink-50 text-pink-600' : 'border-transparent text-gray-600' }} block pl-3 pr-4 py-2 border-l-4 text-base font-medium hover:text-gray-800 hover:bg-gray-50 hover:border-pink-500 transition duration-150 ease-in-out">
+                        <i class="bi bi-gear-fill mr-2"></i> Pengaturan Sistem
+                    </a>
+                    <div class="border-t border-gray-200 my-2"></div>
+                @endif
 
                 <a href="{{ route('profile.edit') }}"
                     class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-pink-500 transition duration-150 ease-in-out">

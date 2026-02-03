@@ -2,8 +2,6 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -11,14 +9,8 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasUuids;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $primaryKey = 'id';
     protected $foreignKey = 'posyandu_id';
     public $incrementing = false;
@@ -32,7 +24,14 @@ class User extends Authenticatable
         'ktp',
         'kk',
         'kabupaten',
+        'kecamatan',
+        'desa',
+        'kabupaten_id',
+        'kecamatan_id',
         'jenis_wilayah',
+
+        'rt',
+        'rw',
 
         'nik',
         'alamat',
@@ -49,6 +48,20 @@ class User extends Authenticatable
         'deactivated_by',
         'deactivation_reason',
     ];
+
+    protected $casts = [
+        'tanggal_lahir' => 'date',
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+    ];
+
+    public function validatePosyanduRw()
+    {
+        if ($this->posyandu && $this->rw) {
+            return $this->posyandu->isRwAllowed($this->rw);
+        }
+        return true;
+    }
 
     public function pengajuans()
     {
@@ -74,12 +87,60 @@ class User extends Authenticatable
         return $this->hasMany(UserHistory::class, 'user_id')->latest();
     }
 
+    public function kabupatenRelation()
+    {
+        return $this->belongsTo(Kabupaten::class, 'kabupaten_id');
+    }
+
+    public function kecamatanRelation()
+    {
+        return $this->belongsTo(Kecamatan::class, 'kecamatan_id');
+    }
+
+    public function getWilayahLengkapAttribute()
+    {
+        $parts = [];
+
+        if ($this->posyandu && $this->posyandu->desa) {
+            $parts[] = $this->posyandu->desa;
+        }
+
+        if ($this->kecamatanRelation) {
+            $parts[] = 'Kec. ' . $this->kecamatanRelation->nama_kecamatan;
+        } elseif ($this->kecamatan) {
+            $parts[] = 'Kec. ' . str_replace('KECAMATAN ', '', $this->kecamatan);
+        }
+
+        if ($this->kabupatenRelation) {
+            $parts[] = $this->kabupatenRelation->nama_lengkap;
+        } elseif ($this->kabupaten) {
+            $parts[] = $this->kabupaten;
+        }
+
+        return implode(', ', $parts) ?: '-';
+    }
+
+    public function getKabupatenNameAttribute()
+    {
+        if ($this->kabupatenRelation) {
+            return $this->kabupatenRelation->nama_lengkap;
+        }
+        return $this->kabupaten ?? '-';
+    }
+
+    public function getKecamatanNameAttribute()
+    {
+        if ($this->kecamatanRelation) {
+            return $this->kecamatanRelation->nama_kecamatan;
+        }
+        return $this->kecamatan ? str_replace('KECAMATAN ', '', $this->kecamatan) : '-';
+    }
+
     public function deactivatedBy()
     {
         return $this->belongsTo(User::class, 'deactivated_by');
     }
 
-    // ✅ TAMBAHKAN HELPER METHOD
     public function isActive()
     {
         return $this->status === 'active';
@@ -90,21 +151,16 @@ class User extends Authenticatable
         return $this->status === 'inactive';
     }
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
+    public function setNikAttribute($value)
+    {
+        $this->attributes['nik'] = empty($value) ? null : $value;
+    }
+
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [

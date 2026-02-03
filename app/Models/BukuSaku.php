@@ -17,10 +17,16 @@ class BukuSaku extends Model
         'title',
         'description',
         'file_path',
+        'is_guidebook',
     ];
 
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id', 'id');
+    }
+
+    public function scopeGuidebook($query)
+    {
+        return $query->where('is_guidebook', true);
     }
 }

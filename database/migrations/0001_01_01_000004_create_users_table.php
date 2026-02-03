@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
@@ -20,11 +17,21 @@ return new class extends Migration
             $table->string('no_telepon', 20)->unique()->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->enum('role', ['masyarakat', 'kader', 'kabid', 'ketua-kader', 'admin'])->default('masyarakat');
+            $table->enum('role', ['masyarakat', 'kader', 'operator-desa', 'ketua-posyandu', 'kades', 'bu-kades', 'admin-kecamatan', 'kabid', 'admin-kabupaten', 'ketua-timpembina-posyandu', 'admin'])->default('masyarakat');
             $table->string('kabupaten')->nullable();
+            $table->string('kecamatan')->nullable();
+            $table->string('desa')->nullable();
+
+            $table->string('rw', 10)->nullable();
+            $table->string('rt', 10)->nullable();
+
             $table->enum('jenis_wilayah', ['kabupaten', 'kota'])->nullable();
 
-            // Kolom Tambahan dari Form Registrasi
+            $table->foreignUuid('kabupaten_id')
+                ->nullable();
+
+            $table->foreignUuid('kecamatan_id')->nullable();
+
             $table->string('nik', 16)->unique()->nullable();
             $table->text('alamat')->nullable();
             $table->string('tempat_lahir')->nullable();
@@ -38,7 +45,6 @@ return new class extends Migration
             $table->uuid('deactivated_by')->nullable();
             $table->text('deactivation_reason')->nullable();
 
-            // Kolom untuk file Base64
             $table->longText('ktp')->nullable();
             $table->longText('kk')->nullable();
 
@@ -93,9 +99,6 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('users');

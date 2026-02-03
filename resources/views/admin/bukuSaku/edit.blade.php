@@ -33,8 +33,8 @@
                             </div>
 
                             <div x-data="{
-                                // URL awal diisi dengan file yang sudah ada
-                                previewUrl: '{{ Illuminate\Support\Facades\Storage::url($bukuSaku->file_path) }}'
+                                // URL awal diisi dengan route terautentikasi
+                                previewUrl: '{{ route('buku_saku.stream-file', $bukuSaku) }}'
                             }">
                                 <x-input-label for="file" :value="__('File PDF (Opsional)')" />
 

@@ -12,7 +12,7 @@
             isKader: {{ auth()->user()->role === 'kader' ? 'true' : 'false' }},
 
             async changeBidang(slug) {
-                if (this.isKader) return; // Kader tidak bisa ganti bidang
+                if (this.isKader) return;
 
                 this.isLoading = true;
                 try {
@@ -23,7 +23,6 @@
                         this.items = data.items;
                         this.selectedBidang = slug;
 
-                        // Reset checkboxes
                         document.querySelectorAll('input[name=\'permohonan_items[]\']').forEach(cb => cb.checked = false);
                         document.getElementById('deskripsi_pengajuan').value = '';
                     }
@@ -73,7 +72,6 @@
                             @endforeach
                         </select>
 
-                        {{-- Loading Indicator --}}
                         <div x-show="isLoading"
                             class="absolute inset-0 bg-white/80 flex items-center justify-center rounded-md">
                             <div class="flex items-center space-x-2">
@@ -145,12 +143,7 @@
 
     @push('scripts')
         <script>
-            // ============================================
-            // KONFIRMASI KELUAR DARI PENGAJUAN
-            // ============================================
             let isSubmitting = false;
-
-            // Konfirmasi browser default ketika refresh/close tab
             window.addEventListener('beforeunload', function(e) {
                 if (isSubmitting) return undefined;
 
@@ -159,12 +152,8 @@
                 return '';
             });
 
-            // Pastikan DOM sudah load
             document.addEventListener('DOMContentLoaded', function() {
 
-                // ============================================
-                // INTERCEPT SEMUA LINK NAVIGASI
-                // ============================================
                 const links = document.querySelectorAll('a:not([id="batal-pengajuan"])');
 
                 links.forEach(link => {
@@ -198,9 +187,6 @@
                     });
                 });
 
-                // ============================================
-                // HANDLER TOMBOL BATALKAN PENGAJUAN
-                // ============================================
                 const btnBatal = document.getElementById('batal-pengajuan');
                 if (btnBatal) {
                     btnBatal.addEventListener('click', function(e) {
@@ -225,19 +211,12 @@
                     });
                 }
 
-                // ============================================
-                // HANDLER TOMBOL SELANJUTNYA (SUBMIT FORM)
-                // ============================================
                 const btnSelanjutnya = document.getElementById('btn-selanjutnya');
                 const form = document.getElementById('form-formulir');
-
-                console.log('Button Selanjutnya:', btnSelanjutnya); // Debug
-                console.log('Form:', form); // Debug
 
                 if (btnSelanjutnya && form) {
                     btnSelanjutnya.addEventListener('click', function(e) {
                         e.preventDefault();
-                        console.log('Tombol Selanjutnya diklik!'); // Debug
 
                         Swal.fire({
                             title: 'Lanjut ke Tahap Administrasi?',

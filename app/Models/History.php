@@ -15,7 +15,11 @@ class History extends Model
     protected $table = 'histories';
     public $timestamps = false;
 
-    protected $fillable = ['pengajuan_id', 'status', 'catatan', 'diubah_oleh', 'created_at'];
+    protected $fillable = ['pengajuan_id', 'action_by_role', 'status', 'catatan', 'diubah_oleh', 'created_at'];
+
+    protected $casts = [
+    'created_at' => 'datetime',
+];
 
     public function pengajuan()
     {

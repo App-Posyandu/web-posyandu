@@ -2,7 +2,6 @@ import axios from "axios";
 window.axios = axios;
 window.axios.defaults.headers.common["X-Requested-With"] = "XMLHttpRequest";
 
-// Import Chart.js
 import {
     Chart,
     CategoryScale,
@@ -21,7 +20,6 @@ import {
     Filler,
 } from "chart.js";
 
-// Register Chart.js components
 Chart.register(
     CategoryScale,
     LinearScale,
@@ -39,14 +37,11 @@ Chart.register(
     Filler
 );
 
-// Import Chart.js Plugin Datalabels
 import ChartDataLabels from "chartjs-plugin-datalabels";
 Chart.register(ChartDataLabels);
 
-// Make Chart available globally
 window.Chart = Chart;
 window.ChartDataLabels = ChartDataLabels; 
 
-// Import SweetAlert2
 import Swal from "sweetalert2";
 window.Swal = Swal;

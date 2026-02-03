@@ -11,8 +11,6 @@
     <form id="send-verification" method="post" action="{{ route('verification.send') }}">
         @csrf
     </form>
-
-    {{-- 1. Tambahkan enctype untuk upload file --}}
     <form method="post" action="{{ route('profile.update') }}" enctype="multipart/form-data" class="mt-6 space-y-6">
         @csrf
         @method('patch')
@@ -38,7 +36,6 @@
                 <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" :value="old('email', $user->email)"
                     required />
                 <x-input-error class="mt-2" :messages="$errors->get('email')" />
-                {{-- ... (kode verifikasi email Anda) ... --}}
             </div>
 
             <div class="md:col-span-2">
@@ -127,7 +124,7 @@
                 <x-input-error class="mt-2" :messages="$errors->get('kk')" />
             </div>
 
-        </div> {{-- Akhir dari grid --}}
+        </div>
 
         <div class="flex items-center gap-4 mt-6">
             <x-primary-button>{{ __('Simpan') }}</x-primary-button>

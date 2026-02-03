@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Pengajuan extends Model
 {
@@ -25,7 +26,30 @@ class Pengajuan extends Model
         'kunjungan_lapangan',
         'verified_formulir_items',
         'verified_administrasi_items',
-        'ttd_kader'
+        'ttd_kader',
+        'tanggal_permohonan',
+        'tindak_lanjut',
+        // Workflow: Ketua Tim Pembina Posyandu
+        'submitted_to_timpembina',
+        'submitted_to_timpembina_at',
+        'approved_by_timpembina',
+        'approved_by_timpembina_id',
+        'approved_by_timpembina_at',
+        // Workflow: Desa (Kades)
+        'submitted_to_desa',
+        'submitted_to_desa_at',
+        'approved_by_kades',
+        'approved_by_kades_id',
+        'approved_by_kades_at',
+        // Legacy (backward compatibility)
+        'approved_by_ketua',
+        'approved_by_ketua_id',
+        'approved_by_ketua_at',
+        'foto_kunjungan',
+        'revision_requested_at',
+        'revision_count',
+        'auto_rejected',
+        'tracking_code',
     ];
 
     protected $casts = [
@@ -35,7 +59,92 @@ class Pengajuan extends Model
         'kunjungan_lapangan' => 'boolean',
         'verified_formulir_items',
         'verified_administrasi_items',
+        'ttd_kader' => 'boolean',
+        'foto_kunjungan' => 'array',
+        // Workflow: Ketua Tim Pembina Posyandu
+        'submitted_to_timpembina' => 'boolean',
+        'submitted_to_timpembina_at' => 'datetime',
+        'approved_by_timpembina' => 'boolean',
+        'approved_by_timpembina_at' => 'datetime',
+        // Workflow: Desa (Kades)
+        'submitted_to_desa' => 'boolean',
+        'submitted_to_desa_at' => 'datetime',
+        'approved_by_kades' => 'boolean',
+        'approved_by_kades_at' => 'datetime',
+        // Legacy
+        'approved_by_ketua' => 'boolean',
+        'approved_by_ketua_at' => 'datetime',
+        'tanggal_permohonan' => 'datetime',
+        'revision_requested_at' => 'datetime',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($pengajuan) {
+            if (empty($pengajuan->tracking_code)) {
+                $pengajuan->tracking_code = self::generateTrackingCode();
+            }
+        });
+    }
+
+    private static function generateTrackingCode()
+    {
+        do {
+            $code = 'PGJ-' . date('Ym') . '-' . strtoupper(Str::random(5));
+        } while (self::where('tracking_code', $code)->exists());
+
+        return $code;
+    }
+
+    public function ketuaPosyandu()
+    {
+        return $this->belongsTo(User::class, 'approved_by_ketua_id');
+    }
+
+    public function ketuaTimpembina()
+    {
+        return $this->belongsTo(User::class, 'approved_by_timpembina_id');
+    }
+
+    public function kades()
+    {
+        return $this->belongsTo(User::class, 'approved_by_kades_id');
+    }
+
+    public function isRevisionExpired()
+    {
+        if (!$this->revision_requested_at) return false;
+
+        $workDays = $this->calculateWorkDays($this->revision_requested_at, now());
+        return $workDays > 5;
+    }
+
+    private function calculateWorkDays($start, $end)
+    {
+        $workDays = 0;
+        $current = $start->copy();
+
+        while ($current->lte($end)) {
+            if ($current->isWeekday()) {
+                $workDays++;
+            }
+            $current->addDay();
+        }
+
+        return $workDays;
+    }
+
+    public function scopeArchived($query)
+    {
+        return $query->whereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->whereNotIn('status_pengajuan', ['Disetujui', 'Ditolak']);
+    }
 
     public function user()
     {

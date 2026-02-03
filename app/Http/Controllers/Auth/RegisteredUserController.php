@@ -17,9 +17,6 @@ use Str;
 
 class RegisteredUserController extends Controller
 {
-    /**
-     * Display the registration view.
-     */
     const PROVINCE_ID = 33;
     public function create(): View
     {
@@ -27,18 +24,10 @@ class RegisteredUserController extends Controller
         return view('auth.register', compact('kabupatens'));
     }
 
-    /**
-     * Handle an incoming registration request.
-     *
-     * @throws \Illuminate\Validation\ValidationException
-     */
-
     public function store(Request $request): RedirectResponse
     {
         $validationRules = [
             'name' => ['required', 'string', 'max:255'],
-            // 'nik' => ['nullable', 'string', 'digits:16', 'unique:users'],
-            // 'alamat' => ['nullable', 'string'],
             'tempat_lahir' => ['required', 'string', 'max:255'],
             'tanggal_lahir' => ['required', 'date'],
             'jenis_kelamin' => ['required', 'string'],
@@ -49,13 +38,31 @@ class RegisteredUserController extends Controller
             'bidang_id' => ['nullable', 'string'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'role' => ['required', 'in:masyarakat,kader'],
-            // 'ktp' => ['nullable', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:2048'],
-            // 'kk' => ['nullable', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:2048'],
             'no_telepon' => ['required', 'string', 'max:20', 'unique:users'],
+
+            'rw' => ['required', 'string', 'regex:/^RW\d{2}$/'],
+            'rt' => ['nullable', 'string', 'regex:/^RT\d{3}$/'],
         ];
 
         $posyanduId = $request->posyandu_id;
+
+        if (\Illuminate\Support\Str::isUuid($posyanduId)) {
+            $posyandu = Posyandu::find($posyanduId);
+
+            if ($posyandu && !$posyandu->isRwAllowed($request->rw)) {
+                return redirect()->back()
+                    ->withErrors(['rw' => 'RW yang Anda pilih tidak dilayani oleh Posyandu ini.'])
+                    ->withInput();
+            }
+
+            if ($request->filled('rt') && $posyandu) {
+                if (!$posyandu->isRtValidForRw($request->rw, $request->rt)) {
+                    return redirect()->back()
+                        ->withErrors(['rt' => 'RT yang Anda pilih tidak tersedia di RW ini.'])
+                        ->withInput();
+                }
+            }
+        }
 
         if (!\Illuminate\Support\Str::isUuid($posyanduId)) {
             $newPosyandu = Posyandu::create([
@@ -73,65 +80,26 @@ class RegisteredUserController extends Controller
 
         $request->validate($validationRules);
 
-        // $ktpBase64 = null;
-        // if ($request->hasFile('ktp')) {
-        //     $ktpPath = $request->file('ktp')->getRealPath();
-        //     $ktpData = file_get_contents($ktpPath);
-        //     $ktpBase64 = 'data:image/' . $request->file('ktp')->getClientOriginalExtension() . ';base64,' . base64_encode($ktpData);
-        // }
-
-        // $kkBase64 = null;
-        // if ($request->hasFile('kk')) {
-        //     $kkPath = $request->file('kk')->getRealPath();
-        //     $kkData = file_get_contents($kkPath);
-        //     $kkBase64 = 'data:image/' . $request->file('kk')->getClientOriginalExtension() . ';base64,' . base64_encode($kkData);
-        // }
-
-        // $posyandu = Posyandu::firstOrCreate(
-        //     [
-        //         'nama_posyandu' => $request->nama_posyandu,
-        //         'desa' => $request->desa,
-        //     ],
-        //     [
-        //         'kecamatan' => $request->kecamatan,
-        //         'kabupaten' => $request->kabupaten,
-        //     ]
-        // );
-
-        // 4. Buat user baru dengan semua data
         $userData = [
             'name' => $request->name,
-            // 'nik' => $request->nik,
-            // 'alamat' => $request->alamat,
             'tempat_lahir' => $request->tempat_lahir,
             'tanggal_lahir' => $request->tanggal_lahir,
             'jenis_kelamin' => $request->jenis_kelamin,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'no_telepon' => $request->no_telepon,
-            'role' => $request->role,
-            // 'ktp' => $ktpBase64,
-            // 'kk' => $kkBase64,
             'posyandu_id' => $posyanduId,
+
+            'rw' => $request->rw,
+            'rt' => $request->rt,
+
             'verified_at' => $request->role === 'masyarakat' ? now() : null,
             'verified_by' => null,
         ];
 
-        if ($request->role === 'kader' && $request->filled('bidang_id')) {
-            $userData['bidang_id'] = $request->bidang_id;
-        }
-
         $user = User::create($userData);
 
-        // Posyandu::create([
-        //     'nama_posyandu' => $request->nama_posyandu,
-        //     'desa' => $request->desa,
-        //     'kecamatan' => $request->kecamatan,
-        // ]);
-
-        // 5. Kirim event, login user, dan redirect ke dashboard (bawaan Breeze)
         event(new Registered($user));
-
         Auth::login($user);
 
         return redirect(route('dashboard', absolute: false));

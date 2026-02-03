@@ -9,11 +9,6 @@ use Symfony\Component\HttpFoundation\Response;
 
 class CheckRole
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
-     */
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
         $user = Auth::user();
@@ -34,7 +29,7 @@ class CheckRole
         }
 
         if ($user->role === 'kader' && is_null($user->verified_at)) {
-            return redirect()->route('dashboard')->with('error', 'Akun Anda belum diverifikasi oleh Ketua Kader.');
+            return redirect()->route('dashboard')->with('error', 'Akun Anda belum diverifikasi oleh Ketua Posyandu.');
         }
 
         return $next($request);

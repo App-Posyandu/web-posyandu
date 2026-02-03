@@ -15,9 +15,6 @@ class AjuanStatusUpdated extends Notification
     protected $ajuan;
     protected $status;
     protected $catatan;
-    /**
-     * Create a new notification instance.
-     */
     public function __construct(Pengajuan $ajuan, $status, $catatan)
     {
         $this->ajuan = $ajuan;
@@ -25,20 +22,11 @@ class AjuanStatusUpdated extends Notification
         $this->catatan = $catatan;
     }
 
-    /**
-     * Get the notification's delivery channels.
-     *
-     * @return array<int, string>
-     */
     public function via(object $notifiable): array
     {
-        // Kita akan simpan di database. Kamu bisa tambah 'mail' jika ingin kirim email
         return ['database'];
     }
 
-    /**
-     * Get the mail representation of the notification.
-     */
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
@@ -47,16 +35,10 @@ class AjuanStatusUpdated extends Notification
             ->line('Thank you for using our application!');
     }
 
-    /**
-     * Get the array representation of the notification.
-     *
-     * @return array<string, mixed>
-     */
     public function toArray(object $notifiable): array
     {
         $message = "Status pengajuan Anda telah diubah menjadi '{$this->status}'.";
 
-        // Tambahkan catatan jika ada
         if (!empty($this->catatan)) {
             $message .= " Catatan dari Kader: \"{$this->catatan}\"";
         }
@@ -65,7 +47,7 @@ class AjuanStatusUpdated extends Notification
             'title' => 'Update Status Pengajuan',
             'message' => $message,
             'ajuan_id' => $this->ajuan->id,
-            'url' => route('ajuan.show', $this->ajuan->id), // Link agar bisa diklik
+            'url' => route('ajuan.show', $this->ajuan->id),
         ];
     }
 }

@@ -7,12 +7,10 @@ use App\Models\Pengajuan;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class PengajuanSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
         Schema::disableForeignKeyConstraints();
@@ -23,7 +21,7 @@ class PengajuanSeeder extends Seeder
         $bidangs = BidangPengajuan::all();
 
         if ($users->isEmpty() || $bidangs->isEmpty()) {
-            $this->command->info('Tabel users atau bidang_pengajuans kosong, PengajuanSeeder dilewati.');
+            $this->command->info('❌ GAGAL: Tabel users atau bidang_pengajuans kosong. Jalankan UserSeeder & BidangSeeder dulu.');
             return;
         }
 
@@ -107,14 +105,26 @@ class PengajuanSeeder extends Seeder
             ],
         ];
 
-        foreach (range(1, 20) as $index) {
+        foreach (range(1, 5) as $index) {
             $user = $users->random();
             $bidang = $bidangs->random();
 
-            $template = $formTemplates[$bidang->slug] ?? null;
-            if (!$template) continue;
+            $selectedKey = null;
+            $slugBidang = Str::slug($bidang->nama_bidang ?? $bidang->name ?? '');
 
-            $checklistData = collect($template['formulir_items'])->random(rand(1, count($template['formulir_items'])))->values()->all();
+            foreach ($formTemplates as $key => $value) {
+                if (str_contains($slugBidang, $key)) {
+                    $selectedKey = $key;
+                    break;
+                }
+            }
+
+            $template = $selectedKey ? $formTemplates[$selectedKey] : $formTemplates[array_rand($formTemplates)];
+
+            $checklistData = collect($template['formulir_items'])
+                ->random(rand(1, count($template['formulir_items'])))
+                ->values()
+                ->all();
 
             if (in_array('Lainnya...', $checklistData)) {
                 $checklistData[] = 'Lainnya: ' . fake()->sentence(3);
@@ -128,10 +138,18 @@ class PengajuanSeeder extends Seeder
             Pengajuan::create([
                 'user_id' => $user->id,
                 'bidang_id' => $bidang->id,
-                'status' => fake()->randomElement(['Diproses', 'Disetujui', 'Ditolak']),
-                'deskripsi_pengajuan' => fake()->sentence(),
+
+                'status_pengajuan' => fake()->randomElement(['Diproses', 'Disetujui', 'Ditolak']),
+
+                'deskripsi_pengajuan' => fake()->sentence(10),
+
                 'formulir_items' => $checklistData,
                 'administrasi_items' => $dokumenData,
+
+                'sudah_verifikasi' => fake()->boolean(),
+                'kunjungan_lapangan' => fake()->boolean(),
+                'ttd_kader' => fake()->boolean(),
+                'tracking_code' => 'PGJ-' . now()->format('Ym') . '-' . str_pad($index, 5, '0', STR_PAD_LEFT),
             ]);
         }
     }

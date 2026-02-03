@@ -12,9 +12,6 @@ use Illuminate\Support\Facades\Schema;
 
 class UserSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
         Schema::disableForeignKeyConstraints();
@@ -43,7 +40,6 @@ class UserSeeder extends Seeder
             'email_verified_at' => now(),
         ]);
 
-        // 5. Factory Anda juga harus sudah diperbarui
-        User::factory(15)->create();
+        User::factory(5)->create();
     }
 }

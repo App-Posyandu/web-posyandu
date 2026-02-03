@@ -8,14 +8,90 @@ use Illuminate\Database\Eloquent\Model;
 
 class Posyandu extends Model
 {
-    /** @use HasFactory<\Database\Factories\PosyanduFactory> */
     use HasFactory, HasUuids;
 
     protected $primaryKey = 'id';
     public $incrementing = false;
     protected $keyType = 'string';
 
-    protected $fillable = ['nama_posyandu', 'kabupaten', 'desa', 'kecamatan'];
+    protected $fillable = [
+        'nama_posyandu',
+        'kabupaten',
+        'desa',
+        'kecamatan',
+        'kabupaten_id',
+        'kecamatan_id',
+        'rw_list',
+        'rt_mapping'
+    ];
+
+    protected $casts = [
+        'rw_list' => 'array',
+        'rt_mapping' => 'array',
+    ];
+
+    public function isRwAllowed($rw)
+    {
+        if (!$this->rw_list) {
+            return true;
+        }
+
+        return in_array($rw, $this->rw_list);
+    }
+
+    public function getRtListForRw($rw)
+    {
+        $mapping = $this->rt_mapping ?? [];
+        return $mapping[$rw] ?? [];
+    }
+
+    public function isRtValidForRw($rw, $rt)
+    {
+        if (!$this->rt_mapping || !isset($this->rt_mapping[$rw])) {
+            return true;
+        }
+
+        return in_array($rt, $this->rt_mapping[$rw]);
+    }
+
+    public function getAvailableRwList()
+    {
+        return count($this->rw_list ?? []);
+    }
+
+    public function getTotalRtCount()
+    {
+        if (!$this->rt_mapping) {
+            return 0;
+        }
+
+        $total = 0;
+        foreach ($this->rt_mapping as $rw => $rtList) {
+            $total += count($rtList);
+        }
+
+        return $total;
+    }
+
+    public function validateRwRtConstraints()
+    {
+        $errors = [];
+
+        if ($this->rw_list && count($this->rw_list) > 15) {
+            $errors[] = 'Maksimal 15 RW per posyandu';
+        }
+
+        if ($this->getTotalRtCount() > 53) {
+            $errors[] = 'Maksimal 53 RT per posyandu';
+        }
+
+        return empty($errors) ? true : $errors;
+    }
+
+    public function scopeByRw($query, string $rw)
+    {
+        return $query->whereJsonContains('rw_list', $rw);
+    }
 
     public function bidang()
     {
@@ -25,5 +101,10 @@ class Posyandu extends Model
     public function users()
     {
         return $this->hasMany(User::class, 'posyandu_id', 'id');
+    }
+
+    public function pengajuans()
+    {
+        return $this->hasMany(Pengajuan::class, 'posyandu_id', 'id');
     }
 }
