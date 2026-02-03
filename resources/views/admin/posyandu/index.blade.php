@@ -72,7 +72,8 @@
                                     <li>Password default: <code class="bg-white px-2 py-1 rounded">password123</code></li>
                                     <li>Kader dapat login menggunakan <strong>email</strong> atau <strong>nomor
                                             telepon</strong></li>
-                                    <li>Ketua Posyandu dapat <strong>melengkapi data</strong> kader (NIK, tanggal lahir, dll)
+                                    <li>Ketua Posyandu dapat <strong>melengkapi data</strong> kader (NIK, tanggal lahir,
+                                        dll)
                                     </li>
                                     <li>Ketua Posyandu dapat <strong>reset password</strong> kader jika diperlukan</li>
                                 </ul>
@@ -154,7 +155,8 @@
                                 <p class="font-semibold mb-1">Informasi untuk Admin Kabupaten</p>
                                 <ul class="list-disc list-inside space-y-1 ml-2">
                                     <li>Anda dapat <strong>melihat</strong> semua posyandu yang ada di kabupaten Anda</li>
-                                    <li>Untuk <strong>mengelola</strong> posyandu (edit/hapus), silakan hubungi Operator Desa terkait</li>
+                                    <li>Untuk <strong>mengelola</strong> posyandu (edit/hapus), silakan hubungi Operator
+                                        Desa terkait</li>
                                 </ul>
                             </div>
                         </div>
@@ -242,7 +244,11 @@
                                         <div class="flex items-center justify-center gap-2 flex-wrap">
                                             @php
                                                 $ketuaPosyandu = $posyandu->users->firstWhere('role', 'ketua-posyandu');
-                                                $operatorPosyandu = $posyandu->users->firstWhere('role', 'operator-desa');
+                                                $operatorPosyandu = \App\Models\User::where('role', 'operator-desa')
+                                                    ->where('kabupaten', $posyandu->kabupaten)
+                                                    ->where('kecamatan', $posyandu->kecamatan)
+                                                    ->where('desa', $posyandu->desa)
+                                                    ->first();
                                                 $kaders = $posyandu->users->where('role', 'kader')->values();
                                                 $posyanduData = [
                                                     'nama' => $posyandu->nama_posyandu,
@@ -251,9 +257,27 @@
                                                     'desa' => $posyandu->desa,
                                                     'rw_list' => $posyandu->rw_list ?? [],
                                                     'rt_mapping' => $posyandu->rt_mapping ?? [],
-                                                    'ketua' => $ketuaPosyandu ? ['name' => $ketuaPosyandu->name, 'email' => $ketuaPosyandu->email] : null,
-                                                    'operator' => $operatorPosyandu ? ['name' => $operatorPosyandu->name, 'email' => $operatorPosyandu->email] : null,
-                                                    'kaders' => $kaders->map(fn($k) => ['name' => $k->name, 'email' => $k->email, 'bidang' => $k->bidang->nama_bidang ?? '-'])->toArray(),
+                                                    'ketua' => $ketuaPosyandu
+                                                        ? [
+                                                            'name' => $ketuaPosyandu->name,
+                                                            'email' => $ketuaPosyandu->email,
+                                                        ]
+                                                        : null,
+                                                    'operator' => $operatorPosyandu
+                                                        ? [
+                                                            'name' => $operatorPosyandu->name,
+                                                            'email' => $operatorPosyandu->email,
+                                                        ]
+                                                        : null,
+                                                    'kaders' => $kaders
+                                                        ->map(
+                                                            fn($k) => [
+                                                                'name' => $k->name,
+                                                                'email' => $k->email,
+                                                                'bidang' => $k->bidang->nama_bidang ?? '-',
+                                                            ],
+                                                        )
+                                                        ->toArray(),
                                                 ];
                                             @endphp
                                             <button type="button"
@@ -373,10 +397,20 @@
     @push('scripts')
         <script>
             function showDetailPosyandu(data) {
-                const { nama, kabupaten, kecamatan, desa, rw_list: rwList, rt_mapping: rtMapping, ketua, operator, kaders } = data;
-                
+                const {
+                    nama,
+                    kabupaten,
+                    kecamatan,
+                    desa,
+                    rw_list: rwList,
+                    rt_mapping: rtMapping,
+                    ketua,
+                    operator,
+                    kaders
+                } = data;
+
                 let contentHtml = `<div class="text-left mt-4" style="max-height: 500px; overflow-y: auto; padding: 5px;">
-                    
+
                     <!-- Lokasi -->
                     <div class="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
                         <h4 class="font-semibold text-blue-800 mb-2 flex items-center gap-2">
@@ -405,38 +439,38 @@
                         <div class="mb-3">
                             <span class="inline-block px-2 py-0.5 bg-pink-500 text-white text-xs rounded font-medium mb-1">Ketua Posyandu</span>
                             ${ketua ? `
-                                <div class="ml-2 text-sm">
-                                    <p class="font-medium text-gray-800">${ketua.name}</p>
-                                    <p class="text-gray-500 text-xs">${ketua.email}</p>
-                                </div>
-                            ` : '<p class="ml-2 text-sm text-gray-400 italic">Belum ada</p>'}
+                                        <div class="ml-2 text-sm">
+                                            <p class="font-medium text-gray-800">${ketua.name}</p>
+                                            <p class="text-gray-500 text-xs">${ketua.email || '-'}</p>
+                                        </div>
+                                    ` : '<p class="ml-2 text-sm text-gray-400 italic">Belum ada</p>'}
                         </div>
-                        
+
                         <!-- Operator Desa -->
                         <div class="mb-3">
                             <span class="inline-block px-2 py-0.5 bg-indigo-500 text-white text-xs rounded font-medium mb-1">Operator Desa</span>
                             ${operator ? `
-                                <div class="ml-2 text-sm">
-                                    <p class="font-medium text-gray-800">${operator.name}</p>
-                                    <p class="text-gray-500 text-xs">${operator.email}</p>
-                                </div>
-                            ` : '<p class="ml-2 text-sm text-gray-400 italic">Belum ada</p>'}
+                                        <div class="ml-2 text-sm">
+                                            <p class="font-medium text-gray-800">${operator.name}</p>
+                                            <p class="text-gray-500 text-xs">${operator.email || '-'}</p>
+                                        </div>
+                                    ` : '<p class="ml-2 text-sm text-gray-400 italic">Belum ada</p>'}
                         </div>
-                        
+
                         <!-- Kader -->
                         <div>
                             <span class="inline-block px-2 py-0.5 bg-green-500 text-white text-xs rounded font-medium mb-2">Kader (${kaders.length})</span>
                             ${kaders.length > 0 ? `
-                                <div class="ml-2 grid grid-cols-2 gap-2">
-                                    ${kaders.map(k => `
+                                        <div class="ml-2 grid grid-cols-2 gap-2">
+                                            ${kaders.map(k => `
                                         <div class="text-sm p-2 bg-white rounded border">
                                             <p class="font-medium text-gray-800">${k.name}</p>
                                             <p class="text-gray-500 text-xs">${k.email}</p>
                                             <span class="inline-block mt-1 px-1.5 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">${k.bidang}</span>
                                         </div>
                                     `).join('')}
-                                </div>
-                            ` : '<p class="ml-2 text-sm text-gray-400 italic">Belum ada kader</p>'}
+                                        </div>
+                                    ` : '<p class="ml-2 text-sm text-gray-400 italic">Belum ada kader</p>'}
                         </div>
                     </div>
 

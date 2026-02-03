@@ -366,6 +366,7 @@ class UserController extends Controller
                 'ketua-timpembina-posyandu',
                 'admin-kecamatan',
                 'kades',
+                'bu-kades',
                 'operator-desa',
                 'admin-kabupaten',
             ],
@@ -383,6 +384,8 @@ class UserController extends Controller
                 'kader',
             ],
             'operator-desa' => [
+                'kades',
+                'bu-kades',
                 'ketua-posyandu',
                 'kader'
             ],
@@ -433,7 +436,7 @@ class UserController extends Controller
 
         $roleSpecificRules = [
             'ketua-timpembina-posyandu' => [
-                'jenis_wilayah' => ['required', 'in:kabupaten,kota'],
+                // 'jenis_wilayah' => ['required', 'in:kabupaten,kota'],
                 'kabupaten' => ['required', 'string'],
             ],
             'kabid' => [
@@ -464,7 +467,7 @@ class UserController extends Controller
             ],
             'kader' => [
                 'bidang_id' => ['required', 'uuid', 'exists:bidang_pengajuans,id'],
-                'posyandu_id' => $currentUser->role === 'ketua-posyandu' 
+                'posyandu_id' => $currentUser->role === 'ketua-posyandu'
                     ? ['nullable', 'uuid', 'exists:posyandus,id']
                     : ['required', 'uuid', 'exists:posyandus,id'],
             ],
@@ -501,7 +504,7 @@ class UserController extends Controller
                 $kabupatenName = explode('_', $kabupatenValue)[1] ?? $kabupatenValue;
 
                 $data['kabupaten'] = $kabupatenName;
-                $data['jenis_wilayah'] = $request->jenis_wilayah;
+                // $data['jenis_wilayah'] = $request->jenis_wilayah;
                 break;
 
             case 'kabid':
@@ -511,7 +514,7 @@ class UserController extends Controller
                 $kabupatenName = explode('_', $kabupatenValue)[1] ?? $kabupatenValue;
 
                 $data['kabupaten'] = $kabupatenName;
-                $data['jenis_wilayah'] = $request->jenis_wilayah ?? 'kabupaten';
+                // $data['jenis_wilayah'] = $request->jenis_wilayah ?? 'kabupaten';
                 break;
             case 'kades':
             case 'bu-kades':
@@ -528,7 +531,7 @@ class UserController extends Controller
                 $data['kabupaten'] = $kabupatenName;
                 $data['kecamatan'] = $kecamatanName;
                 $data['desa'] = $desaName;
-                $data['jenis_wilayah'] = $currentUser->jenis_wilayah ?? 'kabupaten';
+                // $data['jenis_wilayah'] = $currentUser->jenis_wilayah ?? 'kabupaten';
                 break;
 
             case 'admin-kecamatan':
@@ -540,7 +543,7 @@ class UserController extends Controller
 
                 $data['kabupaten'] = $kabupatenName;
                 $data['kecamatan'] = $kecamatanName;
-                $data['jenis_wilayah'] = $request->jenis_wilayah ?? 'kabupaten';
+                // $data['jenis_wilayah'] = $request->jenis_wilayah ?? 'kabupaten';
                 break;
 
             case 'ketua-posyandu':
@@ -552,7 +555,7 @@ class UserController extends Controller
                     $data['kabupaten'] = $posyandu->kabupaten;
                     $data['kecamatan'] = $posyandu->kecamatan;
                     $data['desa'] = $posyandu->desa;
-                    $data['jenis_wilayah'] = $currentUser->jenis_wilayah ?? null;
+                    // $data['jenis_wilayah'] = $currentUser->jenis_wilayah ?? null;
                 }
                 break;
 
@@ -579,7 +582,7 @@ class UserController extends Controller
                     $data['kabupaten'] = $currentUser->kabupaten;
                     $data['kecamatan'] = $currentUser->kecamatan;
                     $data['desa'] = $currentUser->desa;
-                    $data['jenis_wilayah'] = $currentUser->jenis_wilayah;
+                    // $data['jenis_wilayah'] = $currentUser->jenis_wilayah;
                 } elseif ($currentUser->role === 'operator-desa') {
                     // Operator-desa selects posyandu from dropdown
                     if ($request->filled('posyandu_id')) {
@@ -589,7 +592,7 @@ class UserController extends Controller
                             $data['kabupaten'] = $posyandu->kabupaten;
                             $data['kecamatan'] = $posyandu->kecamatan;
                             $data['desa'] = $posyandu->desa;
-                            $data['jenis_wilayah'] = $currentUser->jenis_wilayah;
+                            // $data['jenis_wilayah'] = $currentUser->jenis_wilayah;
                         }
                     }
                 } else {
@@ -600,7 +603,7 @@ class UserController extends Controller
                             $data['kabupaten'] = $posyandu->kabupaten;
                             $data['kecamatan'] = $posyandu->kecamatan;
                             $data['desa'] = $posyandu->desa;
-                            $data['jenis_wilayah'] = $currentUser->jenis_wilayah;
+                            // $data['jenis_wilayah'] = $currentUser->jenis_wilayah;
                         }
                     }
                 }
@@ -1420,7 +1423,7 @@ class UserController extends Controller
                     ]);
                 }
             } else {
-                \Log::warning('Ketua posyandu has no posyandu_id', ['user_id' => $user->id]);
+                Log::warning('Ketua posyandu has no posyandu_id', ['user_id' => $user->id]);
             }
         }
 
