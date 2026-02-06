@@ -88,7 +88,14 @@ class AjuanIndex extends Component
                         ->where('submitted_to_desa', true);
                     break;
                 case 'kades':
-                    $query->whereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
+                case 'bu-kades':
+                    if ($user->desa) {
+                        $query->whereHas('user.posyandu', function ($q) use ($user) {
+                            $q->where('desa', $user->desa);
+                        })->whereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
+                    } else {
+                        $query->whereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
+                    }
                     break;
                 case 'kader':
                     $query->where('sudah_verifikasi', true)->where('kunjungan_lapangan', true);
@@ -144,14 +151,13 @@ class AjuanIndex extends Component
                     }
                     break;
                 case 'kades':
-                    if ($user->posyandu_id) {
-                        $query->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id))
-                            ->where('submitted_to_desa', true)
-                            ->where('status_pengajuan', 'Diproses');
-                    } elseif ($user->desa) {
-                        $query->whereHas('user', fn($q) => $q->where('desa', $user->desa))
-                            ->where('submitted_to_desa', true)
-                            ->where('status_pengajuan', 'Diproses');
+                case 'bu-kades':
+                    if ($user->desa) {
+                        $query->whereHas('user.posyandu', function ($q) use ($user) {
+                            $q->where('desa', $user->desa);
+                        })
+                        ->where('submitted_to_desa', true)
+                        ->where('status_pengajuan', 'Diproses');
                     }
                     break;
 
