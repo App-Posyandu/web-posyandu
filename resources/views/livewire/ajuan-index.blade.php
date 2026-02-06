@@ -88,7 +88,8 @@
                             <div class="flex-1">
                                 <p class="text-sm font-medium text-indigo-900">Mode Monitoring</p>
                                 <p class="text-xs text-indigo-700 mt-1">
-                                    Anda dapat melihat dan mencetak pengajuan, tetapi tidak dapat memberikan persetujuan atau tindak lanjut.
+                                    Anda dapat melihat dan mencetak pengajuan, tetapi tidak dapat memberikan persetujuan
+                                    atau tindak lanjut.
                                 </p>
                             </div>
                         </div>
@@ -208,12 +209,12 @@
             @endif
         </div>
 
-        @if (auth()->user()->role === 'admin-kecamatan' && auth()->user()->kecamatan)
+        @if (auth()->user()->role === 'admin-kabupaten' && auth()->user()->kabupaten || auth()->user()->role === 'ketua-timpembina-posyandu' && auth()->user()->kabupaten)
             <div class="mb-4 p-3 bg-pink-50 border-l-4 border-pink-500 rounded-lg">
                 <div class="flex items-start">
                     <i class="bi bi-info-circle-fill text-pink-500 mr-2 mt-0.5 flex-shrink-0"></i>
                     <p class="text-sm text-gray-700">
-                        Anda mengelola pengajuan di <strong>Kecamatan {{ auth()->user()->kecamatan }}</strong>
+                        Anda mengelola pengajuan di <strong>{{ auth()->user()->kabupaten }}</strong>
                     </p>
                 </div>
             </div>
@@ -231,13 +232,26 @@
             </div>
         @endif
 
-        @if (auth()->user()->role === 'kader' && auth()->user()->bidang)
+        @if (auth()->user()->role === 'admin-kecamatan' && auth()->user()->kecamatan)
             <div class="mb-4 p-3 bg-pink-50 border-l-4 border-pink-500 rounded-lg">
                 <div class="flex items-start">
                     <i class="bi bi-info-circle-fill text-pink-500 mr-2 mt-0.5 flex-shrink-0"></i>
                     <p class="text-sm text-gray-700">
-                        Anda mengelola pengajuan di <strong>{{ auth()->user()->bidang->nama_bidang }}</strong>
-                        untuk <strong>{{ auth()->user()->posyandu->nama_posyandu ?? 'Posyandu Anda' }}</strong>
+                        Anda mengelola pengajuan di <strong>Kecamatan {{ auth()->user()->kecamatan }}</strong>
+                    </p>
+                </div>
+            </div>
+        @endif
+
+        @if (
+            (auth()->user()->role === 'operator-desa' && auth()->user()->desa) ||
+                (auth()->user()->role === 'kades' && auth()->user()->desa) ||
+                (auth()->user()->role === 'bu-kades' && auth()->user()->desa))
+            <div class="mb-4 p-3 bg-pink-50 border-l-4 border-pink-500 rounded-lg">
+                <div class="flex items-start">
+                    <i class="bi bi-info-circle-fill text-pink-500 mr-2 mt-0.5 flex-shrink-0"></i>
+                    <p class="text-sm text-gray-700">
+                        Anda mengelola pengajuan di desa <strong>{{ auth()->user()->desa }}</strong>
                     </p>
                 </div>
             </div>
@@ -249,6 +263,18 @@
                     <i class="bi bi-info-circle-fill text-pink-500 mr-2 mt-0.5 flex-shrink-0"></i>
                     <p class="text-sm text-gray-700">
                         Anda mengelola pengajuan di <strong>{{ auth()->user()->posyandu->nama_posyandu }}</strong>
+                    </p>
+                </div>
+            </div>
+        @endif
+
+        @if (auth()->user()->role === 'kader' && auth()->user()->bidang)
+            <div class="mb-4 p-3 bg-pink-50 border-l-4 border-pink-500 rounded-lg">
+                <div class="flex items-start">
+                    <i class="bi bi-info-circle-fill text-pink-500 mr-2 mt-0.5 flex-shrink-0"></i>
+                    <p class="text-sm text-gray-700">
+                        Anda mengelola pengajuan di <strong>{{ auth()->user()->bidang->nama_bidang }}</strong>
+                        untuk <strong>{{ auth()->user()->posyandu->nama_posyandu ?? 'Posyandu Anda' }}</strong>
                     </p>
                 </div>
             </div>

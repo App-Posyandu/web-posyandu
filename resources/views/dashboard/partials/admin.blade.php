@@ -133,9 +133,34 @@
                 </div>
             </div>
         </div>
-        @if (auth()->user()->role !== 'kabid')
+        @if (auth()->user()->role !== 'kabid' || auth()->user()->role !== 'kader')
+            @php
+                $labels;
+
+                if (
+                    (auth()->user()->role === 'admin-kabupaten' && auth()->user()->kabupaten) ||
+                    (auth()->user()->role === 'ketua-timpembina-posyandu' && auth()->user()->kabupaten)
+                ) {
+                    $labels = 'Kabupaten ' . auth()->user()->kabupaten;
+                } elseif (auth()->user()->role === 'admin-kecamatan' && auth()->user()->kecamatan) {
+                    $labels = 'Kecamatan ' . auth()->user()->kecamatan;
+                } elseif (
+                    (auth()->user()->role === 'operator-desa' && auth()->user()->desa) ||
+                    (auth()->user()->role === 'kades' && auth()->user()->desa) ||
+                    (auth()->user()->role === 'bu-kades' && auth()->user()->desa)
+                ) {
+                    $labels = 'Desa ' . auth()->user()->desa;
+                } elseif (
+                    (auth()->user()->role === 'ketua-posyandu' && auth()->user()->posyandu) ||
+                    (auth()->user()->role === 'masyarakat' && auth()->user()->posyandu)
+                ) {
+                    $labels = 'Posyandu ' . auth()->user()->posyandu;
+                }
+            @endphp
             <div class="bg-white overflow-hidden shadow-xl rounded-lg md:rounded-2xl p-4 md:p-6 lg:p-8 w-full">
-                <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6">Dashboard Ajuan Pelayanan</h2>
+                <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6">Dashboard Ajuan Pelayanan -
+                    <span class="text-pink-500">{{ $labels }}</span>
+                </h2>
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
                     <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                         @php
@@ -544,7 +569,8 @@
                     }
 
                     if (['ketua-timpembina-posyandu', 'admin-kabupaten', 'admin'].includes(userRole)) {
-                        window.location.href = `/admin/export-all-bidang-desa?year=${this.selectedYear}`;
+                        window.location.href =
+                            `/admin/export-all-bidang-desa?year=${this.selectedYear}`;
                         return;
                     }
                     window.location.href = `/admin/export-all-bidang-desa?year=${this.selectedYear}`;
@@ -626,9 +652,11 @@
                                 return;
                             }
                             if (selectedBidang === 'all') {
-                                window.location.href = `/admin/export-all/${userDesa}?year=${selectedYear}`;
+                                window.location.href =
+                                    `/admin/export-all/${userDesa}?year=${selectedYear}`;
                             } else {
-                                window.location.href = `/admin/export/${encodeURIComponent(selectedBidang)}/${userDesa}?year=${selectedYear}`;
+                                window.location.href =
+                                    `/admin/export/${encodeURIComponent(selectedBidang)}/${userDesa}?year=${selectedYear}`;
                             }
 
                             Swal.close();
@@ -692,7 +720,8 @@
                         }
 
                         if (e.target.id === 'confirmKadesExport') {
-                            window.location.href = `/admin/export-all/${userDesa}?year=${selectedYear}`;
+                            window.location.href =
+                                `/admin/export-all/${userDesa}?year=${selectedYear}`;
                             Swal.close();
                             document.removeEventListener('click', handleKadesExport);
                         }
@@ -776,9 +805,11 @@
                             }
 
                             if (selectedDesa === 'all') {
-                                window.location.href = `/admin/export-all/${selectedDesa}?year=${selectedYear}`;
+                                window.location.href =
+                                    `/admin/export-all/${selectedDesa}?year=${selectedYear}`;
                             } else {
-                                window.location.href = `/admin/export-all/${selectedDesa}?year=${selectedYear}`;
+                                window.location.href =
+                                    `/admin/export-all/${selectedDesa}?year=${selectedYear}`;
                             }
 
                             Swal.close();
@@ -790,7 +821,8 @@
                 },
 
                 handlePagination(event) {
-                    const link = event.target.tagName === 'A' ? event.target : event.target.closest('a');
+                    const link = event.target.tagName === 'A' ? event.target : event.target.closest(
+                        'a');
                     if (!link) return;
 
                     const isPagination = link.closest('.pagination');
@@ -1034,7 +1066,7 @@
                 let bidangSelectHTML = "";
 
                 if (userRole !== 'kabid') {
-                bidangSelectHTML = `
+                    bidangSelectHTML = `
             <div class="flex flex-col justify-start">
                 <label class="block text-start font-semibold mb-1 text-gray-700">Pilih Bidang:</label>
                 <select id="selectBidang" class="w-full border rounded-md p-2" required>
@@ -1049,8 +1081,8 @@
                 </select>
             </div>
         `;
-            } else {
-                bidangSelectHTML = `
+                } else {
+                    bidangSelectHTML = `
             <div class="bg-pink-50 border-l-4 border-pink-500 p-4 rounded-md">
                 <div class="flex items-start">
                     <i class="bi bi-info-circle-fill text-pink-500 mr-2 mt-0.5"></i>
@@ -1063,14 +1095,14 @@
                 </div>
             </div>
         `;
-            }
+                }
 
-            let desaSelectHTML = "";
+                let desaSelectHTML = "";
 
-            @if (Auth::user()->role === 'kabid')
-                const desas = @json($desas);
+                @if (Auth::user()->role === 'kabid')
+                    const desas = @json($desas);
 
-                desaSelectHTML = `
+                    desaSelectHTML = `
             <div class="relative text-left">
                 <label class="block text-start font-semibold mb-1 text-gray-700">Pilih Desa:</label>
 
@@ -1100,11 +1132,11 @@
                 </div>
             </div>
         `;
-            @endif
+                @endif
 
-            Swal.fire({
-                title: '<h2 class="text-lg md:text-xl font-bold text-gray-800 mb-2">Export Data Pengajuan</h2>',
-                html: `
+                Swal.fire({
+                    title: '<h2 class="text-lg md:text-xl font-bold text-gray-800 mb-2">Export Data Pengajuan</h2>',
+                    html: `
             <div class="space-y-8">
                 ${bidangSelectHTML}
                 ${desaSelectHTML}
@@ -1120,131 +1152,132 @@
                 </div>
             </div>
         `,
-                showConfirmButton: false,
-                showCancelButton: false,
-                width: 600,
-                background: '#f9fafb',
-                customClass: {
-                    popup: 'rounded-md md:rounded-2xl shadow-lg p-4 md:p-6'
-                },
-                didOpen: () => {
-                    @if (Auth::user()->role === 'kabid')
-                        const desas = ['all', ...@json($desas)];
-                        const searchInput = document.getElementById('desaSearch');
-                        const dropdownList = document.getElementById('desaDropdownList');
-                        const desaOptions = document.getElementById('desaOptions');
-                        const toggleBtn = document.getElementById('toggleDesaDropdown');
-                        const desaValue = document.getElementById('desaValue');
+                    showConfirmButton: false,
+                    showCancelButton: false,
+                    width: 600,
+                    background: '#f9fafb',
+                    customClass: {
+                        popup: 'rounded-md md:rounded-2xl shadow-lg p-4 md:p-6'
+                    },
+                    didOpen: () => {
+                        @if (Auth::user()->role === 'kabid')
+                            const desas = ['all', ...@json($desas)];
+                            const searchInput = document.getElementById('desaSearch');
+                            const dropdownList = document.getElementById('desaDropdownList');
+                            const desaOptions = document.getElementById('desaOptions');
+                            const toggleBtn = document.getElementById('toggleDesaDropdown');
+                            const desaValue = document.getElementById('desaValue');
 
-                        function renderOptions(filter = '') {
-                            const filtered = filter ?
-                                desas.filter(d => d.toLowerCase().includes(filter.toLowerCase())) :
-                                desas;
+                            function renderOptions(filter = '') {
+                                const filtered = filter ?
+                                    desas.filter(d => d.toLowerCase().includes(filter.toLowerCase())) :
+                                    desas;
 
-                            if (filtered.length === 0) {
-                                desaOptions.innerHTML =
-                                    '<div class="px-4 py-2 text-gray-500 text-sm">Tidak ada hasil</div>';
-                                return;
-                            }
+                                if (filtered.length === 0) {
+                                    desaOptions.innerHTML =
+                                        '<div class="px-4 py-2 text-gray-500 text-sm">Tidak ada hasil</div>';
+                                    return;
+                                }
 
-                            desaOptions.innerHTML = filtered.map(desa => {
-                                const displayText = desa === 'all' ?
-                                    '<strong>Semua Desa</strong>' :
-                                    desa;
+                                desaOptions.innerHTML = filtered.map(desa => {
+                                    const displayText = desa === 'all' ?
+                                        '<strong>Semua Desa</strong>' :
+                                        desa;
 
-                                return `<div class="desa-option px-4 py-2 cursor-pointer hover:bg-indigo-50 ${desa === 'all' ? 'bg-indigo-50 border-b-2 border-indigo-200' : ''}" data-value="${desa}">
+                                    return `<div class="desa-option px-4 py-2 cursor-pointer hover:bg-indigo-50 ${desa === 'all' ? 'bg-indigo-50 border-b-2 border-indigo-200' : ''}" data-value="${desa}">
                             ${displayText}
                         </div>`;
-                            }).join('');
+                                }).join('');
 
-                            document.querySelectorAll('.desa-option').forEach(option => {
-                                option.addEventListener('click', function() {
-                                    const value = this.getAttribute('data-value');
-                                    searchInput.value = value === 'all' ? 'Semua Desa' :
-                                        value;
-                                    desaValue.value = value;
-                                    dropdownList.classList.add('hidden');
+                                document.querySelectorAll('.desa-option').forEach(option => {
+                                    option.addEventListener('click', function() {
+                                        const value = this.getAttribute('data-value');
+                                        searchInput.value = value === 'all' ?
+                                            'Semua Desa' :
+                                            value;
+                                        desaValue.value = value;
+                                        dropdownList.classList.add('hidden');
+                                    });
                                 });
+                            }
+
+                            renderOptions();
+
+                            searchInput.addEventListener('focus', () => {
+                                dropdownList.classList.remove('hidden');
                             });
+
+                            searchInput.addEventListener('input', (e) => {
+                                renderOptions(e.target.value);
+                                dropdownList.classList.remove('hidden');
+                            });
+
+                            toggleBtn.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                dropdownList.classList.toggle('hidden');
+                            });
+
+                            document.addEventListener('click', (e) => {
+                                if (!searchInput.contains(e.target) && !dropdownList.contains(e
+                                        .target) && !toggleBtn.contains(e.target)) {
+                                    dropdownList.classList.add('hidden');
+                                }
+                            });
+                        @endif
+                    }
+                });
+
+                document.addEventListener('click', function handler(e) {
+                    if (e.target.id === 'cancelExportBtn') {
+                        Swal.close();
+                        document.removeEventListener('click', handler);
+                    }
+
+                    if (e.target.id === 'confirmExportBtn') {
+                        let bidang = null;
+                        let desa = null;
+
+                        if (userRole === 'kabid') {
+                            bidang = bidangKabid;
+                        } else if (userRole === 'ketua-posyandu') {
+                            bidang = document.getElementById('selectBidang')?.value;
+                            desa = userDesa;
+                        } else {
+                            bidang = document.getElementById('selectBidang')?.value;
                         }
 
-                        renderOptions();
+                        if (userRole === 'kabid') {
+                            desa = document.getElementById('desaValue')?.value || '';
+                        }
 
-                        searchInput.addEventListener('focus', () => {
-                            dropdownList.classList.remove('hidden');
-                        });
+                        if (!bidang) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Bidang Belum Dipilih!',
+                                text: 'Silakan pilih bidang terlebih dahulu sebelum export data.',
+                                confirmButtonColor: '#f87171',
+                                confirmButtonText: 'OK'
+                            });
+                            return;
+                        }
 
-                        searchInput.addEventListener('input', (e) => {
-                            renderOptions(e.target.value);
-                            dropdownList.classList.remove('hidden');
-                        });
+                        if (userRole === 'kabid' && !desa) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Desa Belum Dipilih!',
+                                text: 'Silakan pilih desa terlebih dahulu sebelum export data.',
+                                confirmButtonColor: '#f87171',
+                                confirmButtonText: 'OK'
+                            });
+                            return;
+                        }
 
-                        toggleBtn.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            dropdownList.classList.toggle('hidden');
-                        });
-
-                        document.addEventListener('click', (e) => {
-                            if (!searchInput.contains(e.target) && !dropdownList.contains(e
-                                    .target) && !toggleBtn.contains(e.target)) {
-                                dropdownList.classList.add('hidden');
-                            }
-                        });
-                    @endif
-                }
+                        exportData(bidang, desa);
+                        document.removeEventListener('click', handler);
+                        Swal.close();
+                    }
+                });
             });
-
-            document.addEventListener('click', function handler(e) {
-                if (e.target.id === 'cancelExportBtn') {
-                    Swal.close();
-                    document.removeEventListener('click', handler);
-                }
-
-                if (e.target.id === 'confirmExportBtn') {
-                    let bidang = null;
-                    let desa = null;
-
-                    if (userRole === 'kabid') {
-                        bidang = bidangKabid;
-                    } else if (userRole === 'ketua-posyandu') {
-                        bidang = document.getElementById('selectBidang')?.value;
-                        desa = userDesa;
-                    } else {
-                        bidang = document.getElementById('selectBidang')?.value;
-                    }
-
-                    if (userRole === 'kabid') {
-                        desa = document.getElementById('desaValue')?.value || '';
-                    }
-
-                    if (!bidang) {
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Bidang Belum Dipilih!',
-                            text: 'Silakan pilih bidang terlebih dahulu sebelum export data.',
-                            confirmButtonColor: '#f87171',
-                            confirmButtonText: 'OK'
-                        });
-                        return;
-                    }
-
-                    if (userRole === 'kabid' && !desa) {
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Desa Belum Dipilih!',
-                            text: 'Silakan pilih desa terlebih dahulu sebelum export data.',
-                            confirmButtonColor: '#f87171',
-                            confirmButtonText: 'OK'
-                        });
-                        return;
-                    }
-
-                    exportData(bidang, desa);
-                    document.removeEventListener('click', handler);
-                    Swal.close();
-                }
-            });
-        });
         }
 
         function exportData(bidang, desa) {

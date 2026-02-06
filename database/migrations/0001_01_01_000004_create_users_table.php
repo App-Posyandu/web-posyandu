@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('no_telepon', 20)->unique()->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->enum('role', ['masyarakat', 'kader', 'operator-desa', 'ketua-posyandu', 'kades', 'bu-kades', 'admin-kecamatan', 'kabid', 'admin-kabupaten', 'ketua-timpembina-posyandu', 'admin'])->default('masyarakat');
+            $table->enum('role', ['masyarakat', 'kader', 'ketua-posyandu', 'kades', 'bu-kades', 'operator-desa', 'admin-kecamatan', 'kabid',  'ketua-timpembina-posyandu', 'admin-kabupaten', 'admin'])->default('masyarakat');
             $table->string('kabupaten')->nullable();
             $table->string('kecamatan')->nullable();
             $table->string('desa')->nullable();
