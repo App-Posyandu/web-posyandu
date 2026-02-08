@@ -41,7 +41,7 @@ class UserIndex extends Component
         $roleMap = [
             'kader' => ['masyarakat'],
             'ketua-posyandu' => ['kader'],
-            'operator-desa' => ['ketua-posyandu', 'kader'],
+            'operator-desa' => ['kades', 'bu-kades', 'ketua-posyandu', 'kader'],
             'admin-kecamatan' => [],
             'admin-kabupaten' => ['ketua-timpembina-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'bu-kades', 'operator-desa'],
             'admin' => ['admin-kabupaten', 'ketua-timpembina-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'bu-kades', 'ketua-posyandu', 'operator-desa', 'kader', 'masyarakat'],
@@ -53,7 +53,7 @@ class UserIndex extends Component
     public function generateWhatsAppLink($user)
     {
         $currentUser = Auth::user();
-        
+
         $message = "*Selamat Datang di Sistem Posyandu!*\n\n";
         $message .= "Halo *{$user->name}*,\n\n";
         $message .= "Akun Anda telah berhasil dibuat oleh *{$currentUser->name}*.\n\n";

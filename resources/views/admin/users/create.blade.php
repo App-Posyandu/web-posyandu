@@ -180,6 +180,8 @@
                                 @elseif ($currentUserRole === 'admin-kecamatan')
 
                                 @elseif ($currentUserRole === 'operator-desa')
+                                    <option value="kades">Kades</option>
+                                    <option value="bu-kades">Bu Kades</option>
                                     <option value="ketua-posyandu">Ketua Posyandu</option>
                                     <option value="kader">Kader</option>
                                 @elseif ($currentUserRole === 'ketua-posyandu')
@@ -243,7 +245,7 @@
                             </div>
                         </div>
 
-                        @if (auth()->user()->role === 'admin-kabupaten')
+                        @if (auth()->user()->role === 'admin-kabupaten' || auth()->user()->role === 'operator-desa')
                             <input type="hidden" id="admin-kabupaten-kabupaten" name="admin_kabupaten_kabupaten"
                                 value="{{ auth()->user()->kabupaten }}" disabled>
                             <div id="kabupaten-display-field" style="display: none;" class="md:col-span-2">
@@ -329,6 +331,21 @@
                                 </div>
                             </div>
                         </div>
+                        @if (auth()->user()->role === 'operator-desa')
+                            <input type="hidden" id="operator-desa-kecamatan" name="operator_desa_kecamatan"
+                                value="{{ auth()->user()->desa }}" disabled>
+                            <div id="kecamatan-display-field" style="display: none;" class="md:col-span-2">
+                                <x-input-label for="kecamatan-display" :value="__('Kecamatan')" />
+                                <div
+                                    class="block mt-1 w-full px-3 py-2 border border-gray-300 bg-gray-100 rounded-md shadow-sm text-gray-700">
+                                    {{ str_replace('KECAMATAN ', '', strtoupper(auth()->user()->kecamatan)) }}
+                                </div>
+                                <p class="mt-1 text-xs text-gray-500">
+                                    <i class="bi bi-info-circle"></i>
+                                    Kecamatan otomatis diisi sesuai dengan wilayah Anda
+                                </p>
+                            </div>
+                        @endif
                         <div id="desa-field" style="display: none;" class="md:col-span-2">
 
                             <div x-data="desaCombobox()" @kecamatan-selected.window="fetchDesa($event.detail.code)"
@@ -372,6 +389,22 @@
                                 </div>
                             </div>
                         </div>
+
+                        @if (auth()->user()->role === 'operator-desa')
+                            <input type="hidden" id="operator-desa-desa" name="operator_desa_desa"
+                                value="{{ auth()->user()->desa }}" disabled>
+                            <div id="desa-display-field" style="display: none;" class="md:col-span-2">
+                                <x-input-label for="desa-display" :value="__('Desa')" />
+                                <div
+                                    class="block mt-1 w-full px-3 py-2 border border-gray-300 bg-gray-100 rounded-md shadow-sm text-gray-700">
+                                    {{ str_replace('DESA ', '', strtoupper(auth()->user()->desa)) }}
+                                </div>
+                                <p class="mt-1 text-xs text-gray-500">
+                                    <i class="bi bi-info-circle"></i>
+                                    DESA otomatis diisi sesuai dengan wilayah Anda
+                                </p>
+                            </div>
+                        @endif
 
                         <div id="posyandu-field" style="display: none;" class="md:col-span-2">
                             <x-input-label for="posyandu_select" :value="__('Pilih Posyandu')" />
@@ -1134,9 +1167,31 @@
                         adminKabupatenKabupaten.name = 'admin_kabupaten_kabupaten_val';
                     }
 
+                    const operatorDesaKecamatan = document.getElementById('operator-desa-kecamatan');
+                    if (operatorDesaKecamatan) {
+                        operatorDesaKecamatan.disabled = true;
+                        operatorDesaKecamatan.name = 'operator_desa_kecamatan_val';
+                    }
+
+                    const operatorDesaDesa = document.getElementById('operator-desa-desa');
+                    if (operatorDesaDesa) {
+                        operatorDesaDesa.disabled = true;
+                        operatorDesaDesa.name = 'operator_desa_desa_val';
+                    }
+
                     const kabupatenDisplayField = document.getElementById('kabupaten-display-field');
                     if (kabupatenDisplayField) {
                         kabupatenDisplayField.style.display = 'none';
+                    }
+
+                    const kecamatanDisplayField = document.getElementById('kecamatan-display-field');
+                    if (kecamatanDisplayField) {
+                        kecamatanDisplayField.style.display = 'none';
+                    }
+
+                    const desaDisplayField = document.getElementById('desa-display-field');
+                    if (desaDisplayField) {
+                        desaDisplayField.style.display = 'none';
                     }
 
                     jenisWilayahSelect.required = false;
@@ -1161,6 +1216,33 @@
                         }
                     }
 
+                    if (currentUserRole === 'operator-desa') {
+                        if (role === 'kades' || role === 'bu-kades') {
+                            if (adminKabupatenKabupaten) {
+                                adminKabupatenKabupaten.disabled = false
+                                adminKabupatenKabupaten.name = 'kabupaten'
+                            }
+                            if (kabupatenDisplayField) {
+                                kabupatenDisplayField.style.display = 'block';
+                            }
+
+                            if (operatorDesaKecamatan) {
+                                operatorDesaKecamatan.disabled = false
+                                operatorDesaKecamatan.name = 'kecamatan'
+                            }
+                            if (kecamatanDisplayField) {
+                                kecamatanDisplayField.style.display = 'block';
+                            }
+                            if (operatorDesaDesa) {
+                                operatorDesaDesa.disabled = false
+                                operatorDesaDesa.name = 'desa'
+                            }
+                            if (desaDisplayField) {
+                                desaDisplayField.style.display = 'block';
+                            }
+                        }
+                    }
+
                     if (role === 'admin-kabupaten') {
                         jenisWilayahField.style.display = 'block';
                         jenisWilayahSelect.required = true;
@@ -1175,15 +1257,18 @@
 
                     if (role === 'admin-kecamatan') {
                         kecamatanField.style.display = 'block';
-                        if (currentUserRole !== 'admin-kabupaten') {
+                        if (currentUserRole !== 'admin-kabupaten' || currentUserRole !== 'operator-desa') {
                             kabupatenField.style.display = 'block';
                         }
                     }
                     if (role === 'kades' || role === 'bu-kades') {
-                        kecamatanField.style.display = 'block';
-                        desaField.style.display = 'block';
-                        if (currentUserRole !== 'admin-kabupaten') {
+                        // kecamatanField.style.display = 'block';
+                        // desaField.style.display = 'block';
+                        if (currentUserRole !== 'admin-kabupaten' && currentUserRole !== 'operator-desa') {
                             kabupatenField.style.display = 'block';
+                        } else if (currentUserRole !== 'operator-desa') {
+                            kecamatanField.style.display = 'block';
+                            desaField.style.display = 'block';
                         }
                     }
 
@@ -1193,9 +1278,9 @@
                     }
 
                     if (role === 'operator-desa') {
-                        kecamatanField.style.display = 'block';
-                        desaField.style.display = 'block';
-                        if (currentUserRole !== 'admin-kabupaten') {
+                        // kecamatanField.style.display = 'block';
+                        // desaField.style.display = 'block';
+                        if (currentUserRole !== 'admin-kabupaten' || currentUserRole !== 'operator-desa') {
                             kabupatenField.style.display = 'block';
                         }
 
@@ -1335,7 +1420,7 @@
             const roleTargets = {
                 'kader': ['masyarakat'],
                 'ketua-posyandu': ['kader'],
-                'operator-desa': ['ketua-posyandu', 'kader'],
+                'operator-desa': ['kades', 'bu-kades', 'ketua-posyandu', 'kader'],
                 'admin-kecamatan': [],
                 'admin-kabupaten': ['ketua-timpembina-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'bu-kades',
                     'operator-desa'

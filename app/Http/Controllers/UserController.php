@@ -1084,13 +1084,13 @@ class UserController extends Controller
         $roleMap = [
             'kader' => ['masyarakat'],
             'ketua-posyandu' => ['kader'],
-            'operator-desa' => ['ketua-posyandu', 'kader'],
+            'operator-desa' => ['kades', 'bu-kades', 'ketua-posyandu', 'kader'],
             'admin-kecamatan' => [],
             'admin-kabupaten' => ['ketua-timpembina-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'operator-desa'],
             'admin' => ['admin-kabupaten', 'ketua-timpembina-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'ketua-posyandu', 'operator-desa', 'kader', 'masyarakat'],
         ];
 
-        return $roleMap[$role] ?? [];
+        return [$role] ?? [];
     }
 
     public function deactivate(Request $request, User $user)
