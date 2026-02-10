@@ -69,11 +69,13 @@
                             <i class="bi bi-search text-4xl text-gray-300 mb-3"></i>
                             <p class="text-gray-500 mb-4">Tidak ada masyarakat yang cocok dengan pencarian Anda.</p>
 
-                            <a href="{{ route('admin.users.create', ['source' => 'pilih-user']) }}"
-                                class="inline-flex items-center px-4 py-2 bg-pink-500 text-white rounded-md hover:bg-pink-600 transition-colors duration-150 text-sm font-semibold">
-                                <i class="bi bi-plus-circle mr-2"></i>
-                                Buat User Baru
-                            </a>
+                            @if (in_array(auth()->user()->role, ['admin', 'kader']))
+                                <a href="{{ route('admin.users.create', ['source' => 'pilih-user']) }}"
+                                    class="inline-flex items-center px-4 py-2 bg-pink-500 text-white rounded-md hover:bg-pink-600 transition-colors duration-150 text-sm font-semibold">
+                                    <i class="bi bi-plus-circle mr-2"></i>
+                                    Buat User Baru
+                                </a>
+                            @endif
                         </div>
 
                         <div x-show="users.length === 0" class="text-center py-12">
@@ -82,11 +84,13 @@
                             <p class="text-gray-500 mb-6">Silakan buat user masyarakat terlebih dahulu untuk melanjutkan.
                             </p>
 
-                            <a href="{{ route('admin.users.create', ['source' => 'pilih-user']) }}"
-                                class="inline-flex items-center px-6 py-3 bg-pink-500 text-white rounded-md hover:bg-pink-600 transition-colors duration-150 font-semibold">
-                                <i class="bi bi-plus-circle mr-2"></i>
-                                Buat User Masyarakat
-                            </a>
+                            @if (in_array(auth()->user()->role, ['admin','kader']))
+                                <a href="{{ route('admin.users.create', ['source' => 'pilih-user']) }}"
+                                    class="inline-flex items-center px-6 py-3 bg-pink-500 text-white rounded-md hover:bg-pink-600 transition-colors duration-150 font-semibold">
+                                    <i class="bi bi-plus-circle mr-2"></i>
+                                    Buat User Masyarakat
+                                </a>
+                            @endif
                         </div>
 
                     </div>

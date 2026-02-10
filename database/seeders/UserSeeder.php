@@ -18,28 +18,64 @@ class UserSeeder extends Seeder
         User::truncate();
         Schema::enableForeignKeyConstraints();
 
-        $firstPosyandu = Posyandu::first();
-        $firstBidang = BidangPengajuan::first();
+        $allPosyandu = Posyandu::all();
+        $allBidang = BidangPengajuan::all();
 
-        User::create([
-            'bidang_id' => $firstBidang ? $firstBidang->id : null,
-            'posyandu_id' => $firstPosyandu ? $firstPosyandu->id : null,
-            'name' => 'Kader Eposy',
-            'email' => 'kader@eposy.com',
-            'password' => Hash::make('password'),
-            'role' => 'kader',
-            'verified_at' => now(),
-            'nik' => '3301234567890001',
-            'alamat' => 'Jl. Merdeka No. 1, Purwokerto',
-            'tempat_lahir' => 'Purwokerto',
-            'tanggal_lahir' => '1990-01-01',
-            'jenis_kelamin' => 'Perempuan',
-            'no_telepon' => '081200000001',
-            'ktp' => null,
-            'kk' => null,
-            'email_verified_at' => now(),
+        // 1 admin
+        User::factory()->create([
+            'role' => 'admin',
+            'email' => 'admin@dummy.com',
+            'bidang_id' => $allBidang->random()->id ?? null,
+            'posyandu_id' => $allPosyandu->random()->id ?? null,
         ]);
 
-        User::factory(5)->create();
+        // Role yang diminta 5 user
+        $roles5 = [
+            'kabid',
+            'admin-kabupaten',
+            'kades',
+            'bu-kades',
+            'ketua-timpembina-posyandu',
+            'operator-desa',
+        ];
+        foreach ($roles5 as $role) {
+            for ($i = 1; $i <= 5; $i++) {
+                User::factory()->create([
+                    'role' => $role,
+                    'email' => $role . $i . '@dummy.com',
+                    'bidang_id' => $allBidang->random()->id ?? null,
+                    'posyandu_id' => $allPosyandu->random()->id ?? null,
+                ]);
+            }
+        }
+
+        // Role lain (masing-masing 1 user, posyandu diacak)
+        $roles1 = [
+            'admin-kecamatan',
+            'ketua-posyandu',
+            'masyarakat',
+        ];
+        foreach ($roles1 as $role) {
+            User::factory()->create([
+                'role' => $role,
+                'email' => $role . '@dummy.com',
+                'bidang_id' => $allBidang->random()->id ?? null,
+                'posyandu_id' => $allPosyandu->random()->id ?? null,
+            ]);
+        }
+
+        // 6 kader, 6 bidang berbeda, semua di 1 posyandu yang sama
+        $kaderPosyandu = $allPosyandu->random();
+        $bidangList = $allBidang->take(6);
+        $kaderNum = 1;
+        foreach ($bidangList as $bidang) {
+            User::factory()->create([
+                'role' => 'kader',
+                'email' => 'kader' . $kaderNum . '@dummy.com',
+                'bidang_id' => $bidang->id,
+                'posyandu_id' => $kaderPosyandu->id,
+            ]);
+            $kaderNum++;
+        }
     }
 }

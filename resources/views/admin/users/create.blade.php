@@ -174,8 +174,6 @@
                                     <option value="ketua-timpembina-posyandu">Ketua Tim Pembina Posyandu</option>
                                     <option value="kabid">Kabid</option>
                                     <option value="admin-kecamatan">Admin Kecamatan</option>
-                                    <option value="kades">Kades</option>
-                                    <option value="bu-kades">Bu Kades</option>
                                     <option value="operator-desa">Operator Desa</option>
                                 @elseif ($currentUserRole === 'admin-kecamatan')
 

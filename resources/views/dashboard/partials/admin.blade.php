@@ -135,7 +135,7 @@
         </div>
         @if (auth()->user()->role !== 'kabid' || auth()->user()->role !== 'kader')
             @php
-                $labels;
+                $labels = '';
 
                 if (
                     (auth()->user()->role === 'admin-kabupaten' && auth()->user()->kabupaten) ||
@@ -151,12 +151,11 @@
                 ) {
                     $labels = 'Desa ' . auth()->user()->desa;
                 } elseif (
-                    (auth()->user()->role === 'ketua-posyandu' && auth()->user()->posyandu) ||
-                    (auth()->user()->role === 'masyarakat' && auth()->user()->posyandu)
+                    (auth()->user()->role === 'ketua-posyandu' && auth()->user()->posyandu)
                 ) {
-                    $labels = 'Posyandu ' . auth()->user()->posyandu;
-                }
-            @endphp
+                    $labels = 'Posyandu ' . auth()->user()->posyandu->nama_posyandu;
+                    }
+                    @endphp
             <div class="bg-white overflow-hidden shadow-xl rounded-lg md:rounded-2xl p-4 md:p-6 lg:p-8 w-full">
                 <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6">Dashboard Ajuan Pelayanan -
                     <span class="text-pink-500">{{ $labels }}</span>

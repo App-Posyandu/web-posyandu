@@ -53,7 +53,7 @@
                             </x-dropdown-link>
                         @endif
 
-                        @if (in_array(auth()->user()->role, ['admin', 'kabid', 'ketua-timpembina-posyandu', 'admin-kabupaten', 'operator-desa']))
+                        @if (in_array(auth()->user()->role, ['admin', 'kabid', 'ketua-timpembina-posyandu', 'admin-kabupaten', 'operator-desa', 'admin-kecamatan']))
                             <x-dropdown-link :href="route('admin.posyandu.index')">
                                 <i class="bi bi-building mr-2"></i>
                                 {{ __('Posyandu') }}
