@@ -18,64 +18,180 @@ class UserSeeder extends Seeder
         User::truncate();
         Schema::enableForeignKeyConstraints();
 
-        $allPosyandu = Posyandu::all();
         $allBidang = BidangPengajuan::all();
+        $allPosyandu = Posyandu::all();
+
+        // Ambil satu kabupaten (dari posyandu pertama)
+        $mainPosyandu = $allPosyandu->first();
+        $mainKabupaten = $mainPosyandu->kabupaten;
+        $mainKabupatenId = $mainPosyandu->kabupaten_id;
 
         // 1 admin
         User::factory()->create([
             'role' => 'admin',
             'email' => 'admin@dummy.com',
-            'bidang_id' => $allBidang->random()->id ?? null,
-            'posyandu_id' => $allPosyandu->random()->id ?? null,
+            'bidang_id' => null,
+            'posyandu_id' => null,
+            'kabupaten' => $mainKabupaten,
+            'kabupaten_id' => $mainKabupatenId,
+            'kecamatan' => null,
+            'desa' => null,
         ]);
 
-        // Role yang diminta 5 user
-        $roles5 = [
-            'kabid',
-            'admin-kabupaten',
-            'kades',
-            'bu-kades',
-            'ketua-timpembina-posyandu',
-            'operator-desa',
-        ];
-        foreach ($roles5 as $role) {
-            for ($i = 1; $i <= 5; $i++) {
-                User::factory()->create([
-                    'role' => $role,
-                    'email' => $role . $i . '@dummy.com',
-                    'bidang_id' => $allBidang->random()->id ?? null,
-                    'posyandu_id' => $allPosyandu->random()->id ?? null,
-                ]);
-            }
-        }
-
-        // Role lain (masing-masing 1 user, posyandu diacak)
-        $roles1 = [
-            'admin-kecamatan',
-            'ketua-posyandu',
-            'masyarakat',
-        ];
-        foreach ($roles1 as $role) {
+        // 5 admin-kabupaten
+        for ($i = 1; $i <= 5; $i++) {
             User::factory()->create([
-                'role' => $role,
-                'email' => $role . '@dummy.com',
-                'bidang_id' => $allBidang->random()->id ?? null,
-                'posyandu_id' => $allPosyandu->random()->id ?? null,
+                'role' => 'admin-kabupaten',
+                'email' => 'admin-kabupaten' . $i . '@dummy.com',
+                'posyandu_id' => null,
+                'bidang_id' => null,
+                'kabupaten' => $mainKabupaten,
+                'kabupaten_id' => $mainKabupatenId,
+                'kecamatan' => null,
+                'desa' => null,
             ]);
         }
 
-        // 6 kader, 6 bidang berbeda, semua di 1 posyandu yang sama
-        $kaderPosyandu = $allPosyandu->random();
-        $bidangList = $allBidang->take(6);
-        $kaderNum = 1;
-        foreach ($bidangList as $bidang) {
+        // kabid sejumlah bidang SPM (semua di kabupaten yang sama)
+        $bidangNum = 1;
+        foreach ($allBidang as $bidang) {
             User::factory()->create([
-                'role' => 'kader',
-                'email' => 'kader' . $kaderNum . '@dummy.com',
+                'role' => 'kabid',
+                'email' => 'kabid' . $bidangNum . '@dummy.com',
                 'bidang_id' => $bidang->id,
-                'posyandu_id' => $kaderPosyandu->id,
+                'posyandu_id' => null,
+                'kabupaten' => $mainKabupaten,
+                'kabupaten_id' => $mainKabupatenId,
+                'kecamatan' => null,
+                'desa' => null,
             ]);
-            $kaderNum++;
+            $bidangNum++;
+        }
+
+        // 5 ketua-timpembina-posyandu (semua di kabupaten yang sama)
+        for ($i = 1; $i <= 5; $i++) {
+            User::factory()->create([
+                'role' => 'ketua-timpembina-posyandu',
+                'email' => 'ketua-timpembina-posyandu' . $i . '@dummy.com',
+                'bidang_id' => null,
+                'posyandu_id' => null,
+                'kabupaten' => $mainKabupaten,
+                'kabupaten_id' => $mainKabupatenId,
+                'kecamatan' => null,
+                'desa' => null,
+            ]);
+        }
+
+        $posyanduNum = 1;
+        foreach ($allPosyandu as $posyandu) {
+            $kabupaten = $posyandu->kabupaten;
+            $kabupatenId = $posyandu->kabupaten_id;
+            $kecamatan = $posyandu->kecamatan;
+            $kecamatanId = $posyandu->kecamatan_id;
+            $desa = $posyandu->desa;
+
+            // 1 admin-kecamatan
+            User::factory()->create([
+                'role' => 'admin-kecamatan',
+                'email' => 'admin-kecamatan' . $posyanduNum . '@dummy.com',
+                'bidang_id' => null,
+                'posyandu_id' => null,
+                'kabupaten' => $kabupaten,
+                'kabupaten_id' => $kabupatenId,
+                'kecamatan' => $kecamatan,
+                'kecamatan_id' => $kecamatanId,
+                'desa' => $desa,
+            ]);
+
+            // 1 kades
+            User::factory()->create([
+                'role' => 'kades',
+                'email' => 'kades' . $posyanduNum . '@dummy.com',
+                'bidang_id' => null,
+                'posyandu_id' => null,
+                'kabupaten' => $kabupaten,
+                'kabupaten_id' => $kabupatenId,
+                'kecamatan' => $kecamatan,
+                'kecamatan_id' => $kecamatanId,
+                'desa' => $desa,
+            ]);
+
+            // 1 bu-kades
+            User::factory()->create([
+                'role' => 'bu-kades',
+                'email' => 'bu-kades' . $posyanduNum . '@dummy.com',
+                'bidang_id' => null,
+                'posyandu_id' => null,
+                'kabupaten' => $kabupaten,
+                'kabupaten_id' => $kabupatenId,
+                'kecamatan' => $kecamatan,
+                'kecamatan_id' => $kecamatanId,
+                'desa' => $desa,
+            ]);
+
+            // 1 ketua-posyandu
+            User::factory()->create([
+                'role' => 'ketua-posyandu',
+                'email' => 'ketua-posyandu' . $posyanduNum . '@dummy.com',
+                'bidang_id' => null,
+                'posyandu_id' => $posyandu->id,
+                'kabupaten' => $kabupaten,
+                'kabupaten_id' => $kabupatenId,
+                'kecamatan' => $kecamatan,
+                'kecamatan_id' => $kecamatanId,
+                'desa' => $desa,
+            ]);
+
+            // 1 operator-desa
+            User::factory()->create([
+                'role' => 'operator-desa',
+                'email' => 'operator-desa' . $posyanduNum . '@dummy.com',
+                'bidang_id' => null,
+                'posyandu_id' => null,
+                'kabupaten' => $kabupaten,
+                'kabupaten_id' => $kabupatenId,
+                'kecamatan' => $kecamatan,
+                'kecamatan_id' => $kecamatanId,
+                'desa' => $desa,
+            ]);
+
+            // 6 kader (satu untuk setiap bidang SPM) di posyandu yang sama
+            $kaderNum = 1;
+            foreach ($allBidang as $bidang) {
+                User::factory()->create([
+                    'role' => 'kader',
+                    'email' => 'kader-posyandu' . $posyanduNum . '-bidang' . $kaderNum . '@dummy.com',
+                    'bidang_id' => $bidang->id,
+                    'posyandu_id' => $posyandu->id,
+                    'kabupaten' => $kabupaten,
+                    'kabupaten_id' => $kabupatenId,
+                    'kecamatan' => $kecamatan,
+                    'kecamatan_id' => $kecamatanId,
+                    'desa' => $desa,
+                ]);
+                $kaderNum++;
+            }
+
+            $posyanduNum++;
+        }
+
+        // 1 masyarakat (acak)
+        $jumlahMasyarakat = 10;
+
+        for ($i = 1; $i <= $jumlahMasyarakat; $i++) {
+            $posyandu = $allPosyandu->random();
+
+            User::factory()->create([
+                'role' => 'masyarakat',
+                'email' => 'masyarakat' . $i . '@dummy.com',
+                'bidang_id' => null,
+                'posyandu_id' => $posyandu->id,
+                'kabupaten' => $posyandu->kabupaten,
+                'kabupaten_id' => $posyandu->kabupaten_id,
+                'kecamatan' => $posyandu->kecamatan,
+                'kecamatan_id' => $posyandu->kecamatan_id,
+                'desa' => $posyandu->desa,
+            ]);
         }
     }
 }
