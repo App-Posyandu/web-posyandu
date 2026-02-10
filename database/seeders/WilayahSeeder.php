@@ -12,13 +12,11 @@ class WilayahSeeder extends Seeder
 {
     public function run(): void
     {
-        // Dummy data for Kabupaten Kebumen
         $kabupaten = Kabupaten::create([
             'nama_kabupaten' => 'Kebumen',
-            'jenis' => 'kabupaten', // harus huruf kecil sesuai enum di migration
+            'jenis' => 'kabupaten',
         ]);
 
-        // Dummy kecamatan & desa (minimal, bisa ditambah sesuai kebutuhan)
         $kecamatans = [
             'Kebumen' => ['Desa Gemeksekti', 'Desa Kutosari'],
             'Alian' => ['Desa Kalirancang', 'Desa Sidoagung'],
@@ -32,7 +30,7 @@ class WilayahSeeder extends Seeder
             ]);
 
             foreach ($desaList as $desa) {
-                // Buat 1 posyandu per desa
+
                 Posyandu::create([
                     'nama_posyandu' => 'Posyandu ' . Str::random(5),
                     'desa' => $desa,

@@ -21,12 +21,10 @@ class UserSeeder extends Seeder
         $allBidang = BidangPengajuan::all();
         $allPosyandu = Posyandu::all();
 
-        // Ambil satu kabupaten (dari posyandu pertama)
         $mainPosyandu = $allPosyandu->first();
         $mainKabupaten = $mainPosyandu->kabupaten;
         $mainKabupatenId = $mainPosyandu->kabupaten_id;
 
-        // 1 admin
         User::factory()->create([
             'role' => 'admin',
             'email' => 'admin@dummy.com',
@@ -38,7 +36,6 @@ class UserSeeder extends Seeder
             'desa' => null,
         ]);
 
-        // 5 admin-kabupaten
         for ($i = 1; $i <= 5; $i++) {
             User::factory()->create([
                 'role' => 'admin-kabupaten',
@@ -52,7 +49,6 @@ class UserSeeder extends Seeder
             ]);
         }
 
-        // kabid sejumlah bidang SPM (semua di kabupaten yang sama)
         $bidangNum = 1;
         foreach ($allBidang as $bidang) {
             User::factory()->create([
@@ -68,7 +64,6 @@ class UserSeeder extends Seeder
             $bidangNum++;
         }
 
-        // 5 ketua-timpembina-posyandu (semua di kabupaten yang sama)
         for ($i = 1; $i <= 5; $i++) {
             User::factory()->create([
                 'role' => 'ketua-timpembina-posyandu',
@@ -90,7 +85,6 @@ class UserSeeder extends Seeder
             $kecamatanId = $posyandu->kecamatan_id;
             $desa = $posyandu->desa;
 
-            // 1 admin-kecamatan
             User::factory()->create([
                 'role' => 'admin-kecamatan',
                 'email' => 'admin-kecamatan' . $posyanduNum . '@dummy.com',
@@ -103,7 +97,6 @@ class UserSeeder extends Seeder
                 'desa' => $desa,
             ]);
 
-            // 1 kades
             User::factory()->create([
                 'role' => 'kades',
                 'email' => 'kades' . $posyanduNum . '@dummy.com',
@@ -116,7 +109,6 @@ class UserSeeder extends Seeder
                 'desa' => $desa,
             ]);
 
-            // 1 bu-kades
             User::factory()->create([
                 'role' => 'bu-kades',
                 'email' => 'bu-kades' . $posyanduNum . '@dummy.com',
@@ -129,7 +121,6 @@ class UserSeeder extends Seeder
                 'desa' => $desa,
             ]);
 
-            // 1 ketua-posyandu
             User::factory()->create([
                 'role' => 'ketua-posyandu',
                 'email' => 'ketua-posyandu' . $posyanduNum . '@dummy.com',
@@ -142,7 +133,6 @@ class UserSeeder extends Seeder
                 'desa' => $desa,
             ]);
 
-            // 1 operator-desa
             User::factory()->create([
                 'role' => 'operator-desa',
                 'email' => 'operator-desa' . $posyanduNum . '@dummy.com',
@@ -155,7 +145,6 @@ class UserSeeder extends Seeder
                 'desa' => $desa,
             ]);
 
-            // 6 kader (satu untuk setiap bidang SPM) di posyandu yang sama
             $kaderNum = 1;
             foreach ($allBidang as $bidang) {
                 User::factory()->create([
@@ -175,7 +164,6 @@ class UserSeeder extends Seeder
             $posyanduNum++;
         }
 
-        // 1 masyarakat (acak)
         $jumlahMasyarakat = 10;
 
         for ($i = 1; $i <= $jumlahMasyarakat; $i++) {
