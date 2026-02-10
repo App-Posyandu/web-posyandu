@@ -373,7 +373,7 @@ Route::middleware('auth')->group(function () {
         Route::get('desa', [PosyanduController::class, 'getDesa'])->name('api.desa');
     });
 
-    Route::middleware(['role:kader,admin,admin-kabupaten,operator-desa,ketua-posyandu'])->prefix('admin')->name('admin.')->group(function () {
+    Route::middleware(['role:kader,admin,operator-desa,admin-kabupaten'])->prefix('admin')->name('admin.')->group(function () {
         Route::resource('users', UserController::class);
         Route::patch('/users/{user}/verify', [UserController::class, 'verify'])->name('users.verify');
 

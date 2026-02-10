@@ -109,10 +109,12 @@
             <h2 class="text-xl md:text-2xl font-bold text-gray-800">List Pengguna</h2>
 
             <div class="flex flex-col md:flex-row items-stretch md:items-center gap-2 w-full md:w-auto">
-                <a href="{{ route('admin.users.create') }}"
-                    class="px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600 text-center transition-colors duration-150">
-                    <i class="bi bi-plus-circle-fill mr-2"></i>Tambah User
-                </a>
+                @if (in_array(auth()->user()->role, ['admin', 'operator-desa', 'admin-kabupaten']))
+                    <a href="{{ route('admin.users.create') }}"
+                        class="px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600 text-center transition-colors duration-150">
+                        <i class="bi bi-plus-circle-fill mr-2"></i>Tambah User
+                    </a>
+                @endif
                 <div class="flex flex-col md:flex-row gap-2 w-full md:w-auto">
                     <select wire:model.live="role" class="border-gray-300 rounded-md shadow-sm text-sm">
                         <option value="">Semua Role</option>

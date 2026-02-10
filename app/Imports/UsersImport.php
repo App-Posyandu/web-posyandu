@@ -54,7 +54,7 @@ class UsersImport implements ToModel, WithHeadingRow
         $roleMap = [
             'kader' => ['masyarakat'],
             'ketua-posyandu' => ['kader'],
-            'operator-desa' => ['ketua-posyandu', 'kader'],
+            'operator-desa' => ['kades', 'bu-kades', 'ketua-posyandu', 'kader'],
             'admin-kecamatan' => [],
             'admin-kabupaten' => ['ketua-timpembina-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'operator-desa'],
             'admin' => ['admin-kabupaten', 'ketua-timpembina-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'ketua-posyandu', 'operator-desa', 'kader', 'masyarakat'],
@@ -242,4 +242,5 @@ class UsersImport implements ToModel, WithHeadingRow
             ]);
             throw $e;
         }
-    }}
+    }
+}

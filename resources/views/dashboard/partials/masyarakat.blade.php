@@ -111,7 +111,18 @@
         </div>
 
         <div class="bg-white overflow-hidden shadow-xl rounded-lg md:rounded-2xl p-4 md:p-6 lg:p-8 w-full">
-            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6">Statistik Pengajuan Desa</h2>
+            @php
+                $label = '';
+                if (auth()->user()->posyandu && auth()->user()->posyandu->nama_posyandu) {
+                    $label = 'Posyandu ' . auth()->user()->posyandu->nama_posyandu;
+                }
+            @endphp
+            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6">
+                Statistik Pengajuan Desa - 
+                @if ($label)
+                    <span class="text-pink-500">{{ $label }}</span>
+                @endif
+            </h2>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
                 <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
