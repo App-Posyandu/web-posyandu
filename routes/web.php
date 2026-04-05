@@ -10,6 +10,7 @@ use App\Http\Controllers\PosyanduController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SystemSettingController;
 use App\Http\Controllers\UserController;
+use App\Http\Resources\PosyanduLookupResource;
 use App\Models\Kabupaten;
 use App\Models\Kecamatan;
 use App\Models\Posyandu;
@@ -17,6 +18,19 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\File;
+
+Route::pattern('user', '[0-9a-fA-F\-]{36}');
+Route::pattern('posyandu', '[0-9a-fA-F\-]{36}');
+Route::pattern('ajuan', '[0-9a-fA-F\-]{36}');
+Route::pattern('bidang', '[a-z0-9\-]+');
+Route::pattern('kader', '[0-9a-fA-F\-]{36}');
+Route::pattern('id', '[0-9a-fA-F\-]{36}');
+Route::pattern('key', '[A-Za-z0-9_\-]+');
+Route::pattern('index', '[0-9]+');
+Route::pattern('code', '[A-Z0-9\-]+');
+Route::pattern('slug', '[a-z0-9\-]+');
+Route::pattern('kabupaten_id', '[0-9]+(?:\.[0-9]+)*');
+Route::pattern('kecamatan_id', '[0-9]+(?:\.[0-9]+)*');
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -200,7 +214,7 @@ Route::prefix('api/db')->group(function () {
 
         return response()->json([
             'success' => true,
-            'data' => $posyandus
+            'data' => PosyanduLookupResource::collection($posyandus)->resolve(),
         ]);
     })->name('api.db.posyandu.by-kecamatan');
 
@@ -212,7 +226,7 @@ Route::prefix('api/db')->group(function () {
 
         return response()->json([
             'success' => true,
-            'data' => $posyandus
+            'data' => PosyanduLookupResource::collection($posyandus)->resolve(),
         ]);
     })->name('api.db.posyandu.by-kabupaten');
 });
@@ -244,16 +258,17 @@ Route::get('/api/posyandu/{posyandu}/rw-rt', function (Posyandu $posyandu) {
 })->name('api.posyandu.rw-rt');
 
 Route::get('/api/wilayah/posyandu', function (Request $request) {
-    $request->validate([
-        'kabupaten' => 'required|string',
-        'kecamatan' => 'required|string',
-        'desa' => 'required|string',
+    $validated = $request->validate([
+        'kabupaten' => ['required', 'string', 'max:120', 'regex:/^[A-Za-z0-9\s\.\-]+$/'],
+        'kecamatan' => ['required', 'string', 'max:120', 'regex:/^[A-Za-z0-9\s\.\-]+$/'],
+        'desa' => ['required', 'string', 'max:120', 'regex:/^[A-Za-z0-9\s\.\-]+$/'],
+        'search' => ['nullable', 'string', 'max:100', 'regex:/^[A-Za-z0-9\s\.\-]*$/'],
     ]);
 
-    $kabupatenName = $request->query('kabupaten');
-    $kecamatanName = $request->query('kecamatan');
-    $desaName = $request->query('desa');
-    $search = $request->query('search', '');
+    $kabupatenName = $validated['kabupaten'];
+    $kecamatanName = $validated['kecamatan'];
+    $desaName = $validated['desa'];
+    $search = $validated['search'] ?? '';
 
     $posyandus = Posyandu::where('kabupaten', $kabupatenName)
         ->where('kecamatan', $kecamatanName)
@@ -264,7 +279,7 @@ Route::get('/api/wilayah/posyandu', function (Request $request) {
         ->orderBy('nama_posyandu')
         ->get(['id', 'nama_posyandu', 'rw_list', 'rt_mapping']);
 
-    return response()->json($posyandus);
+    return response()->json(PosyanduLookupResource::collection($posyandus)->resolve());
 })->name('api.posyandu.by-wilayah');
 
 Route::get('/track-submission', [AjuanController::class, 'showTrackingForm'])

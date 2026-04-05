@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StorePosyanduRequest;
+use App\Http\Requests\UpdatePosyanduRequest;
 use App\Models\Posyandu;
 use App\Imports\PosyanduImport;
 use App\Models\User;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
@@ -18,6 +21,8 @@ use Illuminate\Support\Str;
 
 class PosyanduController extends Controller
 {
+    use AuthorizesRequests;
+
     const PROVINCE_ID = 33;
     const API_TIMEOUT = 10;
     const CACHE_TTL = 3600;
@@ -104,39 +109,22 @@ class PosyanduController extends Controller
 
     public function index(Request $request)
     {
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:100', 'regex:/^[\pL\pN\s@\._\-,()]+$/u'],
+        ]);
+
         $currentUser = Auth::user();
-        $query = Posyandu::with('users')->latest();
+        $query = Posyandu::with('users')->visibleTo($currentUser)->latest();
 
-        if ($currentUser->role === 'operator-desa') {
-            $query->where('kabupaten', $currentUser->kabupaten)
-                ->where('kecamatan', $currentUser->kecamatan)
-                ->where('desa', $currentUser->desa);
-        } elseif ($currentUser->role === 'admin-kabupaten') {
-            $query->where('kabupaten', $currentUser->kabupaten);
-        } elseif ($currentUser->role === 'ketua-posyandu') {
-            $query->where('id', $currentUser->posyandu_id);
-        } elseif ($currentUser->role === 'admin-kecamatan') {
-            if ($currentUser->kecamatan_id) {
-                $query->where('kecamatan_id', $currentUser->kecamatan_id);
-            } else {
-                $query->where('kecamatan', $currentUser->kecamatan);
-            }
-        } elseif ($currentUser->role === 'kabid') {
-            if ($currentUser->kabupaten_id) {
-                $query->where('kabupaten_id', $currentUser->kabupaten_id);
-            } else {
-                $query->where('kabupaten', $currentUser->kabupaten);
-            }
-        }
-
-        if ($request->filled('search')) {
-            $query->where(function ($q) use ($request) {
-                $q->where('nama_posyandu', 'like', '%' . $request->search . '%')
-                    ->orWhere('desa', 'like', '%' . $request->search . '%')
-                    ->orWhere('kecamatan', 'like', '%' . $request->search . '%')
-                    ->orWhere('kabupaten', 'like', '%' . $request->search . '%')
-                    ->orWhereHas('users', function ($subQ) use ($request) {
-                        $subQ->where('name', 'like', '%' . $request->search . '%')
+        if (!empty($filters['search'])) {
+            $searchTerm = $filters['search'];
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('nama_posyandu', 'like', '%' . $searchTerm . '%')
+                    ->orWhere('desa', 'like', '%' . $searchTerm . '%')
+                    ->orWhere('kecamatan', 'like', '%' . $searchTerm . '%')
+                    ->orWhere('kabupaten', 'like', '%' . $searchTerm . '%')
+                    ->orWhereHas('users', function ($subQ) use ($searchTerm) {
+                        $subQ->where('name', 'like', '%' . $searchTerm . '%')
                             ->where('role', 'ketua-posyandu');
                     });
             });
@@ -236,7 +224,7 @@ class PosyanduController extends Controller
         ));
     }
 
-    public function store(Request $request)
+    public function store(StorePosyanduRequest $request)
     {
         $currentUser = Auth::user();
 
@@ -244,29 +232,15 @@ class PosyanduController extends Controller
             abort(403, 'Anda tidak memiliki akses untuk membuat posyandu.');
         }
 
-        $request->validate([
-            'nama_posyandu' => 'required|string|max:255',
-            'kabupaten' => 'required|string',
-            'kecamatan' => 'required|string',
-            'desa' => 'required|string',
-            'rw_list' => 'nullable|array|max:15',
-            'rw_list.*' => 'nullable|string|regex:/^RW\d{2}$/',
-            'rt_mapping' => 'nullable|array',
-            'rt_mapping.*' => 'nullable|array',
-            'rt_mapping.*.*' => 'nullable|string|regex:/^RT\d{3}$/',
-        ], [
-            'rw_list.max' => 'Maksimal 15 RW per posyandu',
-            'rw_list.*.regex' => 'Format RW harus: RW01, RW02, dst',
-            'rt_mapping.*.*.regex' => 'Format RT harus: RT001, RT002, dst',
-        ]);
+        $validated = $request->validated();
 
-        $kabupatenName = explode('_', $request->kabupaten)[1] ?? $request->kabupaten;
-        $kecamatanName = explode('_', $request->kecamatan)[1] ?? $request->kecamatan;
-        $desaName = explode('_', $request->desa)[1] ?? $request->desa;
+        $kabupatenName = explode('_', $validated['kabupaten'])[1] ?? $validated['kabupaten'];
+        $kecamatanName = explode('_', $validated['kecamatan'])[1] ?? $validated['kecamatan'];
+        $desaName = explode('_', $validated['desa'])[1] ?? $validated['desa'];
 
-        if ($request->filled('rt_mapping')) {
+        if (!empty($validated['rt_mapping'])) {
             $totalRt = 0;
-            foreach ($request->rt_mapping as $rw => $rtList) {
+            foreach ($validated['rt_mapping'] as $rw => $rtList) {
                 $totalRt += count($rtList);
             }
 
@@ -278,12 +252,12 @@ class PosyanduController extends Controller
         }
 
         $posyandu = Posyandu::create([
-            'nama_posyandu' => $request->nama_posyandu,
+            'nama_posyandu' => $validated['nama_posyandu'],
             'kabupaten' => $kabupatenName,
             'kecamatan' => $kecamatanName,
             'desa' => $desaName,
-            'rw_list' => $request->rw_list ?? [],
-            'rt_mapping' => $request->rt_mapping ?? [],
+            'rw_list' => $validated['rw_list'] ?? [],
+            'rt_mapping' => $validated['rt_mapping'] ?? [],
         ]);
 
         $this->createKadersForPosyandu($posyandu);
@@ -294,11 +268,11 @@ class PosyanduController extends Controller
             'action_type' => 'created',
             'description' => "Posyandu {$posyandu->nama_posyandu} berhasil dibuat dengan " .
                 count($request->rw_list ?? []) . " RW dan " .
-                ($request->filled('rt_mapping') ? array_sum(array_map('count', $request->rt_mapping)) : 0) . " RT",
+                (!empty($validated['rt_mapping']) ? array_sum(array_map('count', $validated['rt_mapping'])) : 0) . " RT",
             'new_data' => json_encode([
                 'nama_posyandu' => $posyandu->nama_posyandu,
-                'total_rw' => count($request->rw_list ?? []),
-                'total_rt' => $request->filled('rt_mapping') ? array_sum(array_map('count', $request->rt_mapping)) : 0,
+                'total_rw' => count($validated['rw_list'] ?? []),
+                'total_rt' => !empty($validated['rt_mapping']) ? array_sum(array_map('count', $validated['rt_mapping'])) : 0,
             ]),
         ]);
 
@@ -379,11 +353,14 @@ class PosyanduController extends Controller
 
     public function editRwRt(Posyandu $posyandu)
     {
+        $this->authorize('update', $posyandu);
         return view('admin.posyandu.edit-rw-rt', compact('posyandu'));
     }
 
     public function updateRwRt(Request $request, Posyandu $posyandu)
     {
+        $this->authorize('update', $posyandu);
+
         $request->validate([
             'rw_list' => 'required|array|max:15',
             'rw_list.*' => 'required|string|regex:/^RW\d{2}$/',
@@ -437,50 +414,14 @@ class PosyanduController extends Controller
 
     public function manageRwRt(Posyandu $posyandu)
     {
-        $user = Auth::user();
-
-        if ($user->role === 'operator-desa') {
-            if ($posyandu->id !== $user->posyandu_id) {
-                abort(403, 'Anda hanya bisa mengelola RW/RT di posyandu Anda sendiri.');
-            }
-        } elseif ($user->role === 'ketua-posyandu') {
-            if ($posyandu->id !== $user->posyandu_id) {
-                abort(403, 'Anda hanya bisa mengelola RW/RT di posyandu Anda sendiri.');
-            }
-        } elseif ($user->role === 'admin-kecamatan') {
-            if ($posyandu->kecamatan_id !== $user->kecamatan_id) {
-                abort(403, 'Anda hanya bisa mengelola posyandu di kecamatan Anda.');
-            }
-        } elseif ($user->role === 'kabid') {
-            if ($posyandu->kabupaten_id !== $user->kabupaten_id) {
-                abort(403, 'Anda hanya bisa mengelola posyandu di kabupaten Anda.');
-            }
-        }
+        $this->authorize('view', $posyandu);
 
         return view('admin.posyandu.manage-rw-rt', compact('posyandu'));
     }
 
     public function saveRwRt(Request $request, Posyandu $posyandu)
     {
-        $user = Auth::user();
-
-        if ($user->role === 'operator-desa') {
-            if ($posyandu->id !== $user->posyandu_id) {
-                abort(403, 'Unauthorized - Anda hanya bisa mengelola posyandu Anda sendiri.');
-            }
-        } elseif ($user->role === 'ketua-posyandu') {
-            if ($posyandu->id !== $user->posyandu_id) {
-                abort(403, 'Unauthorized - Anda hanya bisa mengelola posyandu Anda sendiri.');
-            }
-        } elseif ($user->role === 'admin-kecamatan') {
-            if ($posyandu->kecamatan_id !== $user->kecamatan_id) {
-                abort(403, 'Unauthorized - Anda hanya bisa mengelola posyandu di kecamatan Anda.');
-            }
-        } elseif ($user->role === 'kabid') {
-            if ($posyandu->kabupaten_id !== $user->kabupaten_id) {
-                abort(403, 'Unauthorized - Anda hanya bisa mengelola posyandu di kabupaten Anda.');
-            }
-        }
+        $this->authorize('update', $posyandu);
 
         $request->validate([
             'rw_list' => 'required|array|min:1',
@@ -539,8 +480,8 @@ class PosyanduController extends Controller
         ]);
 
         UserHistory::create([
-            'user_id' => $user->id,
-            'action_by' => $user->id,
+            'user_id' => Auth::id(),
+            'action_by' => Auth::id(),
             'action_type' => 'updated',
             'description' => "Mapping RW/RT posyandu {$posyandu->nama_posyandu} diperbarui. Total RW: " . count($request->rw_list) . ", Total RT: {$totalRt}",
             'new_data' => json_encode([
@@ -665,7 +606,7 @@ class PosyanduController extends Controller
         return view('admin.posyandu.edit', compact('posyandu', 'kabupatens', 'availableKetuas', 'currentKetua'));
     }
 
-    public function update(Request $request, Posyandu $posyandu)
+    public function update(UpdatePosyanduRequest $request, Posyandu $posyandu)
     {
         $user = Auth::user();
         
@@ -683,29 +624,15 @@ class PosyanduController extends Controller
             }
         }
         
-        $request->validate([
-            'nama_posyandu' => 'required|string|max:255',
-            'kabupaten' => 'required|string',
-            'kecamatan' => 'required|string',
-            'desa' => 'required|string',
-            'rw_list' => 'nullable|array|max:15',
-            'rw_list.*' => 'nullable|string|regex:/^RW\d{2}$/',
-            'rt_mapping' => 'nullable|array',
-            'rt_mapping.*' => 'nullable|array',
-            'rt_mapping.*.*' => 'nullable|string|regex:/^RT\d{3}$/',
-        ], [
-            'rw_list.max' => 'Maksimal 15 RW per posyandu',
-            'rw_list.*.regex' => 'Format RW harus: RW01, RW02, dst',
-            'rt_mapping.*.*.regex' => 'Format RT harus: RT001, RT002, dst',
-        ]);
+        $validated = $request->validated();
 
-        $kabupatenName = explode('_', $request->kabupaten)[1] ?? $request->kabupaten;
-        $kecamatanName = explode('_', $request->kecamatan)[1] ?? $request->kecamatan;
-        $desaName = explode('_', $request->desa)[1] ?? $request->desa;
+        $kabupatenName = explode('_', $validated['kabupaten'])[1] ?? $validated['kabupaten'];
+        $kecamatanName = explode('_', $validated['kecamatan'])[1] ?? $validated['kecamatan'];
+        $desaName = explode('_', $validated['desa'])[1] ?? $validated['desa'];
 
-        if ($request->filled('rt_mapping')) {
+        if (!empty($validated['rt_mapping'])) {
             $totalRt = 0;
-            foreach ($request->rt_mapping as $rw => $rtList) {
+            foreach ($validated['rt_mapping'] as $rw => $rtList) {
                 $totalRt += count($rtList);
             }
 
@@ -717,12 +644,12 @@ class PosyanduController extends Controller
         }
 
         $posyandu->update([
-            'nama_posyandu' => $request->nama_posyandu,
+            'nama_posyandu' => $validated['nama_posyandu'],
             'kabupaten' => $kabupatenName,
             'kecamatan' => $kecamatanName,
             'desa' => $desaName,
-            'rw_list' => $request->rw_list ?? [],
-            'rt_mapping' => $request->rt_mapping ?? [],
+            'rw_list' => $validated['rw_list'] ?? [],
+            'rt_mapping' => $validated['rt_mapping'] ?? [],
         ]);
 
         UserHistory::create([
@@ -731,11 +658,11 @@ class PosyanduController extends Controller
             'action_type' => 'updated',
             'description' => "Data posyandu {$posyandu->nama_posyandu} diperbarui. Total RW: " .
                 count($request->rw_list ?? []) . ", Total RT: " .
-                ($request->filled('rt_mapping') ? array_sum(array_map('count', $request->rt_mapping)) : 0),
+                (!empty($validated['rt_mapping']) ? array_sum(array_map('count', $validated['rt_mapping'])) : 0),
             'new_data' => json_encode([
                 'nama_posyandu' => $posyandu->nama_posyandu,
-                'total_rw' => count($request->rw_list ?? []),
-                'total_rt' => $request->filled('rt_mapping') ? array_sum(array_map('count', $request->rt_mapping)) : 0,
+                'total_rw' => count($validated['rw_list'] ?? []),
+                'total_rt' => !empty($validated['rt_mapping']) ? array_sum(array_map('count', $validated['rt_mapping'])) : 0,
             ]),
         ]);
 
@@ -771,11 +698,11 @@ class PosyanduController extends Controller
 
     public function getKecamatan(Request $request)
     {
-        $kabupatenId = $request->query('kab_id');
+        $validated = $request->validate([
+            'kab_id' => ['required', 'string', 'regex:/^\d{2}\.\d{2}$/'],
+        ]);
 
-        if (!$kabupatenId) {
-            return response()->json(['data' => []], 400);
-        }
+        $kabupatenId = $validated['kab_id'];
 
         $kecamatans = $this->fetchWilayahData(
             "districts/{$kabupatenId}.json",
@@ -787,11 +714,11 @@ class PosyanduController extends Controller
 
     public function getDesa(Request $request)
     {
-        $kecamatanId = $request->query('kec_id');
+        $validated = $request->validate([
+            'kec_id' => ['required', 'string', 'regex:/^\d{2}\.\d{2}\.\d{2}$/'],
+        ]);
 
-        if (!$kecamatanId) {
-            return response()->json(['data' => []], 400);
-        }
+        $kecamatanId = $validated['kec_id'];
 
         $desas = $this->fetchWilayahData(
             "villages/{$kecamatanId}.json",
@@ -803,7 +730,11 @@ class PosyanduController extends Controller
 
     public function getPosyanduByDesa(Request $request)
     {
-        $desa = $request->query('desa');
+        $validated = $request->validate([
+            'desa' => ['required', 'string', 'max:120', 'regex:/^[A-Za-z0-9\s\.\-]+$/'],
+        ]);
+
+        $desa = $validated['desa'];
 
         $posyandus = Posyandu::where('desa', 'LIKE', "%{$desa}%")
             ->orderBy('nama_posyandu')
@@ -814,16 +745,17 @@ class PosyanduController extends Controller
 
     public function getPosyanduByWilayah(Request $request)
     {
-        $request->validate([
-            'kabupaten' => 'required|string',
-            'kecamatan' => 'required|string',
-            'desa' => 'required|string',
+        $validated = $request->validate([
+            'kabupaten' => ['required', 'string', 'max:120', 'regex:/^[A-Za-z0-9\s\.\-]+$/'],
+            'kecamatan' => ['required', 'string', 'max:120', 'regex:/^[A-Za-z0-9\s\.\-]+$/'],
+            'desa' => ['required', 'string', 'max:120', 'regex:/^[A-Za-z0-9\s\.\-]+$/'],
+            'search' => ['nullable', 'string', 'max:100', 'regex:/^[A-Za-z0-9\s\.\-]*$/'],
         ]);
 
-        $kabupatenName = $request->query('kabupaten');
-        $kecamatanName = $request->query('kecamatan');
-        $desaName = $request->query('desa');
-        $search = $request->query('search', '');
+        $kabupatenName = $validated['kabupaten'];
+        $kecamatanName = $validated['kecamatan'];
+        $desaName = $validated['desa'];
+        $search = $validated['search'] ?? '';
 
         $posyandus = Posyandu::where('kabupaten', $kabupatenName)
             ->where('kecamatan', $kecamatanName)

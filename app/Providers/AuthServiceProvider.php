@@ -4,9 +4,12 @@ namespace App\Providers;
 
 use App\Models\BukuSaku;
 use App\Models\Pengajuan;
+use App\Models\Posyandu;
 use App\Models\User;
 use App\Policies\AjuanPolicy;
 use App\Policies\BukuSakuPolicy;
+use App\Policies\PosyanduPolicy;
+use App\Policies\UserPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 
@@ -17,13 +20,13 @@ class AuthServiceProvider extends ServiceProvider
     }
     public function boot(): void
     {
+        Gate::policy(User::class, UserPolicy::class);
+        Gate::policy(Posyandu::class, PosyanduPolicy::class);
+        Gate::policy(Pengajuan::class, AjuanPolicy::class);
+        Gate::policy(BukuSaku::class, BukuSakuPolicy::class);
+
         Gate::define('viewAjuan', [AjuanPolicy::class, 'viewAjuan']);
         Gate::define('verify', [AjuanPolicy::class, 'verify']);
-        Gate::define('viewAny', [BukuSakuPolicy::class, 'viewAny']);
-        Gate::define('viewBukuSaku', [BukuSakuPolicy::class, 'viewBukuSaku']);
-        Gate::define('create', [BukuSakuPolicy::class, 'create']);
-        Gate::define('update', [BukuSakuPolicy::class, 'update']);
-        Gate::define('delete', [BukuSakuPolicy::class, 'delete']);
 
         Gate::define('admin.ajuan.pilih-user', function (User $user): bool {
             return $this->hasAnyRole($user, ['admin', 'kabid', 'ketua-posyandu', 'kader', 'admin-kecamatan']);

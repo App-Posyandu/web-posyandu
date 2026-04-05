@@ -275,18 +275,31 @@
                     this.loadDashboardData();
                 },
 
-                async loadDashboardData() {
+                async loadDashboardData(page = 1) {
                     this.loading = true;
 
                     try {
-                        const params = new URLSearchParams({
-                            year: this.selectedYear,
-                            search: this.searchQuery,
-                            status: this.filterStatus,
-                            ajax: '1'
-                        });
+                        const params = new URLSearchParams();
+                        params.set('year', String(this.selectedYear));
 
-                        const response = await fetch(`{{ route('dashboard') }}?${params}`);
+                        if (this.searchQuery) {
+                            params.set('search', this.searchQuery);
+                        }
+
+                        if (this.filterStatus) {
+                            params.set('status', this.filterStatus);
+                        }
+
+                        if (page > 1) {
+                            params.set('page', String(page));
+                        }
+
+                        const response = await fetch(`{{ route('dashboard') }}?${params.toString()}`, {
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json'
+                            }
+                        });
                         const data = await response.json();
 
                         this.bidangData = data.bidangData;

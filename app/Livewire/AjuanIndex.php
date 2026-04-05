@@ -11,6 +11,8 @@ class AjuanIndex extends Component
 {
     use WithPagination;
 
+    private const ALLOWED_STATUSES = ['Diproses', 'Disetujui', 'Ditolak'];
+
     public $status = '';
     public $search = '';
     public $statusFilter = '';
@@ -23,19 +25,34 @@ class AjuanIndex extends Component
         'showArchived' => ['except' => false]
     ];
 
+    public function mount(): void
+    {
+        $this->search = $this->sanitizeSearch($this->search);
+        $this->status = $this->sanitizeStatus($this->status) ?? '';
+        $this->statusFilter = $this->sanitizeStatus($this->statusFilter) ?? '';
+    }
+
     public function toggleArchive()
     {
         $this->showArchived = !$this->showArchived;
         $this->resetPage();
     }
 
-    public function updatingSearch()
+    public function updatedSearch($value): void
     {
+        $this->search = $this->sanitizeSearch($value);
         $this->resetPage();
     }
 
-    public function updatingStatusFilter()
+    public function updatedStatus($value): void
     {
+        $this->status = $this->sanitizeStatus($value) ?? '';
+        $this->resetPage();
+    }
+
+    public function updatedStatusFilter($value): void
+    {
+        $this->statusFilter = $this->sanitizeStatus($value) ?? '';
         $this->resetPage();
     }
 
@@ -45,6 +62,34 @@ class AjuanIndex extends Component
         $this->search = '';
         $this->statusFilter = '';
         $this->resetPage();
+    }
+
+    private function sanitizeSearch(mixed $value): string
+    {
+        if (!is_string($value)) {
+            return '';
+        }
+
+        $normalized = trim(preg_replace('/\s+/', ' ', $value));
+        if ($normalized === '') {
+            return '';
+        }
+
+        return preg_match('/^[\pL\pN\s@\._\-,()]+$/u', $normalized) ? $normalized : '';
+    }
+
+    private function sanitizeStatus(mixed $value): ?string
+    {
+        if (!is_string($value)) {
+            return null;
+        }
+
+        $normalized = trim($value);
+        if ($normalized === '') {
+            return null;
+        }
+
+        return in_array($normalized, self::ALLOWED_STATUSES, true) ? $normalized : null;
     }
 
     public function render()
@@ -187,23 +232,26 @@ class AjuanIndex extends Component
             }
         }
 
-        if (!empty($this->status)) {
-            $query->where('status_pengajuan', $this->status);
+        $safeStatus = $this->sanitizeStatus($this->status);
+        if (!empty($safeStatus)) {
+            $query->where('status_pengajuan', $safeStatus);
         }
 
-        if ($this->search) {
-            $query->where(function ($q) {
-                $q->where('deskripsi_pengajuan', 'like', '%' . $this->search . '%')
-                    ->orWhere('status_pengajuan', 'like', '%' . $this->search . '%')
+        $safeSearch = $this->sanitizeSearch($this->search);
+        if (!empty($safeSearch)) {
+            $query->where(function ($q) use ($safeSearch) {
+                $q->where('deskripsi_pengajuan', 'like', '%' . $safeSearch . '%')
+                    ->orWhere('status_pengajuan', 'like', '%' . $safeSearch . '%')
                     ->orWhereHas('user', fn($userQuery) =>
-                    $userQuery->where('name', 'like', '%' . $this->search . '%'))
+                    $userQuery->where('name', 'like', '%' . $safeSearch . '%'))
                     ->orWhereHas('bidang', fn($bidangQuery) =>
-                    $bidangQuery->where('nama_bidang', 'like', '%' . $this->search . '%'));
+                    $bidangQuery->where('nama_bidang', 'like', '%' . $safeSearch . '%'));
             });
         }
 
-        if ($this->statusFilter) {
-            $query->where('status_pengajuan', $this->statusFilter);
+        $safeStatusFilter = $this->sanitizeStatus($this->statusFilter);
+        if (!empty($safeStatusFilter)) {
+            $query->where('status_pengajuan', $safeStatusFilter);
         }
 
         $semuaAjuan = $query->latest()->paginate(10);

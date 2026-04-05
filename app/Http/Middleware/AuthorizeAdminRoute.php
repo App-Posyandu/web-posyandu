@@ -5,10 +5,10 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use App\Support\AccessAudit;
 
 class AuthorizeAdminRoute
 {
@@ -21,27 +21,42 @@ class AuthorizeAdminRoute
         $ability = $this->resolveAbility($routeName, $uri);
 
         if (!$user) {
-            $this->logAttempt($request, null, $routeName, $uri, $ability, 401);
+            AccessAudit::record($request, null, 'admin_route', $ability ?? 'unknown', false, 401, [
+                'route_name' => $routeName,
+                'uri' => $uri,
+            ]);
             abort(401, 'Unauthenticated.');
         }
 
         if (!$ability) {
-            $this->logAttempt($request, $user, $routeName, $uri, null, 403);
+            AccessAudit::record($request, $user, 'admin_route', 'unknown', false, 403, [
+                'route_name' => $routeName,
+                'uri' => $uri,
+            ]);
             abort(403, 'Akses admin tidak diizinkan untuk route ini.');
         }
 
         if (Gate::denies($ability)) {
-            $this->logAttempt($request, $user, $routeName, $uri, $ability, 403);
+            AccessAudit::record($request, $user, 'admin_route', $ability, false, 403, [
+                'route_name' => $routeName,
+                'uri' => $uri,
+            ]);
             abort(403, 'Akses ditolak.');
         }
 
         try {
             $response = $next($request);
-            $this->logAttempt($request, $user, $routeName, $uri, $ability, $response->getStatusCode());
+            AccessAudit::record($request, $user, 'admin_route', $ability, true, $response->getStatusCode(), [
+                'route_name' => $routeName,
+                'uri' => $uri,
+            ]);
 
             return $response;
         } catch (HttpExceptionInterface $exception) {
-            $this->logAttempt($request, $user, $routeName, $uri, $ability, $exception->getStatusCode());
+            AccessAudit::record($request, $user, 'admin_route', $ability, false, $exception->getStatusCode(), [
+                'route_name' => $routeName,
+                'uri' => $uri,
+            ]);
             throw $exception;
         }
     }
@@ -71,18 +86,4 @@ class AuthorizeAdminRoute
         return null;
     }
 
-    private function logAttempt(Request $request, ?object $user, ?string $routeName, string $uri, ?string $ability, int $status): void
-    {
-        Log::channel('daily')->info('admin.route.access', [
-            'timestamp' => now()->toDateTimeString(),
-            'user_id' => $user?->id,
-            'role' => $user?->role,
-            'route_name' => $routeName,
-            'uri' => $uri,
-            'method' => $request->method(),
-            'ip' => $request->ip(),
-            'ability' => $ability,
-            'status' => $status,
-        ]);
-    }
 }
