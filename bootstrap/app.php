@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
+            'admin.access' => \App\Http\Middleware\AuthorizeAdminRoute::class,
         ]);
     })->withProviders([
         App\Providers\AuthServiceProvider::class

@@ -302,10 +302,10 @@ Route::middleware('auth')->group(function () {
         ->name('dashboard.partials.pilih-layanan');
 
     Route::get('/admin/ajuan/pilih-user', [AjuanController::class, 'pilihUser'])
-        ->middleware('role:admin,kabid,ketua-posyandu,kader,admin-kecamatan')
+        ->middleware(['auth', 'admin.access', 'role:admin,kabid,ketua-posyandu,kader,admin-kecamatan'])
         ->name('dashboard.partials.pilih-user');
 
-    Route::middleware(['auth', 'role:admin,admin-kabupaten'])->group(function () {
+    Route::middleware(['auth', 'admin.access', 'role:admin,admin-kabupaten'])->group(function () {
         Route::get('/admin/settings', [SystemSettingController::class, 'index'])
             ->name('admin.settings.index');
         Route::put('/admin/settings', [SystemSettingController::class, 'update'])
@@ -373,7 +373,7 @@ Route::middleware('auth')->group(function () {
         Route::get('desa', [PosyanduController::class, 'getDesa'])->name('api.desa');
     });
 
-    Route::middleware(['role:kader,admin,operator-desa,admin-kabupaten'])->prefix('admin')->name('admin.')->group(function () {
+    Route::middleware(['auth', 'admin.access', 'role:kader,admin,operator-desa,admin-kabupaten'])->prefix('admin')->name('admin.')->group(function () {
         Route::resource('users', UserController::class);
         Route::patch('/users/{user}/verify', [UserController::class, 'verify'])->name('users.verify');
 
@@ -386,7 +386,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/admin/users/import', [UserController::class, 'importExcel'])->name('users.import');
     });
 
-    Route::middleware(['role:kabid,admin-kecamatan,ketua-posyandu,ketua-timpembina-posyandu,operator-desa,admin-kabupaten,admin,kades,bu-kades'])->prefix('admin')->name('admin.')->group(function () {
+    Route::middleware(['auth', 'admin.access', 'role:kabid,admin-kecamatan,ketua-posyandu,ketua-timpembina-posyandu,operator-desa,admin-kabupaten,admin,kades,bu-kades'])->prefix('admin')->name('admin.')->group(function () {
 
         Route::middleware('role:admin,operator-desa')->group(function () {
             Route::get('posyandu/create', [PosyanduController::class, 'create'])->name('posyandu.create');
@@ -416,11 +416,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/export/{bidang}', [LaporanController::class, 'exportBidangAllDesa'])->name('laporan.exportBidangAllDesa');
     });
 
-    Route::middleware(['role:kabid,ketua-timpembina-posyandu,ketua-posyandu,kader,admin,admin-kecamatan,admin-kabupaten,operator-desa,kades,bu-kades'])->prefix('admin')->name('admin.')->group(function () {
+    Route::middleware(['auth', 'admin.access', 'role:kabid,ketua-timpembina-posyandu,ketua-posyandu,kader,admin,admin-kecamatan,admin-kabupaten,operator-desa,kades,bu-kades'])->prefix('admin')->name('admin.')->group(function () {
         Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
     });
 
-    Route::middleware(['role:operator-desa'])->group(function () {
+    Route::middleware(['auth', 'admin.access', 'role:operator-desa'])->group(function () {
         Route::patch('admin/users/{user}/reset-password', [UserController::class, 'resetPasswordKader'])
             ->name('admin.users.reset-password');
         Route::patch('admin/users/{user}/deactivate', [UserController::class, 'deactivateKader'])
