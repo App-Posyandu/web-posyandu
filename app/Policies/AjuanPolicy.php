@@ -4,18 +4,61 @@ namespace App\Policies;
 
 use App\Models\Pengajuan;
 use App\Models\User;
-use Illuminate\Support\Facades\Log;
+use App\Support\AccessAudit;
+use Illuminate\Auth\Access\Response;
 
 class AjuanPolicy
 {
     public function viewAny(User $user): bool
     {
-        return false;
+        return in_array($user->role, [
+            'admin',
+            'admin-kabupaten',
+            'kabid',
+            'admin-kecamatan',
+            'ketua-timpembina-posyandu',
+            'operator-desa',
+            'kades',
+            'bu-kades',
+            'ketua-posyandu',
+            'kader',
+            'masyarakat',
+        ], true);
     }
 
-    public function viewAjuan(User $user, Pengajuan $ajuan): bool
+    public function viewAjuan(User $user, Pengajuan $ajuan): Response
     {
-        return $user->id === $ajuan->user_id || $user->role !== 'masyarakat';
+        if ($user->role === 'admin' || $user->role === 'ketua-timpembina-posyandu') {
+            return Response::allow();
+        }
+
+        if ((string) $user->id === (string) $ajuan->user_id) {
+            return Response::allow();
+        }
+
+        $ajuanUser = $ajuan->relationLoaded('user') ? $ajuan->user : $ajuan->user()->first();
+
+        if (!$ajuanUser) {
+            $this->deny($user, $ajuan, 'view');
+            return Response::deny('Akses ditolak.');
+        }
+
+        $allowed = match ($user->role) {
+            'admin-kabupaten', 'kabid' => $this->sameKabupaten($user, $ajuanUser),
+            'admin-kecamatan' => $this->sameKecamatan($user, $ajuanUser),
+            'kades', 'bu-kades' => $this->sameDesa($user, $ajuanUser),
+            'operator-desa', 'ketua-posyandu', 'kader' => (string) $user->posyandu_id === (string) $ajuanUser->posyandu_id,
+            'masyarakat' => false,
+            default => false,
+        };
+
+        if ($allowed) {
+            return Response::allow();
+        }
+
+        $this->deny($user, $ajuan, 'view');
+
+        return Response::deny('Akses ditolak.');
     }
 
     public function create(User $user): bool
@@ -23,9 +66,15 @@ class AjuanPolicy
         return false;
     }
 
-    public function update(User $user, Pengajuan $pengajuan): bool
+    public function update(User $user, Pengajuan $pengajuan): Response
     {
-        return false;
+        if ((string) $user->id === (string) $pengajuan->user_id || $user->role === 'admin') {
+            return Response::allow();
+        }
+
+        $this->deny($user, $pengajuan, 'update');
+
+        return Response::deny('Akses ditolak.');
     }
 
     public function delete(User $user, Pengajuan $pengajuan): bool
@@ -43,8 +92,44 @@ class AjuanPolicy
         return false;
     }
 
-    public function verify(User $user, Pengajuan $ajuan): bool
+    public function verify(User $user, Pengajuan $ajuan): Response
     {
-        return $user->role === 'kader' && $ajuan->status_pengajuan === 'Diproses';
+        if (
+            in_array($user->role, ['kader', 'ketua-posyandu', 'ketua-timpembina-posyandu'], true)
+            && $ajuan->status_pengajuan === 'Diproses'
+        ) {
+            return Response::allow();
+        }
+
+        $this->deny($user, $ajuan, 'verify');
+
+        return Response::deny('Akses ditolak.');
+    }
+
+    private function sameKabupaten(User $actor, User $subject): bool
+    {
+        return $actor->kabupaten_id && $subject->kabupaten_id
+            ? (string) $actor->kabupaten_id === (string) $subject->kabupaten_id
+            : (string) $actor->kabupaten === (string) $subject->kabupaten;
+    }
+
+    private function sameKecamatan(User $actor, User $subject): bool
+    {
+        return $actor->kecamatan_id && $subject->kecamatan_id
+            ? (string) $actor->kecamatan_id === (string) $subject->kecamatan_id
+            : (string) $actor->kecamatan === (string) $subject->kecamatan;
+    }
+
+    private function sameDesa(User $actor, User $subject): bool
+    {
+        return (string) $actor->desa === (string) $subject->desa;
+    }
+
+    private function deny(User $actor, Pengajuan $subject, string $action): void
+    {
+        AccessAudit::record(request(), $actor, 'pengajuan', $action, false, 403, [
+            'target_pengajuan_id' => $subject->id,
+            'target_owner_id' => $subject->user_id,
+        ]);
     }
 }

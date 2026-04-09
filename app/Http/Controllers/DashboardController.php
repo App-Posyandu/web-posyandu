@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\DashboardFilterRequest;
 use App\Models\BidangPengajuan;
 use App\Models\Posyandu;
 use App\Models\Pengajuan;
@@ -11,9 +12,10 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
-    public function index(Request $request)
+    public function index(DashboardFilterRequest $request)
     {
         $user = Auth::user();
+        $filters = $request->validated();
 
         $alwaysVerifiedRoles = [
             'admin',
@@ -31,10 +33,13 @@ class DashboardController extends Controller
         $isVerified = !is_null($user->verified_at) || in_array($user->role, $alwaysVerifiedRoles);
 
         $currentYear = now()->year;
-        $selectedYear = $request->input('year', $currentYear);
+        $selectedYear = isset($filters['year']) ? (int) $filters['year'] : $currentYear;
         $startYear = 2024;
         $availableYears = range($currentYear, $startYear);
-        $showArchived = $request->boolean('archived', 0);
+        $showArchived = isset($filters['archived']) ? filter_var($filters['archived'], FILTER_VALIDATE_BOOLEAN) : false;
+        $searchTerm = $filters['search'] ?? null;
+        $statusFilter = $filters['status'] ?? null;
+        $isAjaxRequest = $request->ajax() || (isset($filters['ajax']) && filter_var($filters['ajax'], FILTER_VALIDATE_BOOLEAN));
 
         $allBidangs = BidangPengajuan::orderBy('nama_bidang')->get();
         $colors = [
@@ -56,7 +61,17 @@ class DashboardController extends Controller
 
         switch ($user->role) {
             case 'masyarakat':
-                return $this->masyarakatDashboard($request, $user, $selectedYear, $currentYear, $availableYears, $isVerified, $icons);
+                return $this->masyarakatDashboard(
+                    $user,
+                    $selectedYear,
+                    $currentYear,
+                    $availableYears,
+                    $isVerified,
+                    $icons,
+                    $searchTerm,
+                    $statusFilter,
+                    $isAjaxRequest
+                );
 
             case 'kader':
                 return redirect()->route('ajuan.index');
@@ -216,8 +231,7 @@ class DashboardController extends Controller
                 break;
         }
 
-        if ($request->has('search') && $request->input('search') != '') {
-            $searchTerm = $request->input('search');
+        if (!empty($searchTerm)) {
             $listQuery->where(function ($q) use ($searchTerm) {
                 $q->where('deskripsi_pengajuan', 'like', '%' . $searchTerm . '%')
                     ->orWhere('status_pengajuan', 'like', '%' . $searchTerm . '%')
@@ -226,8 +240,8 @@ class DashboardController extends Controller
             });
         }
 
-        if ($request->filled('status')) {
-            $listQuery->where('status_pengajuan', $request->status);
+        if (!empty($statusFilter)) {
+            $listQuery->where('status_pengajuan', $statusFilter);
         }
 
         $allBidangNames = BidangPengajuan::pluck('nama_bidang');
@@ -280,7 +294,7 @@ class DashboardController extends Controller
 
         $currentUser = Auth::user();
 
-        if ($request->ajax() || $request->input('ajax')) {
+        if ($isAjaxRequest) {
             $colorMap = [
                 'Bidang Perumahan Rakyat' => 'bg-blue-500',
                 'Bidang Pendidikan' => 'bg-orange-500',
@@ -383,7 +397,17 @@ class DashboardController extends Controller
         ]);
     }
 
-    private function masyarakatDashboard($request, $user, $selectedYear, $currentYear, $availableYears, $isVerified, $icons)
+    private function masyarakatDashboard(
+        $user,
+        $selectedYear,
+        $currentYear,
+        $availableYears,
+        $isVerified,
+        $icons,
+        ?string $searchTerm,
+        ?string $statusFilter,
+        bool $isAjaxRequest
+    )
     {
         $myAjuanQuery = Pengajuan::with(['user', 'bidang'])
             ->where('user_id', $user->id)
@@ -400,8 +424,7 @@ class DashboardController extends Controller
             $desaAjuanQuery->where('users.desa', $user->desa);
         }
 
-        if ($request->has('search') && $request->input('search') != '') {
-            $searchTerm = $request->input('search');
+        if (!empty($searchTerm)) {
             $myAjuanQuery->where(function ($q) use ($searchTerm) {
                 $q->where('deskripsi_pengajuan', 'like', '%' . $searchTerm . '%')
                     ->orWhere('status_pengajuan', 'like', '%' . $searchTerm . '%')
@@ -409,8 +432,8 @@ class DashboardController extends Controller
             });
         }
 
-        if ($request->filled('status')) {
-            $myAjuanQuery->where('status_pengajuan', $request->status);
+        if (!empty($statusFilter)) {
+            $myAjuanQuery->where('status_pengajuan', $statusFilter);
         }
 
         $allBidangNames = BidangPengajuan::pluck('nama_bidang');
@@ -459,7 +482,7 @@ class DashboardController extends Controller
             'ditolak' => Pengajuan::where('user_id', $user->id)->whereYear('created_at', $selectedYear)->where('status_pengajuan', 'Ditolak')->count(),
         ];
 
-        if ($request->ajax() || $request->input('ajax')) {
+        if ($isAjaxRequest) {
             $colorMap = [
                 'Bidang Perumahan Rakyat' => 'bg-blue-500',
                 'Bidang Pendidikan' => 'bg-orange-500',

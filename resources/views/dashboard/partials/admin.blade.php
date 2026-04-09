@@ -384,18 +384,30 @@
                     this.loading = true;
 
                     try {
-                        const params = new URLSearchParams({
-                            year: this.selectedYear,
-                            search: this.searchQuery,
-                            status: this.filterStatus,
-                            archived: this.showArchived ? '1' : '0',
-                            ajax: '1',
-                            page: page
-                        });
+                        const params = new URLSearchParams();
+                        params.set('year', String(this.selectedYear));
+                        params.set('archived', this.showArchived ? '1' : '0');
+
+                        if (this.searchQuery) {
+                            params.set('search', this.searchQuery);
+                        }
+
+                        if (this.filterStatus) {
+                            params.set('status', this.filterStatus);
+                        }
+
+                        if (page > 1) {
+                            params.set('page', String(page));
+                        }
 
                         console.log('Loading dashboard data with params:', params.toString());
 
-                        const response = await fetch(`{{ route('dashboard') }}?${params}`);
+                        const response = await fetch(`{{ route('dashboard') }}?${params.toString()}`, {
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json'
+                            }
+                        });
                         const data = await response.json();
 
                         this.bidangData = data.bidangData;

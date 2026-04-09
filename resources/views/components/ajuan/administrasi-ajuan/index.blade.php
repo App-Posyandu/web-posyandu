@@ -317,6 +317,17 @@
                         btnKirim.addEventListener('click', function(e) {
                             e.preventDefault();
 
+                            const agreementCheckbox = form.querySelector('input[name="agreement"]');
+                            if (agreementCheckbox && !agreementCheckbox.checked) {
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: 'Pernyataan Belum Dicentang',
+                                    text: 'Silakan centang pernyataan terlebih dahulu sebelum mengirim pengajuan.',
+                                    confirmButtonColor: '#dc2626'
+                                });
+                                return;
+                            }
+
                             Swal.fire({
                                 title: 'Apakah data yang dikirim sudah benar?',
                                 text: 'Pastikan semua dokumen sudah sesuai.',
@@ -330,7 +341,11 @@
                             }).then((result) => {
                                 if (result.isConfirmed) {
                                     isSubmitting = true;
-                                    form.submit();
+                                    if (typeof form.requestSubmit === 'function') {
+                                        form.requestSubmit();
+                                    } else {
+                                        form.submit();
+                                    }
                                 }
                             });
                         });

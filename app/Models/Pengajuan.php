@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
@@ -144,6 +145,36 @@ class Pengajuan extends Model
     public function scopeActive($query)
     {
         return $query->whereNotIn('status_pengajuan', ['Disetujui', 'Ditolak']);
+    }
+
+    public function scopeVisibleTo(Builder $query, User $actor): Builder
+    {
+        if ($actor->role === 'admin' || $actor->role === 'ketua-timpembina-posyandu') {
+            return $query;
+        }
+
+        return match ($actor->role) {
+            'admin-kabupaten', 'kabid' => $query->whereHas('user', function (Builder $userQuery) use ($actor) {
+                $userQuery->where(function (Builder $regionQuery) use ($actor) {
+                    $regionQuery->where('kabupaten_id', $actor->kabupaten_id)
+                        ->orWhere('kabupaten', $actor->kabupaten);
+                });
+            }),
+            'admin-kecamatan' => $query->whereHas('user', function (Builder $userQuery) use ($actor) {
+                $userQuery->where(function (Builder $regionQuery) use ($actor) {
+                    $regionQuery->where('kecamatan_id', $actor->kecamatan_id)
+                        ->orWhere('kecamatan', $actor->kecamatan);
+                });
+            }),
+            'kades', 'bu-kades' => $query->whereHas('user', function (Builder $userQuery) use ($actor) {
+                $userQuery->where('desa', $actor->desa);
+            }),
+            'operator-desa', 'ketua-posyandu', 'kader' => $query->whereHas('user', function (Builder $userQuery) use ($actor) {
+                $userQuery->where('posyandu_id', $actor->posyandu_id);
+            }),
+            'masyarakat' => $query->where('user_id', $actor->id),
+            default => $query->whereRaw('1 = 0'),
+        };
     }
 
     public function user()
