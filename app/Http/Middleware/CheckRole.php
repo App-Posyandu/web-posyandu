@@ -16,10 +16,6 @@ class CheckRole
             return redirect('login');
         }
 
-        if ($user->role === 'admin') {
-            return $next($request);
-        }
-
         if (!in_array($user->role, $roles)) {
             abort(403, 'AKSES DITOLAK: ROLE TIDAK SESUAI.');
         }

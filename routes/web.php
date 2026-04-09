@@ -10,7 +10,6 @@ use App\Http\Controllers\PosyanduController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SystemSettingController;
 use App\Http\Controllers\UserController;
-use App\Http\Resources\PosyanduLookupResource;
 use App\Models\Kabupaten;
 use App\Models\Kecamatan;
 use App\Models\Posyandu;
@@ -19,19 +18,6 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\File;
 
-Route::pattern('user', '[0-9a-fA-F\-]{36}');
-Route::pattern('posyandu', '[0-9a-fA-F\-]{36}');
-Route::pattern('ajuan', '[0-9a-fA-F\-]{36}');
-Route::pattern('bidang', '[a-z0-9\-]+');
-Route::pattern('kader', '[0-9a-fA-F\-]{36}');
-Route::pattern('id', '[0-9a-fA-F\-]{36}');
-Route::pattern('key', '[A-Za-z0-9_\-]+');
-Route::pattern('index', '[0-9]+');
-Route::pattern('code', '[A-Z0-9\-]+');
-Route::pattern('slug', '[a-z0-9\-]+');
-Route::pattern('kabupaten_id', '[0-9]+(?:\.[0-9]+)*');
-Route::pattern('kecamatan_id', '[0-9]+(?:\.[0-9]+)*');
-
 Route::get('/', function () {
     return redirect()->route('login');
 });
@@ -39,7 +25,10 @@ Route::get('/', function () {
 Route::get('/debug-dashboard', [DashboardController::class, 'debugDashboard'])->middleware('auth');
 
 Route::get('/cetak-laporan-teknologi', function () {
+    // 1. Definisi Deskripsi & Kategori (Database Kecil)
+    // Kita map package ke deskripsi bahasa Indonesia agar laporan terlihat profesional
     $libraryMap = [
+        // Backend (Composer)
         'laravel/framework' => 'Core Framework utama aplikasi.',
         'livewire/livewire' => 'Framework full-stack untuk antarmuka dinamis.',
         'maatwebsite/excel' => 'Fitur Export dan Import data Excel.',
@@ -51,6 +40,7 @@ Route::get('/cetak-laporan-teknologi', function () {
         'blade-ui-kit/blade-icons' => 'Komponen ikon untuk Blade template.',
         'mckenziearts/blade-untitledui-icons' => 'Set ikon tambahan untuk UI.',
 
+        // Frontend (NPM)
         'tailwindcss' => 'Framework CSS Utility-first untuk styling tampilan.',
         'chart.js' => 'Library untuk visualisasi grafik data.',
         'chartjs-plugin-datalabels' => 'Plugin label data untuk grafik.',
@@ -60,17 +50,21 @@ Route::get('/cetak-laporan-teknologi', function () {
         'bootstrap-icons' => 'Set ikon vektor standar.',
     ];
 
+    // 2. Baca File Composer.json
     $composerPath = base_path('composer.json');
     $composerData = json_decode(File::get($composerPath), true);
     $composerPackages = $composerData['require'] ?? [];
 
+    // 3. Baca File Package.json
     $npmPath = base_path('package.json');
     $npmData = json_decode(File::get($npmPath), true);
+    // Gabung dependencies dan devDependencies (karena Tailwind sering di dev)
     $npmPackages = array_merge(
         $npmData['dependencies'] ?? [],
         $npmData['devDependencies'] ?? []
     );
 
+    // 4. Filter: Hanya ambil yang ada di daftar $libraryMap (Yang penting saja)
     $laporan = [
         'backend' => [],
         'frontend' => []
@@ -96,6 +90,7 @@ Route::get('/cetak-laporan-teknologi', function () {
         }
     }
 
+    // 5. Generate PDF menggunakan Blade View on-the-fly
     $html = '
     <html>
     <head>
@@ -164,30 +159,36 @@ Route::get('/cetak-laporan-teknologi', function () {
     </body>
     </html>';
 
+    // Load HTML ke DomPDF
     $pdf = Pdf::loadHTML($html);
     return $pdf->stream('Laporan-Teknologi-Posyandu.pdf');
 });
 
 Route::prefix('api/wilayah')->group(function () {
+    // Ambil daftar kabupaten (Jawa Tengah)
     Route::get('kabupaten', function () {
-        $response = Http::get(env('API_WILAYAH_URL') . 'regencies/33.json');
+        $response = Http::get(env('API_WILAYAH_URL') . 'regencies/33.json'); // 33 = ID Jawa Tengah
         return $response->json();
     })->name('api.kabupaten.public');
 
+    // Ambil daftar kecamatan
     Route::get('kecamatan/{kabupaten_id}', function ($kabupaten_id) {
         $response = Http::get(env('API_WILAYAH_URL') . "districts/{$kabupaten_id}.json");
         return $response->json();
     })->name('api.kecamatan.public');
 
+    // Ambil daftar desa
     Route::get('desa/{kecamatan_id}', function ($kecamatan_id) {
         $response = Http::get(env('API_WILAYAH_URL') . "villages/{$kecamatan_id}.json");
         return $response->json();
     })->name('api.desa.public');
 
+    // Ambil daftar posyandu berdasarkan nama desa
     Route::get('posyandu', [PosyanduController::class, 'getPosyanduByWilayah'])->name('api.posyandu.by-wilayah');
 });
 
 Route::prefix('api/db')->group(function () {
+    // Get all kabupaten dari database
     Route::get('kabupaten', function () {
         $kabupatens = Kabupaten::orderBy('jenis')->orderBy('nama_kabupaten')->get();
         return response()->json([
@@ -196,6 +197,7 @@ Route::prefix('api/db')->group(function () {
         ]);
     })->name('api.db.kabupaten');
 
+    // Get kecamatan berdasarkan kabupaten_id dari database
     Route::get('kecamatan/{kabupaten_id}', function ($kabupaten_id) {
         $kecamatans = Kecamatan::where('kabupaten_id', $kabupaten_id)
             ->orderBy('nama_kecamatan')
@@ -207,6 +209,7 @@ Route::prefix('api/db')->group(function () {
         ]);
     })->name('api.db.kecamatan');
 
+    // Get posyandu berdasarkan kecamatan_id dari database
     Route::get('posyandu/by-kecamatan/{kecamatan_id}', function ($kecamatan_id) {
         $posyandus = Posyandu::where('kecamatan_id', $kecamatan_id)
             ->orderBy('nama_posyandu')
@@ -214,10 +217,11 @@ Route::prefix('api/db')->group(function () {
 
         return response()->json([
             'success' => true,
-            'data' => PosyanduLookupResource::collection($posyandus)->resolve(),
+            'data' => $posyandus
         ]);
     })->name('api.db.posyandu.by-kecamatan');
 
+    // Get posyandu berdasarkan kabupaten_id dari database
     Route::get('posyandu/by-kabupaten/{kabupaten_id}', function ($kabupaten_id) {
         $posyandus = Posyandu::with('kecamatanRelation')
             ->where('kabupaten_id', $kabupaten_id)
@@ -226,11 +230,13 @@ Route::prefix('api/db')->group(function () {
 
         return response()->json([
             'success' => true,
-            'data' => PosyanduLookupResource::collection($posyandus)->resolve(),
+            'data' => $posyandus
         ]);
     })->name('api.db.posyandu.by-kabupaten');
 });
+// ✅ TAMBAHKAN DI web.php
 
+// Get RW/RT mapping dari posyandu spesifik
 Route::get('/api/posyandu/{posyandu}/rw-rt', function (Posyandu $posyandu) {
     if (!$posyandu->rw_list || count($posyandu->rw_list) === 0) {
         return response()->json([
@@ -257,18 +263,18 @@ Route::get('/api/posyandu/{posyandu}/rw-rt', function (Posyandu $posyandu) {
     ]);
 })->name('api.posyandu.rw-rt');
 
+// ✅ UPDATE route api.posyandu.by-wilayah untuk include rw_list & rt_mapping
 Route::get('/api/wilayah/posyandu', function (Request $request) {
-    $validated = $request->validate([
-        'kabupaten' => ['required', 'string', 'max:120', 'regex:/^[A-Za-z0-9\s\.\-]+$/'],
-        'kecamatan' => ['required', 'string', 'max:120', 'regex:/^[A-Za-z0-9\s\.\-]+$/'],
-        'desa' => ['required', 'string', 'max:120', 'regex:/^[A-Za-z0-9\s\.\-]+$/'],
-        'search' => ['nullable', 'string', 'max:100', 'regex:/^[A-Za-z0-9\s\.\-]*$/'],
+    $request->validate([
+        'kabupaten' => 'required|string',
+        'kecamatan' => 'required|string',
+        'desa' => 'required|string',
     ]);
 
-    $kabupatenName = $validated['kabupaten'];
-    $kecamatanName = $validated['kecamatan'];
-    $desaName = $validated['desa'];
-    $search = $validated['search'] ?? '';
+    $kabupatenName = $request->query('kabupaten');
+    $kecamatanName = $request->query('kecamatan');
+    $desaName = $request->query('desa');
+    $search = $request->query('search', '');
 
     $posyandus = Posyandu::where('kabupaten', $kabupatenName)
         ->where('kecamatan', $kecamatanName)
@@ -277,28 +283,29 @@ Route::get('/api/wilayah/posyandu', function (Request $request) {
             return $query->where('nama_posyandu', 'like', "%{$search}%");
         })
         ->orderBy('nama_posyandu')
-        ->get(['id', 'nama_posyandu', 'rw_list', 'rt_mapping']);
+        ->get(['id', 'nama_posyandu', 'rw_list', 'rt_mapping']); // ✅ Include rw_list & rt_mapping
 
-    return response()->json(PosyanduLookupResource::collection($posyandus)->resolve());
+    return response()->json($posyandus);
 })->name('api.posyandu.by-wilayah');
 
+// ========================================
+// TRACKING PENGAJUAN (PUBLIC - NO AUTH)
+// ========================================
+
+// Route untuk form tracking (di halaman login sudah ada tabnya)
+// Jadi ini optional, bisa pakai tab di login atau page terpisah
 Route::get('/track-submission', [AjuanController::class, 'showTrackingForm'])
     ->name('ajuan.track.form');
 
+// Route untuk submit tracking code
 Route::post('/track-submission', [AjuanController::class, 'track'])
     ->name('ajuan.track');
 
+// ✅ Public Tracking (No Auth Required)
 Route::get('/lacak-pengajuan', [AjuanController::class, 'trackShow'])
     ->name('ajuan.track.show');
 
-// Public API endpoint untuk guidebook di halaman login
-Route::get('/api/guidebook', [BukuSakuController::class, 'getGuidebookForLogin'])
-    ->name('api.guidebook');
-
-// Public route untuk stream guidebook file (tanpa authentication)
-Route::get('/api/guidebook/{bukuSaku}/file', [BukuSakuController::class, 'streamGuidebookFile'])
-    ->name('api.guidebook.stream-file');
-
+// ✅ Print Bukti (Auth Required)
 Route::middleware(['auth'])->group(function () {
     Route::get('/ajuan/{ajuan}/print-bukti', [AjuanController::class, 'printBukti'])
         ->name('ajuan.print-bukti');
@@ -309,18 +316,30 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::post('/notifications/mark-as-read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
-
+    
+    // ========================================
+    // USER ACTIVATION/DEACTIVATION
+    // ========================================
+    
     Route::post('users/{user}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
     Route::post('users/{user}/activate', [UserController::class, 'activate'])->name('users.activate');
 
+    // ========================================
+    // PILIH LAYANAN & PILIH USER (UNTUK AJUAN)
+    // ========================================
+    
     Route::get('/pilih-layanan', [AjuanController::class, 'pilihLayanan'])
         ->name('dashboard.partials.pilih-layanan');
 
     Route::get('/admin/ajuan/pilih-user', [AjuanController::class, 'pilihUser'])
-        ->middleware(['auth', 'admin.access', 'role:admin,kabid,ketua-posyandu,kader,admin-kecamatan'])
+        ->middleware('role:admin,kabid,kader,admin-kecamatan')
         ->name('dashboard.partials.pilih-user');
 
-    Route::middleware(['auth', 'admin.access', 'role:admin,admin-kabupaten'])->group(function () {
+    // ========================================
+    // SYSTEM SETTINGS
+    // ========================================
+    
+    Route::middleware(['auth', 'role:admin,admin-kabupaten'])->group(function () {
         Route::get('/admin/settings', [SystemSettingController::class, 'index'])
             ->name('admin.settings.index');
         Route::put('/admin/settings', [SystemSettingController::class, 'update'])
@@ -331,67 +350,106 @@ Route::middleware('auth')->group(function () {
             ->name('api.settings.current');
     });
 
+    // ========================================
+    // PENGAJUAN MANAGEMENT (AUTHENTICATED)
+    // ========================================
+
     Route::middleware(['auth'])->group(function () {
+        // Print bukti pengajuan dengan QR Code
         Route::get('/ajuan/{ajuan}/print', [AjuanController::class, 'printBukti'])
             ->name('ajuan.print');
 
+        // Generate QR Code API
         Route::get('/ajuan/{ajuan}/qrcode', [AjuanController::class, 'generateQRCode'])
             ->name('ajuan.qrcode');
 
+        // Standard CRUD routes
         Route::resource('pengajuan', AjuanController::class);
     });
 
-    Route::get('/ajuan', [AjuanController::class, 'index'])->name('ajuan.index');
-    Route::get('/ajuan/create/{bidang}', [AjuanController::class, 'create'])->name('ajuan.create');
-    Route::post('/ajuan/store-permohonan', [AjuanController::class, 'storePermohonan'])->name('ajuan.store.permohonan');
-    Route::get('/ajuan/administrasi', [AjuanController::class, 'createAdministrasi'])->name('ajuan.create.administrasi');
-    Route::post('/ajuan/store-administrasi', [AjuanController::class, 'storeAdministrasi'])->name('ajuan.store.administrasi');
-    Route::get('/ajuan/{ajuan}', [AjuanController::class, 'show'])->name('ajuan.show');
-    Route::get('/ajuan/{ajuan}/edit', [AjuanController::class, 'edit'])->name('ajuan.edit');
-    Route::patch('/ajuan/{ajuan}', [AjuanController::class, 'update'])->name('ajuan.update');
-    Route::get('/ajuan/{ajuan}/dokumen/{key}', [AjuanController::class, 'downloadDokumen'])->name('ajuan.dokumen.download');
-    Route::get('/ajuan/{ajuan}/dokumen/{key}/stream', [AjuanController::class, 'streamDokumen'])->name('ajuan.dokumen.stream');
-    Route::get('/ajuan/{ajuan}/foto-kunjungan/{index}', [AjuanController::class, 'showFotoKunjungan'])
-        ->name('ajuan.foto-kunjungan');
-    Route::patch('/ajuan/{ajuan}/verify', [AjuanController::class, 'verifyAjuan'])->name('ajuan.verify');
-    Route::get('ajuan/{id}/cetak-ringkasan', [AjuanController::class, 'cetakRingkasan'])->name('ajuan.cetak-ringkasan');
-    Route::get('ajuan/{id}/cetak-dokumen', [AjuanController::class, 'cetakDokumen'])->name('ajuan.cetak-dokumen');
-    Route::get('/ajuan/cetak/{id}', [AjuanController::class, 'cetak'])->name('ajuan.cetak');
-    Route::get('/ajuan/get-items/{slug}', [AjuanController::class, 'getItemsAjax'])
-        ->name('ajuan.get-items')
-        ->middleware(['auth', 'verified']);
-    Route::post('/ajuan/{ajuan}/request-revision', [AjuanController::class, 'requestRevision'])
-        ->name('ajuan.request-revision');
+    // ========================================
+    // AJUAN ROUTES (PERMOHONAN & ADMINISTRASI)
+    // ========================================
+    
+    Route::middleware('role:ketua-timpembina-posyandu,kabid,admin-kecamatan,kades,bu-kades,ketua-posyandu,operator-desa,kader,masyarakat')->group(function () {
+        Route::get('/ajuan', [AjuanController::class, 'index'])->name('ajuan.index');
+        Route::get('/ajuan/create/{bidang}', [AjuanController::class, 'create'])->name('ajuan.create');
+        Route::post('/ajuan/store-permohonan', [AjuanController::class, 'storePermohonan'])->name('ajuan.store.permohonan');
+        Route::get('/ajuan/administrasi', [AjuanController::class, 'createAdministrasi'])->name('ajuan.create.administrasi');
+        Route::post('/ajuan/store-administrasi', [AjuanController::class, 'storeAdministrasi'])->name('ajuan.store.administrasi');
+        Route::get('/ajuan/{ajuan}', [AjuanController::class, 'show'])->name('ajuan.show');
+        Route::get('/ajuan/{ajuan}/edit', [AjuanController::class, 'edit'])->name('ajuan.edit');
+        Route::patch('/ajuan/{ajuan}', [AjuanController::class, 'update'])->name('ajuan.update');
+        Route::get('/ajuan/{ajuan}/dokumen/{key}', [AjuanController::class, 'downloadDokumen'])->name('ajuan.dokumen.download');
+        Route::get('/ajuan/{ajuan}/dokumen/{key}/stream', [AjuanController::class, 'streamDokumen'])->name('ajuan.dokumen.stream');
+        Route::get('/ajuan/{ajuan}/foto-kunjungan/{index}', [AjuanController::class, 'showFotoKunjungan'])
+            ->name('ajuan.foto-kunjungan');
+        Route::patch('/ajuan/{ajuan}/verify', [AjuanController::class, 'verifyAjuan'])->name('ajuan.verify');
+        Route::get('ajuan/{id}/cetak-ringkasan', [AjuanController::class, 'cetakRingkasan'])->name('ajuan.cetak-ringkasan');
+        Route::get('ajuan/{id}/cetak-dokumen', [AjuanController::class, 'cetakDokumen'])->name('ajuan.cetak-dokumen');
+        Route::get('/ajuan/cetak/{id}', [AjuanController::class, 'cetak'])->name('ajuan.cetak');
+        Route::get('/ajuan/get-items/{slug}', [AjuanController::class, 'getItemsAjax'])
+            ->name('ajuan.get-items')
+            ->middleware(['auth', 'verified']);
+        Route::post('/ajuan/{ajuan}/request-revision', [AjuanController::class, 'requestRevision'])
+            ->name('ajuan.request-revision');
+    });
 
+    // ========================================
+    // AJUAN APPROVAL ROUTES (ROLE-BASED)
+    // ========================================
+    
+    // Ketua Posyandu - Submit to Pemdes
     Route::middleware('role:ketua-posyandu')->group(function () {
         Route::post('/ajuan/{ajuan}/submit-to-pemdes', [AjuanController::class, 'submitToPemdes'])
             ->name('ajuan.submit-to-pemdes');
     });
 
-    Route::middleware('role:kades')->group(function () {
+    // Kades & Bu Kades - Approval
+    Route::middleware('role:kades,bu-kades')->group(function () {
         Route::post('/ajuan/{ajuan}/kades-approval', [AjuanController::class, 'kadesApproval'])
             ->name('ajuan.kades-approval');
     });
-
+    
+    // ========================================
+    // BUKU SAKU ROUTES
+    // ========================================
+    
     Route::resource('buku_saku', BukuSakuController::class);
     Route::get('/buku_saku/{bukuSaku}/stream', [BukuSakuController::class, 'stream'])->name('buku_saku.stream');
     Route::get('/buku_saku/{bukuSaku}/file', [BukuSakuController::class, 'streamFile'])->name('buku_saku.stream-file');
-    Route::post('/buku_saku/{bukuSaku}/remove-guidebook', [BukuSakuController::class, 'removeGuidebook'])->name('buku_saku.remove-guidebook');
-    Route::post('/buku_saku/upload-guidebook', [BukuSakuController::class, 'uploadGuidebook'])->name('buku_saku.upload-guidebook');
+    Route::post('/buku_saku/upload-guidebook', [BukuSakuController::class, 'uploadGuidebook'])
+        ->name('buku_saku.upload-guidebook');
+    Route::post('/buku_saku/{bukuSaku}/remove-guidebook', [BukuSakuController::class, 'removeGuidebook'])
+        ->name('buku_saku.remove-guidebook');
 
+    // ========================================
+    // PROFILE ROUTES
+    // ========================================
+    
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    // ========================================
+    // API INTERNAL (KECAMATAN & DESA)
+    // ========================================
+    
     Route::prefix('api')->group(function () {
         Route::get('kecamatan', [PosyanduController::class, 'getKecamatan'])->name('api.kecamatan');
         Route::get('desa', [PosyanduController::class, 'getDesa'])->name('api.desa');
     });
 
-    Route::middleware(['auth', 'admin.access', 'role:kader,admin,operator-desa,admin-kabupaten'])->prefix('admin')->name('admin.')->group(function () {
+    // ========================================
+    // ADMIN ROUTES - USER MANAGEMENT
+    // ========================================
+    
+    // User Management (Termasuk Create) - TIDAK TERMASUK admin-kecamatan
+    Route::middleware(['role:kader,admin,admin-kabupaten,operator-desa'])->prefix('admin')->name('admin.')->group(function () {
         Route::resource('users', UserController::class);
         Route::patch('/users/{user}/verify', [UserController::class, 'verify'])->name('users.verify');
-
+        
+        // Import/Export User - TIDAK TERMASUK admin-kecamatan
         Route::get('/users/import', function () {
             return view('admin.users.import');
         })->name('import.importPage');
@@ -401,41 +459,54 @@ Route::middleware('auth')->group(function () {
         Route::post('/admin/users/import', [UserController::class, 'importExcel'])->name('users.import');
     });
 
-    Route::middleware(['auth', 'admin.access', 'role:kabid,admin-kecamatan,ketua-posyandu,ketua-timpembina-posyandu,operator-desa,admin-kabupaten,admin,kades,bu-kades'])->prefix('admin')->name('admin.')->group(function () {
-
-        Route::middleware('role:admin,operator-desa')->group(function () {
-            Route::get('posyandu/create', [PosyanduController::class, 'create'])->name('posyandu.create');
-            Route::post('posyandu', [PosyanduController::class, 'store'])->name('posyandu.store');
+    // ========================================
+    // ADMIN ROUTES - POSYANDU MANAGEMENT
+    // ========================================
+    
+    Route::middleware(['role:kabid,admin-kecamatan,ketua-posyandu,operator-desa,admin-kabupaten,admin,ketua-timpembina-posyandu'])->prefix('admin')->name('admin.')->group(function () {
+        Route::middleware('role:admin,admin-kabupaten,ketua-timpembina-posyandu,admin-kecamatan')->group(function () {
+            // Print Kader Credentials PDF - HARUS SEBELUM RESOURCE ROUTE
             Route::get('/posyandu/{posyandu}/print-credentials', [PosyanduController::class, 'printKaderCredentials'])
                 ->name('posyandu.print-credentials');
+
+            Route::resource('posyandu', PosyanduController::class);
+
+            // Import Posyandu
+            Route::post('/admin/posyandu/import', [UserController::class, 'importPosyandu'])->name('posyandu.import');
+
+            // Export Posyandu Routes
+            Route::get('export-posyandu-all', [PosyanduController::class, 'exportAllPosyandu'])
+                ->name('posyandu.export.all');
+            Route::get('export-posyandu-kecamatan/{kecamatan}', [PosyanduController::class, 'exportByKecamatan'])
+                ->name('posyandu.export.kecamatan');
+            Route::get('export-posyandu-desa/{desa}', [PosyanduController::class, 'exportByDesa'])
+                ->name('posyandu.export.desa');
+            Route::post('export-posyandu', [PosyanduController::class, 'exportWithFilter'])
+                ->name('posyandu.export.filter');
+            Route::get('export-posyandu/{desa}/{kecamatan}', [PosyanduController::class, 'exportByDesaKecamatan'])
+                ->name('posyandu.export.template');
         });
-
-        Route::resource('posyandu', PosyanduController::class, ['except' => ['create', 'store']]);
-
-        Route::post('/admin/posyandu/import', [UserController::class, 'importPosyandu'])->name('posyandu.import');
-
-        Route::get('export-posyandu-all', [PosyanduController::class, 'exportAllPosyandu'])
-            ->name('posyandu.export.all');
-        Route::get('export-posyandu-kecamatan/{kecamatan}', [PosyanduController::class, 'exportByKecamatan'])
-            ->name('posyandu.export.kecamatan');
-        Route::get('export-posyandu-desa/{desa}', [PosyanduController::class, 'exportByDesa'])
-            ->name('posyandu.export.desa');
-        Route::post('export-posyandu', [PosyanduController::class, 'exportWithFilter'])
-            ->name('posyandu.export.filter');
-        Route::get('export-posyandu/{desa}/{kecamatan}', [PosyanduController::class, 'exportByDesaKecamatan'])
-            ->name('posyandu.export.template');
-
+        
+        // Export Laporan Routes
         Route::get('/export-all/{desa}', [LaporanController::class, 'exportExcelAll'])->name('laporan.exportExcelAll');
         Route::get('/export/{bidang}/{desa}', [LaporanController::class, 'exportExcelBidang'])->name('laporan.exportExcelBidang');
         Route::get('/export-all-bidang-desa', [LaporanController::class, 'exportExcelAllBidangDanDesa'])->name('laporan.exportExcelAllBidangDanDesa');
         Route::get('/export/{bidang}', [LaporanController::class, 'exportBidangAllDesa'])->name('laporan.exportBidangAllDesa');
     });
-
-    Route::middleware(['auth', 'admin.access', 'role:kabid,ketua-timpembina-posyandu,ketua-posyandu,kader,admin,admin-kecamatan,admin-kabupaten,operator-desa,kades,bu-kades'])->prefix('admin')->name('admin.')->group(function () {
+    
+    // ========================================
+    // ADMIN ROUTES - LAPORAN
+    // ========================================
+    
+    Route::middleware(['role:kabid,ketua-posyandu,kader,admin,admin-kecamatan,admin-kabupaten,operator-desa,ketua-timpembina-posyandu'])->prefix('admin')->name('admin.')->group(function () {
         Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
     });
-
-    Route::middleware(['auth', 'admin.access', 'role:operator-desa'])->group(function () {
+    
+    // ========================================
+    // ADMIN ROUTES - OPERATOR DESA (KADER MANAGEMENT)
+    // ========================================
+    
+    Route::middleware(['role:operator-desa'])->group(function () {
         Route::patch('admin/users/{user}/reset-password', [UserController::class, 'resetPasswordKader'])
             ->name('admin.users.reset-password');
         Route::patch('admin/users/{user}/deactivate', [UserController::class, 'deactivateKader'])
@@ -443,19 +514,31 @@ Route::middleware('auth')->group(function () {
         Route::patch('admin/users/{user}/reactivate', [UserController::class, 'reactivateKader'])
             ->name('admin.users.reactivate');
     });
+    
+    // ========================================
+    // ADMIN ROUTES - KETUA POSYANDU (TAKEOVER KADER)
+    // ========================================
 
-    Route::middleware(['auth'])->prefix('ketua-posyandu')->name('ketua-posyandu.')->group(function () {
+    Route::middleware(['auth', 'role:ketua-posyandu'])->prefix('ketua-posyandu')->name('ketua-posyandu.')->group(function () {
         Route::get('/takeover', [UserController::class, 'takeoverIndex'])->name('takeover');
         Route::post('/takeover/{kader}/reset', [UserController::class, 'takeoverResetPassword'])->name('takeover.reset');
     });
-
+    
+    // ========================================
+    // ADMIN ROUTES - ADMIN KABUPATEN (KABID MANAGEMENT)
+    // ========================================
+    
     Route::middleware(['auth', 'role:admin-kabupaten'])->group(function () {
         Route::patch('/users/{user}/reset-password-kabid', [UserController::class, 'resetPasswordKabid']);
         Route::patch('/users/{user}/deactivate-kabid', [UserController::class, 'deactivateUserKabid']);
         Route::patch('/users/{user}/reactivate-kabid', [UserController::class, 'reactivateUserKabid'])->name('admin.users.reactivate-kabid');
     });
-
-    Route::middleware('role:operator-desa,admin,ketua-timpembina-posyandu,admin-kabupaten')->group(function () {
+    
+    // ========================================
+    // ADMIN ROUTES - RW/RT MANAGEMENT
+    // ========================================
+    
+    Route::middleware('role:operator-desa,admin,ketua-posyandu,admin-kabupaten')->group(function () {
         Route::get('/posyandu/{posyandu}/edit-rw-rt', [PosyanduController::class, 'editRwRt'])
             ->name('admin.posyandu.edit-rw-rt');
         Route::put('/posyandu/{posyandu}/update-rw-rt', [PosyanduController::class, 'updateRwRt'])
@@ -467,7 +550,9 @@ Route::middleware('auth')->group(function () {
     });
 });
 
+// ✅ GOOGLE AUTH
 Route::get('/auth/google/redirect', [GoogleLoginController::class, 'redirectToGoogle'])->name('google.login');
 Route::get('/auth/google/callback', [GoogleLoginController::class, 'handleGoogleCallback']);
 
+// Memuat semua rute otentikasi dari Breeze (login, register, dll.)
 require __DIR__ . '/auth.php';
