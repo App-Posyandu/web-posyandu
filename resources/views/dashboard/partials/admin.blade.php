@@ -306,6 +306,7 @@
                 showArchived: false,
 
                 bidangData: [],
+                desas: [],
 
                 statistics: {
                     total: 0,
@@ -369,7 +370,7 @@
                         console.log('Loading dashboard data with params:', params.toString());
 
                         const response = await fetch(
-                            `{{ route('dashboard.get-data') }}?${params.toString()}`, {
+                            `{{ route('dashboard.data') }}?${params.toString()}`, {
                                 headers: {
                                     'X-Requested-With': 'XMLHttpRequest',
                                     'Accept': 'application/json'
@@ -397,6 +398,7 @@
                             to: 0,
                             total: 0
                         };
+                        this.desas = data.desas || [];
 
                         this.$nextTick(() => {
                             this.updateChart();
@@ -797,7 +799,7 @@
                 showAdminKecamatanExportModal() {
                     const selectedYear = this.selectedYear;
                     const userKecamatan = "{{ auth()->user()->kecamatan ?? '' }}";
-                    const desas = @json($desas ?? []);
+                    const desas = this.desas;
 
                     Swal.fire({
                         title: '<h2 class="text-lg md:text-xl font-bold text-gray-800 mb-2">Export Data Pengajuan</h2>',
@@ -900,7 +902,7 @@
                 showKabidExportModal() {
                     const bidangKabid = "{{ auth()->user()->bidang?->nama_bidang ?? '' }}";
                     const kabupatenKabid = "{{ auth()->user()->kabupaten ?? '' }}";
-                    const desas = @json($desas ?? []);
+                    const desas = this.desas;
 
                     Swal.fire({
                         title: '<h2 class="text-lg md:text-xl font-bold text-gray-800 mb-2">Export Data Pengajuan</h2>',
@@ -1047,7 +1049,7 @@
                 let desaSelectHTML = "";
 
                 @if (Auth::user()->role === 'kabid')
-                    const desas = @json($desas);
+                    const desas = Alpine.$data(document.querySelector('[x-data="dashboardFilter"]'))?.desas ?? [];
 
                     desaSelectHTML = `
             <div class="relative text-left">
@@ -1108,7 +1110,8 @@
                     },
                     didOpen: () => {
                         @if (Auth::user()->role === 'kabid')
-                            const desas = ['all', ...@json($desas)];
+                            const desas = ['all', ...(Alpine.$data(document.querySelector(
+                                '[x-data="dashboardFilter"]'))?.desas ?? [])];
                             const searchInput = document.getElementById('desaSearch');
                             const dropdownList = document.getElementById('desaDropdownList');
                             const desaOptions = document.getElementById('desaOptions');
