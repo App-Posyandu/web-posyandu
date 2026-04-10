@@ -39,41 +39,27 @@
                     <div>
                         <h3 class="text-sm font-medium text-gray-600">Periode Data</h3>
                         <p class="text-lg font-bold text-gray-800">
-                            Tahun {{ $selectedYear }}
-                            @if ($selectedYear == $currentYear)
+                            Tahun <span x-text="selectedYear"></span>
+                            <template x-if="selectedYear == currentYear">
                                 <span class="ml-2 px-2 py-1 text-xs font-semibold text-green-700 bg-green-100 rounded-full">
                                     Tahun Berjalan
                                 </span>
-                            @endif
+                            </template>
                         </p>
                     </div>
                 </div>
                 <div class="flex items-center gap-3">
-                    <label for="yearFilter" class="text-sm font-medium text-gray-700 whitespace-nowrap">
-                        Pilih Tahun:
-                    </label>
-                    <form method="GET" action="{{ route('dashboard') }}" id="yearFilterForm" class="flex gap-2">
-                        @if (request('search'))
-                            <input type="hidden" name="search" value="{{ request('search') }}">
-                        @endif
-                        @if (request('status'))
-                            <input type="hidden" name="status" value="{{ request('status') }}">
-                        @endif
-
-                        <select name="year" id="yearFilter" onchange="this.form.submit()"
+                    <label class="text-sm font-medium text-gray-700 whitespace-nowrap">Pilih Tahun:</label>
+                    <div class="flex gap-2">
+                        <select x-model="selectedYear" @change="loadDashboardData()"
                             class="block w-full md:w-auto px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
-                            @foreach ($availableYears as $year)
-                                <option value="{{ $year }}" {{ $selectedYear == $year ? 'selected' : '' }}>
-                                    {{ $year }}
-                                    @if ($year == $currentYear)
-                                        (Tahun Ini)
-                                    @endif
+                            <template x-for="year in availableYears" :key="year">
+                                <option :value="year" x-text="year == currentYear ? year + ' (Tahun Ini)' : year">
                                 </option>
-                            @endforeach
+                            </template>
                         </select>
-
-                        @if ($selectedYear != $currentYear)
-                            <a href="{{ route('dashboard') }}"
+                        <template x-if="selectedYear != currentYear">
+                            <button @click="resetToCurrentYear()"
                                 class="inline-flex items-center px-4 py-2 bg-gray-500 text-white text-sm rounded-lg hover:bg-gray-600 transition">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -81,9 +67,9 @@
                                     </path>
                                 </svg>
                                 Reset
-                            </a>
-                        @endif
-                    </form>
+                            </button>
+                        </template>
+                    </div>
                 </div>
             </div>
         </div>
@@ -118,39 +104,45 @@
                 }
             @endphp
             <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6">
-                Statistik Pengajuan Desa - 
+                Statistik Pengajuan Desa -
                 @if ($label)
                     <span class="text-pink-500">{{ $label }}</span>
                 @endif
             </h2>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+                {{-- Kartu bidang — dirender dari JS setelah AJAX --}}
                 <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-                    @php
-                        $bidangColors = [
-                            'Bidang Perumahan Rakyat' => 'bg-blue-500',
-                            'Bidang Pendidikan' => 'bg-orange-500',
-                            'Bidang Kesehatan' => 'bg-pink-500',
-                            'Bidang Sosial' => 'bg-rose-500',
-                            'Bidang Pekerjaan Umum' => 'bg-green-500',
-                            'Bidang Trantibumlinmas' => 'bg-yellow-500',
-                        ];
-                    @endphp
-                    @foreach ($ajuanCounts as $bidang => $total)
-                        <div
-                            class="{{ $bidangColors[$bidang] ?? 'bg-gray-500' }} text-white p-3 md:p-4 lg:py-4 lg:px-8 rounded-lg shadow-md flex items-center gap-3 md:gap-4">
-                            <span class="text-4xl md:text-5xl lg:text-6xl font-bold">{{ $total }}</span>
-                            <div class="flex flex-col gap-1 md:gap-2">
-                                <img src="{{ $icons[\Illuminate\Support\Str::slug(str_replace('Bidang ', '', $bidang))] ?? asset('assets/image/icon/bidang/default.svg') }}"
-                                    alt="{{ $bidang }} icon" class="w-6 h-6 md:w-8 md:h-8 mx-2 md:mx-3">
-                                <span
-                                    class="ml-2 md:ml-3 text-xs md:text-sm lg:text-base font-semibold leading-tight">{{ $bidang }}</span>
-                            </div>
+                    <template x-if="loading">
+                        <div class="col-span-2 flex items-center justify-center py-12 text-gray-400">
+                            <svg class="animate-spin h-8 w-8 mr-2" fill="none" viewBox="0 0 24 24">
+                                <circle cl ass="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                    stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                </path>
+                            </svg>
+                            Memuat data...
                         </div>
-                    @endforeach
+                    </template>
+                    <template x-if="!loading">
+                        <template x-for="item in bidangData" :key="item.name">
+                            <div
+                                :class="item.color +
+                                    ' text-white p-3 md:p-4 lg:py-4 lg:px-8 rounded-lg shadow-md flex items-center gap-3 md:gap-4'">
+                                <span class="text-4xl md:text-5xl lg:text-6xl font-bold" x-text="item.total"></span>
+                                <div class="flex flex-col gap-1 md:gap-2">
+                                    <img :src="item.icon" :alt="item.name + ' icon'"
+                                        class="w-6 h-6 md:w-8 md:h-8 mx-2 md:mx-3">
+                                    <span class="ml-2 md:ml-3 text-xs md:text-sm lg:text-base font-semibold leading-tight"
+                                        x-text="item.name"></span>
+                                </div>
+                            </div>
+                        </template>
+                    </template>
                 </div>
 
-                <div class="bg-white p-3 md:p-4 rounded-lg" x-data="pieChartData" x-init="drawChart()">
+                <div class="bg-white p-3 md:p-4 rounded-lg">
                     <canvas x-ref="pieChart"></canvas>
                 </div>
             </div>
@@ -205,62 +197,35 @@
                     </div>
                 </div>
 
-                <div class="mt-4 flex justify-between items-center text-xs md:text-sm text-gray-600">
+                <div @click="handlePagination($event)">
                     <div x-html="paginationHtml"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    @php
-        $chartData = $ajuanCounts
-            ->map(function ($total, $nama) use ($icons) {
-                $colorMap = [
-                    'Bidang Perumahan Rakyat' => 'bg-blue-500',
-                    'Bidang Pendidikan' => 'bg-orange-500',
-                    'Bidang Kesehatan' => 'bg-pink-500',
-                    'Bidang Sosial' => 'bg-rose-500',
-                    'Bidang Pekerjaan Umum' => 'bg-green-500',
-                    'Bidang Trantibumlinmas' => 'bg-yellow-500',
-                ];
-
-                $slug = \Illuminate\Support\Str::slug(str_replace('Bidang ', '', $nama));
-                $icon = $icons[$slug] ?? asset('assets/image/icon/bidang/default.svg');
-
-                return [
-                    'name' => $nama,
-                    'total' => $total,
-                    'color' => $colorMap[$nama] ?? 'bg-gray-500',
-                    'icon' => $icon,
-                ];
-            })
-            ->values();
-    @endphp
 
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('masyarakatDashboard', () => ({
                 currentYear: {{ $currentYear }},
-                selectedYear: {{ $selectedYear }},
+                selectedYear: {{ $currentYear }},
                 availableYears: @json($availableYears),
                 searchQuery: '',
                 filterStatus: '',
                 loading: false,
-                isVerified: true,
-                bidangData: @json($chartData),
-
+                bidangData: [],
                 statistics: {
-                    total: {{ $ajuanCounts->sum() }},
+                    total: 0,
                     disetujui: 0,
                     diproses: 0,
-                    ditolak: 0,
+                    ditolak: 0
                 },
-
                 myStats: {
-                    total: {{ $myStats['total'] }},
-                    disetujui: {{ $myStats['disetujui'] }},
-                    diproses: {{ $myStats['diproses'] }},
-                    ditolak: {{ $myStats['ditolak'] }},
+                    total: 0,
+                    disetujui: 0,
+                    diproses: 0,
+                    ditolak: 0
                 },
                 paginationInfo: {
                     from: 0,
@@ -269,7 +234,13 @@
                 },
                 tableHtml: '',
                 paginationHtml: '',
+                pieChartData: {
+                    labels: [],
+                    values: [],
+                    colors: []
+                },
                 chart: null,
+
                 init() {
                     this.drawChart();
                     this.loadDashboardData();
@@ -277,29 +248,20 @@
 
                 async loadDashboardData(page = 1) {
                     this.loading = true;
-
                     try {
                         const params = new URLSearchParams();
                         params.set('year', String(this.selectedYear));
+                        if (this.searchQuery) params.set('search', this.searchQuery);
+                        if (this.filterStatus) params.set('status', this.filterStatus);
+                        if (page > 1) params.set('page', String(page));
 
-                        if (this.searchQuery) {
-                            params.set('search', this.searchQuery);
-                        }
-
-                        if (this.filterStatus) {
-                            params.set('status', this.filterStatus);
-                        }
-
-                        if (page > 1) {
-                            params.set('page', String(page));
-                        }
-
-                        const response = await fetch(`{{ route('dashboard') }}?${params.toString()}`, {
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'Accept': 'application/json'
-                            }
-                        });
+                        const response = await fetch(
+                            `{{ route('dashboard.data') }}?${params.toString()}`, {
+                                headers: {
+                                    'X-Requested-With': 'XMLHttpRequest',
+                                    'Accept': 'application/json'
+                                }
+                            });
                         const data = await response.json();
 
                         this.bidangData = data.bidangData;
@@ -307,11 +269,9 @@
                         this.myStats = data.myStats;
                         this.tableHtml = data.tableHtml;
                         this.paginationHtml = data.paginationHtml;
-                        console.log(data)
-
                         this.paginationInfo = data.paginationInfo;
+                        this.pieChartData = data.pieChart;
                         this.updateChart();
-
                     } catch (error) {
                         console.error('Error loading dashboard data:', error);
                     } finally {
@@ -320,14 +280,19 @@
                 },
 
                 handlePagination(event) {
-                    if (event.target.tagName === 'A' || event.target.closest('a')) {
-                        event.preventDefault();
-                        const link = event.target.tagName === 'A' ? event.target : event.target.closest(
-                            'a');
-                        const url = new URL(link.href);
-                        const page = url.searchParams.get('page') || 1;
-                        this.loadDashboardData(page);
-                    }
+                    const link = event.target.closest('a');
+
+                    if (!link || !link.href) return;
+
+                    event.preventDefault();
+
+                    const url = new URL(link.href);
+                    const page = url.searchParams.get('page') || 1;
+                    this.loadDashboardData(page);
+                    window.scrollTo({
+                        top: ctx.offsetTop - 100,
+                        behavior: 'smooth'
+                    });
                 },
 
                 resetToCurrentYear() {
@@ -346,126 +311,27 @@
                         setTimeout(() => this.drawChart(), 100);
                         return;
                     }
-
                     const ctx = this.$refs.pieChart;
                     if (!ctx) return;
-
-                    if (this.chart) {
-                        this.chart.destroy();
-                    }
-
+                    if (this.chart) this.chart.destroy();
                     this.updateChart();
                 },
 
                 updateChart() {
                     const ctx = this.$refs.pieChart;
                     if (!ctx) return;
-
-                    if (this.chart) {
-                        this.chart.destroy();
-                    }
-
-                    const filteredData = this.bidangData.filter(item => item.total > 0);
-                    const labels = filteredData.length > 0 ?
-                        filteredData.map(item => item.name.replace('Bidang ', '')) : ['Tidak Ada Data'];
-                    const data = filteredData.length > 0 ?
-                        filteredData.map(item => item.total) : [1];
-
-                    const bidangColors = {
-                        'Perumahan Rakyat': 'rgb(59, 130, 246)',
-                        'Pendidikan': 'rgb(251, 146, 60)',
-                        'Kesehatan': 'rgb(236, 72, 153)',
-                        'Sosial': 'rgb(251, 113, 133)',
-                        'Pekerjaan Umum': 'rgb(34, 197, 94)',
-                        'Trantibumlinmas': 'rgb(234, 179, 8)'
-                    };
-
-                    const colors = labels.map(label => bidangColors[label] || 'rgb(209, 213, 219)');
-
-                    this.chart = new Chart(ctx, {
-                        type: 'doughnut',
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                data: data,
-                                backgroundColor: colors,
-                                borderWidth: 2,
-                                borderColor: '#fff',
-                                hoverOffset: 10
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: true,
-                            plugins: {
-                                legend: {
-                                    position: 'bottom',
-                                    labels: {
-                                        padding: 15,
-                                        font: {
-                                            size: 11
-                                        },
-                                        boxWidth: 12,
-                                        usePointStyle: true
-                                    }
-                                }
-                            }
-                        }
-                    });
-                }
-            }));
-
-            Alpine.data('pieChartData', () => ({
-                chart: null,
-
-                drawChart() {
-                    if (typeof Chart === 'undefined') {
-                        setTimeout(() => this.drawChart(), 100);
-                        return;
-                    }
-
-                    const ctx = this.$refs.pieChart;
-                    if (!ctx) return;
-
-                    if (this.chart) {
-                        this.chart.destroy();
-                    }
-
-                    const rawLabels = @json(array_keys($ajuanCounts->toArray() ?? []));
-                    const rawData = @json(array_values($ajuanCounts->toArray() ?? []));
-
-                    const filteredData = rawLabels.map((label, index) => ({
-                        label: label.replace('Bidang ', ''),
-                        value: rawData[index]
-                    })).filter(item => item.value > 0);
-
-                    const labels = filteredData.length > 0 ?
-                        filteredData.map(item => item.label) : ['Tidak Ada Data'];
-                    const data = filteredData.length > 0 ?
-                        filteredData.map(item => item.value) : [1];
-
-                    const bidangColors = {
-                        'Perumahan Rakyat': 'rgb(59, 130, 246)',
-                        'Pendidikan': 'rgb(251, 146, 60)',
-                        'Kesehatan': 'rgb(236, 72, 153)',
-                        'Sosial': 'rgb(251, 113, 133)',
-                        'Pekerjaan Umum': 'rgb(34, 197, 94)',
-                        'Trantibumlinmas': 'rgb(234, 179, 8)'
-                    };
-
-                    const colors = labels.map(label => bidangColors[label] || 'rgb(209, 213, 219)');
+                    if (this.chart) this.chart.destroy();
 
                     const isMobile = window.innerWidth < 640;
-                    const fontSize = isMobile ? 9 : 11;
-                    const legendPadding = isMobile ? 10 : 15;
 
                     this.chart = new Chart(ctx, {
                         type: 'doughnut',
                         data: {
-                            labels: labels,
+                            labels: this.pieChartData.labels, // Data dari controller
                             datasets: [{
-                                data: data,
-                                backgroundColor: colors,
+                                data: this.pieChartData.values, // Data dari controller
+                                backgroundColor: this.pieChartData
+                                    .colors, // Warna dari controller
                                 borderWidth: 2,
                                 borderColor: '#fff',
                                 hoverOffset: 10
@@ -478,25 +344,20 @@
                                 legend: {
                                     position: 'bottom',
                                     labels: {
-                                        padding: legendPadding,
+                                        padding: isMobile ? 10 : 15,
                                         font: {
-                                            size: fontSize
+                                            size: isMobile ? 9 : 11
                                         },
-                                        boxWidth: 12,
                                         usePointStyle: true
                                     }
                                 }
-                            }
+                            },
+                            cutout: '65%'
                         }
                     });
-                },
-
-                destroy() {
-                    if (this.chart) {
-                        this.chart.destroy();
-                    }
                 }
             }));
+
         });
     </script>
 @endsection

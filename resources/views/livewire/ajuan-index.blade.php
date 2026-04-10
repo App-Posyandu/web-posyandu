@@ -26,7 +26,7 @@
             </div>
         @endif
         <div class="w-full flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-            <div class="w-full sm:w-auto">
+            <div class="w-full">
                 <div>
                     @if (auth()->user()->role === 'kader' && auth()->user()->bidang)
                         <h2 class="text-xl sm:text-2xl font-bold text-gray-800">
@@ -143,14 +143,14 @@
                         <a href="{{ route('dashboard.partials.pilih-layanan') }}"
                             class="w-full sm:w-auto flex items-center justify-center px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600 transition-colors duration-150">
                             <i class="bi bi-plus-circle-fill mr-2"></i>
-                            <span class="hidden sm:inline">Tambah Ajuan</span>
+                            <span class="hidden sm:inline whitespace-nowrap">Tambah Ajuan</span>
                             <span class="sm:hidden">Buat Ajuan Baru</span>
                         </a>
                     @else
                         <a href="{{ route('dashboard.partials.pilih-user') }}"
                             class="w-full sm:w-auto flex items-center justify-center px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600 transition-colors duration-150">
                             <i class="bi bi-plus-circle-fill mr-2"></i>
-                            <span class="hidden sm:inline">Tambah Ajuan</span>
+                            <span class="hidden sm:inline whitespace-nowrap">Tambah Ajuan</span>
                             <span class="sm:hidden">Buat Ajuan Baru</span>
                         </a>
                     @endif

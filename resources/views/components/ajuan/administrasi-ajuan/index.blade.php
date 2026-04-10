@@ -96,12 +96,23 @@
                             </div>
 
                             @if ($userKtp)
-                                <button type="button"
-                                    @click="ktp_mode = 'claimed'; ktp_filename = 'KTP Terdaftar'; ktp_preview = '{{ $userKtp }}'; ktp_size = 0"
-                                    class="mt-2 text-base text-green-600 underline hover:text-green-700 transition transform duration-300"
-                                    :class="{ 'font-bold text-lg': ktp_mode == 'claimed' }">
-                                    <i class="fa-solid fa-check-circle"></i> Gunakan KTP Terdaftar
-                                </button>
+                                <div x-data="{ ktpToast: false }">
+                                    <button type="button"
+                                        @click="ktp_mode = 'claimed'; ktp_filename = 'KTP Terdaftar'; ktp_preview = '{{ $userKtp }}'; ktp_size = 0; ktpToast = true; setTimeout(() => ktpToast = false, 3000)"
+                                        class="mt-2 text-base text-green-600 underline hover:text-green-700 transition transform duration-300"
+                                        :class="{ 'font-bold text-lg': ktp_mode == 'claimed' }">
+                                        <i class="fa-solid fa-check-circle"></i> Gunakan KTP Terdaftar
+                                    </button>
+                                    <div x-show="ktpToast" x-transition:enter="transition ease-out duration-300"
+                                        x-transition:enter-start="opacity-0 translate-y-1"
+                                        x-transition:enter-end="opacity-100 translate-y-0"
+                                        x-transition:leave="transition ease-in duration-200"
+                                        x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                                        class="mt-2 flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-300 text-green-700 text-sm rounded-lg">
+                                        <i class="fa-solid fa-circle-check text-green-500"></i>
+                                        <span>KTP terdaftar berhasil digunakan!</span>
+                                    </div>
+                                </div>
                             @endif
                             <x-input-error :messages="$errors->get('ktp')" class="mt-2" />
                         </div>
@@ -156,12 +167,23 @@
                             </div>
 
                             @if ($userKk)
-                                <button type="button"
-                                    @click="kk_mode = 'claimed'; kk_filename = 'KK Terdaftar'; kk_preview = '{{ $userKk }}'; kk_size = 0"
-                                    class="mt-2 text-base text-green-600 underline hover:text-green-700 transition transform duration-300"
-                                    :class="{ 'font-bold text-lg': kk_mode == 'claimed' }">
-                                    <i class="fa-solid fa-check-circle"></i> Gunakan KK Terdaftar
-                                </button>
+                                <div x-data="{ kkToast: false }">
+                                    <button type="button"
+                                        @click="kk_mode = 'claimed'; kk_filename = 'KK Terdaftar'; kk_preview = '{{ $userKk }}'; kk_size = 0; kkToast = true; setTimeout(() => kkToast = false, 3000)"
+                                        class="mt-2 text-base text-green-600 underline hover:text-green-700 transition transform duration-300"
+                                        :class="{ 'font-bold text-lg': kk_mode == 'claimed' }">
+                                        <i class="fa-solid fa-check-circle"></i> Gunakan KK Terdaftar
+                                    </button>
+                                    <div x-show="kkToast" x-transition:enter="transition ease-out duration-300"
+                                        x-transition:enter-start="opacity-0 translate-y-1"
+                                        x-transition:enter-end="opacity-100 translate-y-0"
+                                        x-transition:leave="transition ease-in duration-200"
+                                        x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                                        class="mt-2 flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-300 text-green-700 text-sm rounded-lg">
+                                        <i class="fa-solid fa-circle-check text-green-500"></i>
+                                        <span>KK terdaftar berhasil digunakan!</span>
+                                    </div>
+                                </div>
                             @endif
                             <x-input-error :messages="$errors->get('kk')" class="mt-2" />
                         </div>
