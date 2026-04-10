@@ -777,7 +777,11 @@
         @endif
 
         {{-- KETUA POSYANDU: Submit ke Pemdes --}}
-        @if (auth()->user()->role === 'ketua-posyandu' && $ajuan->status_pengajuan === 'Sesuai')
+        @if (
+            auth()->user()->role === 'ketua-posyandu' &&
+                $ajuan->approved_by_ketua &&
+                !$ajuan->submitted_to_desa &&
+                $ajuan->status_pengajuan === 'Diproses')
             <div class="w-full mx-8">
                 <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-4 md:p-8 mx-0 md:mx-8">
                     <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Kirim ke Pemdes</h2>
@@ -806,7 +810,7 @@
         @endif
 
         {{-- KADES: Approval Final --}}
-        @if (auth()->user()->role === 'kades' && $ajuan->status_pengajuan === 'Diajukan ke Desa')
+        @if (auth()->user()->role === 'kades' && $ajuan->submitted_to_desa && $ajuan->status_pengajuan === 'Diproses')
             <div class="w-full mx-8">
                 <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-4 md:p-8 mx-0 md:mx-8">
                     <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Persetujuan Kepala Desa</h2>

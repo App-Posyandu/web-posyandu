@@ -670,10 +670,7 @@ class AjuanController extends Controller
         $user = Auth::user();
         $targetUser = $ajuan->user;
 
-        if ($user->role === 'ketua-timpembina-posyandu') {
-            // Ketua Tim Pembina Posyandu can verify any submission
-            // No additional authorization needed for step 3
-        } elseif ($user->role === 'ketua-posyandu') {
+        if ($user->role === 'ketua-posyandu') {
             if ($ajuan->user->posyandu_id !== $user->posyandu_id) {
                 abort(403, 'Ketua Posyandu hanya bisa takeover pengajuan di Posyandunya sendiri.');
             }
@@ -830,41 +827,36 @@ class AjuanController extends Controller
             }
         }
 
-        // Step 3: Ketua Tim Pembina Posyandu Approval
-        if ($user->role === 'ketua-timpembina-posyandu') {
+        // Step 3: Ketua Posyandu Approval
+        if ($user->role === 'ketua-posyandu') {
             if ($step == 3) {
                 $request->validate([
-                    'keputusan' => 'required|in:diajukan,tidak-diajukan',
-                    'catatan' => 'required|string|min:15',
+                    'keputusan' => 'required|in:ditindaklanjuti,tidak-ditindaklanjuti',
+                    'catatan' => 'nullable|string|min:10',
                 ], [
                     'keputusan.required' => 'Keputusan harus dipilih.',
-                    'catatan.required' => 'Catatan wajib diisi.',
-                    'catatan.min' => 'Catatan minimal 15 karakter.',
+                    'catatan.min' => 'Catatan minimal 10 karakter.',
                 ]);
 
-                if ($request->keputusan === 'diajukan') {
+                if ($request->keputusan === 'ditindaklanjuti') {
                     $ajuan->update([
                         'status_pengajuan' => 'Diproses',
-                        'approved_by_timpembina' => true,
-                        'approved_by_timpembina_id' => $user->id,
-                        'approved_by_timpembina_at' => now(),
-                        // Langsung submit ke desa saat ketua tim pembina approve
-                        'submitted_to_desa' => true,
-                        'submitted_to_desa_at' => now(),
-                        // Legacy support
                         'approved_by_ketua' => true,
                         'approved_by_ketua_id' => $user->id,
                         'approved_by_ketua_at' => now(),
                     ]);
 
-                    $statusHistory = 'Disetujui Ketua Tim Pembina Posyandu';
-                    $catatanHistory = $request->catatan ?? 'Pengajuan disetujui dan diteruskan ke Pemdes.';
+                    $statusHistory = 'Disetujui Ketua Posyandu';
+                    $catatanHistory = $request->catatan ?? 'Pengajuan disetujui Ketua Posyandu dan siap dikirim ke Pemdes.';
                 } else {
                     $ajuan->update([
                         'status_pengajuan' => 'Ditolak',
+                        'approved_by_ketua' => false,
+                        'approved_by_ketua_id' => $user->id,
+                        'approved_by_ketua_at' => now(),
                     ]);
 
-                    $statusHistory = 'Ditolak Ketua Tim Pembina Posyandu';
+                    $statusHistory = 'Ditolak Ketua Posyandu';
                     $catatanHistory = $request->catatan;
                 }
 
@@ -873,7 +865,7 @@ class AjuanController extends Controller
                     'status' => $statusHistory,
                     'catatan' => $catatanHistory,
                     'diubah_oleh' => $user->id,
-                    'action_by_role' => 'ketua-timpembina-posyandu',
+                    'action_by_role' => 'ketua-posyandu',
                     'created_at' => now(),
                 ]);
 
@@ -890,15 +882,19 @@ class AjuanController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role !== 'ketua-timpembina-posyandu') {
+        if ($user->role !== 'ketua-posyandu') {
             AccessAudit::record(request(), $user, 'pengajuan', 'submit_to_pemdes', false, 403, [
                 'target_pengajuan_id' => $ajuan->id,
             ]);
             abort(403, 'Akses ditolak.');
         }
 
-        if (!$ajuan->approved_by_timpembina || $ajuan->status_pengajuan !== 'Diproses') {
+        if (!$ajuan->approved_by_ketua || $ajuan->status_pengajuan !== 'Diproses') {
             return redirect()->back()->with('error', 'Pengajuan belum siap dikirim ke Pemdes.');
+        }
+
+        if ($ajuan->submitted_to_desa) {
+            return redirect()->back()->with('error', 'Pengajuan ini sudah pernah dikirim ke Pemdes.');
         }
 
         $ajuan->update([
@@ -911,7 +907,7 @@ class AjuanController extends Controller
             'status' => 'Diajukan ke Pemdes',
             'catatan' => 'Pengajuan diteruskan ke Kepala Desa untuk persetujuan akhir.',
             'diubah_oleh' => $user->id,
-            'action_by_role' => 'ketua-timpembina-posyandu',
+            'action_by_role' => 'ketua-posyandu',
             'created_at' => now(),
         ]);
 
