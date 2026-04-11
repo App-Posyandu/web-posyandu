@@ -99,9 +99,9 @@
                                 } elseif ($pengajuan->submitted_to_desa) {
                                     $statusClass = 'bg-purple-100 text-purple-800';
                                     $statusText = 'Diajukan ke Desa';
-                                } elseif ($pengajuan->approved_by_timpembina) {
+                                } elseif ($pengajuan->approved_by_ketua) {
                                     $statusClass = 'bg-blue-100 text-blue-800';
-                                    $statusText = 'Disetujui Tim Pembina';
+                                    $statusText = 'Disetujui Ketua Posyandu';
                                 } else {
                                     $statusClass = 'bg-yellow-100 text-yellow-800';
                                     $statusText = 'Diproses';

@@ -301,13 +301,14 @@
                             @elseif ($ajuan->status_pengajuan == 'Ditolak')
                                 <span
                                     class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Ditolak</span>
-                            @elseif ($ajuan->status_pengajuan == 'Sesuai')
-                                <span
-                                    class="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Sesuai</span>
-                            @elseif ($ajuan->status_pengajuan == 'Diajukan ke Desa')
+                            @elseif ($ajuan->submitted_to_desa)
                                 <span
                                     class="px-3 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">Diajukan
                                     ke Desa</span>
+                            @elseif ($ajuan->approved_by_ketua)
+                                <span
+                                    class="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Disetujui
+                                    Ketua Posyandu</span>
                             @else
                                 <span
                                     class="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Diproses</span>
@@ -414,6 +415,21 @@
                                 </div>
                                 <p class="text-sm text-gray-500 ml-5">
                                     {{ \Carbon\Carbon::parse($history->created_at)->format('d F Y, H:i') }}</p>
+                                @if ($history->pilih_keputusan)
+                                    @php
+                                        $keputusanLabel = match ($history->pilih_keputusan) {
+                                            'lanjut' => 'Lanjut',
+                                            'revisi' => 'Revisi',
+                                            'tolak' => 'Tolak',
+                                            'ditindaklanjuti' => 'Ditindaklanjuti',
+                                            'tidak-ditindaklanjuti' => 'Tidak Ditindaklanjuti',
+                                            default => ucwords(str_replace('-', ' ', $history->pilih_keputusan)),
+                                        };
+                                    @endphp
+                                    <p class="mt-2 text-sm text-indigo-700 bg-indigo-50 p-3 rounded-md ml-5">
+                                        Keputusan: <strong>{{ $keputusanLabel }}</strong>
+                                    </p>
+                                @endif
                                 @if ($history->catatan)
                                     <p class="mt-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-md ml-5">
                                         {{ $history->catatan }}</p>
@@ -507,7 +523,7 @@
                         <div x-show="step1Open" x-transition style="display: none;">
                             @php
                                 $step1History = $ajuan->histories
-                                    ->where('status', 'Menunggu Kunjungan')
+                                    ->whereIn('status', ['Menunggu Kunjungan', 'Revisi Diminta', 'Ditolak'])
                                     ->sortByDesc('created_at')
                                     ->first();
                             @endphp
@@ -591,14 +607,17 @@
                                             class="block w-full border-gray-300 rounded-md shadow-sm"
                                             {{ $ajuan->sudah_verifikasi ? 'disabled' : '' }}>
                                             <option value="">Pilih Keputusan</option>
-                                            <option value="lanjut">Lanjut ke Kunjungan Lapangan</option>
-                                            <option value="revisi" {{ !$canRevise ? 'disabled' : '' }}>
+                                            <option value="lanjut"
+                                                {{ $step1History?->pilih_keputusan === 'lanjut' ? 'selected' : '' }}>Lanjut ke Kunjungan Lapangan</option>
+                                            <option value="revisi" {{ !$canRevise ? 'disabled' : '' }}
+                                                {{ $step1History?->pilih_keputusan === 'revisi' ? 'selected' : '' }}>
                                                 Minta Revisi ({{ $ajuan->revision_count }}/{{ $maxRevisionCount }})
                                                 @if (!$canRevise)
                                                     - Maksimal tercapai
                                                 @endif
                                             </option>
-                                            <option value="tolak">Tolak (Posyandu Salah)</option>
+                                            <option value="tolak"
+                                                {{ $step1History?->pilih_keputusan === 'tolak' ? 'selected' : '' }}>Tolak</option>
                                         </select>
                                     </div>
 
@@ -810,7 +829,7 @@
         @endif
 
         {{-- KADES: Approval Final --}}
-        @if (auth()->user()->role === 'kades' && $ajuan->submitted_to_desa && $ajuan->status_pengajuan === 'Diproses')
+        @if (auth()->user()->role === 'kades' && ($ajuan->submitted_to_desa || $ajuan->approved_by_ketua) && $ajuan->status_pengajuan === 'Diproses')
             <div class="w-full mx-8">
                 <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-4 md:p-8 mx-0 md:mx-8">
                     <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Persetujuan Kepala Desa</h2>
@@ -828,13 +847,13 @@
                             <select name="keputusan" id="keputusan_kades" required
                                 class="block w-full border-gray-300 rounded-md shadow-sm">
                                 <option value="">Pilih Keputusan</option>
-                                <option value="diajukan">Diajukan (Lanjutkan ke Pemdes)</option>
-                                <option value="tidak-diajukan">Tidak Diajukan</option>
+                                <option value="ditindaklanjuti">Ditindaklanjuti</option>
+                                <option value="tidak-ditindaklanjuti">Tidak Ditindaklanjuti</option>
                             </select>
                         </div>
 
                         <div class="mb-6">
-                            <label class="block font-medium text-sm text-gray-700 mb-2">Tindak Lanjut Rekomendasi (Wajib)</label>
+                            <label class="block font-medium text-sm text-gray-700 mb-2">Tindak Lanjut Rekomendasi</label>
                             <textarea name="tindak_lanjut" id="tindaklanjut_kades" rows="4"
                                 class="block w-full border-gray-300 rounded-md shadow-sm"
                                 placeholder="Deskripsikan tindak lanjut yang perlu dilakukan..."></textarea>
@@ -844,7 +863,7 @@
                         </div>
 
                         <div class="mb-6">
-                            <label class="block font-medium text-sm text-gray-700 mb-2">Catatan (Opsional)</label>
+                            <label class="block font-medium text-sm text-gray-700 mb-2">Catatan (Wajib)</label>
                             <textarea name="catatan" id="catatan_kades" rows="4"
                                 class="block w-full border-gray-300 rounded-md shadow-sm"></textarea>
                         </div>
@@ -879,6 +898,11 @@
                         const keputusan = document.getElementById('keputusan_step1').value;
                         const catatan = document.getElementById('catatan_step1').value;
 
+                        const formulirCheckboxes = Array.from(formVerifikasi.querySelectorAll(
+                            'input[name="verified_formulir_items[]"]')).filter(cb => !cb.disabled);
+                        const administrasiCheckboxes = Array.from(formVerifikasi.querySelectorAll(
+                            'input[name^="verified_administrasi_items["]')).filter(cb => !cb.disabled);
+
                         // Validasi keputusan harus dipilih
                         if (!keputusan) {
                             Swal.fire({
@@ -888,6 +912,33 @@
                                 confirmButtonColor: '#dc2626'
                             });
                             return;
+                        }
+
+                        if (keputusan === 'lanjut') {
+                            const formulirChecked = formulirCheckboxes.filter(cb => cb.checked).length;
+                            const administrasiChecked = administrasiCheckboxes.filter(cb => cb.checked).length;
+                            const formulirComplete = formulirCheckboxes.length > 0 && formulirChecked === formulirCheckboxes.length;
+                            const administrasiComplete = administrasiCheckboxes.length > 0 && administrasiChecked === administrasiCheckboxes.length;
+
+                            if (!formulirComplete || !administrasiComplete) {
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: 'Checklist Belum Lengkap',
+                                    html: `
+                                        <div class="text-left">
+                                            <p class="mb-2">Verifikasi belum lengkap, sehingga pengajuan belum bisa dilanjutkan ke kunjungan lapangan.</p>
+                                            <ul class="list-disc pl-5 text-sm text-gray-700 space-y-1">
+                                                <li>Detail Permohonan: <strong>${formulirChecked}/${formulirCheckboxes.length}</strong> tercentang</li>
+                                                <li>Dokumen Administrasi: <strong>${administrasiChecked}/${administrasiCheckboxes.length}</strong> tercentang</li>
+                                            </ul>
+                                            <p class="mt-3">Silakan lengkapi seluruh checklist, atau pilih <strong>Minta Revisi</strong> agar pemohon melengkapi dokumen terlebih dahulu.</p>
+                                        </div>
+                                    `,
+                                    confirmButtonColor: '#dc2626',
+                                    confirmButtonText: 'Saya Mengerti'
+                                });
+                                return;
+                            }
                         }
 
                         // Validasi catatan untuk revisi dan tolak
@@ -1161,35 +1212,21 @@
                             return;
                         }
 
-                        if (!tindakLanjut) {
+                        if (keputusan === 'ditindaklanjuti' && !tindakLanjut.trim()) {
                             Swal.fire({
                                 icon: 'warning',
                                 title: 'Perhatian!',
-                                text: 'Silakan mengisi tindak lanjut terlebih dahulu.',
+                                text: 'Silakan mengisi tindak lanjut untuk keputusan ditindaklanjuti.',
                                 confirmButtonColor: '#dc2626'
                             });
                             return;
                         }
 
-/*                         if (!catatan) {
-                            Swal.fire({
-                                icon: 'warning',
-                                title: 'Perhatian!',
-                                text: 'Silakan mengisi tindak lanjut terlebih dahulu.',
-                                confirmButtonColor: '#dc2626'
-                            });
-                            return;
-                        } */
-
-                        // Validasi catatan untuk revisi dan tolak
-                        if ((keputusan === 'revisi' || keputusan === 'tidak-ditindaklanjuti' || keputusan ===
-                                'tidak-diajukan') && !catatan.trim()) {
+                        if (!catatan.trim()) {
                             Swal.fire({
                                 icon: 'warning',
                                 title: 'Catatan Diperlukan!',
-                                text: 'Silakan berikan catatan untuk keputusan ' + (keputusan ===
-                                    'revisi' ? 'revisi' : keputusan === 'tidak-ditindaklanjuti' ?
-                                    'tidak-ditindaklanjuti' : 'tidak-diajukan') + '.',
+                                text: 'Silakan berikan catatan terlebih dahulu.',
                                 confirmButtonColor: '#dc2626'
                             });
                             return;
@@ -1197,16 +1234,16 @@
 
                         let title, text, icon, confirmButtonText;
 
-                        if (keputusan === 'diajukan') {
-                            title = 'Ajukan Pengajuan?';
-                            text = 'Pengajuan akan diajukan dan disetujui.';
+                        if (keputusan === 'ditindaklanjuti') {
+                            title = 'Setujui Pengajuan?';
+                            text = 'Pengajuan akan ditindaklanjuti dan disetujui.';
                             icon = 'info';
                             confirmButtonText = 'Ya, Lanjutkan';
-                        } else if (keputusan === 'tidak-diajukan') {
-                            title = 'Tidak ajukan Pengajuan?';
+                        } else if (keputusan === 'tidak-ditindaklanjuti') {
+                            title = 'Tolak Pengajuan?';
                             text = 'Pengajuan akan ditolak. Tindakan ini tidak dapat dibatalkan.';
                             icon = 'warning';
-                            confirmButtonText = 'Ya, Tidak diajukan';
+                            confirmButtonText = 'Ya, Tolak';
                         }
 
                         Swal.fire({
@@ -1214,7 +1251,7 @@
                             text: text,
                             icon: icon,
                             showCancelButton: true,
-                            confirmButtonColor: keputusan === 'tolak' ? '#dc2626' : '#16a34a',
+                            confirmButtonColor: keputusan === 'tidak-ditindaklanjuti' ? '#dc2626' : '#16a34a',
                             cancelButtonColor: '#6b7280',
                             confirmButtonText: confirmButtonText,
                             cancelButtonText: 'Batal',

@@ -2,6 +2,7 @@
 
 use App\Models\BidangPengajuan;
 use App\Models\Pengajuan;
+use App\Models\Posyandu;
 use App\Models\User;
 
 function createBidangKesehatan(): BidangPengajuan
@@ -22,6 +23,16 @@ function createPengajuanFor(User $user, BidangPengajuan $bidang): Pengajuan
         'formulir_items' => ['Penyuluhan kesehatan'],
         'administrasi_items' => ['ktp' => 'ajuan_dokumen/ktp.png'],
         'tanggal_permohonan' => now(),
+    ]);
+}
+
+function createPosyandu(string $desa = 'DESA A'): Posyandu
+{
+    return Posyandu::create([
+        'nama_posyandu' => 'Posyandu ' . $desa,
+        'desa' => $desa,
+        'kecamatan' => 'KEC A',
+        'kabupaten' => 'KAB A',
     ]);
 }
 
@@ -106,4 +117,144 @@ test('admin kecamatan can view pengajuan within same kecamatan', function () {
     $this->actingAs($adminKecamatan)
         ->get(route('ajuan.show', $pengajuan))
         ->assertOk();
+});
+
+test('kades can see follow-up form for ketua-approved pengajuan even before explicit submit to desa', function () {
+    $bidang = createBidangKesehatan();
+    $posyandu = createPosyandu('DESA KADES');
+
+    $kades = User::factory()->create([
+        'role' => 'kades',
+        'desa' => 'DESA KADES',
+        'kecamatan' => 'KEC A',
+        'kabupaten' => 'KAB A',
+    ]);
+
+    $pemohon = User::factory()->create([
+        'role' => 'masyarakat',
+        'posyandu_id' => $posyandu->id,
+        'desa' => 'DESA KADES',
+        'kecamatan' => 'KEC A',
+        'kabupaten' => 'KAB A',
+    ]);
+
+    $pengajuan = createPengajuanFor($pemohon, $bidang);
+    $pengajuan->update([
+        'status_pengajuan' => 'Diproses',
+        'approved_by_ketua' => true,
+        'submitted_to_desa' => false,
+    ]);
+
+    $this->actingAs($kades)
+        ->get(route('ajuan.show', $pengajuan))
+        ->assertOk()
+        ->assertSee('form-keputusan-kades', false);
+});
+
+test('kades approval auto marks submitted_to_desa when ketua-approved pengajuan was not explicitly submitted', function () {
+    $bidang = createBidangKesehatan();
+    $posyandu = createPosyandu('DESA KADES');
+
+    $kades = User::factory()->create([
+        'role' => 'kades',
+        'desa' => 'DESA KADES',
+        'kecamatan' => 'KEC A',
+        'kabupaten' => 'KAB A',
+    ]);
+
+    $pemohon = User::factory()->create([
+        'role' => 'masyarakat',
+        'posyandu_id' => $posyandu->id,
+        'desa' => 'DESA KADES',
+        'kecamatan' => 'KEC A',
+        'kabupaten' => 'KAB A',
+    ]);
+
+    $pengajuan = createPengajuanFor($pemohon, $bidang);
+    $pengajuan->update([
+        'status_pengajuan' => 'Diproses',
+        'approved_by_ketua' => true,
+        'submitted_to_desa' => false,
+    ]);
+
+    $response = $this->actingAs($kades)->post(route('ajuan.kades-approval', $pengajuan), [
+        'keputusan' => 'ditindaklanjuti',
+        'tindak_lanjut' => 'Tindak lanjut disetujui untuk segera diproses oleh pemdes.',
+        'catatan' => 'Pengajuan layak diproses dan disetujui oleh kades.',
+    ]);
+
+    $response->assertRedirect(route('ajuan.index'));
+    $response->assertSessionHas('success');
+
+    $pengajuan->refresh();
+
+    expect($pengajuan->status_pengajuan)->toBe('Disetujui');
+    expect($pengajuan->approved_by_kades)->toBeTrue();
+    expect($pengajuan->submitted_to_desa)->toBeTrue();
+});
+
+test('kades can view pengajuan when pemohon alamat matches desa scope', function () {
+    $bidang = createBidangKesehatan();
+    $posyandu = createPosyandu('DESA LAIN');
+
+    $kades = User::factory()->create([
+        'role' => 'kades',
+        'desa' => 'DESA KADES',
+        'kecamatan' => 'KEC A',
+        'kabupaten' => 'KAB A',
+    ]);
+
+    $pemohon = User::factory()->create([
+        'role' => 'masyarakat',
+        'posyandu_id' => $posyandu->id,
+        'desa' => 'DESA LAIN',
+        'kecamatan' => 'KEC A',
+        'kabupaten' => 'KAB A',
+        'alamat' => 'Perbatasan wilayah DESA KADES RT 02',
+    ]);
+
+    $pengajuan = createPengajuanFor($pemohon, $bidang);
+
+    $this->actingAs($kades)
+        ->get(route('ajuan.show', $pengajuan))
+        ->assertOk();
+});
+
+test('step 1 verification persists selected keputusan in history', function () {
+    $bidang = createBidangKesehatan();
+    $posyandu = createPosyandu('DESA VERIF');
+
+    $kader = User::factory()->create([
+        'role' => 'kader',
+        'posyandu_id' => $posyandu->id,
+        'desa' => 'DESA VERIF',
+        'kecamatan' => 'KEC A',
+        'kabupaten' => 'KAB A',
+    ]);
+
+    $pemohon = User::factory()->create([
+        'role' => 'masyarakat',
+        'posyandu_id' => $posyandu->id,
+        'desa' => 'DESA VERIF',
+        'kecamatan' => 'KEC A',
+        'kabupaten' => 'KAB A',
+    ]);
+
+    $pengajuan = createPengajuanFor($pemohon, $bidang);
+
+    $this->actingAs($kader)
+        ->patch(route('ajuan.verify', $pengajuan), [
+            'verification_step' => 1,
+            'keputusan' => 'lanjut',
+            'catatan' => 'Dokumen lengkap dan dapat dilanjutkan ke tahap kunjungan.',
+            'verified_formulir_items' => ['Penyuluhan kesehatan'],
+            'verified_administrasi_items' => ['ktp' => 1],
+        ])
+        ->assertRedirect(route('ajuan.index'));
+
+    $this->assertDatabaseHas('histories', [
+        'pengajuan_id' => $pengajuan->id,
+        'status' => 'Menunggu Kunjungan',
+        'pilih_keputusan' => 'lanjut',
+    ]);
 });

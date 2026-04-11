@@ -122,7 +122,33 @@ class AjuanPolicy
 
     private function sameDesa(User $actor, User $subject): bool
     {
-        return (string) $actor->desa === (string) $subject->desa;
+        if ($actor->posyandu_id && $subject->posyandu_id) {
+            if ((string) $actor->posyandu_id === (string) $subject->posyandu_id) {
+                return true;
+            }
+        }
+
+        $actorDesa = mb_strtolower(trim((string) $actor->desa));
+        if ($actorDesa === '') {
+            return false;
+        }
+
+        $subjectDesa = mb_strtolower(trim((string) $subject->desa));
+        if ($subjectDesa !== '' && str_contains($subjectDesa, $actorDesa)) {
+            return true;
+        }
+
+        $subjectAlamat = mb_strtolower(trim((string) $subject->alamat));
+        if ($subjectAlamat !== '' && str_contains($subjectAlamat, $actorDesa)) {
+            return true;
+        }
+
+        $subjectPosyanduDesa = mb_strtolower(trim((string) optional($subject->posyandu)->desa));
+        if ($subjectPosyanduDesa !== '' && str_contains($subjectPosyanduDesa, $actorDesa)) {
+            return true;
+        }
+
+        return false;
     }
 
     private function deny(User $actor, Pengajuan $subject, string $action): void

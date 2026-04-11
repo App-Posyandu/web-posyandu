@@ -62,15 +62,6 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
                     $userPosyanduId = $this->user->posyandu_id;
                     $query->whereHas('user', fn($q) => $q->where('posyandu_id', $userPosyanduId));
                 }
-                $query->where(function ($q) {
-                    $q->where(function ($subQ) {
-                        $subQ->where('kunjungan_lapangan', true)
-                            ->where('approved_by_timpembina', false)
-                            ->where('status_pengajuan', 'Diproses');
-                    })
-                    ->orWhere('approved_by_timpembina', true)
-                    ->orWhereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
-                });
                 break;
 
             case 'kades':
@@ -79,27 +70,40 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
                     $userDesa = $this->user->desa;
                     $query->whereHas('user', fn($q) => $q->where('desa', $userDesa));
                 }
-                $query->where(function ($q) {
-                    $q->where('submitted_to_desa', true)
-                        ->orWhereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
-                });
+                $query->where('submitted_to_desa', true);
                 break;
 
             case 'admin-kecamatan':
                 if ($this->user->kecamatan) {
                     $query->whereHas('user', fn($q) => $q->where('kecamatan', 'LIKE', '%' . $this->user->kecamatan . '%'));
+                } else {
+                    $query->whereRaw('1 = 0');
                 }
                 break;
 
             case 'kabid':
+                if ($this->user->kabupaten) {
+                    $query->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $this->user->kabupaten . '%'));
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
                 if ($this->user->bidang_id) {
                     $query->where('bidang_id', $this->user->bidang_id);
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
+                break;
+
+            case 'admin-kabupaten':
+            case 'ketua-timpembina-posyandu':
+                if ($this->user->kabupaten) {
+                    $query->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $this->user->kabupaten . '%'));
+                } else {
+                    $query->whereRaw('1 = 0');
                 }
                 break;
 
             case 'admin':
-            case 'admin-kabupaten':
-            case 'ketua-timpembina-posyandu':
                 break;
 
             default:

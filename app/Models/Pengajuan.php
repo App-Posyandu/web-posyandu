@@ -30,22 +30,16 @@ class Pengajuan extends Model
         'ttd_kader',
         'tanggal_permohonan',
         'tindak_lanjut',
-        // Workflow: Ketua Tim Pembina Posyandu
-        'submitted_to_timpembina',
-        'submitted_to_timpembina_at',
-        'approved_by_timpembina',
-        'approved_by_timpembina_id',
-        'approved_by_timpembina_at',
+        // Workflow: Ketua Posyandu
+        'approved_by_ketua',
+        'approved_by_ketua_id',
+        'approved_by_ketua_at',
         // Workflow: Desa (Kades)
         'submitted_to_desa',
         'submitted_to_desa_at',
         'approved_by_kades',
         'approved_by_kades_id',
         'approved_by_kades_at',
-        // Legacy (backward compatibility)
-        'approved_by_ketua',
-        'approved_by_ketua_id',
-        'approved_by_ketua_at',
         'foto_kunjungan',
         'revision_requested_at',
         'revision_count',
@@ -62,19 +56,14 @@ class Pengajuan extends Model
         'verified_administrasi_items',
         'ttd_kader' => 'boolean',
         'foto_kunjungan' => 'array',
-        // Workflow: Ketua Tim Pembina Posyandu
-        'submitted_to_timpembina' => 'boolean',
-        'submitted_to_timpembina_at' => 'datetime',
-        'approved_by_timpembina' => 'boolean',
-        'approved_by_timpembina_at' => 'datetime',
+        // Workflow: Ketua Posyandu
+        'approved_by_ketua' => 'boolean',
+        'approved_by_ketua_at' => 'datetime',
         // Workflow: Desa (Kades)
         'submitted_to_desa' => 'boolean',
         'submitted_to_desa_at' => 'datetime',
         'approved_by_kades' => 'boolean',
         'approved_by_kades_at' => 'datetime',
-        // Legacy
-        'approved_by_ketua' => 'boolean',
-        'approved_by_ketua_at' => 'datetime',
         'tanggal_permohonan' => 'datetime',
         'revision_requested_at' => 'datetime',
     ];
@@ -102,11 +91,6 @@ class Pengajuan extends Model
     public function ketuaPosyandu()
     {
         return $this->belongsTo(User::class, 'approved_by_ketua_id');
-    }
-
-    public function ketuaTimpembina()
-    {
-        return $this->belongsTo(User::class, 'approved_by_timpembina_id');
     }
 
     public function kades()

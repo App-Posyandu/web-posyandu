@@ -21,8 +21,8 @@
                     $status = $statusConfig['Ditolak'];
                 } elseif ($pengajuan->submitted_to_desa) {
                     $status = ['color' => 'indigo', 'icon' => 'send', 'text' => 'Diajukan ke Desa'];
-                } elseif ($pengajuan->approved_by_timpembina) {
-                    $status = ['color' => 'blue', 'icon' => 'check-circle', 'text' => 'Disetujui Tim Pembina'];
+                } elseif ($pengajuan->approved_by_ketua) {
+                    $status = ['color' => 'blue', 'icon' => 'check-circle', 'text' => 'Disetujui Ketua Posyandu'];
                 } else {
                     $status = $statusConfig['Diproses'];
                 }
@@ -89,8 +89,8 @@
 
                     <div class="flex items-start">
                         <div
-                            class="flex items-center justify-center w-8 h-8 rounded-full z-10 {{ $pengajuan->approved_by_timpembina || $pengajuan->submitted_to_desa || $pengajuan->status_pengajuan === 'Disetujui' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500' }}">
-                            @if ($pengajuan->approved_by_timpembina || $pengajuan->submitted_to_desa || $pengajuan->status_pengajuan === 'Disetujui')
+                            class="flex items-center justify-center w-8 h-8 rounded-full z-10 {{ $pengajuan->approved_by_ketua || $pengajuan->submitted_to_desa || $pengajuan->status_pengajuan === 'Disetujui' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500' }}">
+                            @if ($pengajuan->approved_by_ketua || $pengajuan->submitted_to_desa || $pengajuan->status_pengajuan === 'Disetujui')
                                 <i class="bi bi-check-lg"></i>
                             @else
                                 <i class="bi bi-hourglass-split"></i>
@@ -99,7 +99,7 @@
                         <div class="ml-4 flex-1">
                             <p class="text-sm font-semibold text-gray-800">Diproses Kader</p>
                             <p class="text-xs text-gray-500">
-                                @if ($pengajuan->approved_by_timpembina || $pengajuan->submitted_to_desa || $pengajuan->status_pengajuan === 'Disetujui')
+                                @if ($pengajuan->approved_by_ketua || $pengajuan->submitted_to_desa || $pengajuan->status_pengajuan === 'Disetujui')
                                     Verifikasi selesai
                                 @else
                                     Menunggu verifikasi kader
@@ -110,21 +110,21 @@
 
                     <div class="flex items-start">
                         <div
-                            class="flex items-center justify-center w-8 h-8 rounded-full z-10 {{ $pengajuan->approved_by_timpembina ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500' }}">
-                            @if ($pengajuan->approved_by_timpembina)
+                            class="flex items-center justify-center w-8 h-8 rounded-full z-10 {{ $pengajuan->approved_by_ketua ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500' }}">
+                            @if ($pengajuan->approved_by_ketua)
                                 <i class="bi bi-check-lg"></i>
                             @else
                                 <i class="bi bi-hourglass-split"></i>
                             @endif
                         </div>
                         <div class="ml-4 flex-1">
-                            <p class="text-sm font-semibold text-gray-800">Persetujuan Ketua Tim Pembina Posyandu</p>
+                            <p class="text-sm font-semibold text-gray-800">Persetujuan Ketua Posyandu</p>
                             <p class="text-xs text-gray-500">
-                                @if ($pengajuan->approved_by_timpembina)
+                                @if ($pengajuan->approved_by_ketua)
                                     Disetujui pada
-                                    {{ $pengajuan->approved_by_timpembina_at ? $pengajuan->approved_by_timpembina_at->format('d M Y H:i') : '-' }}
+                                    {{ $pengajuan->approved_by_ketua_at ? $pengajuan->approved_by_ketua_at->format('d M Y H:i') : '-' }}
                                 @else
-                                    Menunggu persetujuan Ketua Tim Pembina Posyandu
+                                    Menunggu persetujuan Ketua Posyandu
                                 @endif
                             </p>
                         </div>

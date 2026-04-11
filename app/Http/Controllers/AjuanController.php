@@ -707,7 +707,8 @@ class AjuanController extends Controller
 
                     History::create([
                         'pengajuan_id' => $ajuan->id,
-                        'status' => 'Ditolak - Posyandu Salah',
+                        'status' => 'Ditolak',
+                        'pilih_keputusan' => $keputusan,
                         'catatan' => $request->catatan,
                         'diubah_oleh' => $user->id,
                         'action_by_role' => $user->role,
@@ -734,6 +735,7 @@ class AjuanController extends Controller
                     History::create([
                         'pengajuan_id' => $ajuan->id,
                         'status' => 'Revisi Diminta',
+                        'pilih_keputusan' => $keputusan,
                         'catatan' => $request->catatan,
                         'diubah_oleh' => $user->id,
                         'action_by_role' => $user->role,
@@ -753,8 +755,8 @@ class AjuanController extends Controller
                         'verified_formulir_items' => ['required', 'array', 'size:' . count($submittedItems)],
                         'verified_administrasi_items' => ['required', 'array', 'size:' . count($submittedDocs)],
                     ], [
-                        'verified_formulir_items.size' => 'Semua item permohonan harus dicentang untuk lanjut.',
-                        'verified_administrasi_items.size' => 'Semua dokumen administrasi harus dicentang untuk lanjut.',
+                        'verified_formulir_items.size' => 'Detail permohonan belum lengkap. Centang semua item atau pilih revisi agar pemohon melengkapi.',
+                        'verified_administrasi_items.size' => 'Dokumen administrasi belum lengkap. Centang semua dokumen atau pilih revisi agar pemohon melengkapi.',
                     ]);
 
                     $ajuan->update([
@@ -772,6 +774,7 @@ class AjuanController extends Controller
                     History::create([
                         'pengajuan_id' => $ajuan->id,
                         'status' => $statusHistory,
+                        'pilih_keputusan' => $keputusan,
                         'catatan' => $catatanHistory,
                         'diubah_oleh' => $user->id,
                         'action_by_role' => $user->role,
@@ -863,6 +866,7 @@ class AjuanController extends Controller
                 History::create([
                     'pengajuan_id' => $ajuan->id,
                     'status' => $statusHistory,
+                    'pilih_keputusan' => $request->keputusan,
                     'catatan' => $catatanHistory,
                     'diubah_oleh' => $user->id,
                     'action_by_role' => 'ketua-posyandu',
@@ -925,29 +929,43 @@ class AjuanController extends Controller
             abort(403, 'Akses ditolak.');
         }
 
+        if (!$ajuan->approved_by_ketua || $ajuan->status_pengajuan !== 'Diproses') {
+            return redirect()->back()->with('error', 'Pengajuan belum siap ditindaklanjuti oleh Kades.');
+        }
+
         $request->validate([
             'keputusan' => 'required|in:ditindaklanjuti,tidak-ditindaklanjuti',
-            'tindak_lanjut' => 'nullable|string|min:15',
+            'tindak_lanjut' => 'required_if:keputusan,ditindaklanjuti|nullable|string|min:15',
             'catatan' => 'required|string|min:10',
         ], [
+            'tindak_lanjut.required_if' => 'Tindak lanjut wajib diisi jika keputusan ditindaklanjuti.',
+            'tindak_lanjut.min' => 'Tindak lanjut minimal 15 karakter.',
             'catatan.required' => 'Catatan wajib diisi.',
             'catatan.min' => 'Catatan minimal 10 karakter.',
         ]);
 
+        $desaSubmission = [];
+        if (!$ajuan->submitted_to_desa) {
+            $desaSubmission = [
+                'submitted_to_desa' => true,
+                'submitted_to_desa_at' => now(),
+            ];
+        }
+
         if ($request->keputusan === 'ditindaklanjuti') {
-            $ajuan->update([
+            $ajuan->update(array_merge($desaSubmission, [
                 'status_pengajuan' => 'Disetujui',
                 'approved_by_kades' => true,
                 'approved_by_kades_id' => $user->id,
                 'approved_by_kades_at' => now(),
                 'tindak_lanjut' => $request->tindak_lanjut ?? $ajuan->deskripsi_pengajuan,
-            ]);
+            ]));
 
             $status = 'Disetujui Kades';
         } else {
-            $ajuan->update([
+            $ajuan->update(array_merge($desaSubmission, [
                 'status_pengajuan' => 'Ditolak',
-            ]);
+            ]));
 
             $status = 'Ditolak Kades';
         }
@@ -955,6 +973,7 @@ class AjuanController extends Controller
         History::create([
             'pengajuan_id' => $ajuan->id,
             'status' => $status,
+            'pilih_keputusan' => $request->keputusan,
             'catatan' => $request->catatan ?? '-',
             'diubah_oleh' => $user->id,
             'action_by_role' => 'kades',

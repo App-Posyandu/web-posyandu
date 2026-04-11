@@ -232,7 +232,7 @@
 
                         <div class="relative w-full sm:w-auto">
                             <input type="text" x-model="searchQuery" @input.debounce.500ms="loadDashboardData()"
-                                placeholder="Cari berdasarkan nama..."
+                                placeholder="Cari nama, bidang, posyandu, atau alamat..."
                                 class="w-full sm:w-64 pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm focus:ring-pink-500 focus:border-pink-500">
                             <i class="bi bi-search absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400"></i>
                         </div>

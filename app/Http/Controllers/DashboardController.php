@@ -122,6 +122,56 @@ class DashboardController extends Controller
             ->whereYear('pengajuans.created_at', $selectedYear)
             ->select('bidang_pengajuans.nama_bidang', DB::raw('count(pengajuans.id) as total'));
 
+        $completedStatuses = ['Disetujui', 'Ditolak'];
+        $denyAll = function () use ($listQuery, $statsQuery, $actualCountsQuery, $desasQuery): void {
+            $listQuery->whereRaw('1 = 0');
+            $statsQuery->whereRaw('1 = 0');
+            $actualCountsQuery->whereRaw('1 = 0');
+            $desasQuery->whereRaw('1 = 0');
+        };
+
+        $applyKadesRegionScope = function () use ($user, $listQuery, $statsQuery, $actualCountsQuery, $desasQuery, $denyAll): void {
+            if (!$user->posyandu_id && !$user->desa) {
+                $denyAll();
+                return;
+            }
+
+            $scopeUserQuery = function ($q) use ($user): void {
+                $q->where(function ($scope) use ($user): void {
+                    if ($user->posyandu_id) {
+                        $scope->orWhere('posyandu_id', $user->posyandu_id);
+                    }
+
+                    if ($user->desa) {
+                        $scope->orWhere('desa', 'LIKE', '%' . $user->desa . '%')
+                            ->orWhere('alamat', 'LIKE', '%' . $user->desa . '%')
+                            ->orWhereHas('posyandu', function ($posyanduQuery) use ($user): void {
+                                $posyanduQuery->where('desa', 'LIKE', '%' . $user->desa . '%')
+                                    ->orWhere('nama_posyandu', 'LIKE', '%' . $user->desa . '%');
+                            });
+                    }
+                });
+            };
+
+            $listQuery->whereHas('user', $scopeUserQuery);
+            $statsQuery->whereHas('user', $scopeUserQuery);
+            $desasQuery->whereHas('user', $scopeUserQuery);
+
+            $actualCountsQuery->leftJoin('posyandus', 'users.posyandu_id', '=', 'posyandus.id')
+                ->where(function ($scope) use ($user): void {
+                    if ($user->posyandu_id) {
+                        $scope->orWhere('users.posyandu_id', $user->posyandu_id);
+                    }
+
+                    if ($user->desa) {
+                        $scope->orWhere('users.desa', 'LIKE', '%' . $user->desa . '%')
+                            ->orWhere('users.alamat', 'LIKE', '%' . $user->desa . '%')
+                            ->orWhere('posyandus.desa', 'LIKE', '%' . $user->desa . '%')
+                            ->orWhere('posyandus.nama_posyandu', 'LIKE', '%' . $user->desa . '%');
+                    }
+                });
+        };
+
         // -------------------------
         // Filter per role
         // -------------------------
@@ -132,9 +182,8 @@ class DashboardController extends Controller
                     $statsQuery->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%'));
                     $actualCountsQuery->where('users.kabupaten', 'LIKE', '%' . $user->kabupaten . '%');
                     $desasQuery->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%'));
-                }
-                if ($showArchived) {
-                    $listQuery->whereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
+                } else {
+                    $denyAll();
                 }
                 break;
 
@@ -144,9 +193,8 @@ class DashboardController extends Controller
                     $statsQuery->whereHas('user', fn($q) => $q->where('kecamatan', 'LIKE', '%' . $user->kecamatan . '%'));
                     $actualCountsQuery->where('users.kecamatan', 'LIKE', '%' . $user->kecamatan . '%');
                     $desasQuery->whereHas('user', fn($q) => $q->where('kecamatan', 'LIKE', '%' . $user->kecamatan . '%'));
-                }
-                if ($showArchived) {
-                    $listQuery->whereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
+                } else {
+                    $denyAll();
                 }
                 break;
 
@@ -156,14 +204,15 @@ class DashboardController extends Controller
                     $statsQuery->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%'));
                     $actualCountsQuery->where('users.kabupaten', 'LIKE', '%' . $user->kabupaten . '%');
                     $desasQuery->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%'));
+                } else {
+                    $denyAll();
                 }
                 if ($user->bidang_id) {
                     $listQuery->where('bidang_id', $user->bidang_id);
                     $statsQuery->where('bidang_id', $user->bidang_id);
                     $actualCountsQuery->where('pengajuans.bidang_id', $user->bidang_id);
-                }
-                if ($showArchived) {
-                    $listQuery->whereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
+                } else {
+                    $denyAll();
                 }
                 break;
 
@@ -178,65 +227,65 @@ class DashboardController extends Controller
                     $statsQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
                     $actualCountsQuery->where('users.desa', $user->desa);
                     $desasQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
-                }
-                if (!$showArchived) {
-                    $listQuery->where(function ($q) {
-                        $q->where('status_pengajuan', 'Diproses')
-                            ->orWhere('submitted_to_desa', true);
-                    });
                 } else {
-                    $listQuery->whereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
+                    $denyAll();
+                }
+                break;
+
+            case 'operator-desa':
+                if ($user->posyandu_id) {
+                    $listQuery->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
+                    $statsQuery->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
+                    $actualCountsQuery->where('users.posyandu_id', $user->posyandu_id);
+                    $desasQuery->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
+                } elseif ($user->desa) {
+                    $listQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
+                    $statsQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
+                    $actualCountsQuery->where('users.desa', $user->desa);
+                    $desasQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
+                } else {
+                    $denyAll();
+                }
+                break;
+
+            case 'kader':
+                if ($user->posyandu_id && $user->bidang_id) {
+                    $listQuery->where('bidang_id', $user->bidang_id)
+                        ->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
+                    $statsQuery->where('bidang_id', $user->bidang_id)
+                        ->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
+                    $actualCountsQuery->where('pengajuans.bidang_id', $user->bidang_id)
+                        ->where('users.posyandu_id', $user->posyandu_id);
+                    $desasQuery->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
+                } else {
+                    $denyAll();
                 }
                 break;
 
             case 'kades':
             case 'bu-kades':
-                if ($user->posyandu_id) {
-                    $listQuery->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
-                    $statsQuery->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
-                    $actualCountsQuery->where('users.posyandu_id', $user->posyandu_id);
-                    $desasQuery->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
-                } elseif ($user->desa) {
-                    $listQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
-                    $statsQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
-                    $actualCountsQuery->where('users.desa', $user->desa);
-                    $desasQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
-                }
-                if (!$showArchived) {
-                    $listQuery->where('submitted_to_desa', true)
-                        ->where('status_pengajuan', 'Diproses');
-                } else {
-                    $listQuery->whereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
-                }
+                $applyKadesRegionScope();
                 break;
 
             case 'ketua-timpembina-posyandu':
-                if ($user->posyandu_id) {
-                    $listQuery->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
-                    $statsQuery->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
-                    $actualCountsQuery->where('users.posyandu_id', $user->posyandu_id);
-                    $desasQuery->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
-                } elseif ($user->desa) {
-                    $listQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
-                    $statsQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
-                    $actualCountsQuery->where('users.desa', $user->desa);
-                    $desasQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
-                }
-                if (!$showArchived) {
-                    $listQuery->where('kunjungan_lapangan', true)
-                        ->where('approved_by_timpembina', false)
-                        ->where('status_pengajuan', 'Diproses');
+                if ($user->kabupaten) {
+                    $listQuery->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%'));
+                    $statsQuery->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%'));
+                    $actualCountsQuery->where('users.kabupaten', 'LIKE', '%' . $user->kabupaten . '%');
+                    $desasQuery->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%'));
                 } else {
-                    $listQuery->where('approved_by_timpembina', true)
-                        ->where('submitted_to_desa', true);
+                    $denyAll();
                 }
                 break;
 
             case 'admin':
-                if ($showArchived) {
-                    $listQuery->whereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
-                }
                 break;
+        }
+
+        if ($showArchived) {
+            $listQuery->whereIn('status_pengajuan', $completedStatuses);
+        } else {
+            $listQuery->where('status_pengajuan', 'Diproses');
         }
 
         // -------------------------
@@ -246,7 +295,17 @@ class DashboardController extends Controller
             $listQuery->where(function ($q) use ($searchTerm) {
                 $q->where('deskripsi_pengajuan', 'like', '%' . $searchTerm . '%')
                     ->orWhere('status_pengajuan', 'like', '%' . $searchTerm . '%')
-                    ->orWhereHas('user', fn($u) => $u->where('name', 'like', '%' . $searchTerm . '%'))
+                    ->orWhereHas('user', function ($u) use ($searchTerm) {
+                        $u->where('name', 'like', '%' . $searchTerm . '%')
+                            ->orWhere('alamat', 'like', '%' . $searchTerm . '%')
+                            ->orWhere('desa', 'like', '%' . $searchTerm . '%')
+                            ->orWhereHas('posyandu', function ($p) use ($searchTerm) {
+                                $p->where('nama_posyandu', 'like', '%' . $searchTerm . '%')
+                                    ->orWhere('desa', 'like', '%' . $searchTerm . '%')
+                                    ->orWhere('kecamatan', 'like', '%' . $searchTerm . '%')
+                                    ->orWhere('kabupaten', 'like', '%' . $searchTerm . '%');
+                            });
+                    })
                     ->orWhereHas('bidang', fn($b) => $b->where('nama_bidang', 'like', '%' . $searchTerm . '%'));
             });
         }
