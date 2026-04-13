@@ -28,19 +28,13 @@ return new class extends Migration
 
             $table->timestamp('tanggal_permohonan')->nullable();
             $table->text('tindak_lanjut')->nullable();
-            
-            // Workflow tracking: Desa (Kades) and Ketua Posyandu
-            // Note: columns related to the "Tim Pembina" step were removed
-            // and approval state is captured on the Ketua (leader) fields below.
-            
-            // Workflow tracking: Desa (Kades)
+
             $table->boolean('submitted_to_desa')->default(false);
             $table->timestamp('submitted_to_desa_at')->nullable();
             $table->boolean('approved_by_kades')->default(false);
             $table->uuid('approved_by_kades_id')->nullable();
             $table->timestamp('approved_by_kades_at')->nullable();
 
-            // Legacy column for backward compatibility (will be removed later)
             $table->boolean('approved_by_ketua')->default(false);
             $table->uuid('approved_by_ketua_id')->nullable();
             $table->timestamp('approved_by_ketua_at')->nullable();
