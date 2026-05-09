@@ -2,7 +2,7 @@
 @section('title', 'Detail Pengguna - ' . $user->name)
 @section('content')
     <div class="py-12">
-        <div class="w-full max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="w-full mx-auto sm:px-6 lg:px-8">
             <div class="flex justify-between items-center mb-6">
                 <a href="{{ route('admin.users.index') }}" class="flex items-center text-gray-600 hover:text-gray-900">
                     <i class="bi bi-arrow-left mr-2"></i> Kembali ke Daftar

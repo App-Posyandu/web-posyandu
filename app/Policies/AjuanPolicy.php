@@ -11,7 +11,9 @@ class AjuanPolicy
 {
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, [
+        $role = strtolower(trim($user->role));
+
+        $allowedRoles = [
             'admin',
             'admin-kabupaten',
             'kabid',
@@ -24,7 +26,9 @@ class AjuanPolicy
             'ketua-kader',
             'kader',
             'masyarakat',
-        ], true);
+        ];
+
+        return in_array($role, $allowedRoles, true);
     }
 
     public function viewAjuan(User $user, Pengajuan $ajuan): Response

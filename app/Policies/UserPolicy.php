@@ -26,7 +26,7 @@ class UserPolicy
 
     public function view(User $actor, User $subject): Response
     {
-        if ($this->canAccess($actor, $subject, true)) {  // ← CHANGED FROM false TO true
+        if ($this->canAccess($actor, $subject, true)) {
             return Response::allow();
         }
 
