@@ -573,19 +573,28 @@ class PosyanduController extends Controller
     public function edit(Posyandu $posyandu)
     {
         $user = Auth::user();
-    
-        if (!in_array($user->role, ['admin', 'operator-desa'])) {
+
+        if (!in_array($user->role, ['admin', 'operator-desa', 'admin-kabupaten'])) {
             abort(403, 'Anda tidak memiliki akses untuk mengedit posyandu.');
         }
 
+        if ($user->role === 'admin-kabupaten') {
+            // Admin kabupaten can edit in their kabupaten
+            if ($user->kabupaten !== $posyandu->kabupaten) {
+                abort(403, 'Anda tidak memiliki akses untuk mengedit posyandu di kabupaten lain.');
+            }
+        }
+
         if ($user->role === 'operator-desa') {
-            if ($posyandu->kabupaten !== $user->kabupaten || 
-                $posyandu->kecamatan !== $user->kecamatan || 
-                $posyandu->desa !== $user->desa) {
+            if (
+                $posyandu->kabupaten !== $user->kabupaten ||
+                $posyandu->kecamatan !== $user->kecamatan ||
+                $posyandu->desa !== $user->desa
+            ) {
                 abort(403, 'Anda hanya dapat mengedit posyandu di desa Anda.');
             }
         }
-        
+
         $kabupatens = $this->fetchWilayahData(
             'regencies/' . self::PROVINCE_ID . '.json',
             'kabupatens_jateng'
@@ -609,21 +618,23 @@ class PosyanduController extends Controller
     public function update(UpdatePosyanduRequest $request, Posyandu $posyandu)
     {
         $user = Auth::user();
-        
+
         // Only admin and operator-desa can update posyandu
         if (!in_array($user->role, ['admin', 'operator-desa'])) {
             abort(403, 'Anda tidak memiliki akses untuk mengupdate posyandu.');
         }
-        
+
         // operator-desa can only update posyandu in their desa
         if ($user->role === 'operator-desa') {
-            if ($posyandu->kabupaten !== $user->kabupaten || 
-                $posyandu->kecamatan !== $user->kecamatan || 
-                $posyandu->desa !== $user->desa) {
+            if (
+                $posyandu->kabupaten !== $user->kabupaten ||
+                $posyandu->kecamatan !== $user->kecamatan ||
+                $posyandu->desa !== $user->desa
+            ) {
                 abort(403, 'Anda hanya dapat mengupdate posyandu di desa Anda.');
             }
         }
-        
+
         $validated = $request->validated();
 
         $kabupatenName = explode('_', $validated['kabupaten'])[1] ?? $validated['kabupaten'];
@@ -673,21 +684,23 @@ class PosyanduController extends Controller
     public function destroy(Posyandu $posyandu)
     {
         $user = Auth::user();
-        
+
         // Only admin and operator-desa can delete posyandu
         if (!in_array($user->role, ['admin', 'operator-desa'])) {
             abort(403, 'Anda tidak memiliki akses untuk menghapus posyandu.');
         }
-        
+
         // operator-desa can only delete posyandu in their desa
         if ($user->role === 'operator-desa') {
-            if ($posyandu->kabupaten !== $user->kabupaten || 
-                $posyandu->kecamatan !== $user->kecamatan || 
-                $posyandu->desa !== $user->desa) {
+            if (
+                $posyandu->kabupaten !== $user->kabupaten ||
+                $posyandu->kecamatan !== $user->kecamatan ||
+                $posyandu->desa !== $user->desa
+            ) {
                 abort(403, 'Anda hanya dapat menghapus posyandu di desa Anda.');
             }
         }
-        
+
         if ($posyandu->users()->count() > 0) {
             return redirect()->back()->with('error', 'Posyandu tidak bisa dihapus karena masih terhubung dengan data user.');
         }
@@ -873,8 +886,7 @@ class PosyanduController extends Controller
                         ];
                     }
                 }
-            }
-            else if ($desaName === 'all' || $desaName === 'SEMUA DESA') {
+            } else if ($desaName === 'all' || $desaName === 'SEMUA DESA') {
                 Log::info('Scenario: KECAMATAN SPESIFIK + SEMUA DESA', ['kecamatan' => $kecamatanName]);
 
                 $kecamatanResponse = Http::timeout(15)->get($apiUrl . "districts/{$kabupatenId}.json");
@@ -900,8 +912,7 @@ class PosyanduController extends Controller
                         ];
                     }
                 }
-            }
-            else {
+            } else {
                 Log::info('Scenario: KECAMATAN SPESIFIK + DESA SPESIFIK', [
                     'kecamatan' => $kecamatanName,
                     'desa' => $desaName
@@ -1004,7 +1015,7 @@ class PosyanduController extends Controller
     public function printKaderCredentials(Posyandu $posyandu)
     {
         $this->authorizeAccessToPosyandu(Auth::user(), $posyandu);
-        
+
         $kaders = User::where('posyandu_id', $posyandu->id)
             ->where('role', 'kader')
             ->with('bidang')
@@ -1021,7 +1032,7 @@ class PosyanduController extends Controller
                 ];
             })
             ->toArray();
-        
+
         if (empty($kaders)) {
             return redirect()->route('admin.posyandu.index')
                 ->with('error', 'Posyandu ini belum memiliki kader.');

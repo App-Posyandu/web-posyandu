@@ -22,9 +22,120 @@ use Illuminate\Support\Str;
 class AjuanController extends Controller
 {
     use AuthorizesRequests;
-    public function index()
+    public function index(Request $request)
     {
-        return view('ajuan.index');
+        $this->authorize('viewAny', Pengajuan::class);
+        $currentYear = now()->year;
+        $selectedYear = $request->input('year', $currentYear);
+
+        if (!is_numeric($selectedYear) || $selectedYear > $currentYear || $selectedYear < 2024) {
+            return redirect()->route('ajuan.index')
+                ->with('error', 'Parameter tahun tidak valid. Menampilkan data tahun ' . $currentYear);
+        }
+
+        $selectedYear = (int) $selectedYear;
+
+        // ✅ Build query with validated year
+        $query = Pengajuan::with(['user', 'bidang'])
+            ->whereYear('created_at', $selectedYear);
+
+        // Role-based filtering
+        $currentUser = Auth::user();
+
+        switch ($currentUser->role) {
+            case 'admin':
+            case 'ketua-timpembina-posyandu':
+                // No additional filter
+                break;
+
+            case 'admin-kabupaten':
+            case 'kabid':
+                $query->whereHas(
+                    'user',
+                    fn($q) =>
+                    $q->where('kabupaten', $currentUser->kabupaten)
+                );
+                break;
+
+            case 'admin-kecamatan':
+                $query->whereHas(
+                    'user',
+                    fn($q) =>
+                    $q->where('kecamatan', $currentUser->kecamatan)
+                );
+                break;
+
+            case 'operator-desa':
+            case 'kades':
+            case 'bu-kades':
+                $query->whereHas(
+                    'user',
+                    fn($q) =>
+                    $q->where('kabupaten', $currentUser->kabupaten)
+                        ->where('kecamatan', $currentUser->kecamatan)
+                        ->where('desa', $currentUser->desa)
+                );
+                break;
+
+            case 'ketua-posyandu':
+                $query->whereHas(
+                    'user',
+                    fn($q) =>
+                    $q->where('posyandu_id', $currentUser->posyandu_id)
+                );
+                break;
+
+            // ✅ FIXED: Kader only see their bidang
+            case 'kader':
+                $query->whereHas(
+                    'user',
+                    fn($q) =>
+                    $q->where('posyandu_id', $currentUser->posyandu_id)
+                )
+                    ->where('bidang_id', $currentUser->bidang_id);
+                break;
+
+            case 'masyarakat':
+                $query->where('user_id', $currentUser->id);
+                break;
+
+            default:
+                abort(403, 'Unauthorized');
+        }
+
+        // Search filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('deskripsi_pengajuan', 'like', '%' . $search . '%')
+                    ->orWhereHas(
+                        'user',
+                        fn($userQuery) =>
+                        $userQuery->where('name', 'like', '%' . $search . '%')
+                    )
+                    ->orWhereHas(
+                        'bidang',
+                        fn($bidangQuery) =>
+                        $bidangQuery->where('nama_bidang', 'like', '%' . $search . '%')
+                    );
+            });
+        }
+
+        // Status filter
+        if ($request->filled('status')) {
+            $query->where('status_pengajuan', $request->status);
+        }
+
+        $pengajuans = $query->latest()->paginate(10)->withQueryString();
+
+        $availableYears = range($currentYear, 2024);
+
+        return view('ajuan.index', compact(
+            'pengajuans',
+            'selectedYear',
+            'currentYear',
+            'availableYears'
+        ));
     }
 
     private function getTargetUserId()

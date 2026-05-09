@@ -26,7 +26,7 @@ class UserPolicy
 
     public function view(User $actor, User $subject): Response
     {
-        if ($this->canAccess($actor, $subject, false)) {
+        if ($this->canAccess($actor, $subject, true)) {  // ← CHANGED FROM false TO true
             return Response::allow();
         }
 
@@ -94,7 +94,7 @@ class UserPolicy
             'kabid' => $this->sameKabupaten($actor, $subject),
             'admin-kecamatan' => $this->sameKecamatan($actor, $subject),
             'kades', 'bu-kades' => $this->sameDesa($actor, $subject),
-            'operator-desa' => $this->samePosyandu($actor, $subject) && in_array($subject->role, ['ketua-posyandu', 'kader', 'masyarakat'], true),
+            'operator-desa' => $this->sameDesa($actor, $subject) && in_array($subject->role, ['kades', 'bu-kades', 'ketua-posyandu', 'kader', 'masyarakat'], true),
             'ketua-posyandu' => $this->samePosyandu($actor, $subject) && in_array($subject->role, ['kader', 'masyarakat'], true),
             'kader' => $this->samePosyandu($actor, $subject) && $subject->role === 'masyarakat',
             'ketua-timpembina-posyandu' => true,
@@ -113,7 +113,7 @@ class UserPolicy
             'kabid' => $this->sameKabupaten($actor, $subject) && in_array($subject->role, ['admin-kecamatan', 'ketua-posyandu', 'operator-desa', 'kader', 'masyarakat'], true),
             'admin-kecamatan' => $this->sameKecamatan($actor, $subject) && in_array($subject->role, ['ketua-posyandu', 'operator-desa', 'kader', 'masyarakat'], true),
             'kades', 'bu-kades' => $this->sameDesa($actor, $subject) && in_array($subject->role, ['ketua-posyandu', 'operator-desa', 'kader', 'masyarakat'], true),
-            'operator-desa' => $this->samePosyandu($actor, $subject) && in_array($subject->role, ['ketua-posyandu', 'kader', 'masyarakat'], true),
+            'operator-desa' => $this->sameDesa($actor, $subject) && in_array($subject->role, ['kades', 'bu-kades', 'ketua-posyandu', 'kader', 'masyarakat'], true),
             'ketua-posyandu' => $this->samePosyandu($actor, $subject) && in_array($subject->role, ['kader', 'masyarakat'], true),
             'kader' => $this->samePosyandu($actor, $subject) && $subject->role === 'masyarakat' && $allowVerification,
             default => false,
@@ -127,7 +127,7 @@ class UserPolicy
         }
 
         if ($actor->role === 'operator-desa') {
-            return $this->samePosyandu($actor, $subject) && in_array($subject->role, ['kader', 'ketua-posyandu'], true);
+            return $this->sameDesa($actor, $subject) && in_array($subject->role, ['kader', 'ketua-posyandu'], true);
         }
 
         if ($actor->role === 'admin-kabupaten') {

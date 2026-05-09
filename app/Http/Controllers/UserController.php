@@ -72,8 +72,18 @@ class UserController extends Controller
                 break;
 
             case 'operator-desa':
-                $query->whereIn('role', ['ketua-posyandu', 'kader'])
-                    ->where('posyandu_id', $currentUser->posyandu_id);
+                $query->where(function ($q) use ($currentUser) {
+                    $q->where('kabupaten', $currentUser->kabupaten)
+                        ->where('kecamatan', $currentUser->kecamatan)
+                        ->where('desa', $currentUser->desa);
+                })
+                    ->whereIn('role', [
+                        'kades',
+                        'bu-kades',
+                        'ketua-posyandu',
+                        'kader',
+                        'masyarakat'
+                    ]);
                 break;
             case 'kades':
                 $query->whereIn('role', ['admin-kabupaten', 'kabid', 'admin-kecamatan', 'ketua-posyandu', 'operator-desa', 'kader', 'masyarakat']);
@@ -106,6 +116,9 @@ class UserController extends Controller
                 $query->whereIn('role', ['kabid', 'admin-kecamatan', 'operator-desa']);
                 break;
             case 'admin':
+                break;
+            default:
+                $query->whereRaw('1 = 0');
                 break;
         }
 

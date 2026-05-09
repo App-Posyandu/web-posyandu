@@ -43,9 +43,15 @@ class DashboardController extends Controller
         }
 
         $currentYear = now()->year;
-        $startYear   = 2024;
-        $availableYears = range($currentYear, $startYear);
         $selectedYear = request('year', $currentYear);
+
+        // ✅ Validate year from request
+        if ($selectedYear > $currentYear || $selectedYear < 2024) {
+            $selectedYear = $currentYear;
+        }
+
+        $startYear = 2024;
+        $availableYears = range($currentYear, $startYear);
 
         $alwaysVerifiedRoles = ['admin', 'kabid', 'admin-kabupaten', 'admin-kecamatan', 'ketua-posyandu', 'kades', 'bu-kades', 'ketua-timpembina-posyandu', 'operator-desa'];
         $isVerified = !is_null($user->verified_at) || in_array($user->role, $alwaysVerifiedRoles);
@@ -70,8 +76,22 @@ class DashboardController extends Controller
         $pieChartValues = [];
         $pieChartColors = [];
 
-        $currentYear    = now()->year;
-        $selectedYear   = isset($filters['year']) ? (int) $filters['year'] : $currentYear;
+        $currentYear = now()->year;
+        $selectedYear = isset($filters['year']) ? (int) $filters['year'] : $currentYear;
+
+        if ($selectedYear > $currentYear) {
+            return response()->json([
+                'error' => 'Invalid year',
+                'message' => 'Tidak dapat melihat data tahun yang akan datang'
+            ], 400);
+        }
+
+        if ($selectedYear < 2020) {
+            return response()->json([
+                'error' => 'Invalid year',
+                'message' => 'Data hanya tersedia dari tahun 2020'
+            ], 400);
+        }
         $showArchived   = isset($filters['archived']) ? filter_var($filters['archived'], FILTER_VALIDATE_BOOLEAN) : false;
         $searchTerm     = $filters['search'] ?? null;
         $statusFilter   = $filters['status'] ?? null;
