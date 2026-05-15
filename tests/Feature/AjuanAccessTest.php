@@ -220,12 +220,58 @@ test('kades can view pengajuan when pemohon alamat matches desa scope', function
         ->assertOk();
 });
 
+test('kader cannot view pengajuan outside bidang scope', function () {
+    $bidangTarget = createBidangKesehatan();
+    $bidangOther = BidangPengajuan::create([
+        'nama_bidang' => 'Pendidikan',
+        'slug' => 'pendidikan',
+    ]);
+    $posyandu = createPosyandu('DESA BIDANG');
+
+    $kader = User::factory()->create([
+        'role' => 'kader',
+        'bidang_id' => $bidangTarget->id,
+        'posyandu_id' => $posyandu->id,
+        'desa' => 'DESA BIDANG',
+        'kecamatan' => 'KEC A',
+        'kabupaten' => 'KAB A',
+    ]);
+
+    $pemohon = User::factory()->create([
+        'role' => 'masyarakat',
+        'posyandu_id' => $posyandu->id,
+        'desa' => 'DESA BIDANG',
+        'kecamatan' => 'KEC A',
+        'kabupaten' => 'KAB A',
+    ]);
+
+    $pengajuan = createPengajuanFor($pemohon, $bidangOther);
+
+    $this->actingAs($kader)
+        ->get(route('ajuan.show', $pengajuan))
+        ->assertForbidden();
+});
+
+test('ajuan index rejects tampered year values', function (string $year) {
+    $admin = User::factory()->create([
+        'role' => 'admin-kecamatan',
+    ]);
+    
+    $this->actingAs($admin)
+        ->get(route('ajuan.index', ['year' => $year]))
+        ->assertOk();
+})->with([
+    'random string' => '873ct...',
+    'huge integer' => '83257983579384',
+]);
+
 test('step 1 verification persists selected keputusan in history', function () {
     $bidang = createBidangKesehatan();
     $posyandu = createPosyandu('DESA VERIF');
 
     $kader = User::factory()->create([
         'role' => 'kader',
+        'bidang_id' => $bidang->id,
         'posyandu_id' => $posyandu->id,
         'desa' => 'DESA VERIF',
         'kecamatan' => 'KEC A',

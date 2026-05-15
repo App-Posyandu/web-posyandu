@@ -464,8 +464,8 @@
             </div>
         </div>
 
-        {{-- KADER: Verifikasi Step 1-2 --}}
-        @if (auth()->user()->role === 'kader' && $ajuan->status_pengajuan === 'Diproses')
+        {{-- Verifikasi Step 1-2 (kader atau ketua-posyandu) --}}
+        @if (in_array(auth()->user()->role, ['kader', 'ketua-posyandu']) && $ajuan->status_pengajuan === 'Diproses')
             <div class="w-full mx-8">
                 <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-4 md:p-8 mx-0 md:mx-8"
                     x-data="{

@@ -2,21 +2,24 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\Validator as ValidatorContract;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class DashboardFilterRequest extends FormRequest
 {
-    public function authorize(): bool
+    public static function allowedQueryKeys(): array
     {
-        return (bool) $this->user();
+        return ['year', 'search', 'status', 'archived', 'ajax', 'page'];
     }
 
-    public function rules(): array
+    public static function filterRules(?int $maxYear = null): array
     {
+        $maxYear ??= now()->year;
+
         return [
-            'year' => ['nullable', 'integer', 'min:2024', 'max:' . now()->year],
             'search' => ['nullable', 'string', 'max:100', 'regex:/^[\pL\pN\s@\._\-,()]+$/u'],
             'status' => ['nullable', Rule::in(['Diproses', 'Disetujui', 'Ditolak'])],
             'archived' => ['nullable', 'boolean'],
@@ -25,10 +28,20 @@ class DashboardFilterRequest extends FormRequest
         ];
     }
 
+    public function authorize(): bool
+    {
+        return (bool) $this->user();
+    }
+
+    public function rules(): array
+    {
+        return self::filterRules();
+    }
+
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {
-            $allowed = ['year', 'search', 'status', 'archived', 'ajax', 'page'];
+            $allowed = self::allowedQueryKeys();
             $extra = array_diff(array_keys($this->query()), $allowed);
 
             if (!empty($extra)) {
@@ -37,13 +50,27 @@ class DashboardFilterRequest extends FormRequest
         });
     }
 
+    protected function failedValidation(ValidatorContract $validator)
+    {
+        throw new HttpResponseException(response()->json([
+            'error' => 'Invalid dashboard filter',
+            'message' => 'Parameter filter dashboard tidak valid.',
+            'errors' => $validator->errors(),
+        ], 400));
+    }
+
     protected function prepareForValidation(): void
     {
         $search = $this->normalizeText($this->query('search'));
         $status = $this->normalizeText($this->query('status'));
+        $year = $this->query('year');
+
+        if (is_string($year)) {
+            $year = trim($year);
+        }
 
         $this->merge([
-            'year' => $this->emptyToNull($this->query('year')),
+            'year' => $this->emptyToNull($year),
             'search' => $search === '' ? null : $search,
             'status' => $status === '' ? null : $status,
             'archived' => $this->emptyToNull($this->query('archived')),

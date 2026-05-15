@@ -11,6 +11,7 @@ use App\Models\SystemSetting;
 use App\Models\User;
 use App\Notifications\PengajuanStatusUpdated;
 use App\Support\AccessAudit;
+use App\Support\YearParameter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
@@ -27,14 +28,8 @@ class AjuanController extends Controller
     {
         $this->authorize('viewAny', Pengajuan::class);
         $currentYear = now()->year;
-        $selectedYear = $request->input('year', $currentYear);
 
-        if (!is_numeric($selectedYear) || $selectedYear > $currentYear || $selectedYear < 2024) {
-            return redirect()->route('ajuan.index')
-                ->with('error', 'Parameter tahun tidak valid. Menampilkan data tahun ' . $currentYear);
-        }
-
-        $selectedYear = (int) $selectedYear;
+        $selectedYear = YearParameter::resolveOrFallback($request->query('year'), $currentYear, 2000, 2100);
 
         // ✅ Build query with validated year
         $query = Pengajuan::with(['user', 'bidang'])
@@ -184,6 +179,10 @@ class AjuanController extends Controller
     public function pilihLayanan(Request $request)
     {
         $user = Auth::user();
+        // Only allow masyarakat and kader to access pilih-layanan
+        if (! in_array($user->role, ['masyarakat', 'kader'])) {
+            abort(403, 'Unauthorized');
+        }
         if ($request->has('on_behalf_of')) {
             session(['ajuan_on_behalf_of_id' => $request->query('on_behalf_of')]);
         }
@@ -224,7 +223,12 @@ class AjuanController extends Controller
                 $bidangSlug = $user->bidang->slug;
                 return redirect()->route('ajuan.create', $bidangSlug);
             } else {
-                return redirect()->route('dashboard.partials.pilih-layanan');
+                // only redirect to pilih-layanan if the current user may access it
+                if (in_array($user->role, ['masyarakat', 'kader'])) {
+                    return redirect()->route('dashboard.partials.pilih-layanan');
+                }
+
+                return redirect()->route('dashboard')->with('error', 'Anda tidak memiliki akses untuk memilih layanan.');
             }
         }
 
@@ -242,6 +246,11 @@ class AjuanController extends Controller
     {
 
         Session::forget('ajuan_data');
+
+        $user = Auth::user();
+        if ($user && $user->role === 'kader' && ! $user->bidang) {
+            return redirect()->route('dashboard')->with('error', 'Akun kader belum diatur bidangnya. Hubungi administrator.');
+        }
 
         $allBidangs = BidangPengajuan::orderBy('nama_bidang')->get();
         $bidang = BidangPengajuan::where('slug', $bidang_slug)->firstOrFail();

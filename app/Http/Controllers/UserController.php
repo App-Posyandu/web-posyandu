@@ -134,6 +134,27 @@ class UserController extends Controller
                     });
             });
         } elseif ($currentUser->role === 'kabid') {
+        } elseif ($currentUser->role === 'operator-desa') {
+            if ($currentUser->desa) {
+                $posyanduIds = Posyandu::where('desa', $currentUser->desa)
+                    ->pluck('id')
+                    ->toArray();
+
+                $query->where(function ($scope) use ($currentUser, $posyanduIds) {
+                    $scope->where(function ($posScope) use ($posyanduIds) {
+                        if (!empty($posyanduIds)) {
+                            $posScope->whereIn('posyandu_id', $posyanduIds);
+                        } else {
+                            $posScope->whereRaw('1 = 0');
+                        }
+                    })->orWhere(function ($desaScope) use ($currentUser) {
+                        $desaScope->where('desa', $currentUser->desa)
+                            ->whereIn('role', ['kades', 'bu-kades']);
+                    });
+                });
+            } else {
+                $query->whereRaw('1 = 0');
+            }
         }
 
         if (!empty($filters['search'])) {

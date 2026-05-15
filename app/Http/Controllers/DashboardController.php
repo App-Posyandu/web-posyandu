@@ -6,9 +6,11 @@ use App\Http\Requests\DashboardFilterRequest;
 use App\Models\BidangPengajuan;
 use App\Models\Posyandu;
 use App\Models\Pengajuan;
+use App\Support\YearParameter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class DashboardController extends Controller
 {
@@ -16,7 +18,7 @@ class DashboardController extends Controller
      * Hanya menampilkan halaman dashboard (tidak ada data sensitif di sini).
      * Semua data akan di-fetch oleh JS lewat endpoint getData().
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
 
@@ -43,12 +45,24 @@ class DashboardController extends Controller
         }
 
         $currentYear = now()->year;
-        $selectedYear = request('year', $currentYear);
 
-        // ✅ Validate year from request
-        if ($selectedYear > $currentYear || $selectedYear < 2024) {
-            $selectedYear = $currentYear;
+        $dashboardRules = DashboardFilterRequest::filterRules($currentYear);
+        unset($dashboardRules['year']);
+
+        $validator = Validator::make($request->query(), $dashboardRules);
+        $validator->after(function ($validator) use ($request): void {
+            $extra = array_diff(array_keys($request->query()), DashboardFilterRequest::allowedQueryKeys());
+
+            if (!empty($extra)) {
+                $validator->errors()->add('request', 'Terdapat parameter tidak dikenali: ' . implode(', ', $extra));
+            }
+        });
+
+        if ($validator->fails()) {
+            return redirect()->route('dashboard')->withErrors($validator)->withInput();
         }
+
+        $selectedYear = YearParameter::resolveOrFallback($request->query('year'), $currentYear, 2000, 2100);
 
         $startYear = 2024;
         $availableYears = range($currentYear, $startYear);
@@ -77,21 +91,8 @@ class DashboardController extends Controller
         $pieChartColors = [];
 
         $currentYear = now()->year;
-        $selectedYear = isset($filters['year']) ? (int) $filters['year'] : $currentYear;
 
-        if ($selectedYear > $currentYear) {
-            return response()->json([
-                'error' => 'Invalid year',
-                'message' => 'Tidak dapat melihat data tahun yang akan datang'
-            ], 400);
-        }
-
-        if ($selectedYear < 2020) {
-            return response()->json([
-                'error' => 'Invalid year',
-                'message' => 'Data hanya tersedia dari tahun 2020'
-            ], 400);
-        }
+        $selectedYear = YearParameter::resolveOrFallback($request->query('year'), $currentYear, 2000, 2100);
         $showArchived   = isset($filters['archived']) ? filter_var($filters['archived'], FILTER_VALIDATE_BOOLEAN) : false;
         $searchTerm     = $filters['search'] ?? null;
         $statusFilter   = $filters['status'] ?? null;

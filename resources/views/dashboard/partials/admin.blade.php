@@ -378,7 +378,20 @@
                             });
 
                         if (!response.ok) {
-                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                            let errorData = {};
+
+                            try {
+                                errorData = await response.json();
+                            } catch (parseError) {
+                                console.warn('Failed to parse dashboard error response:', parseError);
+                            }
+
+                            if (response.status === 400 && errorData?.errors?.year) {
+                                this.selectedYear = this.currentYear;
+                                await this.loadDashboardData(1);
+                            }
+
+                            throw new Error(errorData?.message || `HTTP ${response.status}: ${response.statusText}`);
                         }
 
                         const data = await response.json();

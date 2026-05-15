@@ -90,8 +90,23 @@ class User extends Authenticatable
             })->whereIn('role', ['ketua-posyandu', 'operator-desa', 'kader', 'masyarakat']),
             'kades', 'bu-kades' => $query->where('desa', $actor->desa)
                 ->whereIn('role', ['ketua-posyandu', 'operator-desa', 'kader', 'masyarakat']),
-            'operator-desa' => $query->where('posyandu_id', $actor->posyandu_id)
-                ->whereIn('role', ['ketua-posyandu', 'kader']),
+            'operator-desa' => $query->where(function (Builder $scope) use ($actor) {
+                $scope->where(function (Builder $posyanduScope) use ($actor): void {
+                    if ($actor->posyandu_id) {
+                        $posyanduScope->where('posyandu_id', $actor->posyandu_id)
+                            ->whereIn('role', ['ketua-posyandu', 'kader', 'masyarakat']);
+                    } else {
+                        $posyanduScope->whereRaw('1 = 0');
+                    }
+                });
+
+                if ($actor->desa) {
+                    $scope->orWhere(function (Builder $desaScope) use ($actor): void {
+                        $desaScope->where('desa', $actor->desa)
+                            ->whereIn('role', ['kades', 'bu-kades']);
+                    });
+                }
+            }),
             'ketua-posyandu' => $query->where('posyandu_id', $actor->posyandu_id)
                 ->whereIn('role', ['kader', 'masyarakat']),
             'kader' => $query->where('posyandu_id', $actor->posyandu_id)

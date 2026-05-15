@@ -179,8 +179,8 @@ class AjuanPolicy
 
     public function takeover(User $user, Pengajuan $ajuan): Response
     {
-        if ($user->role !== 'ketua-kader') {
-            return Response::deny('Hanya Ketua Kader yang dapat mengambil alih pengajuan.');
+        if ($user->role !== 'ketua-posyandu') {
+            return Response::deny('Hanya Ketua Posyandu yang dapat mengambil alih pengajuan.');
         }
 
         $ajuanUser = $ajuan->relationLoaded('user') ? $ajuan->user : $ajuan->user()->first();

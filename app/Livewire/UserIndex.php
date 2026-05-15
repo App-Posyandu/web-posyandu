@@ -152,13 +152,24 @@ class UserIndex extends Component
             $query->where('posyandu_id', $currentUser->posyandu_id);
         } elseif ($currentUser->role === 'operator-desa') {
             if ($currentUser->desa) {
-                // Get all posyandu IDs di desa ini
                 $posyanduIds = \App\Models\Posyandu::where('desa', $currentUser->desa)
                     ->pluck('id')
                     ->toArray();
 
-                // Filter users yang ada di posyandu-posyandu tersebut
-                $query->whereIn('posyandu_id', $posyanduIds);
+                $query->where(function ($scope) use ($currentUser, $posyanduIds) {
+                    $scope->where(function ($posScope) use ($posyanduIds) {
+                        if (!empty($posyanduIds)) {
+                            $posScope->whereIn('posyandu_id', $posyanduIds);
+                        } else {
+                            $posScope->whereRaw('1 = 0');
+                        }
+                    })->orWhere(function ($desaScope) use ($currentUser) {
+                        $desaScope->where('desa', $currentUser->desa)
+                            ->whereIn('role', ['kades', 'bu-kades']);
+                    });
+                });
+            } else {
+                $query->whereRaw('1 = 0');
             }
         }
 

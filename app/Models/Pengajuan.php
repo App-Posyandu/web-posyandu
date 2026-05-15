@@ -153,9 +153,15 @@ class Pengajuan extends Model
             'kades', 'bu-kades' => $query->whereHas('user', function (Builder $userQuery) use ($actor) {
                 $userQuery->where('desa', $actor->desa);
             }),
-            'operator-desa', 'ketua-posyandu', 'kader' => $query->whereHas('user', function (Builder $userQuery) use ($actor) {
+            'operator-desa', 'ketua-posyandu' => $query->whereHas('user', function (Builder $userQuery) use ($actor) {
                 $userQuery->where('posyandu_id', $actor->posyandu_id);
             }),
+            'kader' => $actor->bidang_id
+                ? $query->where('bidang_id', $actor->bidang_id)
+                    ->whereHas('user', function (Builder $userQuery) use ($actor) {
+                        $userQuery->where('posyandu_id', $actor->posyandu_id);
+                    })
+                : $query->whereRaw('1 = 0'),
             'masyarakat' => $query->where('user_id', $actor->id),
             default => $query->whereRaw('1 = 0'),
         };

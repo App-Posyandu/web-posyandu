@@ -47,7 +47,7 @@ function rbacEndpoints(): array
         ],
         'admin.posyandu' => [
             'url' => '/admin/posyandu',
-            'allowed' => ['admin', 'admin-kabupaten', 'ketua-timpembina-posyandu', 'admin-kecamatan'],
+            'allowed' => ['admin', 'admin-kabupaten', 'ketua-timpembina-posyandu', 'admin-kecamatan', 'operator-desa'],
             'redirect' => [],
         ],
         'admin.settings' => [
@@ -69,6 +69,7 @@ function rbacEndpoints(): array
             'url' => '/ajuan',
             'allowed' => [
                 'ketua-timpembina-posyandu',
+                'admin-kabupaten',
                 'kabid',
                 'admin-kecamatan',
                 'kades',

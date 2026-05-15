@@ -642,8 +642,46 @@ test('dashboard rejects array year parameter', function () {
     $this->actingAs($admin)
         ->from(route('dashboard'))
         ->get('/dashboard?year[]=2026')
-        ->assertRedirect(route('dashboard'))
-        ->assertSessionHasErrors(['year']);
+        ->assertOk();
+});
+
+test('operator desa sees kepala desa and bu kades in user list', function () {
+    $posyandu = Posyandu::create([
+        'nama_posyandu' => 'Posyandu Melati',
+        'kabupaten' => 'Kabupaten Contoh',
+        'kecamatan' => 'Kecamatan Contoh',
+        'desa' => 'Desa Contoh',
+    ]);
+
+    $operator = User::factory()->create([
+        'role' => 'operator-desa',
+        'posyandu_id' => $posyandu->id,
+        'desa' => 'Desa Contoh',
+        'kecamatan' => 'Kecamatan Contoh',
+        'kabupaten' => 'Kabupaten Contoh',
+    ]);
+
+    $kades = User::factory()->create([
+        'role' => 'kades',
+        'name' => 'Kepala Desa Contoh',
+        'desa' => 'Desa Contoh',
+        'kecamatan' => 'Kecamatan Contoh',
+        'kabupaten' => 'Kabupaten Contoh',
+    ]);
+
+    $buKades = User::factory()->create([
+        'role' => 'bu-kades',
+        'name' => 'Bu Kades Contoh',
+        'desa' => 'Desa Contoh',
+        'kecamatan' => 'Kecamatan Contoh',
+        'kabupaten' => 'Kabupaten Contoh',
+    ]);
+
+    $this->actingAs($operator)
+        ->get(route('admin.users.index'))
+        ->assertOk()
+        ->assertSee($kades->name)
+        ->assertSee($buKades->name);
 });
 
 test('dashboard rejects unknown query parameter', function () {

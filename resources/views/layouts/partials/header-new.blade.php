@@ -54,7 +54,7 @@
                             </x-dropdown-link>
                         @endif
 
-                        @if (in_array(auth()->user()->role, ['admin', 'admin-kabupaten', 'ketua-timpembina-posyandu', 'admin-kecamatan']))
+                        @if (in_array(auth()->user()->role, ['admin', 'admin-kabupaten', 'ketua-timpembina-posyandu', 'admin-kecamatan', 'operator-desa']))
                             <x-dropdown-link :href="route('admin.posyandu.index')">
                                 <i class="bi bi-building mr-2"></i>
                                 {{ __('Posyandu') }}
@@ -71,7 +71,6 @@
                             {{ __('Lihat Pengajuan') }}
                         </x-dropdown-link>
 
-                        {{-- ✅ MENU SETTINGS (Only for admin-kabupaten) --}}
                         @if (in_array(auth()->user()->role, ['admin', 'admin-kabupaten']))
                             <div class="border-t border-gray-100 my-1"></div>
                             <x-dropdown-link :href="route('admin.settings.index')"

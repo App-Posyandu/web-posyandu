@@ -256,3 +256,26 @@ test('dashboard search supports bidang and posyandu keywords', function () {
     expect($alamatHtml)->toContain('SEARCH_BIDANG_TARGET');
     expect($alamatHtml)->not->toContain('SEARCH_OTHER_RECORD');
 });
+
+test('dashboard data rejects tampered year values', function (string $year) {
+    $admin = User::factory()->create([
+        'role' => 'admin',
+    ]);
+
+    getDashboardDataJson($this, $admin, ['year' => $year])
+        ->assertOk();
+})->with([
+    'random string' => '873ct...',
+    'huge integer' => '83257983579384',
+]);
+
+test('dashboard page falls back to current year for invalid year', function () {
+    $admin = User::factory()->create([
+        'role' => 'admin',
+    ]);
+
+    $this->actingAs($admin)
+        ->from(route('dashboard'))
+        ->get('/dashboard?year=1111')
+        ->assertOk();
+});

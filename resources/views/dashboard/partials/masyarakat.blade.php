@@ -18,11 +18,13 @@
                     </div>
                 </div>
                 <div class="w-full sm:w-auto">
-                    <a href="{{ route('dashboard.partials.pilih-layanan') }}"
-                        class="w-full sm:w-auto flex items-center justify-center px-6 py-3 bg-white text-pink-500 rounded-lg text-sm font-semibold hover:bg-indigo-50 transition-all duration-150 shadow-lg">
-                        <i class="bi bi-plus-circle-fill mr-2"></i>
-                        <span>Buat Pengajuan Baru</span>
-                    </a>
+                    @if(in_array(auth()->user()->role, ['masyarakat','kader']))
+                        <a href="{{ route('dashboard.partials.pilih-layanan') }}"
+                            class="w-full sm:w-auto flex items-center justify-center px-6 py-3 bg-white text-pink-500 rounded-lg text-sm font-semibold hover:bg-indigo-50 transition-all duration-150 shadow-lg">
+                            <i class="bi bi-plus-circle-fill mr-2"></i>
+                            <span>Buat Pengajuan Baru</span>
+                        </a>
+                    @endif
                 </div>
             </div>
         </div>
@@ -262,6 +264,24 @@
                                     'Accept': 'application/json'
                                 }
                             });
+
+                        if (!response.ok) {
+                            let errorData = {};
+
+                            try {
+                                errorData = await response.json();
+                            } catch (parseError) {
+                                console.warn('Failed to parse dashboard error response:', parseError);
+                            }
+
+                            if (response.status === 400 && errorData?.errors?.year) {
+                                this.selectedYear = this.currentYear;
+                                await this.loadDashboardData(1);
+                            }
+
+                            throw new Error(errorData?.message || `HTTP ${response.status}: ${response.statusText}`);
+                        }
+
                         const data = await response.json();
 
                         this.bidangData = data.bidangData;

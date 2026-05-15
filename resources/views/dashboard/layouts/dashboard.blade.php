@@ -65,7 +65,9 @@
         </div>
     </div>
 
-    @include('sweetalert2::index')
+    @if (app('view')->exists('sweetalert2::index'))
+        @include('sweetalert2::index')
+    @endif
     <script src="{{ asset('pwa-install.js') }}"></script>
     @stack('scripts')
     <script>

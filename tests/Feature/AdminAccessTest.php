@@ -54,6 +54,27 @@ test('ketua posyandu is forbidden from admin posyandu page', function () {
         ->assertForbidden();
 });
 
+test('operator desa can access admin posyandu page', function () {
+    $posyandu = Posyandu::create([
+        'nama_posyandu' => 'Posyandu Melati',
+        'kabupaten' => 'Kabupaten Contoh',
+        'kecamatan' => 'Kecamatan Contoh',
+        'desa' => 'Desa Contoh',
+    ]);
+
+    $operator = User::factory()->create([
+        'role' => 'operator-desa',
+        'posyandu_id' => $posyandu->id,
+        'desa' => 'Desa Contoh',
+        'kecamatan' => 'Kecamatan Contoh',
+        'kabupaten' => 'Kabupaten Contoh',
+    ]);
+
+    $this->actingAs($operator)
+        ->get(route('admin.posyandu.index'))
+        ->assertOk();
+});
+
 test('operator desa can reset password for ketua posyandu in the same posyandu', function () {
     $posyandu = Posyandu::create([
         'nama_posyandu' => 'Posyandu Melati',
