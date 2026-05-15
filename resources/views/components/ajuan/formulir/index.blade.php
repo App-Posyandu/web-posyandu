@@ -47,7 +47,7 @@
                 $isKader = $user->role === 'kader';
             @endphp
 
-            @if ($isKader)
+            @if ($isKader && $user->bidang)
                 <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">
                     Formulir Permohonan
                     <span class="text-pink-600">{{ $user->bidang->nama_bidang }}</span>
@@ -57,7 +57,7 @@
             @endif
 
             <div class="mb-6">
-                @if ($isKader)
+                @if ($isKader && $user->bidang)
                     <input type="hidden" name="bidang_pelayanan" value="{{ $user->bidang->slug }}">
                 @else
                     <div class="relative">

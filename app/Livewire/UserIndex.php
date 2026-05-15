@@ -19,13 +19,27 @@ class UserIndex extends Component
         'search' => ['except' => ''],
     ];
 
-    public function updatingRole()
+    public function mount(): void
     {
+        $currentUser = Auth::user();
+        $allowedRoles = $this->getAllowedRoleTargets($currentUser->role);
+
+        $this->search = $this->sanitizeSearch($this->search);
+        $this->role = $this->sanitizeRole($this->role, $allowedRoles) ?? '';
+    }
+
+    public function updatedRole($value): void
+    {
+        $currentUser = Auth::user();
+        $allowedRoles = $this->getAllowedRoleTargets($currentUser->role);
+
+        $this->role = $this->sanitizeRole($value, $allowedRoles) ?? '';
         $this->resetPage();
     }
 
-    public function updatingSearch()
+    public function updatedSearch($value): void
     {
+        $this->search = $this->sanitizeSearch($value);
         $this->resetPage();
     }
 
@@ -34,6 +48,34 @@ class UserIndex extends Component
         $this->role = '';
         $this->search = '';
         $this->resetPage();
+    }
+
+    private function sanitizeSearch(mixed $value): string
+    {
+        if (!is_string($value)) {
+            return '';
+        }
+
+        $normalized = trim(preg_replace('/\s+/', ' ', $value));
+        if ($normalized === '') {
+            return '';
+        }
+
+        return preg_match('/^[\pL\pN\s@\._\-,()]+$/u', $normalized) ? $normalized : '';
+    }
+
+    private function sanitizeRole(mixed $value, array $allowedRoles): ?string
+    {
+        if (!is_string($value)) {
+            return null;
+        }
+
+        $normalized = trim($value);
+        if ($normalized === '') {
+            return null;
+        }
+
+        return in_array($normalized, $allowedRoles, true) ? $normalized : null;
     }
 
     private function getAllowedRoleTargets(string $role): array
@@ -97,6 +139,8 @@ class UserIndex extends Component
         $query = User::with(['posyandu', 'bidang'])->latest();
 
         $allowedRoles = $this->getAllowedRoleTargets($currentUser->role);
+        $safeRole = $this->sanitizeRole($this->role, $allowedRoles);
+        $safeSearch = $this->sanitizeSearch($this->search);
 
         if (!empty($allowedRoles)) {
             $query->whereIn('role', $allowedRoles);
@@ -108,19 +152,30 @@ class UserIndex extends Component
             $query->where('posyandu_id', $currentUser->posyandu_id);
         } elseif ($currentUser->role === 'operator-desa') {
             if ($currentUser->desa) {
-                // Get all posyandu IDs di desa ini
                 $posyanduIds = \App\Models\Posyandu::where('desa', $currentUser->desa)
                     ->pluck('id')
                     ->toArray();
 
-                // Filter users yang ada di posyandu-posyandu tersebut
-                $query->whereIn('posyandu_id', $posyanduIds);
+                $query->where(function ($scope) use ($currentUser, $posyanduIds) {
+                    $scope->where(function ($posScope) use ($posyanduIds) {
+                        if (!empty($posyanduIds)) {
+                            $posScope->whereIn('posyandu_id', $posyanduIds);
+                        } else {
+                            $posScope->whereRaw('1 = 0');
+                        }
+                    })->orWhere(function ($desaScope) use ($currentUser) {
+                        $desaScope->where('desa', $currentUser->desa)
+                            ->whereIn('role', ['kades', 'bu-kades']);
+                    });
+                });
+            } else {
+                $query->whereRaw('1 = 0');
             }
         }
 
         // Search filter
-        if ($this->search) {
-            $searchTerm = $this->search;
+        if (!empty($safeSearch)) {
+            $searchTerm = $safeSearch;
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('name', 'like', '%' . $searchTerm . '%')
                     ->orWhere('email', 'like', '%' . $searchTerm . '%')
@@ -130,8 +185,8 @@ class UserIndex extends Component
         }
 
         // Role filter
-        if ($this->role && $this->role !== '') {
-            $query->where('role', $this->role);
+        if (!empty($safeRole)) {
+            $query->where('role', $safeRole);
         }
 
         $users = $query->paginate(10);

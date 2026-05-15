@@ -11,6 +11,8 @@ class AjuanIndex extends Component
 {
     use WithPagination;
 
+    private const ALLOWED_STATUSES = ['Diproses', 'Disetujui', 'Ditolak'];
+
     public $status = '';
     public $search = '';
     public $statusFilter = '';
@@ -23,19 +25,34 @@ class AjuanIndex extends Component
         'showArchived' => ['except' => false]
     ];
 
+    public function mount(): void
+    {
+        $this->search = $this->sanitizeSearch($this->search);
+        $this->status = $this->sanitizeStatus($this->status) ?? '';
+        $this->statusFilter = $this->sanitizeStatus($this->statusFilter) ?? '';
+    }
+
     public function toggleArchive()
     {
         $this->showArchived = !$this->showArchived;
         $this->resetPage();
     }
 
-    public function updatingSearch()
+    public function updatedSearch($value): void
     {
+        $this->search = $this->sanitizeSearch($value);
         $this->resetPage();
     }
 
-    public function updatingStatusFilter()
+    public function updatedStatus($value): void
     {
+        $this->status = $this->sanitizeStatus($value) ?? '';
+        $this->resetPage();
+    }
+
+    public function updatedStatusFilter($value): void
+    {
+        $this->statusFilter = $this->sanitizeStatus($value) ?? '';
         $this->resetPage();
     }
 
@@ -45,6 +62,34 @@ class AjuanIndex extends Component
         $this->search = '';
         $this->statusFilter = '';
         $this->resetPage();
+    }
+
+    private function sanitizeSearch(mixed $value): string
+    {
+        if (!is_string($value)) {
+            return '';
+        }
+
+        $normalized = trim(preg_replace('/\s+/', ' ', $value));
+        if ($normalized === '') {
+            return '';
+        }
+
+        return preg_match('/^[\pL\pN\s@\._\-,()]+$/u', $normalized) ? $normalized : '';
+    }
+
+    private function sanitizeStatus(mixed $value): ?string
+    {
+        if (!is_string($value)) {
+            return null;
+        }
+
+        $normalized = trim($value);
+        if ($normalized === '') {
+            return null;
+        }
+
+        return in_array($normalized, self::ALLOWED_STATUSES, true) ? $normalized : null;
     }
 
     public function render()
@@ -69,141 +114,156 @@ class AjuanIndex extends Component
                 ->orderBy('created_at', 'desc');
         }]);
 
-        if ($this->showArchived) {
-            switch ($user->role) {
-                case 'masyarakat':
-                    // Masyarakat lihat arsip: semua pengajuan milik sendiri yang sudah selesai
-                    $query->where('user_id', $user->id)
-                        ->whereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
-                    break;
-                case 'ketua-posyandu':
-                    $query->where(function ($q) {
-                        $q->whereIn('status_pengajuan', ['Disetujui', 'Ditolak'])
-                            ->orWhere('submitted_to_desa', true);
-                    });
-                    break;
-                case 'ketua-timpembina-posyandu':
-                    // Arsip: WAJIB approved_by_timpembina DAN submitted_to_desa = true
-                    $query->where('approved_by_timpembina', true)
-                        ->where('submitted_to_desa', true);
-                    break;
-                case 'kades':
-                case 'bu-kades':
-                    if ($user->desa) {
-                        $query->whereHas('user.posyandu', function ($q) use ($user) {
-                            $q->where('desa', $user->desa);
-                        })->whereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
-                    } else {
-                        $query->whereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
-                    }
-                    break;
-                case 'kader':
-                    $query->where('sudah_verifikasi', true)->where('kunjungan_lapangan', true);
-                    break;
-                default:
-                    $query->whereIn('status_pengajuan', ['Disetujui', 'Ditolak']);
-            }
-        } else {
-            switch ($user->role) {
-                case 'masyarakat':
-                    $query->where('user_id', $user->id);
-                    break;
+        $completedStatuses = ['Disetujui', 'Ditolak'];
 
-                case 'kader':
-                    if ($user->bidang_id && $user->posyandu_id) {
-                        $query->where('bidang_id', $user->bidang_id)
-                            ->whereHas('user', function ($q) use ($user) {
-                                $q->where('posyandu_id', $user->posyandu_id);
-                            })
-                            ->where('status_pengajuan', 'Diproses');
-                    } else {
-                        $query->whereRaw('1 = 0');
-                    }
-                    break;
+        switch ($user->role) {
+            case 'masyarakat':
+                $query->where('user_id', $user->id);
+                break;
 
-                case 'operator-desa':
-                    if ($user->posyandu_id) {
-                        $query->whereHas('user', function ($q) use ($user) {
+            case 'kader':
+                if ($user->bidang_id && $user->posyandu_id) {
+                    $query->where('bidang_id', $user->bidang_id)
+                        ->whereHas('user', function ($q) use ($user) {
                             $q->where('posyandu_id', $user->posyandu_id);
                         });
-                    } else {
-                        $query->whereRaw('1 = 0');
-                    }
-                    break;
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
+                break;
 
-                case 'ketua-timpembina-posyandu':
-                    // Menampilkan pengajuan yang menunggu persetujuan (kunjungan selesai, belum di-approve)
-                    $query->where('kunjungan_lapangan', true)
-                        ->where('approved_by_timpembina', false)
-                        ->where('status_pengajuan', 'Diproses');
-                    break;
-                case 'ketua-posyandu':
-                    if ($user->posyandu_id) {
-                        $query->whereHas('user', function ($q) use ($user) {
-                            $q->where('posyandu_id', $user->posyandu_id);
-                        })
-                            ->where(function ($q) {
-                                $q->where('status_pengajuan', 'Diproses')
-                                    ->orWhere('submitted_to_desa', true);
+            case 'operator-desa':
+                if ($user->posyandu_id) {
+                    $query->whereHas('user', function ($q) use ($user) {
+                        $q->where('posyandu_id', $user->posyandu_id);
+                    });
+                } elseif ($user->desa) {
+                    $query->whereHas('user', function ($q) use ($user) {
+                        $q->where('desa', $user->desa);
+                    });
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
+                break;
+
+            case 'ketua-posyandu':
+                if ($user->posyandu_id) {
+                    $query->whereHas('user', function ($q) use ($user) {
+                        $q->where('posyandu_id', $user->posyandu_id);
+                    });
+                } elseif ($user->desa) {
+                    $query->whereHas('user', function ($q) use ($user) {
+                        $q->where('desa', $user->desa);
+                    });
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
+                break;
+
+            case 'kades':
+            case 'bu-kades':
+                if ($user->posyandu_id || $user->desa) {
+                    $query->whereHas('user', function ($q) use ($user) {
+                        $q->where(function ($scope) use ($user) {
+                            if ($user->posyandu_id) {
+                                $scope->orWhere('posyandu_id', $user->posyandu_id);
+                            }
+
+                            if ($user->desa) {
+                                $scope->orWhere('desa', 'LIKE', '%' . $user->desa . '%')
+                                    ->orWhere('alamat', 'LIKE', '%' . $user->desa . '%')
+                                    ->orWhereHas('posyandu', function ($posyanduQuery) use ($user) {
+                                        $posyanduQuery->where('desa', 'LIKE', '%' . $user->desa . '%')
+                                            ->orWhere('nama_posyandu', 'LIKE', '%' . $user->desa . '%');
+                                    });
+                            }
+                        });
+                    });
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
+                break;
+
+            case 'ketua-timpembina-posyandu':
+                if ($user->kabupaten) {
+                    $query->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%'));
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
+                break;
+
+            case 'admin-kecamatan':
+                if ($user->kecamatan) {
+                    $query->whereHas('user', fn($q) => $q->where('kecamatan', 'LIKE', '%' . $user->kecamatan . '%'));
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
+                break;
+
+            case 'kabid':
+                if ($user->kabupaten) {
+                    $query->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%'));
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
+                if ($user->bidang_id) {
+                    $query->where('bidang_id', $user->bidang_id);
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
+                break;
+
+            case 'admin-kabupaten':
+                if ($user->kabupaten) {
+                    $query->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%'));
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
+                break;
+
+            case 'admin':
+                break;
+
+            default:
+                $query->whereRaw('1 = 0');
+                break;
+        }
+
+        if ($this->showArchived) {
+            $query->whereIn('status_pengajuan', $completedStatuses);
+        } else {
+            $query->where('status_pengajuan', 'Diproses');
+        }
+
+        $safeStatus = $this->sanitizeStatus($this->status);
+        if (!empty($safeStatus)) {
+            $query->where('status_pengajuan', $safeStatus);
+        }
+
+        $safeSearch = $this->sanitizeSearch($this->search);
+        if (!empty($safeSearch)) {
+            $query->where(function ($q) use ($safeSearch) {
+                $q->where('deskripsi_pengajuan', 'like', '%' . $safeSearch . '%')
+                    ->orWhere('status_pengajuan', 'like', '%' . $safeSearch . '%')
+                    ->orWhereHas('user', function ($userQuery) use ($safeSearch) {
+                        $userQuery->where('name', 'like', '%' . $safeSearch . '%')
+                            ->orWhere('alamat', 'like', '%' . $safeSearch . '%')
+                            ->orWhere('desa', 'like', '%' . $safeSearch . '%')
+                            ->orWhereHas('posyandu', function ($posyanduQuery) use ($safeSearch) {
+                                $posyanduQuery->where('nama_posyandu', 'like', '%' . $safeSearch . '%')
+                                    ->orWhere('desa', 'like', '%' . $safeSearch . '%')
+                                    ->orWhere('kecamatan', 'like', '%' . $safeSearch . '%')
+                                    ->orWhere('kabupaten', 'like', '%' . $safeSearch . '%');
                             });
-                    } else {
-                        $query->whereRaw('1 = 0');
-                    }
-                    break;
-                case 'kades':
-                case 'bu-kades':
-                    if ($user->desa) {
-                        $query->whereHas('user.posyandu', function ($q) use ($user) {
-                            $q->where('desa', $user->desa);
-                        })
-                        ->where('submitted_to_desa', true)
-                        ->where('status_pengajuan', 'Diproses');
-                    }
-                    break;
-
-                case 'admin-kecamatan':
-                    if ($user->kecamatan) {
-                        $query->whereHas('user', fn($q) => $q->where('kecamatan', 'LIKE', '%' . $user->kecamatan . '%'));
-                    }
-                    break;
-
-                case 'kabid':
-                    if ($user->kabupaten) {
-                        $query->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%'));
-                    }
-                    if ($user->bidang_id) {
-                        $query->where('bidang_id', $user->bidang_id);
-                    }
-                    break;
-
-                case 'admin-kabupaten':
-                    if ($user->kabupaten) {
-                        $query->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%'));
-                    }
-                    break;
-
-                case 'admin':
-                    break;
-            }
-        }
-
-        if (!empty($this->status)) {
-            $query->where('status_pengajuan', $this->status);
-        }
-
-        if ($this->search) {
-            $query->where(function ($q) {
-                $q->where('deskripsi_pengajuan', 'like', '%' . $this->search . '%')
-                    ->orWhere('status_pengajuan', 'like', '%' . $this->search . '%')
-                    ->orWhereHas('user', fn($userQuery) =>
-                    $userQuery->where('name', 'like', '%' . $this->search . '%'))
+                    })
                     ->orWhereHas('bidang', fn($bidangQuery) =>
-                    $bidangQuery->where('nama_bidang', 'like', '%' . $this->search . '%'));
+                    $bidangQuery->where('nama_bidang', 'like', '%' . $safeSearch . '%'));
             });
         }
 
-        if ($this->statusFilter) {
-            $query->where('status_pengajuan', $this->statusFilter);
+        $safeStatusFilter = $this->sanitizeStatus($this->statusFilter);
+        if (!empty($safeStatusFilter)) {
+            $query->where('status_pengajuan', $safeStatusFilter);
         }
 
         $semuaAjuan = $query->latest()->paginate(10);

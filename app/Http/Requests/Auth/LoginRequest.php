@@ -24,6 +24,22 @@ class LoginRequest extends FormRequest
         ];
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->filled('login')) {
+            return;
+        }
+
+        if ($this->filled('email')) {
+            $this->merge(['login' => $this->input('email')]);
+            return;
+        }
+
+        if ($this->filled('no_telepon')) {
+            $this->merge(['login' => $this->input('no_telepon')]);
+        }
+    }
+
     public function authenticate(): void
     {
         $this->ensureIsNotRateLimited();

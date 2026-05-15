@@ -34,8 +34,8 @@ class ProfileController extends Controller
             'tanggal_lahir' => ['nullable', 'date'],
             'jenis_kelamin' => ['nullable', 'string'],
             'no_telepon' => ['nullable', 'string', 'max:20', Rule::unique(User::class)->ignore($user->id)],
-            'ktp' => ['nullable', 'file', 'mimes:jpeg,png,jpg', 'max:2048'],
-            'kk' => ['nullable', 'file', 'mimes:jpeg,png,jpg', 'max:2048'],
+            'ktp' => ['nullable', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:2048'],
+            'kk' => ['nullable', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:2048'],
         ]);
 
         $user->fill($request->except(['ktp', 'kk']));
@@ -45,12 +45,14 @@ class ProfileController extends Controller
         }
 
         if ($request->hasFile('ktp')) {
-            $ktpBase64 = 'data:' . $request->file('ktp')->getMimeType() . ';base64,' . base64_encode(file_get_contents($request->file('ktp')->getRealPath()));
+            $ktpFile = $request->file('ktp');
+            $ktpBase64 = 'data:' . $ktpFile->getMimeType() . ';base64,' . base64_encode(file_get_contents($ktpFile->getRealPath()));
             $user->ktp = $ktpBase64;
         }
 
         if ($request->hasFile('kk')) {
-            $kkBase64 = 'data:' . $request->file('kk')->getMimeType() . ';base64,' . base64_encode(file_get_contents($request->file('kk')->getRealPath()));
+            $kkFile = $request->file('kk');
+            $kkBase64 = 'data:' . $kkFile->getMimeType() . ';base64,' . base64_encode(file_get_contents($kkFile->getRealPath()));
             $user->kk = $kkBase64;
         }
 

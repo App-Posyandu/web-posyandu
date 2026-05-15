@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StorePengajuanRequest;
+use App\Http\Requests\UpdatePengajuanRequest;
 use App\Models\BidangPengajuan;
 use App\Models\History;
 use App\Models\Pengajuan;
 use App\Models\SystemSetting;
 use App\Models\User;
 use App\Notifications\PengajuanStatusUpdated;
+use App\Support\AccessAudit;
+use App\Support\YearParameter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
@@ -20,9 +24,114 @@ use Illuminate\Support\Str;
 class AjuanController extends Controller
 {
     use AuthorizesRequests;
-    public function index()
+    public function index(Request $request)
     {
-        return view('ajuan.index');
+        $this->authorize('viewAny', Pengajuan::class);
+        $currentYear = now()->year;
+
+        $selectedYear = YearParameter::resolveOrFallback($request->query('year'), $currentYear, 2000, 2100);
+
+        // ✅ Build query with validated year
+        $query = Pengajuan::with(['user', 'bidang'])
+            ->whereYear('created_at', $selectedYear);
+
+        // Role-based filtering
+        $currentUser = Auth::user();
+
+        switch ($currentUser->role) {
+            case 'admin':
+            case 'ketua-timpembina-posyandu':
+                // No additional filter
+                break;
+
+            case 'admin-kabupaten':
+            case 'kabid':
+                $query->whereHas(
+                    'user',
+                    fn($q) =>
+                    $q->where('kabupaten', $currentUser->kabupaten)
+                );
+                break;
+
+            case 'admin-kecamatan':
+                $query->whereHas(
+                    'user',
+                    fn($q) =>
+                    $q->where('kecamatan', $currentUser->kecamatan)
+                );
+                break;
+
+            case 'operator-desa':
+            case 'kades':
+            case 'bu-kades':
+                $query->whereHas(
+                    'user',
+                    fn($q) =>
+                    $q->where('kabupaten', $currentUser->kabupaten)
+                        ->where('kecamatan', $currentUser->kecamatan)
+                        ->where('desa', $currentUser->desa)
+                );
+                break;
+
+            case 'ketua-posyandu':
+                $query->whereHas(
+                    'user',
+                    fn($q) =>
+                    $q->where('posyandu_id', $currentUser->posyandu_id)
+                );
+                break;
+
+            // ✅ FIXED: Kader only see their bidang
+            case 'kader':
+                $query->whereHas(
+                    'user',
+                    fn($q) =>
+                    $q->where('posyandu_id', $currentUser->posyandu_id)
+                )
+                    ->where('bidang_id', $currentUser->bidang_id);
+                break;
+
+            case 'masyarakat':
+                $query->where('user_id', $currentUser->id);
+                break;
+
+            default:
+                abort(403, 'Unauthorized');
+        }
+
+        // Search filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('deskripsi_pengajuan', 'like', '%' . $search . '%')
+                    ->orWhereHas(
+                        'user',
+                        fn($userQuery) =>
+                        $userQuery->where('name', 'like', '%' . $search . '%')
+                    )
+                    ->orWhereHas(
+                        'bidang',
+                        fn($bidangQuery) =>
+                        $bidangQuery->where('nama_bidang', 'like', '%' . $search . '%')
+                    );
+            });
+        }
+
+        // Status filter
+        if ($request->filled('status')) {
+            $query->where('status_pengajuan', $request->status);
+        }
+
+        $pengajuans = $query->latest()->paginate(10)->withQueryString();
+
+        $availableYears = range($currentYear, 2024);
+
+        return view('ajuan.index', compact(
+            'pengajuans',
+            'selectedYear',
+            'currentYear',
+            'availableYears'
+        ));
     }
 
     private function getTargetUserId()
@@ -70,6 +179,10 @@ class AjuanController extends Controller
     public function pilihLayanan(Request $request)
     {
         $user = Auth::user();
+        // Only allow masyarakat and kader to access pilih-layanan
+        if (! in_array($user->role, ['masyarakat', 'kader'])) {
+            abort(403, 'Unauthorized');
+        }
         if ($request->has('on_behalf_of')) {
             session(['ajuan_on_behalf_of_id' => $request->query('on_behalf_of')]);
         }
@@ -110,21 +223,19 @@ class AjuanController extends Controller
                 $bidangSlug = $user->bidang->slug;
                 return redirect()->route('ajuan.create', $bidangSlug);
             } else {
-                return redirect()->route('dashboard.partials.pilih-layanan');
+                // only redirect to pilih-layanan if the current user may access it
+                if (in_array($user->role, ['masyarakat', 'kader'])) {
+                    return redirect()->route('dashboard.partials.pilih-layanan');
+                }
+
+                return redirect()->route('dashboard')->with('error', 'Anda tidak memiliki akses untuk memilih layanan.');
             }
         }
 
         $query = User::with(['posyandu'])
             ->where('role', 'masyarakat')
+            ->visibleTo($user)
             ->orderBy('name');
-
-        if (in_array($user->role, ['kader', 'ketua-posyandu'])) {
-            $query->where('posyandu_id', $user->posyandu_id);
-        } elseif ($user->role === 'admin-kecamatan') {
-            $query->where('kecamatan_id', $user->kecamatan_id);
-        } elseif ($user->role === 'kabid') {
-            $query->where('kabupaten_id', $user->kabupaten_id);
-        }
 
         $masyarakatUsers = $query->get();
 
@@ -135,6 +246,11 @@ class AjuanController extends Controller
     {
 
         Session::forget('ajuan_data');
+
+        $user = Auth::user();
+        if ($user && $user->role === 'kader' && ! $user->bidang) {
+            return redirect()->route('dashboard')->with('error', 'Akun kader belum diatur bidangnya. Hubungi administrator.');
+        }
 
         $allBidangs = BidangPengajuan::orderBy('nama_bidang')->get();
         $bidang = BidangPengajuan::where('slug', $bidang_slug)->firstOrFail();
@@ -158,16 +274,12 @@ class AjuanController extends Controller
         ]);
     }
 
-    public function storePermohonan(Request $request)
+    public function storePermohonan(StorePengajuanRequest $request)
     {
-        $permohonanItems = $request->input('permohonan_items', []);
+        $validated = $request->validated();
+        $permohonanItems = $validated['permohonan_items'] ?? [];
 
-        $request->validate([
-            'bidang_pelayanan' => 'required|string|exists:bidang_pengajuans,slug',
-            'deskripsi_pengajuan' => 'required|string|min:10',
-        ]);
-
-        $bidangSlug = $request->input('bidang_pelayanan');
+        $bidangSlug = $validated['bidang_pelayanan'];
         $bidang = BidangPengajuan::where('slug', $bidangSlug)->firstOrFail();
 
         $templateData = $this->getBidangData($bidangSlug);
@@ -180,12 +292,12 @@ class AjuanController extends Controller
         session()->put('ajuan_data.bidang_nama', $bidang->nama_bidang);
         session()->put('ajuan_data.administrasi_items_template', $templateData['administrasi_items']);
         session()->put('ajuan_data.selected_formulir_items', $permohonanItems);
-        session()->put('ajuan_data.deskripsi_pengajuan', $request->input('deskripsi_pengajuan'));
+        session()->put('ajuan_data.deskripsi_pengajuan', $validated['deskripsi_pengajuan']);
         session()->put('ajuan_data.tanggal_permohonan', now());
-        session()->put('ajuan_data.tindak_lanjut', $request->input('deskripsi_pengajuan'));
+        session()->put('ajuan_data.tindak_lanjut', $validated['deskripsi_pengajuan']);
 
-        if ($request->has('lainnya_text') && !empty($request->input('lainnya_text'))) {
-            session()->put('ajuan_data.lainnya_text', $request->input('lainnya_text'));
+        if (!empty($validated['lainnya_text'])) {
+            session()->put('ajuan_data.lainnya_text', $validated['lainnya_text']);
         }
 
         return redirect()->route('ajuan.create.administrasi');
@@ -381,9 +493,7 @@ class AjuanController extends Controller
 
     public function show(Pengajuan $ajuan)
     {
-        if (!Gate::forUser(Auth::user())->check('viewAjuan', $ajuan)) {
-            abort(403, 'Anda tidak memiliki akses untuk melihat pengajuan ini.');
-        }
+        $this->authorize('viewAjuan', $ajuan);
         $user = Auth::user();
         $ajuan = Pengajuan::with([
             'user.posyandu',
@@ -444,9 +554,7 @@ class AjuanController extends Controller
 
     public function edit(Pengajuan $ajuan)
     {
-        if (Auth::user()->id !== $ajuan->user_id) {
-            abort(403, 'Anda tidak memiliki akses untuk mengedit pengajuan ini.');
-        }
+        $this->authorize('update', $ajuan);
 
         if (!in_array($ajuan->status_pengajuan, ['Diproses', 'Ditolak'])) {
             return redirect()->route('ajuan.show', $ajuan)
@@ -521,6 +629,8 @@ class AjuanController extends Controller
             }
         ])->findOrFail($id);
 
+        $this->authorize('viewAjuan', $pengajuan);
+
         $revisionDeadline = null;
         if ($pengajuan->revision_requested_at) {
             $debugMode = SystemSetting::get('revision_debug_mode', false);
@@ -542,13 +652,12 @@ class AjuanController extends Controller
         ]);
     }
 
-    public function update(Request $request, Pengajuan $ajuan)
+    public function update(UpdatePengajuanRequest $request, Pengajuan $ajuan)
     {
-        $user = Auth::user();
+        $this->authorize('update', $ajuan);
 
-        if ($user->id !== $ajuan->user_id) {
-            abort(403, 'Anda tidak memiliki akses untuk mengedit pengajuan ini.');
-        }
+        $user = Auth::user();
+        $validated = $request->validated();
 
         if ($ajuan->revision_requested_at) {
             $revisionDeadline = \Carbon\Carbon::parse($ajuan->revision_requested_at)->addWeekdays(5);
@@ -558,24 +667,12 @@ class AjuanController extends Controller
             }
         }
 
-        $request->validate([
-            'deskripsi_pengajuan' => 'required|string|min:10',
-            'permohonan_items' => 'required|array|min:1',
-            'permohonan_items.*' => 'string',
-            'lainnya_text' => 'nullable|string|max:500',
-        ], [
-            'deskripsi_pengajuan.required' => 'Deskripsi pengajuan wajib diisi.',
-            'deskripsi_pengajuan.min' => 'Deskripsi pengajuan minimal 10 karakter.',
-            'permohonan_items.required' => 'Pilih minimal 1 item permohonan.',
-            'permohonan_items.min' => 'Pilih minimal 1 item permohonan.',
-        ]);
-
         $ajuan->load('bidang');
 
-        $finalChecklistData = $request->input('permohonan_items', []);
-        if (in_array('Lainnya...', $finalChecklistData) && $request->filled('lainnya_text')) {
+        $finalChecklistData = $validated['permohonan_items'];
+        if (in_array('Lainnya...', $finalChecklistData, true) && !empty($validated['lainnya_text'])) {
             $finalChecklistData = array_map(
-                fn($item) => $item === 'Lainnya...' ? 'Lainnya: ' . $request->lainnya_text : $item,
+                fn($item) => $item === 'Lainnya...' ? 'Lainnya: ' . $validated['lainnya_text'] : $item,
                 $finalChecklistData
             );
         }
@@ -616,7 +713,7 @@ class AjuanController extends Controller
         }
 
         $ajuan->update([
-            'deskripsi_pengajuan' => $request->deskripsi_pengajuan,
+            'deskripsi_pengajuan' => $validated['deskripsi_pengajuan'],
             'formulir_items' => $finalChecklistData,
             'administrasi_items' => $dokumenData,
             'status_pengajuan' => 'Diproses',
@@ -694,10 +791,7 @@ class AjuanController extends Controller
         $user = Auth::user();
         $targetUser = $ajuan->user;
 
-        if ($user->role === 'ketua-timpembina-posyandu') {
-            // Ketua Tim Pembina Posyandu can verify any submission
-            // No additional authorization needed for step 3
-        } elseif ($user->role === 'ketua-posyandu') {
+        if ($user->role === 'ketua-posyandu') {
             if ($ajuan->user->posyandu_id !== $user->posyandu_id) {
                 abort(403, 'Ketua Posyandu hanya bisa takeover pengajuan di Posyandunya sendiri.');
             }
@@ -734,7 +828,8 @@ class AjuanController extends Controller
 
                     History::create([
                         'pengajuan_id' => $ajuan->id,
-                        'status' => 'Ditolak - Posyandu Salah',
+                        'status' => 'Ditolak',
+                        'pilih_keputusan' => $keputusan,
                         'catatan' => $request->catatan,
                         'diubah_oleh' => $user->id,
                         'action_by_role' => $user->role,
@@ -761,6 +856,7 @@ class AjuanController extends Controller
                     History::create([
                         'pengajuan_id' => $ajuan->id,
                         'status' => 'Revisi Diminta',
+                        'pilih_keputusan' => $keputusan,
                         'catatan' => $request->catatan,
                         'diubah_oleh' => $user->id,
                         'action_by_role' => $user->role,
@@ -780,8 +876,8 @@ class AjuanController extends Controller
                         'verified_formulir_items' => ['required', 'array', 'size:' . count($submittedItems)],
                         'verified_administrasi_items' => ['required', 'array', 'size:' . count($submittedDocs)],
                     ], [
-                        'verified_formulir_items.size' => 'Semua item permohonan harus dicentang untuk lanjut.',
-                        'verified_administrasi_items.size' => 'Semua dokumen administrasi harus dicentang untuk lanjut.',
+                        'verified_formulir_items.size' => 'Detail permohonan belum lengkap. Centang semua item atau pilih revisi agar pemohon melengkapi.',
+                        'verified_administrasi_items.size' => 'Dokumen administrasi belum lengkap. Centang semua dokumen atau pilih revisi agar pemohon melengkapi.',
                     ]);
 
                     $ajuan->update([
@@ -799,6 +895,7 @@ class AjuanController extends Controller
                     History::create([
                         'pengajuan_id' => $ajuan->id,
                         'status' => $statusHistory,
+                        'pilih_keputusan' => $keputusan,
                         'catatan' => $catatanHistory,
                         'diubah_oleh' => $user->id,
                         'action_by_role' => $user->role,
@@ -854,50 +951,46 @@ class AjuanController extends Controller
             }
         }
 
-        // Step 3: Ketua Tim Pembina Posyandu Approval
-        if ($user->role === 'ketua-timpembina-posyandu') {
+        // Step 3: Ketua Posyandu Approval
+        if ($user->role === 'ketua-posyandu') {
             if ($step == 3) {
                 $request->validate([
-                    'keputusan' => 'required|in:diajukan,tidak-diajukan',
-                    'catatan' => 'required|string|min:15',
+                    'keputusan' => 'required|in:ditindaklanjuti,tidak-ditindaklanjuti',
+                    'catatan' => 'nullable|string|min:10',
                 ], [
                     'keputusan.required' => 'Keputusan harus dipilih.',
-                    'catatan.required' => 'Catatan wajib diisi.',
-                    'catatan.min' => 'Catatan minimal 15 karakter.',
+                    'catatan.min' => 'Catatan minimal 10 karakter.',
                 ]);
 
-                if ($request->keputusan === 'diajukan') {
+                if ($request->keputusan === 'ditindaklanjuti') {
                     $ajuan->update([
                         'status_pengajuan' => 'Diproses',
-                        'approved_by_timpembina' => true,
-                        'approved_by_timpembina_id' => $user->id,
-                        'approved_by_timpembina_at' => now(),
-                        // Langsung submit ke desa saat ketua tim pembina approve
-                        'submitted_to_desa' => true,
-                        'submitted_to_desa_at' => now(),
-                        // Legacy support
                         'approved_by_ketua' => true,
                         'approved_by_ketua_id' => $user->id,
                         'approved_by_ketua_at' => now(),
                     ]);
 
-                    $statusHistory = 'Disetujui Ketua Tim Pembina Posyandu';
-                    $catatanHistory = $request->catatan ?? 'Pengajuan disetujui dan diteruskan ke Pemdes.';
+                    $statusHistory = 'Disetujui Ketua Posyandu';
+                    $catatanHistory = $request->catatan ?? 'Pengajuan disetujui Ketua Posyandu dan siap dikirim ke Pemdes.';
                 } else {
                     $ajuan->update([
                         'status_pengajuan' => 'Ditolak',
+                        'approved_by_ketua' => false,
+                        'approved_by_ketua_id' => $user->id,
+                        'approved_by_ketua_at' => now(),
                     ]);
 
-                    $statusHistory = 'Ditolak Ketua Tim Pembina Posyandu';
+                    $statusHistory = 'Ditolak Ketua Posyandu';
                     $catatanHistory = $request->catatan;
                 }
 
                 History::create([
                     'pengajuan_id' => $ajuan->id,
                     'status' => $statusHistory,
+                    'pilih_keputusan' => $request->keputusan,
                     'catatan' => $catatanHistory,
                     'diubah_oleh' => $user->id,
-                    'action_by_role' => 'ketua-timpembina-posyandu',
+                    'action_by_role' => 'ketua-posyandu',
                     'created_at' => now(),
                 ]);
 
@@ -914,12 +1007,19 @@ class AjuanController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role !== 'ketua-timpembina-posyandu') {
-            abort(403);
+        if ($user->role !== 'ketua-posyandu') {
+            AccessAudit::record(request(), $user, 'pengajuan', 'submit_to_pemdes', false, 403, [
+                'target_pengajuan_id' => $ajuan->id,
+            ]);
+            abort(403, 'Akses ditolak.');
         }
 
-        if (!$ajuan->approved_by_timpembina || $ajuan->status_pengajuan !== 'Diproses') {
+        if (!$ajuan->approved_by_ketua || $ajuan->status_pengajuan !== 'Diproses') {
             return redirect()->back()->with('error', 'Pengajuan belum siap dikirim ke Pemdes.');
+        }
+
+        if ($ajuan->submitted_to_desa) {
+            return redirect()->back()->with('error', 'Pengajuan ini sudah pernah dikirim ke Pemdes.');
         }
 
         $ajuan->update([
@@ -932,7 +1032,7 @@ class AjuanController extends Controller
             'status' => 'Diajukan ke Pemdes',
             'catatan' => 'Pengajuan diteruskan ke Kepala Desa untuk persetujuan akhir.',
             'diubah_oleh' => $user->id,
-            'action_by_role' => 'ketua-timpembina-posyandu',
+            'action_by_role' => 'ketua-posyandu',
             'created_at' => now(),
         ]);
 
@@ -944,32 +1044,49 @@ class AjuanController extends Controller
         $user = Auth::user();
 
         if ($user->role !== 'kades') {
-            abort(403);
+            AccessAudit::record(request(), $user, 'pengajuan', 'kades_approval', false, 403, [
+                'target_pengajuan_id' => $ajuan->id,
+            ]);
+            abort(403, 'Akses ditolak.');
+        }
+
+        if (!$ajuan->approved_by_ketua || $ajuan->status_pengajuan !== 'Diproses') {
+            return redirect()->back()->with('error', 'Pengajuan belum siap ditindaklanjuti oleh Kades.');
         }
 
         $request->validate([
             'keputusan' => 'required|in:ditindaklanjuti,tidak-ditindaklanjuti',
-            'tindak_lanjut' => 'nullable|string|min:15',
+            'tindak_lanjut' => 'required_if:keputusan,ditindaklanjuti|nullable|string|min:15',
             'catatan' => 'required|string|min:10',
         ], [
+            'tindak_lanjut.required_if' => 'Tindak lanjut wajib diisi jika keputusan ditindaklanjuti.',
+            'tindak_lanjut.min' => 'Tindak lanjut minimal 15 karakter.',
             'catatan.required' => 'Catatan wajib diisi.',
             'catatan.min' => 'Catatan minimal 10 karakter.',
         ]);
 
+        $desaSubmission = [];
+        if (!$ajuan->submitted_to_desa) {
+            $desaSubmission = [
+                'submitted_to_desa' => true,
+                'submitted_to_desa_at' => now(),
+            ];
+        }
+
         if ($request->keputusan === 'ditindaklanjuti') {
-            $ajuan->update([
+            $ajuan->update(array_merge($desaSubmission, [
                 'status_pengajuan' => 'Disetujui',
                 'approved_by_kades' => true,
                 'approved_by_kades_id' => $user->id,
                 'approved_by_kades_at' => now(),
                 'tindak_lanjut' => $request->tindak_lanjut ?? $ajuan->deskripsi_pengajuan,
-            ]);
+            ]));
 
             $status = 'Disetujui Kades';
         } else {
-            $ajuan->update([
+            $ajuan->update(array_merge($desaSubmission, [
                 'status_pengajuan' => 'Ditolak',
-            ]);
+            ]));
 
             $status = 'Ditolak Kades';
         }
@@ -977,6 +1094,7 @@ class AjuanController extends Controller
         History::create([
             'pengajuan_id' => $ajuan->id,
             'status' => $status,
+            'pilih_keputusan' => $request->keputusan,
             'catatan' => $request->catatan ?? '-',
             'diubah_oleh' => $user->id,
             'action_by_role' => 'kades',
@@ -988,6 +1106,8 @@ class AjuanController extends Controller
     public function cetak($id)
     {
         $ajuan = Pengajuan::with(['user', 'bidang', 'histories.diubahOleh', 'latestHistory.diubahOleh'])->findOrFail($id);
+
+        $this->authorize('viewAjuan', $ajuan);
 
         foreach (['verified_formulir_items', 'verified_administrasi_items', 'formulir_items', 'administrasi_items'] as $key) {
             if (is_string($ajuan->$key)) {
@@ -1014,6 +1134,8 @@ class AjuanController extends Controller
 
     public function streamDokumen(Pengajuan $ajuan, $key)
     {
+        $this->authorize('viewAjuan', $ajuan);
+
         $ajuan->load(['user', 'bidang']);
 
         $dokumenData = $ajuan->administrasi_items;
@@ -1079,6 +1201,8 @@ class AjuanController extends Controller
     {
         $ajuan = Pengajuan::with(['user.posyandu', 'bidang', 'ketuaPosyandu', 'kades'])->findOrFail($id);
 
+        $this->authorize('viewAjuan', $ajuan);
+
         foreach (['formulir_items', 'administrasi_items', 'verified_formulir_items', 'verified_administrasi_items'] as $key) {
             if (is_string($ajuan->$key)) {
                 $ajuan->$key = json_decode($ajuan->$key, true) ?? [];
@@ -1109,6 +1233,8 @@ class AjuanController extends Controller
     public function cetakDokumen($id)
     {
         $ajuan = Pengajuan::with(['user.posyandu', 'bidang'])->findOrFail($id);
+
+        $this->authorize('viewAjuan', $ajuan);
 
         foreach (['formulir_items', 'administrasi_items'] as $key) {
             if (is_string($ajuan->$key)) {
@@ -1209,6 +1335,8 @@ class AjuanController extends Controller
 
     public function generateQRCode(Pengajuan $pengajuan)
     {
+        $this->authorize('viewAjuan', $pengajuan);
+
         $trackingUrl = route('ajuan.track.show', ['code' => $pengajuan->tracking_code]);
 
         return response()->json([
@@ -1234,13 +1362,7 @@ class AjuanController extends Controller
 
     public function printBukti(Pengajuan $pengajuan)
     {
-        $user = Auth::user();
-        if (
-            $user->id !== $pengajuan->user_id &&
-            !in_array($user->role, ['admin', 'kader', 'operator-desa', 'ketua-posyandu', 'ketua-timpembina-posyandu'])
-        ) {
-            abort(403, 'Unauthorized');
-        }
+        $this->authorize('viewAjuan', $pengajuan);
 
         return view('ajuan.print-bukti', [
             'pengajuan' => $pengajuan

@@ -54,7 +54,10 @@
             <div>
                 <x-input-label for="tanggal_lahir" :value="__('Tanggal Lahir')" />
                 <x-text-input id="tanggal_lahir" name="tanggal_lahir" type="date" class="mt-1 block w-full"
-                    :value="old('tanggal_lahir', $user->tanggal_lahir)" />
+                    :value="old(
+                        'tanggal_lahir',
+                        $user->tanggal_lahir ? \Carbon\Carbon::parse($user->tanggal_lahir)->format('Y-m-d') : '',
+                    )" />
                 <x-input-error class="mt-2" :messages="$errors->get('tanggal_lahir')" />
             </div>
 
@@ -76,51 +79,63 @@
                 <x-input-error class="mt-2" :messages="$errors->get('no_telepon')" />
             </div>
 
-            <div x-data="{ previewUrl: '{{ $user->ktp ?? '' }}' }">
+            <div x-data="{
+                previewUrl: '{{ $user->ktp ?? '' }}',
+                get isBase64Image() { return this.previewUrl && this.previewUrl.startsWith('data:image'); },
+                get isFilePath() { return this.previewUrl && !this.previewUrl.startsWith('data:') && !this.previewUrl.startsWith('pdf:'); },
+                get isPdf() { return this.previewUrl && (this.previewUrl.startsWith('data:application/pdf') || this.previewUrl === 'pdf-selected'); }
+            }">
                 <x-input-label for="ktp" :value="__('KTP (Opsional)')" />
                 <div
-                    class="mt-1 w-full h-32 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-md">
-                    <img x-show="previewUrl && previewUrl.startsWith('data:image')" :src="previewUrl"
+                    class="mt-1 w-full h-32 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-md overflow-hidden">
+                    <img x-show="isBase64Image || isFilePath" :src="previewUrl"
                         class="max-h-full max-w-full object-contain" alt="Preview KTP">
-                    <span x-show="previewUrl && !previewUrl.startsWith('data:image')" class="text-gray-500">File PDF
-                        (Tidak ada preview)</span>
-                    <span x-show="!previewUrl" class="text-gray-400">Preview KTP/PDF</span>
+                    <span x-show="isPdf" class="text-gray-500 text-sm">📄 File PDF (Tidak ada preview)</span>
+                    <span x-show="!previewUrl" class="text-gray-400 text-sm">Preview KTP / PDF</span>
                 </div>
                 <input id="ktp" class="block mt-2" type="file" name="ktp" accept="image/*,application/pdf"
                     @change="
-                           const file = $event.target.files[0];
-                           if (file && file.type.startsWith('image/')) {
-                               previewUrl = URL.createObjectURL(file);
-                           } else if (file) {
-                               previewUrl = 'pdf-selected'; // Placeholder
-                           } else {
-                               previewUrl = '{{ $user->ktp ?? '' }}';
-                           }
-                       " />
+                        const file = $event.target.files[0];
+                        if (!file) { previewUrl = '{{ $user->ktp ?? '' }}'; return; }
+                        if (file.type.startsWith('image/')) {
+                            previewUrl = URL.createObjectURL(file);
+                        } else {
+                            previewUrl = 'pdf-selected';
+                        }
+                    " />
+                @if ($user->ktp)
+                    <p class="text-xs text-green-600 mt-1">✓ File KTP sudah tersimpan. Upload baru untuk mengganti.</p>
+                @endif
                 <x-input-error class="mt-2" :messages="$errors->get('ktp')" />
             </div>
 
-            <div x-data="{ previewUrl: '{{ $user->kk ?? '' }}' }">
+            <div x-data="{
+                previewUrl: '{{ $user->kk ?? '' }}',
+                get isBase64Image() { return this.previewUrl && this.previewUrl.startsWith('data:image'); },
+                get isFilePath() { return this.previewUrl && !this.previewUrl.startsWith('data:') && !this.previewUrl.startsWith('pdf:'); },
+                get isPdf() { return this.previewUrl && (this.previewUrl.startsWith('data:application/pdf') || this.previewUrl === 'pdf-selected'); }
+            }">
                 <x-input-label for="kk" :value="__('KK (Opsional)')" />
                 <div
-                    class="mt-1 w-full h-32 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-md">
-                    <img x-show="previewUrl && previewUrl.startsWith('data:image')" :src="previewUrl"
+                    class="mt-1 w-full h-32 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-md overflow-hidden">
+                    <img x-show="isBase64Image || isFilePath" :src="previewUrl"
                         class="max-h-full max-w-full object-contain" alt="Preview KK">
-                    <span x-show="previewUrl && !previewUrl.startsWith('data:image')" class="text-gray-500">File PDF
-                        (Tidak ada preview)</span>
-                    <span x-show="!previewUrl" class="text-gray-400">Preview KK/PDF</span>
+                    <span x-show="isPdf" class="text-gray-500 text-sm">📄 File PDF (Tidak ada preview)</span>
+                    <span x-show="!previewUrl" class="text-gray-400 text-sm">Preview KK / PDF</span>
                 </div>
                 <input id="kk" class="block mt-2" type="file" name="kk" accept="image/*,application/pdf"
                     @change="
-                           const file = $event.target.files[0];
-                           if (file && file.type.startsWith('image/')) {
-                               previewUrl = URL.createObjectURL(file);
-                           } else if (file) {
-                               previewUrl = 'pdf-selected'; // Placeholder
-                           } else {
-                               previewUrl = '{{ $user->kk ?? '' }}';
-                           }
-                       " />
+                        const file = $event.target.files[0];
+                        if (!file) { previewUrl = '{{ $user->kk ?? '' }}'; return; }
+                        if (file.type.startsWith('image/')) {
+                            previewUrl = URL.createObjectURL(file);
+                        } else {
+                            previewUrl = 'pdf-selected';
+                        }
+                    " />
+                @if ($user->kk)
+                    <p class="text-xs text-green-600 mt-1">✓ File KK sudah tersimpan. Upload baru untuk mengganti.</p>
+                @endif
                 <x-input-error class="mt-2" :messages="$errors->get('kk')" />
             </div>
 

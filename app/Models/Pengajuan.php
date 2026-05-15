@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
@@ -29,22 +30,16 @@ class Pengajuan extends Model
         'ttd_kader',
         'tanggal_permohonan',
         'tindak_lanjut',
-        // Workflow: Ketua Tim Pembina Posyandu
-        'submitted_to_timpembina',
-        'submitted_to_timpembina_at',
-        'approved_by_timpembina',
-        'approved_by_timpembina_id',
-        'approved_by_timpembina_at',
+        // Workflow: Ketua Posyandu
+        'approved_by_ketua',
+        'approved_by_ketua_id',
+        'approved_by_ketua_at',
         // Workflow: Desa (Kades)
         'submitted_to_desa',
         'submitted_to_desa_at',
         'approved_by_kades',
         'approved_by_kades_id',
         'approved_by_kades_at',
-        // Legacy (backward compatibility)
-        'approved_by_ketua',
-        'approved_by_ketua_id',
-        'approved_by_ketua_at',
         'foto_kunjungan',
         'revision_requested_at',
         'revision_count',
@@ -61,19 +56,14 @@ class Pengajuan extends Model
         'verified_administrasi_items',
         'ttd_kader' => 'boolean',
         'foto_kunjungan' => 'array',
-        // Workflow: Ketua Tim Pembina Posyandu
-        'submitted_to_timpembina' => 'boolean',
-        'submitted_to_timpembina_at' => 'datetime',
-        'approved_by_timpembina' => 'boolean',
-        'approved_by_timpembina_at' => 'datetime',
+        // Workflow: Ketua Posyandu
+        'approved_by_ketua' => 'boolean',
+        'approved_by_ketua_at' => 'datetime',
         // Workflow: Desa (Kades)
         'submitted_to_desa' => 'boolean',
         'submitted_to_desa_at' => 'datetime',
         'approved_by_kades' => 'boolean',
         'approved_by_kades_at' => 'datetime',
-        // Legacy
-        'approved_by_ketua' => 'boolean',
-        'approved_by_ketua_at' => 'datetime',
         'tanggal_permohonan' => 'datetime',
         'revision_requested_at' => 'datetime',
     ];
@@ -101,11 +91,6 @@ class Pengajuan extends Model
     public function ketuaPosyandu()
     {
         return $this->belongsTo(User::class, 'approved_by_ketua_id');
-    }
-
-    public function ketuaTimpembina()
-    {
-        return $this->belongsTo(User::class, 'approved_by_timpembina_id');
     }
 
     public function kades()
@@ -144,6 +129,42 @@ class Pengajuan extends Model
     public function scopeActive($query)
     {
         return $query->whereNotIn('status_pengajuan', ['Disetujui', 'Ditolak']);
+    }
+
+    public function scopeVisibleTo(Builder $query, User $actor): Builder
+    {
+        if ($actor->role === 'admin' || $actor->role === 'ketua-timpembina-posyandu') {
+            return $query;
+        }
+
+        return match ($actor->role) {
+            'admin-kabupaten', 'kabid' => $query->whereHas('user', function (Builder $userQuery) use ($actor) {
+                $userQuery->where(function (Builder $regionQuery) use ($actor) {
+                    $regionQuery->where('kabupaten_id', $actor->kabupaten_id)
+                        ->orWhere('kabupaten', $actor->kabupaten);
+                });
+            }),
+            'admin-kecamatan' => $query->whereHas('user', function (Builder $userQuery) use ($actor) {
+                $userQuery->where(function (Builder $regionQuery) use ($actor) {
+                    $regionQuery->where('kecamatan_id', $actor->kecamatan_id)
+                        ->orWhere('kecamatan', $actor->kecamatan);
+                });
+            }),
+            'kades', 'bu-kades' => $query->whereHas('user', function (Builder $userQuery) use ($actor) {
+                $userQuery->where('desa', $actor->desa);
+            }),
+            'operator-desa', 'ketua-posyandu' => $query->whereHas('user', function (Builder $userQuery) use ($actor) {
+                $userQuery->where('posyandu_id', $actor->posyandu_id);
+            }),
+            'kader' => $actor->bidang_id
+                ? $query->where('bidang_id', $actor->bidang_id)
+                    ->whereHas('user', function (Builder $userQuery) use ($actor) {
+                        $userQuery->where('posyandu_id', $actor->posyandu_id);
+                    })
+                : $query->whereRaw('1 = 0'),
+            'masyarakat' => $query->where('user_id', $actor->id),
+            default => $query->whereRaw('1 = 0'),
+        };
     }
 
     public function user()

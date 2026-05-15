@@ -178,19 +178,12 @@
                                     <i class="bi bi-eye-fill mr-1"></i> Detail
                                 </a>
                             @endif
-                        @elseif (auth()->user()->role === 'ketua-timpembina-posyandu' && $ajuan->status_pengajuan === 'Diproses')
-                            @if (!$ajuan->approved_by_timpembina)
-                                <a href="{{ route('ajuan.show', $ajuan) }}"
-                                    class="px-3 py-1 bg-purple-500 text-white rounded-md text-xs hover:bg-purple-600 transition">
-                                    <i class="bi bi-arrow-right-circle-fill mr-1"></i> Tindak Lanjut
-                                </a>
-                            @else
-                                <a href="{{ route('ajuan.show', $ajuan) }}"
-                                    class="flex items-center px-3 py-1 bg-blue-500 text-white rounded-md text-xs hover:bg-blue-600">
-                                    <i class="bi bi-eye-fill mr-1"></i> Detail
-                                </a>
-                            @endif
-                        @elseif (auth()->user()->role === 'kades' && $ajuan->submitted_to_desa)
+                        @elseif (auth()->user()->role === 'ketua-timpembina-posyandu')
+                            <a href="{{ route('ajuan.show', $ajuan) }}"
+                                class="flex items-center px-3 py-1 bg-blue-500 text-white rounded-md text-xs hover:bg-blue-600">
+                                <i class="bi bi-eye-fill mr-1"></i> Detail
+                            </a>
+                        @elseif (auth()->user()->role === 'kades' && ($ajuan->submitted_to_desa || $ajuan->approved_by_ketua))
                             @if ($ajuan->status_pengajuan === 'Diproses')
                                 <a href="{{ route('ajuan.show', $ajuan) }}"
                                     class="px-3 py-1 bg-purple-500 text-white rounded-md text-xs hover:bg-purple-600 transition">
@@ -353,23 +346,13 @@
                             Detail
                         </a>
                     @endif
-                @elseif (auth()->user()->role === 'ketua-timpembina-posyandu' && $ajuan->status_pengajuan === 'Diproses')
-                    @if (!$ajuan->approved_by_timpembina)
-                        {{-- Step 3 belum selesai: Tindak Lanjut --}}
-                        <a href="{{ route('ajuan.show', $ajuan) }}"
-                            class="flex-1 flex items-center justify-center px-3 py-2 bg-purple-500 text-white rounded-md text-xs font-medium hover:bg-purple-600 transition-colors duration-150">
-                            <i class="bi bi-arrow-right-circle-fill mr-1"></i>
-                            Tindak Lanjut
-                        </a>
-                    @else
-                        {{-- Step 3 selesai (sudah submit ke desa): Detail --}}
-                        <a href="{{ route('ajuan.show', $ajuan) }}"
-                            class="flex-1 flex items-center justify-center px-3 py-2 bg-blue-500 text-white rounded-md text-xs font-medium hover:bg-blue-600 transition-colors duration-150">
-                            <i class="bi bi-eye-fill mr-1"></i>
-                            Detail
-                        </a>
-                    @endif
-                @elseif (auth()->user()->role === 'kades' && $ajuan->submitted_to_desa)
+                @elseif (auth()->user()->role === 'ketua-timpembina-posyandu')
+                    <a href="{{ route('ajuan.show', $ajuan) }}"
+                        class="flex-1 flex items-center justify-center px-3 py-2 bg-blue-500 text-white rounded-md text-xs font-medium hover:bg-blue-600 transition-colors duration-150">
+                        <i class="bi bi-eye-fill mr-1"></i>
+                        Detail
+                    </a>
+                @elseif (auth()->user()->role === 'kades' && ($ajuan->submitted_to_desa || $ajuan->approved_by_ketua))
                     @if ($ajuan->status_pengajuan === 'Diproses')
                         {{-- Sudah diajukan ke desa, belum disetujui kades: Tindak Lanjut --}}
                         <a href="{{ route('ajuan.show', $ajuan) }}"

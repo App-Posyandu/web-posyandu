@@ -16,16 +16,8 @@ class CheckRole
             return redirect('login');
         }
 
-        if (in_array($user->role, ['admin', 'kabid'])) {
-            return $next($request);
-        }
-
         if (!in_array($user->role, $roles)) {
             abort(403, 'AKSES DITOLAK: ROLE TIDAK SESUAI.');
-        }
-
-        if (!in_array($user->role, $roles)) {
-            abort(403, 'AKSES DITOLAK: ANDA TIDAK MEMILIKI ROLE YANG SESUAI.');
         }
 
         if ($user->role === 'kader' && is_null($user->verified_at)) {

@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
 use Str;
@@ -18,10 +19,35 @@ use Str;
 class RegisteredUserController extends Controller
 {
     const PROVINCE_ID = 33;
+
     public function create(): View
     {
-        $kabupatens = Http::get(env('API_WILAYAH_URL') . 'regencies/' . self::PROVINCE_ID . '.json')->json();
+        $kabupatens = $this->fetchKabupatenList();
+
         return view('auth.register', compact('kabupatens'));
+    }
+
+    private function fetchKabupatenList(): array
+    {
+        try {
+            $response = Http::timeout(10)
+                ->retry(2, 100)
+                ->get(env('API_WILAYAH_URL') . 'regencies/' . self::PROVINCE_ID . '.json');
+
+            if ($response->successful()) {
+                $payload = $response->json();
+
+                if (is_array($payload) && isset($payload['data']) && is_array($payload['data'])) {
+                    return $payload;
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('register.wilayah_api_unavailable', [
+                'message' => $e->getMessage(),
+            ]);
+        }
+
+        return ['data' => []];
     }
 
     public function store(Request $request): RedirectResponse

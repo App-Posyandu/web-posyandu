@@ -26,7 +26,7 @@
             </div>
         @endif
         <div class="w-full flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-            <div class="w-full sm:w-auto">
+            <div class="w-full">
                 <div>
                     @if (auth()->user()->role === 'kader' && auth()->user()->bidang)
                         <h2 class="text-xl sm:text-2xl font-bold text-gray-800">
@@ -58,12 +58,11 @@
                             <div class="flex-1">
                                 <p class="text-sm font-medium text-blue-900">Filter Otomatis Aktif</p>
                                 <p class="text-xs text-blue-700 mt-1">
-                                    Anda hanya melihat pengajuan yang:
+                                    Anda hanya melihat pengajuan di posyandu Anda dengan aturan:
                                 </p>
                                 <ul class="text-xs text-blue-700 mt-2 space-y-1 list-disc list-inside">
-                                    <li>Sudah menyelesaikan kunjungan lapangan (Tahap 3)</li>
-                                    <li>Memerlukan persetujuan dari Ketua Posyandu</li>
-                                    <li>Atau pengajuan yang sudah disetujui (status "Sesuai")</li>
+                                    <li>Mode aktif: status Diproses</li>
+                                    <li>Mode arsip: status Disetujui atau Ditolak</li>
                                 </ul>
                             </div>
                         </div>
@@ -75,8 +74,8 @@
                             <div class="flex-1">
                                 <p class="text-sm font-medium text-purple-900">Filter Otomatis Aktif</p>
                                 <p class="text-xs text-purple-700 mt-1">
-                                    Anda hanya melihat pengajuan yang sudah diajukan ke Desa dan memerlukan persetujuan
-                                    akhir dari Kepala Desa
+                                    Anda hanya melihat pengajuan yang sudah diajukan ke desa.
+                                    Mode aktif menampilkan status Diproses, mode arsip menampilkan Disetujui atau Ditolak.
                                 </p>
                             </div>
                         </div>
@@ -143,14 +142,14 @@
                         <a href="{{ route('dashboard.partials.pilih-layanan') }}"
                             class="w-full sm:w-auto flex items-center justify-center px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600 transition-colors duration-150">
                             <i class="bi bi-plus-circle-fill mr-2"></i>
-                            <span class="hidden sm:inline">Tambah Ajuan</span>
+                            <span class="hidden sm:inline whitespace-nowrap">Tambah Ajuan</span>
                             <span class="sm:hidden">Buat Ajuan Baru</span>
                         </a>
                     @else
                         <a href="{{ route('dashboard.partials.pilih-user') }}"
                             class="w-full sm:w-auto flex items-center justify-center px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600 transition-colors duration-150">
                             <i class="bi bi-plus-circle-fill mr-2"></i>
-                            <span class="hidden sm:inline">Tambah Ajuan</span>
+                            <span class="hidden sm:inline whitespace-nowrap">Tambah Ajuan</span>
                             <span class="sm:hidden">Buat Ajuan Baru</span>
                         </a>
                     @endif

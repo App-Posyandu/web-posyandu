@@ -65,20 +65,53 @@
         </div>
     </div>
 
-    @include('sweetalert2::index')
-    <script src="{{ asset('/sw.js') }}"></script>
+    @if (app('view')->exists('sweetalert2::index'))
+        @include('sweetalert2::index')
+    @endif
     <script src="{{ asset('pwa-install.js') }}"></script>
     @stack('scripts')
     <script>
         if ("serviceWorker" in navigator) {
-            navigator.serviceWorker.register("/sw.js").then(
+            const swUrl = "{{ asset('/sw.js') }}?v={{ filemtime(public_path('sw.js')) }}";
+
+            navigator.serviceWorker.register(swUrl, {
+                updateViaCache: 'none'
+            }).then(
                 (registration) => {
                     console.log("Service worker registration succeeded:", registration);
+
+                    registration.update();
+
+                    if (registration.waiting) {
+                        registration.waiting.postMessage({
+                            type: 'SKIP_WAITING'
+                        });
+                    }
+
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+                        if (!newWorker) return;
+
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                newWorker.postMessage({
+                                    type: 'SKIP_WAITING'
+                                });
+                            }
+                        });
+                    });
                 },
                 (error) => {
                     console.error(`Service worker registration failed: ${error}`);
                 },
             );
+
+            let refreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (refreshing) return;
+                refreshing = true;
+                window.location.reload();
+            });
         } else {
             console.error("Service workers are not supported.");
         }
