@@ -1,0 +1,19 @@
+services:
+  app:
+    build: .
+    container_name: eposyandu_app
+    restart: unless-stopped
+    ports:
+      - "8080:8000"
+    volumes:
+      # Mount seluruh project — perubahan kode langsung terdeteksi tanpa build ulang
+      - .:/var/www/html
+      # Kecualikan vendor (pakai yang di dalam container)
+      - /var/www/html/vendor
+    env_file:
+      - .env
+    # Jalankan migrate otomatis sebelum serve
+    command: php artisan serve --host=0.0.0.0 --port=8000
+    extra_hosts:
+      # Ini yang penting! Biar container bisa akses PostgreSQL di Laragon
+      - "host.docker.internal:host-gateway"
