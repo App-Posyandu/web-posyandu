@@ -35,7 +35,7 @@ services:
       - SESSION_DRIVER=redis
       - CACHE_STORE=redis
       - QUEUE_CONNECTION=redis
-      - RUN_SEEDERS=false
+      - RUN_SEEDERS=auto
 
   # Vite / Node.js service for Frontend Hot-Reloading
   vite:

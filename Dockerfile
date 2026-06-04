@@ -50,8 +50,8 @@ COPY . .
 COPY --from=node-builder /app/public/build ./public/build
 
 # Run Composer installation for production
-RUN composer update ladumor/laravel-pwa --no-interaction --ignore-platform-reqs --no-scripts 2>/dev/null || true \
-    && composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev --ignore-platform-reqs
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader --ignore-platform-reqs 2>/dev/null \
+    || composer update --no-interaction --prefer-dist --optimize-autoloader --ignore-platform-reqs
 
 # Copy PHP OPcache and FPM pool configuration
 COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/opcache.ini

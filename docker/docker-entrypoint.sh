@@ -44,10 +44,25 @@ php artisan clear-compiled 2>/dev/null || rm -f bootstrap/cache/packages.php boo
 echo "Running database migrations..."
 php artisan migrate --force
 
-# 6. Conditionally run database seeding (default: false to prevent duplicate seedings on restart)
+# 6. Run seeders: auto = seed only on fresh DB, true = always seed, false = never seed
 if [ "$RUN_SEEDERS" = "true" ]; then
-    echo "Seeding database..."
+    echo "Seeding database (forced)..."
     php artisan db:seed --force
+elif [ "$RUN_SEEDERS" != "false" ]; then
+    echo "Checking if database needs seeding..."
+    USER_COUNT=$(php -r "
+        \$pdo = new PDO(
+            'pgsql:host=' . getenv('DB_HOST') . ';port=' . getenv('DB_PORT') . ';dbname=' . getenv('DB_DATABASE'),
+            getenv('DB_USERNAME'), getenv('DB_PASSWORD')
+        );
+        echo \$pdo->query('SELECT COUNT(*) FROM users')->fetchColumn();
+    " 2>/dev/null || echo "0")
+    if [ "$USER_COUNT" = "0" ]; then
+        echo "Fresh database detected, seeding..."
+        php artisan db:seed --force
+    else
+        echo "Database already has ${USER_COUNT} users, skipping seed."
+    fi
 fi
 
 # 7. Optimize Laravel configurations
