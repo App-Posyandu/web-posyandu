@@ -21,6 +21,7 @@ export default defineConfig({
         },
         watch: {
             usePolling: true,
+            ignored: ['**/node_modules/**', '**/vendor/**', '**/storage/**'],
         },
     },
     optimizeDeps: {
