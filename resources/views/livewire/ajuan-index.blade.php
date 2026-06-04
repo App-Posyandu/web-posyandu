@@ -136,7 +136,7 @@
                     </div>
                 @endif
             </div>
-            @if (auth()->user()->role === 'kader' || auth()->user()->role === 'masyarakat' || auth()->user()->role === 'admin')
+            @if (in_array(auth()->user()->role, ['kader', 'masyarakat', 'admin']))
                 <div class="w-full sm:w-auto">
                     @if (auth()->user()->role === 'masyarakat')
                         <a href="{{ route('dashboard.partials.pilih-layanan') }}"

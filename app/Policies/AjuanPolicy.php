@@ -123,7 +123,7 @@ class AjuanPolicy
             return Response::deny('Kader hanya dapat memverifikasi pengajuan di bidangnya sendiri.');
         }
 
-        if (in_array($user->role, ['ketua-posyandu', 'ketua-timpembina-posyandu'], true)) {
+        if (in_array($user->role, ['ketua-posyandu', 'ketua-timpembina-posyandu', 'admin'], true)) {
             return Response::allow();
         }
 
