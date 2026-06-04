@@ -1,7 +1,27 @@
-# .dockerignore
-public/storage
-node_modules
+# Directories to ignore from Docker build context
 .git
-.env
-storage/logs/*.log
+.github
+node_modules
 vendor
+
+# Laravel files to ignore
+.env
+.env.backup
+.env.production
+storage/logs/*.log
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*.php
+bootstrap/cache/*.php
+public/storage
+
+# Docker / local dev files to ignore
+docker-compose.yaml
+docker-compose.override.yml
+.phpunit.result.cache
+tests/
+phpunit.xml
+README.md
+*.pdf
+_ide_helper.php
+test_output.txt
