@@ -87,3 +87,5 @@ volumes:
     driver: local
   redisdata:
     driver: local
+  ssl:
+    driver: local
