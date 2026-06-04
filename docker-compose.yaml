@@ -1,0 +1,89 @@
+services:
+  # Web application service (PHP + Nginx + Supervisor)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sapaposyandu
+    restart: unless-stopped
+    ports:
+      - "8001:80"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - .:/var/www/html
+      - /var/www/html/vendor
+      - /var/www/html/node_modules
+      - /var/www/html/public/build
+    env_file:
+      - .env
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - APP_URL=http://localhost:8001
+      - DB_CONNECTION=pgsql
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_DATABASE=db_sapa
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=s4p4masE
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - SESSION_DRIVER=redis
+      - CACHE_STORE=redis
+      - QUEUE_CONNECTION=redis
+      - RUN_SEEDERS=auto
+
+  # Vite / Node.js service for Frontend Hot-Reloading
+  vite:
+    image: node:20-alpine
+    container_name: sapaposyandu_vite
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html
+      - /var/www/html/node_modules
+    ports:
+      - "5173:5173"
+    command: sh -c "npm install && npm run dev -- --host"
+    depends_on:
+      - app
+
+  # PostgreSQL database service
+  db:
+    image: postgres:15-alpine
+    container_name: sapaposyandu_db
+    restart: unless-stopped
+    ports:
+      - "5434:5432"
+    environment:
+      - POSTGRES_DB=db_sapa
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=s4p4masE
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d db_sapa"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Redis caching & queue service
+  redis:
+    image: redis:alpine
+    container_name: sapaposyandu_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+
+volumes:
+  pgdata:
+    driver: local
+  redisdata:
+    driver: local

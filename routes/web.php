@@ -256,7 +256,7 @@ Route::middleware('auth')->group(function () {
     // AJUAN ROUTES (PERMOHONAN & ADMINISTRASI)
     // ========================================
 
-    Route::middleware('role:ketua-timpembina-posyandu,kabid,admin-kecamatan,admin-kabupaten,kades,bu-kades,ketua-posyandu,operator-desa,kader,masyarakat')->group(function () {
+    Route::middleware('role:admin,ketua-timpembina-posyandu,kabid,admin-kecamatan,admin-kabupaten,kades,bu-kades,ketua-posyandu,operator-desa,kader,masyarakat')->group(function () {
         Route::get('/ajuan', [AjuanController::class, 'index'])->name('ajuan.index');
         Route::get('/ajuan/create/{bidang}', [AjuanController::class, 'create'])->name('ajuan.create');
         Route::post('/ajuan/store-permohonan', [AjuanController::class, 'storePermohonan'])->name('ajuan.store.permohonan');
