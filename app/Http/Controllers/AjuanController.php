@@ -180,7 +180,7 @@ class AjuanController extends Controller
     {
         $user = Auth::user();
         // Only allow masyarakat and kader to access pilih-layanan
-        if (! in_array($user->role, ['masyarakat', 'kader'])) {
+        if (! in_array($user->role, ['masyarakat', 'kader', 'admin'])) {
             abort(403, 'Unauthorized');
         }
         if ($request->has('on_behalf_of')) {
@@ -224,7 +224,7 @@ class AjuanController extends Controller
                 return redirect()->route('ajuan.create', $bidangSlug);
             } else {
                 // only redirect to pilih-layanan if the current user may access it
-                if (in_array($user->role, ['masyarakat', 'kader'])) {
+                if (in_array($user->role, ['masyarakat', 'kader', 'admin'])) {
                     return redirect()->route('dashboard.partials.pilih-layanan');
                 }
 
@@ -803,8 +803,7 @@ class AjuanController extends Controller
         $statusHistory = '';
         $catatanHistory = $request->catatan;
 
-        if (in_array($user->role, ['kader', 'ketua-posyandu'])) {
-
+        if (in_array($user->role, ['kader', 'ketua-posyandu', 'admin'])) {
             if ($step == 1) {
                 $keputusan = $request->input('keputusan');
 

@@ -465,7 +465,7 @@
         </div>
 
         {{-- Verifikasi Step 1-2 (kader atau ketua-posyandu) --}}
-        @if (in_array(auth()->user()->role, ['kader', 'ketua-posyandu']) && $ajuan->status_pengajuan === 'Diproses')
+        @if (in_array(auth()->user()->role, ['kader', 'ketua-posyandu', 'admin']) && $ajuan->status_pengajuan === 'Diproses')
             <div class="w-full mx-8">
                 <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-4 md:p-8 mx-0 md:mx-8"
                     x-data="{
@@ -752,7 +752,7 @@
         @endif
 
         {{-- KETUA POSYANDU: Approval Step 3 --}}
-        @if (auth()->user()->role === 'ketua-posyandu' && $ajuan->kunjungan_lapangan && !$ajuan->approved_by_ketua)
+        @if (in_array(auth()->user()->role, ['ketua-posyandu', 'admin']) && $ajuan->kunjungan_lapangan && !$ajuan->approved_by_ketua)
             <div class="w-full mx-8">
                 <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-4 md:p-8 mx-0 md:mx-8">
                     <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Persetujuan Ketua Posyandu</h2>
@@ -829,7 +829,7 @@
         @endif
 
         {{-- KADES: Approval Final --}}
-        @if (auth()->user()->role === 'kades' && ($ajuan->submitted_to_desa || $ajuan->approved_by_ketua) && $ajuan->status_pengajuan === 'Diproses')
+        @if (in_array(auth()->user()->role, ['kades', 'admin']) && ($ajuan->submitted_to_desa || $ajuan->approved_by_ketua) && $ajuan->status_pengajuan === 'Diproses')
             <div class="w-full mx-8">
                 <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-4 md:p-8 mx-0 md:mx-8">
                     <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Persetujuan Kepala Desa</h2>

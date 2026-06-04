@@ -21,7 +21,8 @@ return new class extends Migration
                 'ketua-posyandu',
                 'ketua-timpembina-posyandu',
                 'kades',
-                'system'
+                'system',
+                'admin',
             ])->nullable();
             $table->timestamp('created_at');
         });
