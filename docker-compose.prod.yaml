@@ -1,0 +1,121 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: sapaposyandu:latest
+    container_name: sapaposyandu
+    restart: unless-stopped
+    ports:
+      - "8001:80"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - app_storage:/var/www/html/storage
+      - app_bootstrap:/var/www/html/bootstrap/cache
+    networks:
+      - default
+      - scb-network
+    environment:
+      - APP_NAME=Sapa Posyandu
+      - APP_ENV=production
+      - APP_KEY=base64:YPqRaQ77HmU9w2lXE74z6ksjzUB/a75uuGMw6wnStYI=
+      - APP_DEBUG=false
+      - APP_URL=https://sapaposyandu.kebumenkab.go.id
+
+      - APP_LOCALE=id
+      - APP_FALLBACK_LOCALE=id
+      - APP_FAKER_LOCALE=id_ID
+
+      - GOOGLE_CLIENT_ID=875620849263-fs7f4orokat8uctbfrqeo1n4nffc22up.apps.googleusercontent.com
+      - GOOGLE_CLIENT_SECRET=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
+      - GOOGLE_REDIRECT_URI=https://sapaposyandu.kebumenkab.go.id/auth/google/callback
+
+      - APP_MAINTENANCE_DRIVER=file
+      - API_WILAYAH_URL=https://wilayah.id/api/
+      - REVISION_DEBUG_MODE=false
+      - PHP_CLI_SERVER_WORKERS=4
+      - BCRYPT_ROUNDS=12
+
+      - LOG_CHANNEL=stack
+      - LOG_STACK=single
+      - LOG_DEPRECATIONS_CHANNEL=null
+      - LOG_LEVEL=error
+
+      - DB_CONNECTION=pgsql
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_DATABASE=db_sapa
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=s4p4masE
+
+      - SESSION_DRIVER=redis
+      - SESSION_LIFETIME=120
+      - SESSION_ENCRYPT=false
+      - SESSION_PATH=/
+      - SESSION_DOMAIN=
+
+      - BROADCAST_CONNECTION=log
+      - FILESYSTEM_DISK=local
+      - QUEUE_CONNECTION=redis
+      - CACHE_STORE=redis
+
+      - REDIS_CLIENT=phpredis
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=null
+      - REDIS_PORT=6379
+
+      - MAIL_MAILER=log
+      - MAIL_SCHEME=null
+      - MAIL_HOST=127.0.0.1
+      - MAIL_PORT=2525
+      - MAIL_USERNAME=null
+      - MAIL_PASSWORD=null
+      - MAIL_FROM_ADDRESS=admin@sapaposyandu.kebumenkab.go.id
+      - MAIL_FROM_NAME=Sapa Posyandu
+
+      - RUN_SEEDERS=auto
+
+  db:
+    image: postgres:15-alpine
+    container_name: sapaposyandu_db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=db_sapa
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=s4p4masE
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d db_sapa"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  redis:
+    image: redis:alpine
+    container_name: sapaposyandu_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redisdata:/data
+
+volumes:
+  pgdata:
+    driver: local
+  redisdata:
+    driver: local
+  app_storage:
+    driver: local
+  app_bootstrap:
+    driver: local
+
+networks:
+  default:
+  scb-network:
+    external: true
+    name: scb-network
