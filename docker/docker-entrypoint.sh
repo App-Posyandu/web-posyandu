@@ -84,6 +84,10 @@ echo "Setting storage and bootstrap/cache permissions..."
 chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# 9. Start supervisord (which starts nginx & php-fpm)
+# 9. Create public storage symlink
+echo "Creating storage symlink..."
+php artisan storage:link --force 2>/dev/null || true
+
+# 10. Start supervisord (which starts nginx & php-fpm)
 echo "Starting application services (Nginx, PHP-FPM, Queue Worker)..."
 exec "$@"
