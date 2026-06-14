@@ -103,10 +103,14 @@ class Posyandu extends Model
         return match ($actor->role) {
             'admin-kabupaten', 'kabid' => $query->where(function (Builder $q) use ($actor) {
                 if ($actor->kabupaten_id) {
-                    $q->where('kabupaten_id', $actor->kabupaten_id)
-                      ->orWhere('kabupaten', $actor->kabupaten);
-                } else {
+                    $q->where('kabupaten_id', $actor->kabupaten_id);
+                    if ($actor->kabupaten) {
+                        $q->orWhere('kabupaten', $actor->kabupaten);
+                    }
+                } elseif ($actor->kabupaten) {
                     $q->where('kabupaten', $actor->kabupaten);
+                } else {
+                    $q->whereRaw('1 = 0');
                 }
             }),
             'admin-kecamatan' => $query->where(function (Builder $q) use ($actor) {
