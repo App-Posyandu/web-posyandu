@@ -27,42 +27,81 @@
                                 <x-input-error :messages="$errors->get('nama_posyandu')" class="mt-2" />
                             </div>
 
-                            {{-- Kabupaten (Disabled) --}}
+                            {{-- Kabupaten --}}
                             <div>
                                 <x-input-label for="kabupaten" :value="__('Kabupaten/Kota')" />
-                                <input type="hidden" name="kabupaten" value="{{ $posyandu->kabupaten }}">
-                                <input type="text" value="{{ $posyandu->kabupaten }}" disabled
-                                    class="block mt-1 w-full border-gray-300 rounded-md shadow-sm bg-gray-100 cursor-not-allowed">
-                                <p class="mt-1 text-xs text-gray-500">
-                                    <i class="bi bi-lock-fill text-gray-400"></i>
-                                    Kabupaten tidak dapat diubah
-                                </p>
+                                @if(auth()->user()->role === 'admin')
+                                    <select name="kabupaten" id="kabupaten"
+                                        x-model="selectedKabupaten"
+                                        @change="fetchKecamatan(); selectedKecamatan = ''; selectedDesa = ''"
+                                        class="block mt-1 w-full border-gray-300 rounded-md shadow-sm focus:border-pink-500 focus:ring-pink-500" required>
+                                        <option value="">-- Pilih Kabupaten/Kota --</option>
+                                        <template x-for="kab in kabupatens" :key="kab.code">
+                                            <option :value="`${kab.code}_${kab.name}`" x-text="kab.name"
+                                                :selected="kab.name === '{{ $posyandu->kabupaten }}'"></option>
+                                        </template>
+                                    </select>
+                                @else
+                                    <input type="hidden" name="kabupaten" value="{{ $posyandu->kabupaten }}">
+                                    <input type="text" value="{{ $posyandu->kabupaten }}" disabled
+                                        class="block mt-1 w-full border-gray-300 rounded-md shadow-sm bg-gray-100 cursor-not-allowed">
+                                    <p class="mt-1 text-xs text-gray-500">
+                                        <i class="bi bi-lock-fill text-gray-400"></i> Kabupaten tidak dapat diubah
+                                    </p>
+                                @endif
                                 <x-input-error :messages="$errors->get('kabupaten')" class="mt-2" />
                             </div>
 
-                            {{-- Kecamatan (Disabled) --}}
+                            {{-- Kecamatan --}}
                             <div>
                                 <x-input-label for="kecamatan" :value="__('Kecamatan')" />
-                                <input type="hidden" name="kecamatan" value="{{ $posyandu->kecamatan }}">
-                                <input type="text" value="{{ $posyandu->kecamatan }}" disabled
-                                    class="block mt-1 w-full border-gray-300 rounded-md shadow-sm bg-gray-100 cursor-not-allowed">
-                                <p class="mt-1 text-xs text-gray-500">
-                                    <i class="bi bi-lock-fill text-gray-400"></i>
-                                    Kecamatan tidak dapat diubah
-                                </p>
+                                @if(auth()->user()->role === 'admin')
+                                    <div x-show="loadingKecamatan" class="mt-1 text-sm text-gray-500">Memuat kecamatan...</div>
+                                    <select name="kecamatan" id="kecamatan"
+                                        x-show="!loadingKecamatan"
+                                        x-model="selectedKecamatan"
+                                        @change="fetchDesa(); selectedDesa = ''"
+                                        class="block mt-1 w-full border-gray-300 rounded-md shadow-sm focus:border-pink-500 focus:ring-pink-500" required>
+                                        <option value="">-- Pilih Kecamatan --</option>
+                                        <template x-for="kec in kecamatanList" :key="kec.code">
+                                            <option :value="`${kec.code}_${kec.name}`" x-text="kec.name"
+                                                :selected="kec.name === '{{ $posyandu->kecamatan }}'"></option>
+                                        </template>
+                                    </select>
+                                @else
+                                    <input type="hidden" name="kecamatan" value="{{ $posyandu->kecamatan }}">
+                                    <input type="text" value="{{ $posyandu->kecamatan }}" disabled
+                                        class="block mt-1 w-full border-gray-300 rounded-md shadow-sm bg-gray-100 cursor-not-allowed">
+                                    <p class="mt-1 text-xs text-gray-500">
+                                        <i class="bi bi-lock-fill text-gray-400"></i> Kecamatan tidak dapat diubah
+                                    </p>
+                                @endif
                                 <x-input-error :messages="$errors->get('kecamatan')" class="mt-2" />
                             </div>
 
-                            {{-- Desa (Disabled) --}}
+                            {{-- Desa --}}
                             <div>
                                 <x-input-label for="desa" :value="__('Desa/Kelurahan')" />
-                                <input type="hidden" name="desa" value="{{ $posyandu->desa }}">
-                                <input type="text" value="{{ $posyandu->desa }}" disabled
-                                    class="block mt-1 w-full border-gray-300 rounded-md shadow-sm bg-gray-100 cursor-not-allowed">
-                                <p class="mt-1 text-xs text-gray-500">
-                                    <i class="bi bi-lock-fill text-gray-400"></i>
-                                    Desa tidak dapat diubah
-                                </p>
+                                @if(auth()->user()->role === 'admin')
+                                    <div x-show="loadingDesa" class="mt-1 text-sm text-gray-500">Memuat desa...</div>
+                                    <select name="desa" id="desa"
+                                        x-show="!loadingDesa"
+                                        x-model="selectedDesa"
+                                        class="block mt-1 w-full border-gray-300 rounded-md shadow-sm focus:border-pink-500 focus:ring-pink-500" required>
+                                        <option value="">-- Pilih Desa/Kelurahan --</option>
+                                        <template x-for="ds in desaList" :key="ds.code">
+                                            <option :value="`${ds.code}_${ds.name}`" x-text="ds.name"
+                                                :selected="ds.name === '{{ $posyandu->desa }}'"></option>
+                                        </template>
+                                    </select>
+                                @else
+                                    <input type="hidden" name="desa" value="{{ $posyandu->desa }}">
+                                    <input type="text" value="{{ $posyandu->desa }}" disabled
+                                        class="block mt-1 w-full border-gray-300 rounded-md shadow-sm bg-gray-100 cursor-not-allowed">
+                                    <p class="mt-1 text-xs text-gray-500">
+                                        <i class="bi bi-lock-fill text-gray-400"></i> Desa tidak dapat diubah
+                                    </p>
+                                @endif
                                 <x-input-error :messages="$errors->get('desa')" class="mt-2" />
                             </div>
                         </div>

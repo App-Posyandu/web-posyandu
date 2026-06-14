@@ -53,8 +53,9 @@ COPY --from=node-builder /app/public/build ./public/build
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader --ignore-platform-reqs 2>/dev/null \
     || composer update --no-interaction --prefer-dist --optimize-autoloader --ignore-platform-reqs
 
-# Copy PHP OPcache and FPM pool configuration
+# Copy PHP OPcache, upload settings, and FPM pool configuration
 COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
+COPY docker/php/php.ini     /usr/local/etc/php/conf.d/uploads.ini
 COPY docker/php/fpm-pool.conf /usr/local/etc/php-fpm.d/zzz-app.conf
 
 # Copy Nginx virtual host configuration
