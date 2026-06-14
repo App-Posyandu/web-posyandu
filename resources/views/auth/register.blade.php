@@ -9,9 +9,9 @@
         @endif
 
         @if ($errors->any())
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                <strong>Validation Errors:</strong>
-                <ul class="list-disc list-inside">
+            <div class="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                <strong class="block mb-1">Mohon periksa kembali isian Anda:</strong>
+                <ul class="list-disc list-inside space-y-1 text-sm">
                     @foreach ($errors->all() as $error)
                         <li>{{ $error }}</li>
                     @endforeach
