@@ -72,44 +72,38 @@ class UserController extends Controller
                 break;
 
             case 'operator-desa':
-                $query->where(function ($q) use ($currentUser) {
-                    $q->where('kabupaten', $currentUser->kabupaten)
-                        ->where('kecamatan', $currentUser->kecamatan)
-                        ->where('desa', $currentUser->desa);
-                })
-                    ->whereIn('role', [
-                        'kades',
-                        'bu-kades',
-                        'ketua-posyandu',
-                        'kader',
-                        'masyarakat'
-                    ]);
+                // visibleTo sudah handle scope wilayah — tambah role filter saja
+                $query->whereIn('role', ['kades', 'bu-kades', 'ketua-posyandu', 'kader', 'masyarakat']);
                 break;
+
             case 'kades':
-                $query->whereIn('role', ['admin-kabupaten', 'kabid', 'admin-kecamatan', 'ketua-posyandu', 'operator-desa', 'kader', 'masyarakat']);
-                if ($currentUser->posyandu_id) {
-                    $query->whereHas('user', fn($q) => $q->where('posyandu_id', $currentUser->posyandu_id));
-                } elseif ($currentUser->desa) {
-                    $query->whereHas('user', fn($q) => $q->where('desa', $currentUser->desa));
-                }
+            case 'bu-kades':
+                // visibleTo sudah filter berdasarkan desa+kecamatan
+                $query->whereIn('role', ['ketua-posyandu', 'operator-desa', 'kader', 'masyarakat']);
                 break;
+
             case 'ketua-posyandu':
-                $query->whereIn('role', ['operator-desa', 'kader', 'masyarakat'])
+                $query->whereIn('role', ['kader', 'masyarakat'])
                     ->where('posyandu_id', $currentUser->posyandu_id);
                 break;
 
             case 'admin-kecamatan':
+                // visibleTo sudah filter kecamatan
                 $query->whereIn('role', ['ketua-posyandu', 'operator-desa', 'kader', 'masyarakat']);
                 break;
 
             case 'kabid':
+                // visibleTo sudah filter kabupaten
                 $query->whereIn('role', ['admin-kecamatan', 'ketua-posyandu', 'operator-desa', 'kader', 'masyarakat']);
                 break;
 
             case 'admin-kabupaten':
-                $query->whereIn('role', ['kabid', 'ketua-timpembina-posyandu', 'admin-kabupaten', 'admin-kecamatan', 'operator-desa', 'kades']);
+                $query->whereIn('role', [
+                    'kabid', 'ketua-timpembina-posyandu', 'admin-kecamatan',
+                    'kades', 'bu-kades', 'operator-desa', 'ketua-posyandu', 'kader', 'masyarakat',
+                ]);
                 if ($currentUser->kabupaten) {
-                    $query->where('kabupaten', 'LIKE', "%{$currentUser->kabupaten}%");
+                    $query->where('kabupaten', $currentUser->kabupaten);
                 }
                 break;
             case 'ketua-timpembina-posyandu':

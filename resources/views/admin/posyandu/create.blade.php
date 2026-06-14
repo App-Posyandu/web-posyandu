@@ -24,7 +24,7 @@
                                 <x-input-error :messages="$errors->get('nama_posyandu')" class="mt-2" />
                             </div>
 
-                            @if (auth()->user()->kabupaten)
+                            @if (auth()->user()->kabupaten && auth()->user()->role !== 'admin')
                                 <div>
                                     <x-input-label for="kabupaten" :value="__('Kabupaten/Kota')" />
                                     <input type="hidden" name="kabupaten" value="{{ auth()->user()->kabupaten }}">
@@ -72,7 +72,7 @@
                                 </div>
                             @endif
 
-                            @if (auth()->user()->kecamatan)
+                            @if (auth()->user()->kecamatan && auth()->user()->role !== 'admin')
                                 <div>
                                     <x-input-label for="kecamatan" :value="__('Kecamatan')" />
                                     <input type="hidden" name="kecamatan" value="{{ auth()->user()->kecamatan }}">
@@ -134,7 +134,7 @@
                                 </div>
                             @endif
 
-                            @if (auth()->user()->desa)
+                            @if (auth()->user()->desa && auth()->user()->role !== 'admin')
                                 <div>
                                     <x-input-label for="desa" :value="__('Desa/Kelurahan')" />
                                     <input type="hidden" name="desa" value="{{ auth()->user()->desa }}">
@@ -345,15 +345,15 @@
                     kecamatanList: [],
                     desaList: [],
 
-                    @if (!auth()->user()->kabupaten)
+                    @if (!auth()->user()->kabupaten || auth()->user()->role === 'admin')
                         selectedKabupaten: '',
                     @endif
 
-                    @if (!auth()->user()->kecamatan)
+                    @if (!auth()->user()->kecamatan || auth()->user()->role === 'admin')
                         selectedKecamatan: '',
                     @endif
 
-                    @if (!auth()->user()->desa)
+                    @if (!auth()->user()->desa || auth()->user()->role === 'admin')
                         selectedDesa: '',
                     @endif
 
@@ -372,11 +372,11 @@
                     init() {
                         console.log('Posyandu Form initialized');
 
-                        @if (auth()->user()->kabupaten && !auth()->user()->kecamatan)
+                        @if (auth()->user()->kabupaten && !auth()->user()->kecamatan && auth()->user()->role !== 'admin')
                             this.fetchKecamatan();
                         @endif
 
-                        @if (auth()->user()->kecamatan && !auth()->user()->desa)
+                        @if (auth()->user()->kecamatan && !auth()->user()->desa && auth()->user()->role !== 'admin')
                             this.fetchDesa();
                         @endif
 
@@ -426,17 +426,17 @@
                         this.kecamatanList = [];
                         this.desaList = [];
 
-                        @if (!auth()->user()->kecamatan)
+                        @if (!auth()->user()->kecamatan || auth()->user()->role === 'admin')
                             this.selectedKecamatan = '';
                         @endif
 
-                        @if (!auth()->user()->desa)
+                        @if (!auth()->user()->desa || auth()->user()->role === 'admin')
                             this.selectedDesa = '';
                         @endif
 
                         this.loadingKecamatan = true;
 
-                        @if (auth()->user()->kabupaten)
+                        @if (auth()->user()->kabupaten && auth()->user()->role !== 'admin')
                             const kabupatenName = '{{ auth()->user()->kabupaten }}';
                             const kabupaten = this.kabupatens.find(k => k.name === kabupatenName);
                             if (!kabupaten) {
@@ -477,13 +477,13 @@
 
                         this.desaList = [];
 
-                        @if (!auth()->user()->desa)
+                        @if (!auth()->user()->desa || auth()->user()->role === 'admin')
                             this.selectedDesa = '';
                         @endif
 
                         this.loadingDesa = true;
 
-                        @if (auth()->user()->kecamatan)
+                        @if (auth()->user()->kecamatan && auth()->user()->role !== 'admin')
                             const kecamatanName = '{{ auth()->user()->kecamatan }}';
                             const kecamatan = this.kecamatanList.find(k => k.name === kecamatanName);
                             if (!kecamatan) {

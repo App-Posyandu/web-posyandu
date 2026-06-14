@@ -77,18 +77,45 @@ class User extends Authenticatable
 
         return match ($actor->role) {
             'admin-kabupaten' => $query->where(function (Builder $q) use ($actor) {
-                $q->where('kabupaten_id', $actor->kabupaten_id)
-                    ->orWhere('kabupaten', $actor->kabupaten);
+                if ($actor->kabupaten_id) {
+                    $q->where('kabupaten_id', $actor->kabupaten_id)
+                      ->orWhere('kabupaten', $actor->kabupaten);
+                } else {
+                    $q->where('kabupaten', $actor->kabupaten);
+                }
             })->whereIn('role', ['kabid', 'ketua-timpembina-posyandu', 'admin-kabupaten', 'admin-kecamatan', 'operator-desa', 'kades', 'bu-kades', 'ketua-posyandu', 'kader', 'masyarakat']),
             'kabid' => $query->where(function (Builder $q) use ($actor) {
-                $q->where('kabupaten_id', $actor->kabupaten_id)
-                    ->orWhere('kabupaten', $actor->kabupaten);
+                if ($actor->kabupaten_id) {
+                    $q->where('kabupaten_id', $actor->kabupaten_id)
+                      ->orWhere('kabupaten', $actor->kabupaten);
+                } else {
+                    $q->where('kabupaten', $actor->kabupaten);
+                }
             })->whereIn('role', ['admin-kecamatan', 'ketua-posyandu', 'operator-desa', 'kader', 'masyarakat']),
             'admin-kecamatan' => $query->where(function (Builder $q) use ($actor) {
-                $q->where('kecamatan_id', $actor->kecamatan_id)
-                    ->orWhere('kecamatan', $actor->kecamatan);
+                if ($actor->kecamatan_id) {
+                    $q->where('kecamatan_id', $actor->kecamatan_id)
+                      ->orWhere('kecamatan', $actor->kecamatan);
+                } else {
+                    $q->where('kecamatan', $actor->kecamatan);
+                }
+            })->where(function (Builder $q) use ($actor) {
+                if ($actor->kabupaten_id) {
+                    $q->where('kabupaten_id', $actor->kabupaten_id)
+                      ->orWhere('kabupaten', $actor->kabupaten);
+                } elseif ($actor->kabupaten) {
+                    $q->where('kabupaten', $actor->kabupaten);
+                }
             })->whereIn('role', ['ketua-posyandu', 'operator-desa', 'kader', 'masyarakat']),
             'kades', 'bu-kades' => $query->where('desa', $actor->desa)
+                ->where(function (Builder $q) use ($actor) {
+                    if ($actor->kecamatan_id) {
+                        $q->where('kecamatan_id', $actor->kecamatan_id)
+                          ->orWhere('kecamatan', $actor->kecamatan);
+                    } elseif ($actor->kecamatan) {
+                        $q->where('kecamatan', $actor->kecamatan);
+                    }
+                })
                 ->whereIn('role', ['ketua-posyandu', 'operator-desa', 'kader', 'masyarakat']),
             'operator-desa' => $query->where(function (Builder $scope) use ($actor) {
                 $scope->where(function (Builder $posyanduScope) use ($actor): void {
