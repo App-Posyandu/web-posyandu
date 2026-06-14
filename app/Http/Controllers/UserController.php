@@ -102,8 +102,17 @@ class UserController extends Controller
                     'kabid', 'ketua-timpembina-posyandu', 'admin-kecamatan',
                     'kades', 'bu-kades', 'operator-desa', 'ketua-posyandu', 'kader', 'masyarakat',
                 ]);
-                if ($currentUser->kabupaten) {
+                if ($currentUser->kabupaten_id) {
+                    $query->where(function ($q) use ($currentUser) {
+                        $q->where('kabupaten_id', $currentUser->kabupaten_id);
+                        if ($currentUser->kabupaten) {
+                            $q->orWhere('kabupaten', $currentUser->kabupaten);
+                        }
+                    });
+                } elseif ($currentUser->kabupaten) {
                     $query->where('kabupaten', $currentUser->kabupaten);
+                } else {
+                    $query->whereRaw('1 = 0');
                 }
                 break;
             case 'ketua-timpembina-posyandu':

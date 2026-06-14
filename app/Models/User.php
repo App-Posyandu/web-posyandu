@@ -78,10 +78,14 @@ class User extends Authenticatable
         return match ($actor->role) {
             'admin-kabupaten' => $query->where(function (Builder $q) use ($actor) {
                 if ($actor->kabupaten_id) {
-                    $q->where('kabupaten_id', $actor->kabupaten_id)
-                      ->orWhere('kabupaten', $actor->kabupaten);
-                } else {
+                    $q->where('kabupaten_id', $actor->kabupaten_id);
+                    if ($actor->kabupaten) {
+                        $q->orWhere('kabupaten', $actor->kabupaten);
+                    }
+                } elseif ($actor->kabupaten) {
                     $q->where('kabupaten', $actor->kabupaten);
+                } else {
+                    $q->whereRaw('1 = 0');
                 }
             })->whereIn('role', ['kabid', 'ketua-timpembina-posyandu', 'admin-kabupaten', 'admin-kecamatan', 'operator-desa', 'kades', 'bu-kades', 'ketua-posyandu', 'kader', 'masyarakat']),
             'kabid' => $query->where(function (Builder $q) use ($actor) {
