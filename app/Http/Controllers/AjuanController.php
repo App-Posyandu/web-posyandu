@@ -338,13 +338,13 @@ class AjuanController extends Controller
         $validationRules = [];
         foreach ($ajuanData['administrasi_items_template'] as $key => $item) {
             if ($key === 'ktp') {
-                $validationRules[$key] = ['required_if:ktp_mode,upload', 'nullable', 'file', 'mimes:jpg,jpeg,png', 'max:2048'];
+                $validationRules[$key] = ['required_if:ktp_mode,upload', 'nullable', 'file', 'mimes:jpg,jpeg,png', 'max:10240'];
             } elseif ($key === 'kk') {
-                $validationRules[$key] = ['required_if:kk_mode,upload', 'nullable', 'file', 'mimes:jpg,jpeg,png', 'max:2048'];
+                $validationRules[$key] = ['required_if:kk_mode,upload', 'nullable', 'file', 'mimes:jpg,jpeg,png', 'max:10240'];
             } elseif ($key === 'kartu_bpjs') {
-                $validationRules[$key] = ['nullable', 'file', 'mimes:jpg,jpeg,png', 'max:2048'];
+                $validationRules[$key] = ['nullable', 'file', 'mimes:jpg,jpeg,png', 'max:10240'];
             } else {
-                $validationRules[$key] = ['required', 'file', 'mimes:jpg,jpeg,png', 'max:2048'];
+                $validationRules[$key] = ['required', 'file', 'mimes:jpg,jpeg,png', 'max:10240'];
             }
         }
         $validationRules['agreement'] = ['required'];
@@ -355,7 +355,7 @@ class AjuanController extends Controller
         foreach (array_keys($ajuanData['administrasi_items_template']) as $key) {
 
             if ($request->hasFile($key)) {
-                $path = $request->file($key)->store('ajuan_dokumen', 'public');
+                $path = $this->compressAndStoreImage($request->file($key), 'ajuan_dokumen');
                 $uploadedFiles[$key] = $path;
             } elseif ($key === 'ktp' && $request->input('ktp_mode') === 'claimed' && $user->ktp) {
                 $uploadedFiles[$key] = $user->ktp;
@@ -698,12 +698,12 @@ class AjuanController extends Controller
         foreach (array_keys($administrasiItemsTemplate) as $key) {
             if (!isset($dokumenData[$key])) {
                 if (in_array($key, ['ktp', 'kk', 'kartu_bpjs'])) {
-                    $validationRules[$key] = ['nullable', 'file', 'mimes:jpg,jpeg,png', 'max:2048'];
+                    $validationRules[$key] = ['nullable', 'file', 'mimes:jpg,jpeg,png', 'max:10240'];
                 } else {
-                    $validationRules[$key] = ['required', 'file', 'mimes:jpg,jpeg,png', 'max:2048'];
+                    $validationRules[$key] = ['required', 'file', 'mimes:jpg,jpeg,png', 'max:10240'];
                 }
             } else {
-                $validationRules[$key] = ['nullable', 'file', 'mimes:jpg,jpeg,png', 'max:2048'];
+                $validationRules[$key] = ['nullable', 'file', 'mimes:jpg,jpeg,png', 'max:10240'];
             }
         }
 
@@ -715,7 +715,7 @@ class AjuanController extends Controller
                     Storage::disk('public')->delete($dokumenData[$key]);
                 }
 
-                $path = $request->file($key)->store('ajuan_dokumen', 'public');
+                $path = $this->compressAndStoreImage($request->file($key), 'ajuan_dokumen');
                 $dokumenData[$key] = $path;
             }
         }
@@ -918,18 +918,18 @@ class AjuanController extends Controller
             if ($step == 2) {
                 $request->validate([
                     'catatan_kunjungan' => 'required|string|min:10',
-                    'foto_kunjungan.*' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+                    'foto_kunjungan.*' => 'nullable|image|mimes:jpg,jpeg,png|max:10240',
                 ], [
                     'catatan_kunjungan.required' => 'Catatan kunjungan wajib diisi.',
                     'catatan_kunjungan.min' => 'Catatan minimal 10 karakter.',
                     'foto_kunjungan.*.image' => 'File harus berupa gambar.',
-                    'foto_kunjungan.*.max' => 'Ukuran foto maksimal 2MB.',
+                    'foto_kunjungan.*.max' => 'Ukuran foto maksimal 10MB.',
                 ]);
 
                 $fotoKunjungan = $ajuan->foto_kunjungan ?? [];
                 if ($request->hasFile('foto_kunjungan')) {
                     foreach ($request->file('foto_kunjungan') as $foto) {
-                        $path = $foto->store('foto_kunjungan', 'public');
+                        $path = $this->compressAndStoreImage($foto, 'foto_kunjungan');
                         $fotoKunjungan[] = $path;
                     }
                 }
@@ -1398,5 +1398,53 @@ class AjuanController extends Controller
         return view('ajuan.track-result', [
             'pengajuan' => $pengajuan
         ]);
+    }
+
+    private function compressAndStoreImage(\Illuminate\Http\UploadedFile $file, string $directory): string
+    {
+        $extension = strtolower($file->getClientOriginalExtension());
+        $filename = Str::uuid() . '.jpg';
+        $dir = storage_path('app/public/' . $directory);
+
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
+        $storagePath = $dir . '/' . $filename;
+
+        $source = match ($extension) {
+            'png'        => imagecreatefrompng($file->getPathname()),
+            'jpg', 'jpeg' => imagecreatefromjpeg($file->getPathname()),
+            default      => imagecreatefromjpeg($file->getPathname()),
+        };
+
+        // Flatten PNG transparency to white background before JPEG conversion
+        if ($extension === 'png') {
+            $w = imagesx($source);
+            $h = imagesy($source);
+            $bg = imagecreatetruecolor($w, $h);
+            $white = imagecolorallocate($bg, 255, 255, 255);
+            imagefill($bg, 0, 0, $white);
+            imagecopy($bg, $source, 0, 0, 0, 0, $w, $h);
+            imagedestroy($source);
+            $source = $bg;
+        }
+
+        // Resize if wider than 1920px
+        $origW = imagesx($source);
+        $origH = imagesy($source);
+        if ($origW > 1920) {
+            $newW = 1920;
+            $newH = (int) round($origH * 1920 / $origW);
+            $resized = imagecreatetruecolor($newW, $newH);
+            imagecopyresampled($resized, $source, 0, 0, 0, 0, $newW, $newH, $origW, $origH);
+            imagedestroy($source);
+            $source = $resized;
+        }
+
+        imagejpeg($source, $storagePath, 80);
+        imagedestroy($source);
+
+        return $directory . '/' . $filename;
     }
 }

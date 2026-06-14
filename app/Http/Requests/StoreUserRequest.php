@@ -96,7 +96,14 @@ class StoreUserRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'role.required' => 'Role harus dipilih atau otomatis terisi.',
+            'role.required'                  => 'Role harus dipilih atau otomatis terisi.',
+            'password.required'              => 'Password wajib diisi.',
+            'password.confirmed'             => 'Konfirmasi password tidak cocok.',
+            'password.min'                   => 'Password minimal 8 karakter.',
+            'password.mixed'                 => 'Password harus mengandung huruf besar dan kecil.',
+            'password.numbers'               => 'Password harus mengandung setidaknya satu angka.',
+            'password.symbols'               => 'Password harus mengandung setidaknya satu simbol.',
+            'password.uncompromised'         => 'Password ini terlalu umum, gunakan password yang lebih aman.',
         ];
     }
 
