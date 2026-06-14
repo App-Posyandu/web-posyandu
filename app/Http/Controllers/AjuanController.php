@@ -64,13 +64,15 @@ class AjuanController extends Controller
             case 'operator-desa':
             case 'kades':
             case 'bu-kades':
-                $query->whereHas(
-                    'user',
-                    fn($q) =>
-                    $q->where('kabupaten', $currentUser->kabupaten)
-                        ->where('kecamatan', $currentUser->kecamatan)
-                        ->where('desa', $currentUser->desa)
-                );
+                $query->whereHas('user', function ($q) use ($currentUser) {
+                    $q->where('desa', $currentUser->desa);
+                    if ($currentUser->kecamatan) {
+                        $q->where('kecamatan', $currentUser->kecamatan);
+                    }
+                    if ($currentUser->kabupaten) {
+                        $q->where('kabupaten', $currentUser->kabupaten);
+                    }
+                });
                 break;
 
             case 'ketua-posyandu':
@@ -541,14 +543,20 @@ class AjuanController extends Controller
         }
 
         $ajuan->load(['user', 'bidang', 'histories']);
-        $templateData = $this->getBidangData($ajuan->bidang->slug);
+        $templateData = $this->getBidangData($ajuan->bidang?->slug);
         if (!$templateData) {
             $templateData = ['formulir_items' => [], 'administrasi_items' => []];
         }
+
+        $maxRevisionCount = SystemSetting::get('max_revision_count', 3);
+        $canRevise = ($ajuan->revision_count ?? 0) < $maxRevisionCount;
+
         return view('ajuan.detail', [
-            'ajuan' => $ajuan,
-            'templateData' => $templateData,
-            'currentUser' => $user,
+            'ajuan'            => $ajuan,
+            'templateData'     => $templateData,
+            'currentUser'      => $user,
+            'canRevise'        => $canRevise,
+            'maxRevisionCount' => $maxRevisionCount,
         ]);
     }
 

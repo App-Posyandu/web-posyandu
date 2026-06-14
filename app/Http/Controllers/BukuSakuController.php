@@ -35,7 +35,7 @@ class BukuSakuController extends Controller
         $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'file' => ['required', 'file', 'mimes:pdf', 'max:10240'],
+            'file' => ['required', 'file', 'mimes:pdf', 'max:102400'],
         ]);
 
         $path = $request->file('file')->store('buku_saku', 'public');
@@ -68,7 +68,7 @@ class BukuSakuController extends Controller
         $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'file' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
+            'file' => ['nullable', 'file', 'mimes:pdf', 'max:102400'],
         ]);
 
         $data = $request->only('title', 'description');
@@ -195,7 +195,7 @@ class BukuSakuController extends Controller
         $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'file' => ['required', 'file', 'mimes:pdf', 'max:10240'],
+            'file' => ['required', 'file', 'mimes:pdf', 'max:102400'],
         ]);
 
         // Delete old guidebook and its file

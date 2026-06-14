@@ -79,15 +79,24 @@ else
     php artisan view:clear
 fi
 
-# 8. Correct permissions for Laravel Storage & Cache
+# 8. Pastikan direktori storage yang wajib ada (bisa kosong di volume baru)
+echo "Ensuring storage directory structure..."
+mkdir -p /var/www/html/storage/app/public \
+         /var/www/html/storage/app/private \
+         /var/www/html/storage/framework/cache/data \
+         /var/www/html/storage/framework/sessions \
+         /var/www/html/storage/framework/views \
+         /var/www/html/storage/logs
+
+# 9. Correct permissions for Laravel Storage & Cache
 echo "Setting storage and bootstrap/cache permissions..."
 chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# 9. Create public storage symlink
+# 10. Create public storage symlink
 echo "Creating storage symlink..."
-php artisan storage:link --force 2>/dev/null || true
+php artisan storage:link --force
 
-# 10. Start supervisord (which starts nginx & php-fpm)
+# 11. Start supervisord (which starts nginx & php-fpm)
 echo "Starting application services (Nginx, PHP-FPM, Queue Worker)..."
 exec "$@"

@@ -592,10 +592,6 @@
                                 <x-primary-button>
                                     {{ __('Simpan Pengguna') }}
                                 </x-primary-button>
-                                <button type="button" id="importBtn"
-                                    class="px-4 py-2 bg-emerald-600 text-white rounded-md text-sm font-semibold hover:bg-emerald-700">
-                                    Import Nama Pengguna
-                                </button>
                             </div>
                         </div>
                 </form>

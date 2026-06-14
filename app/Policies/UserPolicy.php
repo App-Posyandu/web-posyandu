@@ -109,7 +109,11 @@ class UserPolicy
         }
 
         return match ($actor->role) {
-            'admin-kabupaten' => $this->sameKabupaten($actor, $subject) && in_array($subject->role, ['kabid', 'ketua-timpembina-posyandu', 'admin-kecamatan', 'kades', 'bu-kades', 'operator-desa'], true),
+            'admin-kabupaten' => $this->sameKabupaten($actor, $subject) && in_array($subject->role, [
+                'kabid', 'ketua-timpembina-posyandu', 'admin-kecamatan',
+                'kades', 'bu-kades', 'operator-desa',
+                'ketua-posyandu', 'kader', 'masyarakat',
+            ], true),
             'kabid' => $this->sameKabupaten($actor, $subject) && in_array($subject->role, ['admin-kecamatan', 'ketua-posyandu', 'operator-desa', 'kader', 'masyarakat'], true),
             'admin-kecamatan' => $this->sameKecamatan($actor, $subject) && in_array($subject->role, ['ketua-posyandu', 'operator-desa', 'kader', 'masyarakat'], true),
             'kades', 'bu-kades' => $this->sameDesa($actor, $subject) && in_array($subject->role, ['ketua-posyandu', 'operator-desa', 'kader', 'masyarakat'], true),
@@ -131,7 +135,10 @@ class UserPolicy
         }
 
         if ($actor->role === 'admin-kabupaten') {
-            return $this->sameKabupaten($actor, $subject) && in_array($subject->role, ['kabid', 'ketua-posyandu'], true);
+            return $this->sameKabupaten($actor, $subject) && in_array($subject->role, [
+                'kabid', 'admin-kecamatan', 'kades', 'bu-kades',
+                'operator-desa', 'ketua-posyandu', 'kader', 'masyarakat',
+            ], true);
         }
 
         if ($actor->role === 'ketua-posyandu') {
@@ -143,16 +150,25 @@ class UserPolicy
 
     private function sameKabupaten(User $actor, User $subject): bool
     {
-        return $actor->kabupaten_id && $subject->kabupaten_id
-            ? (string) $actor->kabupaten_id === (string) $subject->kabupaten_id
-            : (string) $actor->kabupaten === (string) $subject->kabupaten;
+        if ($actor->kabupaten_id && $subject->kabupaten_id) {
+            return (string) $actor->kabupaten_id === (string) $subject->kabupaten_id;
+        }
+        // Fallback: cocokkan nama kabupaten, OR cocokkan via kabupaten_id salah satu
+        if ($actor->kabupaten_id) {
+            return (string) $actor->kabupaten === (string) $subject->kabupaten;
+        }
+        return $actor->kabupaten && (string) $actor->kabupaten === (string) $subject->kabupaten;
     }
 
     private function sameKecamatan(User $actor, User $subject): bool
     {
-        return $actor->kecamatan_id && $subject->kecamatan_id
-            ? (string) $actor->kecamatan_id === (string) $subject->kecamatan_id
-            : (string) $actor->kecamatan === (string) $subject->kecamatan;
+        if ($actor->kecamatan_id && $subject->kecamatan_id) {
+            return (string) $actor->kecamatan_id === (string) $subject->kecamatan_id;
+        }
+        if ($actor->kecamatan_id) {
+            return (string) $actor->kecamatan === (string) $subject->kecamatan;
+        }
+        return $actor->kecamatan && (string) $actor->kecamatan === (string) $subject->kecamatan;
     }
 
     private function sameDesa(User $actor, User $subject): bool
