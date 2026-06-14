@@ -20,8 +20,13 @@
                                 Pilih masyarakat yang akan Anda bantu buatkan pengajuan
                             </p>
                         </div>
-
-
+                        @if (in_array(auth()->user()->role, ['admin', 'kader']))
+                            <a href="{{ route('admin.users.create', ['source' => 'pilih-user']) }}"
+                                class="inline-flex items-center px-4 py-2 bg-pink-500 text-white rounded-md hover:bg-pink-600 transition-colors duration-150 text-sm font-semibold">
+                                <i class="bi bi-person-plus mr-2"></i>
+                                Tambah Masyarakat
+                            </a>
+                        @endif
                     </div>
 
                     <div class="relative mb-4">

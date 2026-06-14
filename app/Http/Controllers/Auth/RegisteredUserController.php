@@ -104,7 +104,31 @@ class RegisteredUserController extends Controller
             $validationRules['bidang_id'] = ['required', 'uuid', 'exists:bidang_pengajuans,id'];
         }
 
-        $request->validate($validationRules);
+        $request->validate($validationRules, [
+            'name.required'          => 'Nama lengkap wajib diisi.',
+            'name.max'               => 'Nama maksimal 255 karakter.',
+            'tempat_lahir.required'  => 'Tempat lahir wajib diisi.',
+            'tanggal_lahir.required' => 'Tanggal lahir wajib diisi.',
+            'tanggal_lahir.date'     => 'Format tanggal lahir tidak valid.',
+            'jenis_kelamin.required' => 'Jenis kelamin wajib dipilih.',
+            'desa.required'          => 'Desa wajib dipilih.',
+            'kecamatan.required'     => 'Kecamatan wajib dipilih.',
+            'kabupaten.required'     => 'Kabupaten wajib dipilih.',
+            'posyandu_id.required'   => 'Posyandu wajib dipilih.',
+            'email.required'         => 'Email wajib diisi.',
+            'email.email'            => 'Format email tidak valid (contoh: nama@email.com).',
+            'email.unique'           => 'Email sudah terdaftar, gunakan email lain.',
+            'password.required'      => 'Password wajib diisi.',
+            'password.confirmed'     => 'Konfirmasi password tidak cocok.',
+            'password.min'           => 'Password minimal 8 karakter.',
+            'no_telepon.required'    => 'Nomor WhatsApp wajib diisi.',
+            'no_telepon.max'         => 'Nomor WhatsApp maksimal 20 digit.',
+            'no_telepon.unique'      => 'Nomor WhatsApp sudah terdaftar, gunakan nomor lain.',
+            'rw.required'            => 'RW wajib dipilih.',
+            'rw.regex'               => 'Format RW tidak valid (contoh: RW01, RW02).',
+            'rt.regex'               => 'Format RT tidak valid (contoh: RT001, RT002).',
+            'bidang_id.required'     => 'Bidang tugas wajib dipilih.',
+        ]);
 
         $userData = [
             'name' => $request->name,

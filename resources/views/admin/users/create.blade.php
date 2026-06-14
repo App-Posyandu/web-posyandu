@@ -592,10 +592,6 @@
                                 <x-primary-button>
                                     {{ __('Simpan Pengguna') }}
                                 </x-primary-button>
-                                <button type="button" id="importBtn"
-                                    class="px-4 py-2 bg-emerald-600 text-white rounded-md text-sm font-semibold hover:bg-emerald-700">
-                                    Import Nama Pengguna
-                                </button>
                             </div>
                         </div>
                 </form>
@@ -1255,13 +1251,11 @@
 
                     if (role === 'admin-kecamatan') {
                         kecamatanField.style.display = 'block';
-                        if (currentUserRole !== 'admin-kabupaten' || currentUserRole !== 'operator-desa') {
+                        if (currentUserRole !== 'admin-kabupaten' && currentUserRole !== 'operator-desa') {
                             kabupatenField.style.display = 'block';
                         }
                     }
                     if (role === 'kades' || role === 'bu-kades') {
-                        // kecamatanField.style.display = 'block';
-                        // desaField.style.display = 'block';
                         if (currentUserRole !== 'admin-kabupaten' && currentUserRole !== 'operator-desa') {
                             kabupatenField.style.display = 'block';
                         } else if (currentUserRole !== 'operator-desa') {
@@ -1276,10 +1270,13 @@
                     }
 
                     if (role === 'operator-desa') {
-                        // kecamatanField.style.display = 'block';
-                        // desaField.style.display = 'block';
-                        if (currentUserRole !== 'admin-kabupaten' || currentUserRole !== 'operator-desa') {
+                        if (currentUserRole !== 'admin-kabupaten' && currentUserRole !== 'operator-desa') {
                             kabupatenField.style.display = 'block';
+                        }
+
+                        if (currentUserRole === 'admin-kabupaten') {
+                            kecamatanField.style.display = 'block';
+                            desaField.style.display = 'block';
                         }
 
                         if (currentUserRole === 'ketua-posyandu') {

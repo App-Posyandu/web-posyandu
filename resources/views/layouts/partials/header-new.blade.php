@@ -162,7 +162,7 @@
                     </a>
                 @endif
 
-                @if (in_array(auth()->user()->role, ['admin', 'admin-kabupaten', 'ketua-timpembina-posyandu', 'admin-kecamatan']))
+                @if (in_array(auth()->user()->role, ['admin', 'admin-kabupaten', 'ketua-timpembina-posyandu', 'admin-kecamatan', 'operator-desa']))
                     <a href="{{ route('admin.posyandu.index') }}"
                         class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-pink-500 transition duration-150 ease-in-out">
                         <i class="bi bi-building mr-2"></i> Posyandu

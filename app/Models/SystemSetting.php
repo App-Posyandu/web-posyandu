@@ -42,7 +42,16 @@ class SystemSetting extends Model
                 return $default;
             }
 
-            return self::castValue($setting->value, $setting->type);
+            $value = self::castValue($setting->value, $setting->type);
+
+            // Gunakan tipe dari $default sebagai hint jika type kolom tidak terdefinisi
+            if (is_string($value) && $default !== null) {
+                if (is_int($default))   return (int) $value;
+                if (is_float($default)) return (float) $value;
+                if (is_bool($default))  return filter_var($value, FILTER_VALIDATE_BOOLEAN);
+            }
+
+            return $value;
         });
     }
 
