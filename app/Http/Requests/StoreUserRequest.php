@@ -104,6 +104,9 @@ class StoreUserRequest extends FormRequest
             'password.numbers'               => 'Password harus mengandung setidaknya satu angka.',
             'password.symbols'               => 'Password harus mengandung setidaknya satu simbol.',
             'password.uncompromised'         => 'Password ini terlalu umum, gunakan password yang lebih aman.',
+            'no_telepon.required'            => 'Nomor WhatsApp wajib diisi.',
+            'no_telepon.max'                 => 'Nomor WhatsApp maksimal 20 digit.',
+            'no_telepon.unique'              => 'Nomor WhatsApp sudah terdaftar, gunakan nomor lain.',
         ];
     }
 
