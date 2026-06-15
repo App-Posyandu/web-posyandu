@@ -441,13 +441,8 @@ class DashboardController extends Controller
         $desaAjuanQuery = Pengajuan::query()
             ->join('bidang_pengajuans', 'pengajuans.bidang_id', '=', 'bidang_pengajuans.id')
             ->join('users', 'pengajuans.user_id', '=', 'users.id')
+            ->where('pengajuans.user_id', $user->id)
             ->whereYear('pengajuans.created_at', $selectedYear);
-
-        if ($user->posyandu_id) {
-            $desaAjuanQuery->where('users.posyandu_id', $user->posyandu_id);
-        } elseif ($user->desa) {
-            $desaAjuanQuery->where('users.desa', $user->desa);
-        }
 
         if (!empty($searchTerm)) {
             $myAjuanQuery->where(function ($q) use ($searchTerm) {
@@ -555,19 +550,10 @@ class DashboardController extends Controller
         return response()->json([
             'bidangData'     => $bidangData,
             'statistics'     => [
-                'total'     => $ajuanCounts->sum(),
-                'disetujui' => Pengajuan::whereHas('user', function ($q) use ($user) {
-                    if ($user->posyandu_id) $q->where('posyandu_id', $user->posyandu_id);
-                    elseif ($user->desa)    $q->where('desa', $user->desa);
-                })->whereYear('created_at', $selectedYear)->where('status_pengajuan', 'Disetujui')->count(),
-                'diproses'  => Pengajuan::whereHas('user', function ($q) use ($user) {
-                    if ($user->posyandu_id) $q->where('posyandu_id', $user->posyandu_id);
-                    elseif ($user->desa)    $q->where('desa', $user->desa);
-                })->whereYear('created_at', $selectedYear)->where('status_pengajuan', 'Diproses')->count(),
-                'ditolak'   => Pengajuan::whereHas('user', function ($q) use ($user) {
-                    if ($user->posyandu_id) $q->where('posyandu_id', $user->posyandu_id);
-                    elseif ($user->desa)    $q->where('desa', $user->desa);
-                })->whereYear('created_at', $selectedYear)->where('status_pengajuan', 'Ditolak')->count(),
+                'total'     => $myStats['total'],
+                'disetujui' => $myStats['disetujui'],
+                'diproses'  => $myStats['diproses'],
+                'ditolak'   => $myStats['ditolak'],
             ],
             'pieChart'       => [
                 'labels' => $pieChartLabels,

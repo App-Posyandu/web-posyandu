@@ -45,20 +45,58 @@ class AjuanController extends Controller
                 break;
 
             case 'admin-kabupaten':
+                if ($currentUser->kabupaten_id) {
+                    $query->whereHas('user', function ($q) use ($currentUser) {
+                        $q->where(function ($inner) use ($currentUser) {
+                            $inner->where('kabupaten_id', $currentUser->kabupaten_id);
+                            if ($currentUser->kabupaten) {
+                                $inner->orWhere('kabupaten', $currentUser->kabupaten);
+                            }
+                        });
+                    });
+                } elseif ($currentUser->kabupaten) {
+                    $query->whereHas('user', fn($q) => $q->where('kabupaten', $currentUser->kabupaten));
+                } else {
+                    abort(403, 'Unauthorized');
+                }
+                break;
+
             case 'kabid':
-                $query->whereHas(
-                    'user',
-                    fn($q) =>
-                    $q->where('kabupaten', $currentUser->kabupaten)
-                );
+                if (!$currentUser->bidang_id) {
+                    abort(403, 'Unauthorized');
+                }
+                $query->where('bidang_id', $currentUser->bidang_id);
+                if ($currentUser->kabupaten_id) {
+                    $query->whereHas('user', function ($q) use ($currentUser) {
+                        $q->where(function ($inner) use ($currentUser) {
+                            $inner->where('kabupaten_id', $currentUser->kabupaten_id);
+                            if ($currentUser->kabupaten) {
+                                $inner->orWhere('kabupaten', $currentUser->kabupaten);
+                            }
+                        });
+                    });
+                } elseif ($currentUser->kabupaten) {
+                    $query->whereHas('user', fn($q) => $q->where('kabupaten', $currentUser->kabupaten));
+                } else {
+                    abort(403, 'Unauthorized');
+                }
                 break;
 
             case 'admin-kecamatan':
-                $query->whereHas(
-                    'user',
-                    fn($q) =>
-                    $q->where('kecamatan', $currentUser->kecamatan)
-                );
+                if ($currentUser->kecamatan_id) {
+                    $query->whereHas('user', function ($q) use ($currentUser) {
+                        $q->where(function ($inner) use ($currentUser) {
+                            $inner->where('kecamatan_id', $currentUser->kecamatan_id);
+                            if ($currentUser->kecamatan) {
+                                $inner->orWhere('kecamatan', $currentUser->kecamatan);
+                            }
+                        });
+                    });
+                } elseif ($currentUser->kecamatan) {
+                    $query->whereHas('user', fn($q) => $q->where('kecamatan', $currentUser->kecamatan));
+                } else {
+                    abort(403, 'Unauthorized');
+                }
                 break;
 
             case 'operator-desa':
