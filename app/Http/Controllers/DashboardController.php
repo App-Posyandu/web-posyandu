@@ -63,10 +63,9 @@ class DashboardController extends Controller
         }
 
         // Default ke tahun terbaru yang punya data, bukan selalu tahun ini
-        $latestDataYear = Pengajuan::selectRaw('YEAR(created_at) as year')
-            ->orderByRaw('YEAR(created_at) DESC')
-            ->value('year');
-        $defaultYear = $request->query('year') ? $currentYear : ($latestDataYear ?? $currentYear);
+        $latestEntry   = Pengajuan::latest()->first();
+        $latestDataYear = $latestEntry ? (int) $latestEntry->created_at->year : null;
+        $defaultYear   = $request->query('year') ? $currentYear : ($latestDataYear ?? $currentYear);
 
         $selectedYear = YearParameter::resolveOrFallback($request->query('year'), $defaultYear, 2000, 2100);
 
