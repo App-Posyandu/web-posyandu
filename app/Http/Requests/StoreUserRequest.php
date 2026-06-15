@@ -96,7 +96,28 @@ class StoreUserRequest extends FormRequest
     public function messages(): array
     {
         return [
+            // Role
             'role.required'                  => 'Role harus dipilih atau otomatis terisi.',
+            'role.in'                        => 'Role yang dipilih tidak valid.',
+            // Identitas
+            'name.required'                  => 'Nama lengkap wajib diisi.',
+            'name.max'                       => 'Nama maksimal 255 karakter.',
+            'tempat_lahir.required'          => 'Tempat lahir wajib diisi.',
+            'tanggal_lahir.required'         => 'Tanggal lahir wajib diisi.',
+            'tanggal_lahir.date'             => 'Format tanggal lahir tidak valid.',
+            'jenis_kelamin.required'         => 'Jenis kelamin wajib dipilih.',
+            'alamat.required'                => 'Alamat wajib diisi.',
+            // NIK
+            'nik.max'                        => 'NIK maksimal 16 digit.',
+            'nik.unique'                     => 'NIK sudah terdaftar, gunakan NIK yang benar.',
+            // Email
+            'email.email'                    => 'Format email tidak valid.',
+            'email.unique'                   => 'Email sudah terdaftar, gunakan email lain.',
+            // No. Telepon
+            'no_telepon.required'            => 'Nomor WhatsApp wajib diisi.',
+            'no_telepon.max'                 => 'Nomor WhatsApp maksimal 20 digit.',
+            'no_telepon.unique'              => 'Nomor WhatsApp sudah terdaftar, gunakan nomor lain.',
+            // Password
             'password.required'              => 'Password wajib diisi.',
             'password.confirmed'             => 'Konfirmasi password tidak cocok.',
             'password.min'                   => 'Password minimal 8 karakter.',
@@ -104,17 +125,17 @@ class StoreUserRequest extends FormRequest
             'password.numbers'               => 'Password harus mengandung setidaknya satu angka.',
             'password.symbols'               => 'Password harus mengandung setidaknya satu simbol.',
             'password.uncompromised'         => 'Password ini terlalu umum, gunakan password yang lebih aman.',
-            'no_telepon.required'            => 'Nomor WhatsApp wajib diisi.',
-            'no_telepon.max'                 => 'Nomor WhatsApp maksimal 20 digit.',
-            'no_telepon.unique'              => 'Nomor WhatsApp sudah terdaftar, gunakan nomor lain.',
-            'nik.unique'                     => 'NIK sudah terdaftar, gunakan NIK yang benar.',
-            'nik.max'                        => 'NIK maksimal 16 digit.',
-            'email.unique'                   => 'Email sudah terdaftar, gunakan email lain.',
-            'email.email'                    => 'Format email tidak valid.',
-            'name.required'                  => 'Nama lengkap wajib diisi.',
-            'alamat.required'                => 'Alamat wajib diisi.',
-            'tanggal_lahir.required'         => 'Tanggal lahir wajib diisi.',
-            'jenis_kelamin.required'         => 'Jenis kelamin wajib dipilih.',
+            // Wilayah
+            'kabupaten.required'             => 'Kabupaten wajib dipilih.',
+            'kecamatan.required'             => 'Kecamatan wajib dipilih.',
+            'desa.required'                  => 'Desa wajib dipilih.',
+            'rw.required'                    => 'RW wajib dipilih.',
+            'rt.required'                    => 'RT wajib dipilih.',
+            // Relasi
+            'posyandu_id.required'           => 'Posyandu wajib dipilih.',
+            'posyandu_id.exists'             => 'Posyandu tidak ditemukan, silakan pilih ulang.',
+            'bidang_id.required'             => 'Bidang tugas wajib dipilih.',
+            'bidang_id.exists'               => 'Bidang tugas tidak ditemukan, silakan pilih ulang.',
         ];
     }
 
