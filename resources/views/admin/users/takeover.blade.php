@@ -142,8 +142,11 @@
                                         <div class="mb-4">
                                             <label for="new_password"
                                                 class="block text-sm font-medium text-gray-700">Password Baru</label>
-                                            <input type="password" name="new_password" id="new_password" required
+                                            <input type="password" name="new_password" id="new_password" required minlength="8"
+                                                oninput="validateTakeoverPassword()"
                                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                            <span id="takeover_password_hint" class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Minimal 8 karakter.</span>
+                                            <span id="takeover_password_error" class="mt-1 text-xs text-red-600 hidden"><i class="bi bi-exclamation-circle mr-1"></i>Password minimal 8 karakter.</span>
                                         </div>
 
                                         <div class="mb-4">
@@ -151,7 +154,10 @@
                                                 class="block text-sm font-medium text-gray-700">Konfirmasi Password</label>
                                             <input type="password" name="new_password_confirmation"
                                                 id="new_password_confirmation" required
+                                                oninput="validateTakeoverPassword()"
                                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                            <span id="takeover_confirm_hint" class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Masukkan ulang password yang sama.</span>
+                                            <span id="takeover_confirm_error" class="mt-1 text-xs text-red-600 hidden"><i class="bi bi-exclamation-circle mr-1"></i>Password tidak cocok.</span>
                                         </div>
 
                                         <div class="mb-2">
@@ -203,6 +209,33 @@
                     }
                 }))
             })
+        </script>
+        <script>
+            function validateTakeoverPassword() {
+                const pw = document.getElementById('new_password');
+                const confirm = document.getElementById('new_password_confirmation');
+
+                const pwHint = document.getElementById('takeover_password_hint');
+                const pwErr = document.getElementById('takeover_password_error');
+                const cfHint = document.getElementById('takeover_confirm_hint');
+                const cfErr = document.getElementById('takeover_confirm_error');
+
+                if (pw.value.length > 0 && pw.value.length < 8) {
+                    pwHint.classList.add('hidden');
+                    pwErr.classList.remove('hidden');
+                } else {
+                    pwHint.classList.remove('hidden');
+                    pwErr.classList.add('hidden');
+                }
+
+                if (confirm.value.length > 0 && confirm.value !== pw.value) {
+                    cfHint.classList.add('hidden');
+                    cfErr.classList.remove('hidden');
+                } else {
+                    cfHint.classList.remove('hidden');
+                    cfErr.classList.add('hidden');
+                }
+            }
         </script>
     @endpush
 @endsection

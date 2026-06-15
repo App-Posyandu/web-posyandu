@@ -570,13 +570,22 @@
                             <x-input-label for="password" :value="__('Password')" />
                             <x-text-input id="password" class="block mt-1 w-full" type="password" name="password"
                                 required autocomplete="new-password" />
-                            <x-input-error :messages="$errors->get('password')" class="mt-2" />
+                            @error('password')
+                                <p class="mt-1 text-xs text-red-600"><i class="bi bi-exclamation-circle mr-1"></i>{{ $message }}</p>
+                            @else
+                                <p class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Minimal 8 karakter.</p>
+                            @enderror
                         </div>
 
                         <div>
                             <x-input-label for="password_confirmation" :value="__('Konfirmasi Password')" />
                             <x-text-input id="password_confirmation" class="block mt-1 w-full" type="password"
                                 name="password_confirmation" required />
+                            @error('password_confirmation')
+                                <p class="mt-1 text-xs text-red-600"><i class="bi bi-exclamation-circle mr-1"></i>{{ $message }}</p>
+                            @else
+                                <p class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Masukkan ulang password yang sama.</p>
+                            @enderror
                         </div>
                     </div>
                     <div class="flex gap-3">
