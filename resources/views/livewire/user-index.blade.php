@@ -539,14 +539,20 @@
 
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Password Baru</label>
-                            <input type="password" name="new_password" required minlength="8"
+                            <input type="password" name="new_password" id="reset_pw_kader" required minlength="8"
+                                oninput="validateResetPw('kader')"
                                 class="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500">
+                            <span id="reset_pw_kader_hint" class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Minimal 8 karakter.</span>
+                            <span id="reset_pw_kader_error" class="mt-1 text-xs text-red-600 hidden"><i class="bi bi-exclamation-circle mr-1"></i>Password minimal 8 karakter.</span>
                         </div>
 
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Konfirmasi Password</label>
-                            <input type="password" name="new_password_confirmation" required minlength="8"
+                            <input type="password" name="new_password_confirmation" id="reset_cf_kader" required minlength="8"
+                                oninput="validateResetPw('kader')"
                                 class="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500">
+                            <span id="reset_cf_kader_hint" class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Masukkan ulang password yang sama.</span>
+                            <span id="reset_cf_kader_error" class="mt-1 text-xs text-red-600 hidden"><i class="bi bi-exclamation-circle mr-1"></i>Password tidak cocok.</span>
                         </div>
 
                         <div class="flex gap-2">
@@ -610,14 +616,20 @@
 
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Password Baru</label>
-                            <input type="password" name="new_password" required minlength="8"
+                            <input type="password" name="new_password" id="reset_pw_kabid" required minlength="8"
+                                oninput="validateResetPw('kabid')"
                                 class="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500">
+                            <span id="reset_pw_kabid_hint" class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Minimal 8 karakter.</span>
+                            <span id="reset_pw_kabid_error" class="mt-1 text-xs text-red-600 hidden"><i class="bi bi-exclamation-circle mr-1"></i>Password minimal 8 karakter.</span>
                         </div>
 
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Konfirmasi Password</label>
-                            <input type="password" name="new_password_confirmation" required minlength="8"
+                            <input type="password" name="new_password_confirmation" id="reset_cf_kabid" required minlength="8"
+                                oninput="validateResetPw('kabid')"
                                 class="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500">
+                            <span id="reset_cf_kabid_hint" class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Masukkan ulang password yang sama.</span>
+                            <span id="reset_cf_kabid_error" class="mt-1 text-xs text-red-600 hidden"><i class="bi bi-exclamation-circle mr-1"></i>Password tidak cocok.</span>
                         </div>
 
                         <div class="flex gap-2">
@@ -681,6 +693,27 @@
             function closeResetPasswordModal() {
                 document.getElementById('resetPasswordModal').classList.add('hidden');
                 document.getElementById('resetPasswordForm').reset();
+            }
+
+            function validateResetPw(type) {
+                const pw = document.getElementById('reset_pw_' + type);
+                const cf = document.getElementById('reset_cf_' + type);
+                const pwHint = document.getElementById('reset_pw_' + type + '_hint');
+                const pwErr  = document.getElementById('reset_pw_' + type + '_error');
+                const cfHint = document.getElementById('reset_cf_' + type + '_hint');
+                const cfErr  = document.getElementById('reset_cf_' + type + '_error');
+
+                if (pw.value.length > 0 && pw.value.length < 8) {
+                    pwHint.classList.add('hidden'); pwErr.classList.remove('hidden');
+                } else {
+                    pwHint.classList.remove('hidden'); pwErr.classList.add('hidden');
+                }
+
+                if (cf.value.length > 0 && cf.value !== pw.value) {
+                    cfHint.classList.add('hidden'); cfErr.classList.remove('hidden');
+                } else {
+                    cfHint.classList.remove('hidden'); cfErr.classList.add('hidden');
+                }
             }
 
             function openDeactivateModal(userId, userName) {

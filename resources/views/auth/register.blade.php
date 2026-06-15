@@ -318,7 +318,11 @@
                         <i class="bi bi-eye text-lg"></i>
                     </button>
                 </div>
-                <x-input-error :messages="$errors->get('password')" class="mt-2" />
+                @error('password')
+                    <p class="mt-1 text-xs text-red-600"><i class="bi bi-exclamation-circle mr-1"></i>{{ $message }}</p>
+                @else
+                    <p class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Minimal 8 karakter.</p>
+                @enderror
             </div>
 
             <div class="md:col-span-2">
