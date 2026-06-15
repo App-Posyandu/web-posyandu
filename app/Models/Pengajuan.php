@@ -137,18 +137,40 @@ class Pengajuan extends Model
             return $query;
         }
 
+        $kabupatenScope = function (Builder $userQuery) use ($actor): void {
+            if ($actor->kabupaten_id) {
+                $userQuery->where(function (Builder $q) use ($actor) {
+                    $q->where('kabupaten_id', $actor->kabupaten_id);
+                    if ($actor->kabupaten) {
+                        $q->orWhere('kabupaten', $actor->kabupaten);
+                    }
+                });
+            } elseif ($actor->kabupaten) {
+                $userQuery->where('kabupaten', $actor->kabupaten);
+            } else {
+                $userQuery->whereRaw('1 = 0');
+            }
+        };
+
         return match ($actor->role) {
-            'admin-kabupaten', 'kabid' => $query->whereHas('user', function (Builder $userQuery) use ($actor) {
-                $userQuery->where(function (Builder $regionQuery) use ($actor) {
-                    $regionQuery->where('kabupaten_id', $actor->kabupaten_id)
-                        ->orWhere('kabupaten', $actor->kabupaten);
-                });
-            }),
+            'admin-kabupaten' => $query->whereHas('user', $kabupatenScope),
+            'kabid' => $actor->bidang_id
+                ? $query->where('bidang_id', $actor->bidang_id)
+                    ->whereHas('user', $kabupatenScope)
+                : $query->whereRaw('1 = 0'),
             'admin-kecamatan' => $query->whereHas('user', function (Builder $userQuery) use ($actor) {
-                $userQuery->where(function (Builder $regionQuery) use ($actor) {
-                    $regionQuery->where('kecamatan_id', $actor->kecamatan_id)
-                        ->orWhere('kecamatan', $actor->kecamatan);
-                });
+                if ($actor->kecamatan_id) {
+                    $userQuery->where(function (Builder $q) use ($actor) {
+                        $q->where('kecamatan_id', $actor->kecamatan_id);
+                        if ($actor->kecamatan) {
+                            $q->orWhere('kecamatan', $actor->kecamatan);
+                        }
+                    });
+                } elseif ($actor->kecamatan) {
+                    $userQuery->where('kecamatan', $actor->kecamatan);
+                } else {
+                    $userQuery->whereRaw('1 = 0');
+                }
             }),
             'kades', 'bu-kades' => $query->whereHas('user', function (Builder $userQuery) use ($actor) {
                 $userQuery->where('desa', $actor->desa);
