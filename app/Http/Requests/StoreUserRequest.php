@@ -107,6 +107,14 @@ class StoreUserRequest extends FormRequest
             'no_telepon.required'            => 'Nomor WhatsApp wajib diisi.',
             'no_telepon.max'                 => 'Nomor WhatsApp maksimal 20 digit.',
             'no_telepon.unique'              => 'Nomor WhatsApp sudah terdaftar, gunakan nomor lain.',
+            'nik.unique'                     => 'NIK sudah terdaftar, gunakan NIK yang benar.',
+            'nik.max'                        => 'NIK maksimal 16 digit.',
+            'email.unique'                   => 'Email sudah terdaftar, gunakan email lain.',
+            'email.email'                    => 'Format email tidak valid.',
+            'name.required'                  => 'Nama lengkap wajib diisi.',
+            'alamat.required'                => 'Alamat wajib diisi.',
+            'tanggal_lahir.required'         => 'Tanggal lahir wajib diisi.',
+            'jenis_kelamin.required'         => 'Jenis kelamin wajib dipilih.',
         ];
     }
 

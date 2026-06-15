@@ -34,6 +34,21 @@ class UpdateUserRequest extends FormRequest
         ];
     }
 
+    public function messages(): array
+    {
+        return [
+            'name.required'         => 'Nama lengkap wajib diisi.',
+            'email.required'        => 'Email wajib diisi.',
+            'email.email'           => 'Format email tidak valid.',
+            'email.unique'          => 'Email sudah terdaftar, gunakan email lain.',
+            'nik.digits'            => 'NIK harus tepat 16 digit angka.',
+            'nik.unique'            => 'NIK sudah terdaftar, gunakan NIK yang benar.',
+            'no_telepon.max'        => 'Nomor WhatsApp maksimal 20 digit.',
+            'password.min'          => 'Password minimal 8 karakter.',
+            'password.confirmed'    => 'Konfirmasi password tidak cocok.',
+        ];
+    }
+
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {
