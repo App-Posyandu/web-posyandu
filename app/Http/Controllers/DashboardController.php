@@ -219,10 +219,19 @@ class DashboardController extends Controller
 
             case 'admin-kecamatan':
                 if ($user->kecamatan) {
-                    $listQuery->whereHas('user', fn($q) => $q->where('kecamatan', 'LIKE', '%' . $user->kecamatan . '%'));
-                    $statsQuery->whereHas('user', fn($q) => $q->where('kecamatan', 'LIKE', '%' . $user->kecamatan . '%'));
+                    $kecScope = function ($q) use ($user): void {
+                        $q->where('kecamatan', 'LIKE', '%' . $user->kecamatan . '%');
+                        if ($user->kabupaten) {
+                            $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%');
+                        }
+                    };
+                    $listQuery->whereHas('user', $kecScope);
+                    $statsQuery->whereHas('user', $kecScope);
+                    $desasQuery->whereHas('user', $kecScope);
                     $actualCountsQuery->where('users.kecamatan', 'LIKE', '%' . $user->kecamatan . '%');
-                    $desasQuery->whereHas('user', fn($q) => $q->where('kecamatan', 'LIKE', '%' . $user->kecamatan . '%'));
+                    if ($user->kabupaten) {
+                        $actualCountsQuery->where('users.kabupaten', 'LIKE', '%' . $user->kabupaten . '%');
+                    }
                 } else {
                     $denyAll();
                 }

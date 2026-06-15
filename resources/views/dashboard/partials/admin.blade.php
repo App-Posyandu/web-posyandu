@@ -133,7 +133,7 @@
                 </div>
             </div>
         </div>
-        @if (auth()->user()->role !== 'kabid' || auth()->user()->role !== 'kader')
+        @if (!in_array(auth()->user()->role, ['kader']))
             @php
                 $labels = '';
 
@@ -143,7 +143,13 @@
                 ) {
                     $labels = 'Kabupaten ' . auth()->user()->kabupaten;
                 } elseif (auth()->user()->role === 'admin-kecamatan' && auth()->user()->kecamatan) {
-                    $labels = 'Kecamatan ' . auth()->user()->kecamatan;
+                    $kecLabel = 'Kecamatan ' . auth()->user()->kecamatan;
+                    $kabLabel = auth()->user()->kabupaten ? ', ' . auth()->user()->kabupaten : '';
+                    $labels = $kecLabel . $kabLabel;
+                } elseif (auth()->user()->role === 'kabid') {
+                    $bidangLabel = auth()->user()->bidang ? auth()->user()->bidang->nama_bidang : 'Bidang';
+                    $kabLabel = auth()->user()->kabupaten ? ' - ' . auth()->user()->kabupaten : '';
+                    $labels = $bidangLabel . $kabLabel;
                 } elseif (
                     (auth()->user()->role === 'operator-desa' && auth()->user()->desa) ||
                     (auth()->user()->role === 'kades' && auth()->user()->desa) ||
