@@ -91,9 +91,17 @@ class AjuanController extends Controller
                                 $inner->orWhere('kecamatan', $currentUser->kecamatan);
                             }
                         });
+                        if ($currentUser->kabupaten) {
+                            $q->where('kabupaten', 'LIKE', '%' . $currentUser->kabupaten . '%');
+                        }
                     });
                 } elseif ($currentUser->kecamatan) {
-                    $query->whereHas('user', fn($q) => $q->where('kecamatan', $currentUser->kecamatan));
+                    $query->whereHas('user', function ($q) use ($currentUser) {
+                        $q->where('kecamatan', $currentUser->kecamatan);
+                        if ($currentUser->kabupaten) {
+                            $q->where('kabupaten', 'LIKE', '%' . $currentUser->kabupaten . '%');
+                        }
+                    });
                 } else {
                     abort(403, 'Unauthorized');
                 }
