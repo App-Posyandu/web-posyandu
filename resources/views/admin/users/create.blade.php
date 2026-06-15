@@ -1332,20 +1332,23 @@
                     const rolesNeedingKecamatan = ['admin-kecamatan', 'kades', 'bu-kades', 'operator-desa'];
                     if (!rolesNeedingKecamatan.includes(role)) return;
 
-                    const adminKabupatenName = '{{ auth()->user()->kabupaten }}';
+                    const rawName = '{{ auth()->user()->kabupaten }}';
                     const kabupatenList = @json($kabupatenList ?? []);
 
-                    const kabupaten = kabupatenList.find(k => k.name === adminKabupatenName);
+                    // Fuzzy match: strip "Kabupaten " prefix dan bandingkan case-insensitive
+                    const normalize = s => (s || '').toLowerCase().replace(/^kabupaten\s+/i, '').trim();
+                    const adminNorm = normalize(rawName);
+
+                    const kabupaten = kabupatenList.find(k => normalize(k.name) === adminNorm);
+
                     if (kabupaten) {
                         const code = kabupaten.id || kabupaten.code;
-                        console.log('[Auto-fetch Kecamatan] Admin-kabupaten selected role:', role,
-                            'Fetching kecamatan for:', code);
-
+                        console.log('[Auto-fetch Kecamatan] role:', role, 'kab code:', code);
                         window.dispatchEvent(new CustomEvent('region-selected', {
-                            detail: {
-                                code: code
-                            }
+                            detail: { code: code }
                         }));
+                    } else {
+                        console.warn('[Auto-fetch Kecamatan] Kabupaten tidak ditemukan di list:', rawName);
                     }
                 }
 
