@@ -784,12 +784,9 @@
                     async fetchKecamatan(parentId) {
                         if (!parentId) return;
 
-                        // Only fetch if kecamatan field is visible
+                        // Fetch jika kecamatan field ada di DOM (tidak perlu cek visible)
                         const kecamatanField = document.getElementById('kecamatan-field');
-                        if (!kecamatanField || kecamatanField.style.display === 'none') {
-                            console.log('[fetchKecamatan] Skipped - kecamatan field not visible');
-                            return;
-                        }
+                        if (!kecamatanField) return;
 
                         this.loading = true;
 
@@ -873,10 +870,7 @@
                         if (!parentId) return;
 
                         const desaField = document.getElementById('desa-field');
-                        if (!desaField || desaField.style.display === 'none') {
-                            console.log('[fetchDesa] Skipped - desa field not visible');
-                            return;
-                        }
+                        if (!desaField) return;
 
                         console.log('Fetching Desa for Parent:', parentId);
                         this.loading = true;
@@ -1286,7 +1280,9 @@
 
                         if (currentUserRole === 'admin-kabupaten') {
                             kecamatanField.style.display = 'block';
+                            kecamatanField.removeAttribute('hidden');
                             desaField.style.display = 'block';
+                            desaField.removeAttribute('hidden');
                         }
 
                         if (currentUserRole === 'ketua-posyandu') {
@@ -1335,21 +1331,25 @@
                     const rawName = '{{ auth()->user()->kabupaten }}';
                     const kabupatenList = @json($kabupatenList ?? []);
 
-                    // Fuzzy match: strip "Kabupaten " prefix dan bandingkan case-insensitive
                     const normalize = s => (s || '').toLowerCase().replace(/^kabupaten\s+/i, '').trim();
                     const adminNorm = normalize(rawName);
 
                     const kabupaten = kabupatenList.find(k => normalize(k.name) === adminNorm);
 
-                    if (kabupaten) {
-                        const code = kabupaten.id || kabupaten.code;
-                        console.log('[Auto-fetch Kecamatan] role:', role, 'kab code:', code);
+                    if (!kabupaten) {
+                        console.warn('[Auto-fetch Kecamatan] Kabupaten tidak ditemukan di list:', rawName);
+                        return;
+                    }
+
+                    const code = kabupaten.id || kabupaten.code;
+                    console.log('[Auto-fetch Kecamatan] role:', role, 'kab code:', code);
+
+                    // setTimeout agar Alpine.js listener @region-selected.window sudah aktif
+                    setTimeout(() => {
                         window.dispatchEvent(new CustomEvent('region-selected', {
                             detail: { code: code }
                         }));
-                    } else {
-                        console.warn('[Auto-fetch Kecamatan] Kabupaten tidak ditemukan di list:', rawName);
-                    }
+                    }, 100);
                 }
 
                 function toggleWilayahField() {
