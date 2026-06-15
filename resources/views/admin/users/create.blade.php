@@ -19,13 +19,14 @@
         <script>
             document.addEventListener('DOMContentLoaded', function() {
                 const errors = @json($errors->all());
-                const errorList = errors.map(err => `• ${err}`).join('<br>');
+                const errorList = errors.map(err => `<li style="text-align:left">• ${err}</li>`).join('');
 
                 Swal.fire({
                     icon: 'error',
-                    title: 'Error Validasi',
-                    html: errorList,
-                    confirmButtonColor: '#ef4444'
+                    title: 'Mohon periksa kembali isian Anda',
+                    html: `<ul class="text-sm text-gray-700">${errorList}</ul>`,
+                    confirmButtonColor: '#ef4444',
+                    confirmButtonText: 'Periksa Ulang'
                 });
             });
         </script>

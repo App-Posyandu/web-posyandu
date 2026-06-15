@@ -36,6 +36,19 @@ class ProfileController extends Controller
             'no_telepon' => ['nullable', 'string', 'max:20', Rule::unique(User::class)->ignore($user->id)],
             'ktp' => ['nullable', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:2048'],
             'kk' => ['nullable', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:2048'],
+        ], [
+            'name.required'      => 'Nama lengkap wajib diisi.',
+            'email.required'     => 'Email wajib diisi.',
+            'email.email'        => 'Format email tidak valid.',
+            'email.unique'       => 'Email sudah terdaftar, gunakan email lain.',
+            'nik.digits'         => 'NIK harus tepat 16 digit angka.',
+            'nik.unique'         => 'NIK sudah terdaftar, gunakan NIK yang benar.',
+            'no_telepon.max'     => 'Nomor WhatsApp maksimal 20 digit.',
+            'no_telepon.unique'  => 'Nomor WhatsApp sudah terdaftar, gunakan nomor lain.',
+            'ktp.mimes'          => 'File KTP harus berformat jpeg, png, jpg, atau pdf.',
+            'ktp.max'            => 'Ukuran file KTP maksimal 2MB.',
+            'kk.mimes'           => 'File KK harus berformat jpeg, png, jpg, atau pdf.',
+            'kk.max'             => 'Ukuran file KK maksimal 2MB.',
         ]);
 
         $user->fill($request->except(['ktp', 'kk']));

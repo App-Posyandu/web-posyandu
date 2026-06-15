@@ -124,6 +124,8 @@ class RegisteredUserController extends Controller
             'no_telepon.required'    => 'Nomor WhatsApp wajib diisi.',
             'no_telepon.max'         => 'Nomor WhatsApp maksimal 20 digit.',
             'no_telepon.unique'      => 'Nomor WhatsApp sudah terdaftar, gunakan nomor lain.',
+            'nik.unique'             => 'NIK sudah terdaftar, gunakan NIK yang benar.',
+            'nik.max'                => 'NIK maksimal 16 digit.',
             'rw.required'            => 'RW wajib dipilih.',
             'rw.regex'               => 'Format RW tidak valid (contoh: RW01, RW02).',
             'rt.regex'               => 'Format RT tidak valid (contoh: RT001, RT002).',
