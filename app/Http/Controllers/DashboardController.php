@@ -62,10 +62,20 @@ class DashboardController extends Controller
             return redirect()->route('dashboard')->withErrors($validator)->withInput();
         }
 
-        $selectedYear = YearParameter::resolveOrFallback($request->query('year'), $currentYear, 2000, 2100);
+        // Default ke tahun terbaru yang punya data, bukan selalu tahun ini
+        $latestDataYear = Pengajuan::selectRaw('YEAR(created_at) as year')
+            ->orderByRaw('YEAR(created_at) DESC')
+            ->value('year');
+        $defaultYear = $request->query('year') ? $currentYear : ($latestDataYear ?? $currentYear);
+
+        $selectedYear = YearParameter::resolveOrFallback($request->query('year'), $defaultYear, 2000, 2100);
 
         $startYear = 2024;
-        $availableYears = range($currentYear, $startYear);
+        $availableYears = array_unique(array_merge(
+            range($currentYear, $startYear),
+            $latestDataYear ? [$latestDataYear] : []
+        ));
+        rsort($availableYears);
 
         $alwaysVerifiedRoles = ['admin', 'kabid', 'admin-kabupaten', 'admin-kecamatan', 'ketua-posyandu', 'kades', 'bu-kades', 'ketua-timpembina-posyandu', 'operator-desa'];
         $isVerified = !is_null($user->verified_at) || in_array($user->role, $alwaysVerifiedRoles);

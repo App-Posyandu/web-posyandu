@@ -211,7 +211,7 @@
         document.addEventListener('alpine:init', () => {
             Alpine.data('masyarakatDashboard', () => ({
                 currentYear: {{ $currentYear }},
-                selectedYear: {{ $currentYear }},
+                selectedYear: {{ $selectedYear }},
                 availableYears: @json($availableYears),
                 searchQuery: '',
                 filterStatus: '',
