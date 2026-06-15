@@ -40,30 +40,35 @@
                         <x-input-label for="name" :value="__('Nama Lengkap')" />
                         <x-text-input id="name" name="name" type="text" class="mt-1 block w-full"
                             :value="old('name', $user->name)" required />
+                        <p class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Nama lengkap sesuai KTP, maks. 255 karakter.</p>
                         <x-input-error :messages="$errors->get('name')" class="mt-2" />
                     </div>
                     <div>
                         <x-input-label for="nik" :value="__('NIK')" />
                         <x-text-input id="nik" name="nik" type="text" class="mt-1 block w-full"
-                            :value="old('nik', $user->nik)" maxlength="16" />
+                            :value="old('nik', $user->nik)" maxlength="16" placeholder="Contoh: 3302011234567890" />
+                        <p class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>16 digit angka NIK sesuai KTP.</p>
                         <x-input-error :messages="$errors->get('nik')" class="mt-2" />
                     </div>
                     <div>
                         <x-input-label for="email" :value="__('Email')" />
                         <x-text-input id="email" name="email" type="email" class="mt-1 block w-full"
-                            :value="old('email', $user->email)" />
+                            :value="old('email', $user->email)" placeholder="Contoh: nama@domain.com" />
+                        <p class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Format email valid dan unik (belum digunakan akun lain).</p>
                         <x-input-error :messages="$errors->get('email')" class="mt-2" />
                     </div>
                     <div>
                         <x-input-label for="no_telepon" :value="__('No. Telepon')" />
                         <x-text-input id="no_telepon" name="no_telepon" type="text" class="mt-1 block w-full"
-                            :value="old('no_telepon', $user->no_telepon)" />
+                            :value="old('no_telepon', $user->no_telepon)" placeholder="Contoh: 081234567890" />
+                        <p class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Nomor aktif, maks. 20 digit, dan unik (belum digunakan akun lain).</p>
                         <x-input-error :messages="$errors->get('no_telepon')" class="mt-2" />
                     </div>
                     <div>
                         <x-input-label for="tempat_lahir" :value="__('Tempat Lahir')" />
                         <x-text-input id="tempat_lahir" name="tempat_lahir" type="text" class="mt-1 block w-full"
-                            :value="old('tempat_lahir', $user->tempat_lahir)" />
+                            :value="old('tempat_lahir', $user->tempat_lahir)" placeholder="Contoh: Kebumen" />
+                        <p class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Nama kota/kabupaten sesuai KTP.</p>
                         <x-input-error :messages="$errors->get('tempat_lahir')" class="mt-2" />
                     </div>
                     <div>
@@ -75,6 +80,7 @@
                                     ? \Carbon\Carbon::parse($user->tanggal_lahir)->format('Y-m-d')
                                     : '',
                             )" />
+                        <p class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Tanggal lahir sesuai KTP.</p>
                         <x-input-error :messages="$errors->get('tanggal_lahir')" class="mt-2" />
                     </div>
                     <div>
@@ -91,12 +97,15 @@
                                 Perempuan
                             </option>
                         </select>
+                        <p class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Pilih salah satu: Laki-laki atau Perempuan.</p>
                         <x-input-error :messages="$errors->get('jenis_kelamin')" class="mt-2" />
                     </div>
                     <div class="md:col-span-2">
                         <x-input-label for="alamat" :value="__('Alamat Lengkap')" />
                         <textarea id="alamat" name="alamat" rows="3"
-                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-pink-500 focus:ring-pink-500">{{ old('alamat', $user->alamat) }}</textarea>
+                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-pink-500 focus:ring-pink-500"
+                            placeholder="Contoh: Jl. Merdeka No. 10, RT 01/RW 02, Kelurahan ...">{{ old('alamat', $user->alamat) }}</textarea>
+                        <p class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Alamat lengkap tempat tinggal.</p>
                         <x-input-error :messages="$errors->get('alamat')" class="mt-2" />
                     </div>
                 </div>
@@ -137,8 +146,15 @@
                         <div x-show="showPasswordFields" x-transition class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <x-input-label for="password" :value="__('Password Baru')" />
-                                <x-text-input id="password" name="password" type="password" class="mt-1 block w-full"
-                                    autocomplete="new-password" />
+                                <div class="relative mt-1">
+                                    <x-text-input id="password" name="password" type="password" class="block w-full pr-10"
+                                        autocomplete="new-password" />
+                                    <button type="button" onclick="togglePassword('password', this)"
+                                        class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none"
+                                        tabindex="-1">
+                                        <i class="bi bi-eye text-lg"></i>
+                                    </button>
+                                </div>
                                 @error('password')
                                     <p class="mt-1 text-xs text-red-600"><i class="bi bi-exclamation-circle mr-1"></i>{{ $message }}</p>
                                 @else
@@ -147,8 +163,15 @@
                             </div>
                             <div>
                                 <x-input-label for="password_confirmation" :value="__('Konfirmasi Password')" />
-                                <x-text-input id="password_confirmation" name="password_confirmation" type="password"
-                                    class="mt-1 block w-full" autocomplete="new-password" />
+                                <div class="relative mt-1">
+                                    <x-text-input id="password_confirmation" name="password_confirmation" type="password"
+                                        class="block w-full pr-10" autocomplete="new-password" />
+                                    <button type="button" onclick="togglePassword('password_confirmation', this)"
+                                        class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none"
+                                        tabindex="-1">
+                                        <i class="bi bi-eye text-lg"></i>
+                                    </button>
+                                </div>
                                 @error('password_confirmation')
                                     <p class="mt-1 text-xs text-red-600"><i class="bi bi-exclamation-circle mr-1"></i>{{ $message }}</p>
                                 @else
@@ -187,6 +210,18 @@
                             document.getElementById('posyandu_id').value = '';
                         }
                     }
+                }
+            }
+
+            function togglePassword(id, btn) {
+                const input = document.getElementById(id);
+                const icon = btn.querySelector('i');
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.className = 'bi bi-eye-slash text-lg';
+                } else {
+                    input.type = 'password';
+                    icon.className = 'bi bi-eye text-lg';
                 }
             }
         </script>

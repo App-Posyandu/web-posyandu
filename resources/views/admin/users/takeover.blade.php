@@ -142,9 +142,16 @@
                                         <div class="mb-4">
                                             <label for="new_password"
                                                 class="block text-sm font-medium text-gray-700">Password Baru</label>
-                                            <input type="password" name="new_password" id="new_password" required minlength="8"
-                                                oninput="validateTakeoverPassword()"
-                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                            <div class="relative mt-1">
+                                                <input type="password" name="new_password" id="new_password" required minlength="8"
+                                                    oninput="validateTakeoverPassword()"
+                                                    class="block w-full pr-10 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                                <button type="button" onclick="toggleTakeoverPassword('new_password', this)"
+                                                    class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none"
+                                                    tabindex="-1">
+                                                    <i class="bi bi-eye text-lg"></i>
+                                                </button>
+                                            </div>
                                             <span id="takeover_password_hint" class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Minimal 8 karakter.</span>
                                             <span id="takeover_password_error" class="mt-1 text-xs text-red-600 hidden"><i class="bi bi-exclamation-circle mr-1"></i>Password minimal 8 karakter.</span>
                                         </div>
@@ -152,10 +159,17 @@
                                         <div class="mb-4">
                                             <label for="new_password_confirmation"
                                                 class="block text-sm font-medium text-gray-700">Konfirmasi Password</label>
-                                            <input type="password" name="new_password_confirmation"
-                                                id="new_password_confirmation" required
-                                                oninput="validateTakeoverPassword()"
-                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                            <div class="relative mt-1">
+                                                <input type="password" name="new_password_confirmation"
+                                                    id="new_password_confirmation" required
+                                                    oninput="validateTakeoverPassword()"
+                                                    class="block w-full pr-10 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                                <button type="button" onclick="toggleTakeoverPassword('new_password_confirmation', this)"
+                                                    class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none"
+                                                    tabindex="-1">
+                                                    <i class="bi bi-eye text-lg"></i>
+                                                </button>
+                                            </div>
                                             <span id="takeover_confirm_hint" class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Masukkan ulang password yang sama.</span>
                                             <span id="takeover_confirm_error" class="mt-1 text-xs text-red-600 hidden"><i class="bi bi-exclamation-circle mr-1"></i>Password tidak cocok.</span>
                                         </div>
@@ -165,6 +179,7 @@
                                                 Reset (Wajib)</label>
                                             <textarea name="reason" id="reason" rows="2" required placeholder="Contoh: Kader lupa password..."
                                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"></textarea>
+                                            <p class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Wajib diisi, maks. 500 karakter.</p>
                                         </div>
                                     </div>
                                 </div>
@@ -211,6 +226,18 @@
             })
         </script>
         <script>
+            function toggleTakeoverPassword(id, btn) {
+                const input = document.getElementById(id);
+                const icon = btn.querySelector('i');
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.className = 'bi bi-eye-slash text-lg';
+                } else {
+                    input.type = 'password';
+                    icon.className = 'bi bi-eye text-lg';
+                }
+            }
+
             function validateTakeoverPassword() {
                 const pw = document.getElementById('new_password');
                 const confirm = document.getElementById('new_password_confirmation');

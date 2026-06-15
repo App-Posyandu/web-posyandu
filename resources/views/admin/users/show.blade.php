@@ -7,12 +7,12 @@
                 <a href="{{ route('admin.users.index') }}" class="flex items-center text-gray-600 hover:text-gray-900">
                     <i class="bi bi-arrow-left mr-2"></i> Kembali ke Daftar
                 </a>
-                @if (auth()->user()->role === 'admin')
+                @can('update', $user)
                     <a href="{{ route('admin.users.edit', $user) }}"
                         class="px-4 py-2 bg-yellow-500 text-white rounded-md text-sm font-semibold hover:bg-yellow-600 shadow-sm">
                         <i class="bi bi-pencil-square mr-2"></i> Ubah Data / Status
                     </a>
-                @endif
+                @endcan
             </div>
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">

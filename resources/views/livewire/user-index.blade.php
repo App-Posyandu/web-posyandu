@@ -98,8 +98,8 @@
                     <div>
                         <p class="text-sm font-medium text-gray-900">Kelola Kader di Posyandu Anda</p>
                         <p class="text-xs text-gray-600 mt-1">
-                            Anda dapat melihat, reset password, dan mengaktifkan/menonaktifkan kader di
-                            <strong>{{ auth()->user()->posyandu->nama_posyandu ?? 'posyandu Anda' }}</strong>
+                            Anda dapat melihat, mengedit, reset password, dan mengaktifkan/menonaktifkan akun kades, bu kades,
+                            ketua posyandu, serta kader di desa Anda.
                         </p>
                     </div>
                 </div>
@@ -240,17 +240,18 @@
                             </td>
 
                             <td class="px-4 py-3">
-                                @if ($user->verified_at)
-                                    <span
-                                        class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                                        Terverifikasi
-                                    </span>
-                                @else
-                                    <span
-                                        class="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                        Belum Diverifikasi
-                                    </span>
-                                @endif
+                                <div class="flex flex-col gap-1">
+                                    @if ($user->is_active)
+                                        <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Aktif</span>
+                                    @else
+                                        <span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Nonaktif</span>
+                                    @endif
+                                    @if ($user->verified_at)
+                                        <span class="px-3 py-1 text-xs font-semibold rounded-full bg-teal-100 text-teal-800">Terverifikasi</span>
+                                    @else
+                                        <span class="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Belum Diverifikasi</span>
+                                    @endif
+                                </div>
                             </td>
 
                             <td class="px-4 py-3">
@@ -260,6 +261,13 @@
                                         <i class="bi bi-eye-fill mr-1"></i> Detail
                                     </a>
 
+                                    @can('update', $user)
+                                        <a href="{{ route('admin.users.edit', $user) }}"
+                                            class="px-3 py-1 bg-yellow-500 text-white rounded-md text-xs text-center hover:bg-yellow-600 transition-colors duration-150">
+                                            <i class="bi bi-pencil-fill mr-1"></i> Ubah
+                                        </a>
+                                    @endcan
+
                                     @if ($currentUser->role === 'kader' && $user->role === 'masyarakat' && $user->no_telepon)
                                         <a href="{{ $this->generateWhatsAppLink($user) }}" target="_blank"
                                             class="px-3 py-1 bg-green-500 text-white rounded-md text-xs text-center hover:bg-green-600 transition-colors duration-150">
@@ -268,10 +276,6 @@
                                     @endif
 
                                     @if ($currentUser->role === 'admin')
-                                        <a href="{{ route('admin.users.edit', $user) }}"
-                                            class="px-3 py-1 bg-yellow-500 text-white rounded-md text-xs text-center hover:bg-yellow-600 transition-colors duration-150">
-                                            <i class="bi bi-pencil-fill mr-1"></i> Ubah
-                                        </a>
                                         <form id="delete-form-table-{{ $user->id }}" action="{{ route('admin.users.destroy', $user) }}" method="POST" style="display: inline;">
                                             @csrf
                                             @method('DELETE')
@@ -325,8 +329,16 @@
                                                     method="POST" class="inline">
                                                     @csrf
                                                     @method('PATCH')
+                                                    @php
+                                                        $roleLabel = match ($user->role) {
+                                                            'kades' => 'Kades',
+                                                            'bu-kades' => 'Bu Kades',
+                                                            'ketua-posyandu' => 'Ketua Posyandu',
+                                                            default => 'Kader',
+                                                        };
+                                                    @endphp
                                                     <button type="button"
-                                                        onclick="confirmReactivate('{{ $user->id }}', '{{ $user->name }}', '{{ $user->role === 'ketua-posyandu' ? 'Ketua Posyandu' : 'Kader' }}')"
+                                                        onclick="confirmReactivate('{{ $user->id }}', '{{ $user->name }}', '{{ $roleLabel }}')"
                                                         class="px-3 py-1 bg-green-500 text-white rounded-md text-xs hover:bg-green-600">
                                                         <i class="bi bi-check-circle"></i> Aktifkan
                                                     </button>
@@ -444,6 +456,15 @@
                                 <span class="text-xs font-medium text-gray-500">Status</span>
                             </div>
                             <div class="flex-1">
+                                @if ($user->is_active)
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                        <i class="bi bi-check-circle-fill mr-1"></i> Aktif
+                                    </span>
+                                @else
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                        <i class="bi bi-x-circle-fill mr-1"></i> Nonaktif
+                                    </span>
+                                @endif
                                 @if ($user->verified_at)
                                     <span
                                         class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
@@ -467,12 +488,15 @@
                             </a>
 
                             <div class="flex gap-2">
-                                @if ($currentUser->role === 'admin')
+                                @can('update', $user)
                                     <a href="{{ route('admin.users.edit', $user) }}"
                                         class="flex-1 flex items-center justify-center px-3 py-2 bg-yellow-500 text-white rounded-md text-sm font-medium hover:bg-yellow-600 transition-colors duration-150">
                                         <i class="bi bi-pencil-fill mr-1"></i>
                                         Ubah
                                     </a>
+                                @endcan
+
+                                @if ($currentUser->role === 'admin')
                                     <form id="delete-form-card-{{ $user->id }}" action="{{ route('admin.users.destroy', $user) }}" method="POST" style="display: inline;">
                                         @csrf
                                         @method('DELETE')
@@ -529,7 +553,7 @@
             class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
             <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
                 <div class="mt-3">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">Reset Password Kader</h3>
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Reset Password User</h3>
                     <p class="text-sm text-gray-600 mb-4">Reset password untuk: <strong id="resetUserName"></strong>
                     </p>
 
@@ -573,7 +597,7 @@
             class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
             <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
                 <div class="mt-3">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">Nonaktifkan Kader</h3>
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Nonaktifkan User</h3>
                     <p class="text-sm text-gray-600 mb-4">Nonaktifkan: <strong id="deactivateUserName"></strong></p>
 
                     <form id="deactivateForm" method="POST">
@@ -583,7 +607,7 @@
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Alasan <span
                                     class="text-red-500">*</span></label>
-                            <textarea name="reason" required rows="3" placeholder="Masukkan alasan menonaktifkan kader ini..."
+                            <textarea name="reason" required rows="3" placeholder="Masukkan alasan menonaktifkan user ini..."
                                 class="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"></textarea>
                         </div>
 
@@ -650,7 +674,7 @@
             class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
             <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
                 <div class="mt-3">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">Nonaktifkan Kader</h3>
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Nonaktifkan User</h3>
                     <p class="text-sm text-gray-600 mb-4">Nonaktifkan: <strong id="deactivateUserNameKabid"></strong>
                     </p>
 
@@ -661,7 +685,7 @@
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Alasan <span
                                     class="text-red-500">*</span></label>
-                            <textarea name="reason" required rows="3" placeholder="Masukkan alasan menonaktifkan kader ini..."
+                            <textarea name="reason" required rows="3" placeholder="Masukkan alasan menonaktifkan user ini..."
                                 class="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"></textarea>
                         </div>
 
