@@ -131,6 +131,35 @@
 
                 @include('components.all-notifications')
 
+                {{-- Search Filter --}}
+                <form method="GET" action="{{ route('admin.posyandu.index') }}" class="mb-6">
+                    <div class="flex gap-2">
+                        <div class="relative flex-1">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <i class="bi bi-search text-gray-400"></i>
+                            </div>
+                            <input type="text" name="search" value="{{ request('search') }}"
+                                placeholder="Cari nama posyandu, desa, kecamatan, atau ketua..."
+                                class="block w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md shadow-sm focus:border-pink-500 focus:ring-pink-500 text-sm">
+                        </div>
+                        <button type="submit"
+                            class="px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600 transition">
+                            Cari
+                        </button>
+                        @if (request('search'))
+                            <a href="{{ route('admin.posyandu.index') }}"
+                                class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md text-sm font-semibold hover:bg-gray-300 transition">
+                                Reset
+                            </a>
+                        @endif
+                    </div>
+                    @if (request('search'))
+                        <p class="mt-2 text-sm text-gray-500">
+                            Menampilkan hasil pencarian untuk: <strong>"{{ request('search') }}"</strong>
+                        </p>
+                    @endif
+                </form>
+
                 @if (auth()->user()->role === 'operator-desa')
                     <div class="mb-6 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
                         <div class="flex items-start">
@@ -462,11 +491,23 @@
                             <span class="inline-block px-2 py-0.5 bg-green-500 text-white text-xs rounded font-medium mb-2">Kader (${kaders.length})</span>
                             ${kaders.length > 0 ? `
                                         <div class="ml-2 grid grid-cols-2 gap-2">
-                                            ${kaders.map(k => `
+                                            ${kaders.map((k, idx) => `
                                         <div class="text-sm p-2 bg-white rounded border">
                                             <p class="font-medium text-gray-800">${k.name}</p>
                                             <p class="text-gray-500 text-xs">${k.email}</p>
-                                            <span class="inline-block mt-1 px-1.5 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">${k.bidang}</span>
+                                            <div class="flex items-center gap-1 mt-1">
+                                                <span class="px-1.5 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">${k.bidang}</span>
+                                            </div>
+                                            <div class="flex items-center gap-2 mt-2 p-1.5 bg-amber-50 rounded border border-amber-200">
+                                                <div class="flex-1 min-w-0">
+                                                    <span class="text-xs text-amber-700 font-medium">Password:</span>
+                                                    <code class="ml-1 text-xs text-red-600 font-bold">password123</code>
+                                                </div>
+                                                <button type="button" onclick="copyKaderPassword('${k.email}', 'password123')"
+                                                    class="flex-shrink-0 px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition flex items-center gap-1">
+                                                    <i class="bi bi-clipboard"></i> Copy
+                                                </button>
+                                            </div>
                                         </div>
                                     `).join('')}
                                         </div>
@@ -513,6 +554,39 @@
                         title: 'border-b pb-4'
                     },
                     showCloseButton: true
+                });
+            }
+        </script>
+        <script>
+            function copyKaderPassword(email, password) {
+                const text = `Email: ${email}\nPassword: ${password}`;
+                navigator.clipboard.writeText(text).then(() => {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: 'Credentials berhasil disalin!',
+                        showConfirmButton: false,
+                        timer: 2000,
+                        timerProgressBar: true
+                    });
+                }).catch(() => {
+                    // Fallback for older browsers
+                    const textarea = document.createElement('textarea');
+                    textarea.value = text;
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textarea);
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: 'Credentials berhasil disalin!',
+                        showConfirmButton: false,
+                        timer: 2000,
+                        timerProgressBar: true
+                    });
                 });
             }
         </script>

@@ -36,6 +36,7 @@
                     <x-text-input id="name" class="block mt-1 w-full" type="text" name="name"
                         :value="old('name')" required autocomplete="name" placeholder="Masukkan Nama" />
                 @endif
+                <p class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Nama lengkap sesuai KTP, maks. 255 karakter.</p>
                 <x-input-error :messages="$errors->get('name')" class="mt-2" />
             </div>
 
@@ -48,13 +49,15 @@
                     <x-text-input id="email" class="block mt-1 w-full" type="email" name="email"
                         :value="old('email')" required autocomplete="username" placeholder="Masukkan Email" />
                 @endif
+                <p class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Format email valid, contoh: nama@domain.com. Harus unik.</p>
                 <x-input-error :messages="$errors->get('email')" class="mt-2" />
             </div>
 
             <div>
                 <x-input-label class="text-sm md:text-lg" for="tempat_lahir" :value="__('Tempat Lahir')" />
                 <x-text-input id="tempat_lahir" class="block mt-1 w-full" type="text" name="tempat_lahir"
-                    :value="old('tempat_lahir')" required placeholder="Masukkan Tempat Lahir" />
+                    :value="old('tempat_lahir')" required placeholder="Contoh: Kebumen" />
+                <p class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Nama kota/kabupaten sesuai KTP.</p>
                 <x-input-error :messages="$errors->get('tempat_lahir')" class="mt-2" />
             </div>
 
@@ -62,6 +65,7 @@
                 <x-input-label class="text-sm md:text-lg" for="tanggal_lahir" :value="__('Tanggal Lahir')" />
                 <x-text-input id="tanggal_lahir" class="block mt-1 w-full" type="date" name="tanggal_lahir"
                     :value="old('tanggal_lahir')" required />
+                <p class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Tanggal lahir sesuai KTP.</p>
                 <x-input-error :messages="$errors->get('tanggal_lahir')" class="mt-2" />
             </div>
 
@@ -74,6 +78,7 @@
                     <option value="Laki-laki" @selected(old('jenis_kelamin') == 'Laki-laki')>Laki-laki</option>
                     <option value="Perempuan" @selected(old('jenis_kelamin') == 'Perempuan')>Perempuan</option>
                 </select>
+                <p class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Pilih salah satu: Laki-laki atau Perempuan.</p>
                 <x-input-error :messages="$errors->get('jenis_kelamin')" class="mt-2" />
             </div>
 
@@ -81,6 +86,7 @@
                 <x-input-label class="text-sm md:text-lg" for="no_telepon" :value="__('Nomor Telepon')" />
                 <x-text-input id="no_telepon" class="block mt-1 w-full" type="text" name="no_telepon"
                     :value="old('no_telepon')" required placeholder="Contoh: 081234567890" />
+                <p class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Nomor aktif WhatsApp, maks. 20 digit, dan unik.</p>
                 <x-input-error :messages="$errors->get('no_telepon')" class="mt-2" />
             </div>
 

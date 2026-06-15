@@ -190,6 +190,42 @@ class AjuanController extends Controller
         return Auth::id();
     }
 
+    private function getTargetUser(): ?User
+    {
+        $actor = Auth::user();
+        $targetUserId = $this->getTargetUserId();
+
+        if (!$actor || !$targetUserId) {
+            return null;
+        }
+
+        $target = User::find($targetUserId);
+
+        if (!$target) {
+            return null;
+        }
+
+        if ($actor->role === 'kader') {
+            return $target->role === 'masyarakat'
+                && (string) $target->posyandu_id === (string) $actor->posyandu_id
+                ? $target
+                : null;
+        }
+
+        if ($actor->role === 'masyarakat') {
+            return (string) $target->id === (string) $actor->id ? $target : null;
+        }
+
+        return $target;
+    }
+
+    private function historyRole(?string $role): ?string
+    {
+        return in_array($role, ['kader', 'ketua-posyandu', 'ketua-timpembina-posyandu', 'kades', 'system'], true)
+            ? $role
+            : null;
+    }
+
     public function requestRevision(Request $request, Pengajuan $ajuan)
     {
         $ajuan = Pengajuan::findOrFail($ajuan->id);
@@ -216,8 +252,7 @@ class AjuanController extends Controller
             'status' => 'Revisi Diminta',
             'catatan' => $request->catatan,
             'diubah_oleh' => Auth::id(),
-            'action_by_role' => in_array(Auth::user()->role, ['kader', 'ketua-posyandu', 'kades', 'ketua-timpembina-posyandu'])
-                ? Auth::user()->role : null,
+            'action_by_role' => $this->historyRole(Auth::user()->role),
             'created_at' => now(),
         ]);
 
@@ -356,14 +391,15 @@ class AjuanController extends Controller
 
         $ajuanData = session('ajuan_data');
         $user = Auth::user();
+        $targetUser = $this->getTargetUser();
         if (! $ajuanData) {
             return redirect()->route('dashboard');
         }
 
         return view('components.ajuan.administrasi-ajuan.index', [
             'items' => $ajuanData['administrasi_items_template'],
-            'userKtp' => $user->ktp,
-            'userKk' => $user->kk
+            'userKtp' => $targetUser?->ktp ?? $user->ktp,
+            'userKk' => $targetUser?->kk ?? $user->kk
         ]);
     }
 
@@ -372,13 +408,14 @@ class AjuanController extends Controller
         $ajuanData = session('ajuan_data');
         $user = Auth::user();
 
-        $targetUserId = $this->getTargetUserId();
-        if (!$targetUserId) {
-            return redirect()->route('dashboard')->with('error', 'User target tidak ditemukan.');
-        }
-
         if (!$ajuanData || !$user) {
             return redirect()->route('dashboard')->with('error', 'Sesi tidak valid.');
+        }
+
+        $targetUser = $this->getTargetUser();
+        if (!$targetUser) {
+            Session::forget('ajuan_on_behalf_of_id');
+            return redirect()->route('dashboard')->with('error', 'User masyarakat yang dipilih tidak valid atau di luar posyandu Anda.');
         }
 
         $validationRules = [];
@@ -403,10 +440,10 @@ class AjuanController extends Controller
             if ($request->hasFile($key)) {
                 $path = $this->compressAndStoreImage($request->file($key), 'ajuan_dokumen');
                 $uploadedFiles[$key] = $path;
-            } elseif ($key === 'ktp' && $request->input('ktp_mode') === 'claimed' && $user->ktp) {
-                $uploadedFiles[$key] = $user->ktp;
-            } elseif ($key === 'kk' && $request->input('kk_mode') === 'claimed' && $user->kk) {
-                $uploadedFiles[$key] = $user->kk;
+            } elseif ($key === 'ktp' && $request->input('ktp_mode') === 'claimed' && $targetUser->ktp) {
+                $uploadedFiles[$key] = $targetUser->ktp;
+            } elseif ($key === 'kk' && $request->input('kk_mode') === 'claimed' && $targetUser->kk) {
+                $uploadedFiles[$key] = $targetUser->kk;
             }
         }
 
@@ -420,7 +457,7 @@ class AjuanController extends Controller
         $trackingCode = $this->generateTrackingCode();
 
         $pengajuan = Pengajuan::create([
-            'user_id' => $targetUserId,
+            'user_id' => $targetUser->id,
             'bidang_id' => $ajuanData['bidang_id'],
             'status_pengajuan' => 'Diproses',
             'formulir_items' => $finalChecklistData,
@@ -885,7 +922,7 @@ class AjuanController extends Controller
                         'pilih_keputusan' => $keputusan,
                         'catatan' => $request->catatan,
                         'diubah_oleh' => $user->id,
-                        'action_by_role' => $user->role,
+                        'action_by_role' => $this->historyRole($user->role),
                         'created_at' => now(),
                     ]);
 
@@ -912,7 +949,7 @@ class AjuanController extends Controller
                         'pilih_keputusan' => $keputusan,
                         'catatan' => $request->catatan,
                         'diubah_oleh' => $user->id,
-                        'action_by_role' => $user->role,
+                        'action_by_role' => $this->historyRole($user->role),
                         'created_at' => now(),
                     ]);
 
@@ -951,7 +988,7 @@ class AjuanController extends Controller
                         'pilih_keputusan' => $keputusan,
                         'catatan' => $catatanHistory,
                         'diubah_oleh' => $user->id,
-                        'action_by_role' => $user->role,
+                        'action_by_role' => $this->historyRole($user->role),
                         'created_at' => now()
                     ]);
 
@@ -994,7 +1031,7 @@ class AjuanController extends Controller
                     'status' => $statusHistory,
                     'catatan' => $catatanHistory,
                     'diubah_oleh' => $user->id,
-                    'action_by_role' => $user->role,
+                    'action_by_role' => $this->historyRole($user->role),
                     'created_at' => now(),
                 ]);
 
