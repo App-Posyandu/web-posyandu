@@ -19,13 +19,14 @@
         <script>
             document.addEventListener('DOMContentLoaded', function() {
                 const errors = @json($errors->all());
-                const errorList = errors.map(err => `• ${err}`).join('<br>');
+                const errorList = errors.map(err => `<li style="text-align:left">• ${err}</li>`).join('');
 
                 Swal.fire({
                     icon: 'error',
-                    title: 'Error Validasi',
-                    html: errorList,
-                    confirmButtonColor: '#ef4444'
+                    title: 'Mohon periksa kembali isian Anda',
+                    html: `<ul class="text-sm text-gray-700">${errorList}</ul>`,
+                    confirmButtonColor: '#ef4444',
+                    confirmButtonText: 'Periksa Ulang'
                 });
             });
         </script>
@@ -59,13 +60,15 @@
                             <x-input-label for="name" :value="__('Nama Lengkap')" />
                             <x-text-input id="name" class="block mt-1 w-full" type="text" name="name"
                                 :value="old('name')" required autofocus placeholder="Masukkan nama lengkap" />
+                            <p class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Nama lengkap sesuai KTP, maks. 255 karakter.</p>
                             <x-input-error :messages="$errors->get('name')" class="mt-2" />
                         </div>
 
                         <div>
                             <x-input-label for="no_telepon" :value="__('Nomor Whatsapp')" />
                             <x-text-input id="no_telepon" class="block mt-1 w-full" type="text" name="no_telepon"
-                                :value="old('no_telepon')" required />
+                                :value="old('no_telepon')" required placeholder="Contoh: 081234567890" />
+                            <p class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Nomor aktif WhatsApp, maks. 20 digit, dan unik.</p>
                             <x-input-error :messages="$errors->get('no_telepon')" class="mt-2" />
                         </div>
 
@@ -74,20 +77,23 @@
                             <textarea id="alamat" name="alamat"
                                 class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
                                 rows="3" required placeholder="Masukkan alamat lengkap">{{ old('alamat') }}</textarea>
+                            <p class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Alamat lengkap tempat tinggal.</p>
                             <x-input-error :messages="$errors->get('alamat')" class="mt-2" />
                         </div>
 
                         <div>
                             <x-input-label for="nik" :value="__('NIK')" />
                             <x-text-input id="nik" class="block mt-1 w-full" type="text" name="nik"
-                                :value="old('nik')" required maxlength="16" />
+                                :value="old('nik')" required maxlength="16" placeholder="Contoh: 3302011234567890" />
+                            <p class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>16 digit angka NIK sesuai KTP.</p>
                             <x-input-error :messages="$errors->get('nik')" class="mt-2" />
                         </div>
 
                         <div>
                             <x-input-label for="tempat_lahir" :value="__('Tempat Lahir')" />
                             <x-text-input id="tempat_lahir" class="block mt-1 w-full" type="text" name="tempat_lahir"
-                                :value="old('tempat_lahir')" required />
+                                :value="old('tempat_lahir')" required placeholder="Contoh: Kebumen" />
+                            <p class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Nama kota/kabupaten sesuai KTP.</p>
                             <x-input-error :messages="$errors->get('tempat_lahir')" class="mt-2" />
                         </div>
 
@@ -95,6 +101,7 @@
                             <x-input-label for="tanggal_lahir" :value="__('Tanggal Lahir')" />
                             <x-text-input id="tanggal_lahir" class="block mt-1 w-full" type="date" name="tanggal_lahir"
                                 :value="old('tanggal_lahir')" required />
+                            <p class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Tanggal lahir sesuai KTP.</p>
                             <x-input-error :messages="$errors->get('tanggal_lahir')" class="mt-2" />
                         </div>
 
@@ -405,21 +412,40 @@
                         @endif
 
                         <div id="posyandu-field" style="display: none;" class="md:col-span-2">
-                            <x-input-label for="posyandu_select" :value="__('Pilih Posyandu')" />
+                            <x-input-label for="posyandu_search_input" :value="__('Pilih Posyandu')" />
+
+                            {{-- Search input for posyandu --}}
+                            <div class="relative mt-1 mb-2">
+                                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                    <i class="bi bi-search text-gray-400 text-sm"></i>
+                                </div>
+                                <input type="text" id="posyandu_search_input"
+                                    placeholder="Cari posyandu..."
+                                    class="block w-full pl-9 pr-4 py-2 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+                                    oninput="rebuildPosyanduOptions(document.getElementById('role')?.value, this.value)"
+                                    autocomplete="off">
+                            </div>
+
+                            {{-- The actual select (hidden visually but functional for JS/form) --}}
                             <select id="posyandu_select" name="posyandu_id"
-                                class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                                 <option value="" disabled selected>Pilih Posyandu</option>
                                 @foreach ($posyandus as $posyandu)
                                     <option value="{{ $posyandu->id }}" data-kabupaten="{{ $posyandu->kabupaten }}"
                                         data-kabupaten-id="{{ $posyandu->kabupaten_id }}"
                                         data-kecamatan="{{ $posyandu->kecamatan }}"
                                         data-kecamatan-id="{{ $posyandu->kecamatan_id }}"
-                                        data-desa="{{ $posyandu->desa }}">
+                                        data-desa="{{ $posyandu->desa }}"
+                                        data-has-ketua="{{ in_array($posyandu->id, $posyandusWithKetua) ? '1' : '0' }}"
+                                        @selected(old('posyandu_id') == $posyandu->id)>
                                         {{ $posyandu->nama_posyandu }} - {{ $posyandu->kecamatan }}
+                                        @if (in_array($posyandu->id, $posyandusWithKetua))
+                                            (Sudah ada Ketua)
+                                        @endif
                                     </option>
                                 @endforeach
                             </select>
-                            <p class="mt-1 text-xs text-gray-500">
+                            <p class="mt-1 text-xs text-gray-500" id="posyandu-helper-text">
                                 Ketua Posyandu akan memimpin posyandu ini
                             </p>
                             <input type="hidden" id="posyandu_kabupaten" name="posyandu_kabupaten_val" disabled>
@@ -568,15 +594,38 @@
 
                         <div>
                             <x-input-label for="password" :value="__('Password')" />
-                            <x-text-input id="password" class="block mt-1 w-full" type="password" name="password"
-                                required autocomplete="new-password" />
-                            <x-input-error :messages="$errors->get('password')" class="mt-2" />
+                            <div class="relative mt-1">
+                                <x-text-input id="password" class="block w-full pr-10" type="password" name="password"
+                                    required autocomplete="new-password" />
+                                <button type="button" onclick="togglePassword('password', this)"
+                                    class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none"
+                                    tabindex="-1">
+                                    <i class="bi bi-eye text-lg"></i>
+                                </button>
+                            </div>
+                            @error('password')
+                                <p class="mt-1 text-xs text-red-600"><i class="bi bi-exclamation-circle mr-1"></i>{{ $message }}</p>
+                            @else
+                                <p class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Minimal 8 karakter.</p>
+                            @enderror
                         </div>
 
                         <div>
                             <x-input-label for="password_confirmation" :value="__('Konfirmasi Password')" />
-                            <x-text-input id="password_confirmation" class="block mt-1 w-full" type="password"
-                                name="password_confirmation" required />
+                            <div class="relative mt-1">
+                                <x-text-input id="password_confirmation" class="block w-full pr-10" type="password"
+                                    name="password_confirmation" required />
+                                <button type="button" onclick="togglePassword('password_confirmation', this)"
+                                    class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none"
+                                    tabindex="-1">
+                                    <i class="bi bi-eye text-lg"></i>
+                                </button>
+                            </div>
+                            @error('password_confirmation')
+                                <p class="mt-1 text-xs text-red-600"><i class="bi bi-exclamation-circle mr-1"></i>{{ $message }}</p>
+                            @else
+                                <p class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Masukkan ulang password yang sama.</p>
+                            @enderror
                         </div>
                     </div>
                     <div class="flex gap-3">
@@ -601,6 +650,74 @@
 
     @push('scripts')
         <script>
+            function togglePassword(id, btn) {
+                const input = document.getElementById(id);
+                const icon = btn.querySelector('i');
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.className = 'bi bi-eye-slash text-lg';
+                } else {
+                    input.type = 'password';
+                    icon.className = 'bi bi-eye text-lg';
+                }
+            }
+
+            // All posyandu data with has_ketua flag
+            const ALL_POSYANDUS = @json($posyandus->map(fn($p) => [
+                'id' => $p->id,
+                'label' => $p->nama_posyandu . ' - ' . $p->kecamatan,
+                'kabupaten' => $p->kabupaten,
+                'kabupaten_id' => $p->kabupaten_id,
+                'kecamatan' => $p->kecamatan,
+                'kecamatan_id' => $p->kecamatan_id,
+                'desa' => $p->desa,
+                'has_ketua' => in_array($p->id, $posyandusWithKetua),
+            ]));
+
+            function rebuildPosyanduOptions(role, search) {
+                const select = document.getElementById('posyandu_select');
+                if (!select) return;
+
+                const currentValue = select.value;
+                const searchLower = (search || '').toLowerCase().trim();
+
+                select.innerHTML = '<option value="" disabled>Pilih Posyandu</option>';
+
+                const filtered = ALL_POSYANDUS.filter(p => {
+                    // Ketua-posyandu role: hide posyandus that already have a ketua
+                    if (role === 'ketua-posyandu' && p.has_ketua) return false;
+                    // Search filter
+                    if (searchLower && !p.label.toLowerCase().includes(searchLower)) return false;
+                    return true;
+                });
+
+                filtered.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.textContent = p.label + (p.has_ketua ? ' (Sudah ada Ketua)' : '');
+                    opt.setAttribute('data-kabupaten', p.kabupaten || '');
+                    opt.setAttribute('data-kabupaten-id', p.kabupaten_id || '');
+                    opt.setAttribute('data-kecamatan', p.kecamatan || '');
+                    opt.setAttribute('data-kecamatan-id', p.kecamatan_id || '');
+                    opt.setAttribute('data-desa', p.desa || '');
+                    opt.setAttribute('data-has-ketua', p.has_ketua ? '1' : '0');
+                    if (p.id == currentValue) opt.selected = true;
+                    select.appendChild(opt);
+                });
+
+                // Update helper text based on role
+                const helperText = document.getElementById('posyandu-helper-text');
+                if (helperText) {
+                    if (role === 'ketua-posyandu') {
+                        helperText.innerHTML = '<i class="bi bi-info-circle text-blue-500"></i> Hanya menampilkan posyandu yang <strong>belum memiliki ketua</strong>.';
+                        helperText.className = 'mt-1 text-xs text-blue-600';
+                    } else {
+                        helperText.textContent = 'Posyandu yang akan ditugaskan';
+                        helperText.className = 'mt-1 text-xs text-gray-500';
+                    }
+                }
+            }
+
             document.addEventListener('DOMContentLoaded', function() {
                 const validationMessages = {
                     'name': 'Silakan isi nama lengkap',
@@ -774,12 +891,9 @@
                     async fetchKecamatan(parentId) {
                         if (!parentId) return;
 
-                        // Only fetch if kecamatan field is visible
+                        // Fetch jika kecamatan field ada di DOM (tidak perlu cek visible)
                         const kecamatanField = document.getElementById('kecamatan-field');
-                        if (!kecamatanField || kecamatanField.style.display === 'none') {
-                            console.log('[fetchKecamatan] Skipped - kecamatan field not visible');
-                            return;
-                        }
+                        if (!kecamatanField) return;
 
                         this.loading = true;
 
@@ -863,10 +977,7 @@
                         if (!parentId) return;
 
                         const desaField = document.getElementById('desa-field');
-                        if (!desaField || desaField.style.display === 'none') {
-                            console.log('[fetchDesa] Skipped - desa field not visible');
-                            return;
-                        }
+                        if (!desaField) return;
 
                         console.log('Fetching Desa for Parent:', parentId);
                         this.loading = true;
@@ -1267,6 +1378,9 @@
                     if (role === 'ketua-posyandu') {
                         posyanduField.style.display = 'block';
                         posyanduSelect.required = true;
+                        const searchInput = document.getElementById('posyandu_search_input');
+                        if (searchInput) searchInput.value = '';
+                        rebuildPosyanduOptions('ketua-posyandu', '');
                     }
 
                     if (role === 'operator-desa') {
@@ -1276,7 +1390,9 @@
 
                         if (currentUserRole === 'admin-kabupaten') {
                             kecamatanField.style.display = 'block';
+                            kecamatanField.removeAttribute('hidden');
                             desaField.style.display = 'block';
+                            desaField.removeAttribute('hidden');
                         }
 
                         if (currentUserRole === 'ketua-posyandu') {
@@ -1293,12 +1409,18 @@
                         if (currentUserRole === 'operator-desa') {
                             posyanduField.style.display = 'block';
                             posyanduSelect.required = true;
+                            const searchInput = document.getElementById('posyandu_search_input');
+                            if (searchInput) searchInput.value = '';
+                            rebuildPosyanduOptions('kader', '');
                         } else if (currentUserRole === 'ketua-posyandu') {
                             posyanduField.style.display = 'none';
                             posyanduSelect.required = false;
                         } else {
                             posyanduField.style.display = 'block';
                             posyanduSelect.required = true;
+                            const searchInput = document.getElementById('posyandu_search_input');
+                            if (searchInput) searchInput.value = '';
+                            rebuildPosyanduOptions('kader', '');
                         }
                     }
 
@@ -1322,21 +1444,28 @@
                     const rolesNeedingKecamatan = ['admin-kecamatan', 'kades', 'bu-kades', 'operator-desa'];
                     if (!rolesNeedingKecamatan.includes(role)) return;
 
-                    const adminKabupatenName = '{{ auth()->user()->kabupaten }}';
+                    const rawName = '{{ auth()->user()->kabupaten }}';
                     const kabupatenList = @json($kabupatenList ?? []);
 
-                    const kabupaten = kabupatenList.find(k => k.name === adminKabupatenName);
-                    if (kabupaten) {
-                        const code = kabupaten.id || kabupaten.code;
-                        console.log('[Auto-fetch Kecamatan] Admin-kabupaten selected role:', role,
-                            'Fetching kecamatan for:', code);
+                    const normalize = s => (s || '').toLowerCase().replace(/^kabupaten\s+/i, '').trim();
+                    const adminNorm = normalize(rawName);
 
-                        window.dispatchEvent(new CustomEvent('region-selected', {
-                            detail: {
-                                code: code
-                            }
-                        }));
+                    const kabupaten = kabupatenList.find(k => normalize(k.name) === adminNorm);
+
+                    if (!kabupaten) {
+                        console.warn('[Auto-fetch Kecamatan] Kabupaten tidak ditemukan di list:', rawName);
+                        return;
                     }
+
+                    const code = kabupaten.id || kabupaten.code;
+                    console.log('[Auto-fetch Kecamatan] role:', role, 'kab code:', code);
+
+                    // setTimeout agar Alpine.js listener @region-selected.window sudah aktif
+                    setTimeout(() => {
+                        window.dispatchEvent(new CustomEvent('region-selected', {
+                            detail: { code: code }
+                        }));
+                    }, 100);
                 }
 
                 function toggleWilayahField() {

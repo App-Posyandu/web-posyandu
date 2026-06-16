@@ -23,7 +23,9 @@
                             <div>
                                 <x-input-label for="nama_posyandu" :value="__('Nama Posyandu')" />
                                 <x-text-input id="nama_posyandu" class="block mt-1 w-full" type="text" name="nama_posyandu"
-                                    :value="old('nama_posyandu', $posyandu->nama_posyandu)" required />
+                                    :value="old('nama_posyandu', $posyandu->nama_posyandu)" required
+                                    placeholder="Contoh: Posyandu Melati 1" />
+                                <p class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Hanya huruf, angka, spasi, titik, dan tanda hubung. Maks. 255 karakter.</p>
                                 <x-input-error :messages="$errors->get('nama_posyandu')" class="mt-2" />
                             </div>
 

@@ -20,6 +20,17 @@ class TakeoverResetPasswordRequest extends FormRequest
         ];
     }
 
+    public function messages(): array
+    {
+        return [
+            'new_password.required'  => 'Password baru wajib diisi.',
+            'new_password.min'       => 'Password baru minimal 8 karakter.',
+            'new_password.confirmed' => 'Konfirmasi password tidak cocok.',
+            'reason.required'        => 'Alasan pengambilalihan wajib diisi.',
+            'reason.max'             => 'Alasan maksimal 500 karakter.',
+        ];
+    }
+
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {

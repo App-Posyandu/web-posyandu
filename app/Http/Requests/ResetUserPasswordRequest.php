@@ -19,6 +19,15 @@ class ResetUserPasswordRequest extends FormRequest
         ];
     }
 
+    public function messages(): array
+    {
+        return [
+            'new_password.required'  => 'Password baru wajib diisi.',
+            'new_password.min'       => 'Password baru minimal 8 karakter.',
+            'new_password.confirmed' => 'Konfirmasi password tidak cocok.',
+        ];
+    }
+
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {

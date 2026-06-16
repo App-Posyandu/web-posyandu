@@ -238,6 +238,12 @@ class UserController extends Controller
             $defaultRole = 'masyarakat';
         }
 
+        // IDs of posyandus that already have a ketua-posyandu assigned
+        $posyandusWithKetua = User::where('role', 'ketua-posyandu')
+            ->whereNotNull('posyandu_id')
+            ->pluck('posyandu_id')
+            ->toArray();
+
         return view('admin.users.create', compact(
             'posyandus',
             'bidangs',
@@ -245,7 +251,8 @@ class UserController extends Controller
             'kecamatans',
             'kabupatenList',
             'kotaList',
-            'defaultRole'
+            'defaultRole',
+            'posyandusWithKetua'
         ));
     }
 
@@ -625,8 +632,8 @@ class UserController extends Controller
         $validated = $request->validated();
 
         $currentUser = Auth::user();
-        $newStatus = $request->has('is_active') ? 1 : 0;
-        $oldStatus = $user->is_active;
+        $newStatus = $request->boolean('is_active');
+        $oldStatus = (bool) $user->is_active;
 
         $data = [
             'name' => $validated['name'],
@@ -640,7 +647,7 @@ class UserController extends Controller
             'is_active' => $newStatus,
         ];
 
-        if ($newStatus === 0) {
+        if (!$newStatus) {
             $data['deactivated_at'] = now();
             $data['deactivated_by'] = $currentUser->id;
             $data['deactivation_reason'] = $request->input('reason', '-');
@@ -967,14 +974,15 @@ class UserController extends Controller
             return redirect()->back()->with('error', 'Unauthorized');
         }
 
-        if ($user->role !== 'kader' || $user->posyandu_id !== $currentUser->posyandu_id) {
+        $allowedRoles = ['kades', 'bu-kades', 'ketua-posyandu', 'kader'];
+        if (!in_array($user->role, $allowedRoles, true) || !$this->sameOperatorDesa($currentUser, $user)) {
             $this->auditDeniedUserAction($currentUser, $user, 'deactivate_scope');
-            return redirect()->back()->with('error', 'Anda hanya bisa nonaktifkan kader di posyandu Anda');
+            return redirect()->back()->with('error', 'Anda hanya bisa nonaktifkan kades, bu kades, ketua posyandu, atau kader di desa Anda');
         }
 
 
         $user->update([
-            'status' => 'inactive',
+            'is_active' => false,
             'deactivated_at' => now(),
             'deactivated_by' => $currentUser->id,
             'deactivation_reason' => $validated['reason'],
@@ -985,9 +993,9 @@ class UserController extends Controller
             'action_by' => $currentUser->id,
             'action_type' => 'deactivated',
             'description' => "User dinonaktifkan oleh {$currentUser->name}. Alasan: {$validated['reason']}",
-            'old_data' => ['status' => 'active'],
+            'old_data' => ['is_active' => true],
             'new_data' => [
-                'status' => 'inactive',
+                'is_active' => false,
                 'reason' => $validated['reason'],
             ],
         ]);
@@ -1006,13 +1014,14 @@ class UserController extends Controller
             return redirect()->back()->with('error', 'Unauthorized');
         }
 
-        if ($user->role !== 'kader' || $user->posyandu_id !== $currentUser->posyandu_id) {
+        $allowedRoles = ['kades', 'bu-kades', 'ketua-posyandu', 'kader'];
+        if (!in_array($user->role, $allowedRoles, true) || !$this->sameOperatorDesa($currentUser, $user)) {
             $this->auditDeniedUserAction($currentUser, $user, 'activate_scope');
-            return redirect()->back()->with('error', 'Anda hanya bisa aktifkan kader di posyandu Anda');
+            return redirect()->back()->with('error', 'Anda hanya bisa aktifkan kades, bu kades, ketua posyandu, atau kader di desa Anda');
         }
 
         $user->update([
-            'status' => 'active',
+            'is_active' => true,
             'deactivated_at' => null,
             'deactivated_by' => null,
             'deactivation_reason' => null,
@@ -1023,8 +1032,8 @@ class UserController extends Controller
             'action_by' => $currentUser->id,
             'action_type' => 'activated',
             'description' => "User diaktifkan kembali oleh {$currentUser->name}",
-            'old_data' => ['status' => 'inactive'],
-            'new_data' => ['status' => 'active'],
+            'old_data' => ['is_active' => false],
+            'new_data' => ['is_active' => true],
         ]);
 
         return redirect()->route('admin.users.show', $user)->with('success', 'User berhasil diaktifkan kembali.');
@@ -1042,10 +1051,10 @@ class UserController extends Controller
             return redirect()->back()->with('error', 'Unauthorized');
         }
 
-        $allowedRoles = ['kader', 'ketua-posyandu'];
-        if (!in_array($user->role, $allowedRoles) || (string)$user->posyandu_id !== (string)$currentUser->posyandu_id) {
+        $allowedRoles = ['kades', 'bu-kades', 'ketua-posyandu', 'kader'];
+        if (!in_array($user->role, $allowedRoles, true) || !$this->sameOperatorDesa($currentUser, $user)) {
             $this->auditDeniedUserAction($currentUser, $user, 'reset_password_scope');
-            return redirect()->back()->with('error', 'Anda hanya bisa reset password kader atau ketua di posyandu Anda');
+            return redirect()->back()->with('error', 'Anda hanya bisa reset password kades, bu kades, ketua posyandu, atau kader di desa Anda');
         }
 
         $validated = $request->validated();
@@ -1061,7 +1070,23 @@ class UserController extends Controller
             'description' => "Password direset oleh {$currentUser->name}",
         ]);
 
-        return redirect()->back()->with('success', 'Password kader berhasil direset');
+        return redirect()->back()->with('success', 'Password user berhasil direset');
+    }
+
+    private function sameOperatorDesa(User $operator, User $target): bool
+    {
+        if ($operator->role !== 'operator-desa') {
+            return false;
+        }
+
+        if ($target->role === 'kader' || $target->role === 'ketua-posyandu') {
+            if ($operator->posyandu_id && $target->posyandu_id) {
+                return (string) $operator->posyandu_id === (string) $target->posyandu_id;
+            }
+        }
+
+        return (string) $operator->desa === (string) $target->desa
+            && (string) $operator->kecamatan === (string) $target->kecamatan;
     }
 
     public function resetPasswordKabid(ResetUserPasswordRequest $request, User $user)
@@ -1218,12 +1243,12 @@ class UserController extends Controller
             ]);
         }
 
-        $allowedRoles = ['kader', 'ketua-posyandu'];
+        $allowedRoles = ['kader', 'ketua-posyandu', 'kades', 'bu-kades'];
         if (!in_array($user->role, $allowedRoles)) {
             $this->auditDeniedUserAction($currentUser, $user, 'deactivate_scope');
             return redirect()->back()->with('swal_error', [
                 'title' => 'Role Tidak Valid',
-                'text' => 'Anda hanya bisa menonaktifkan kader atau ketua posyandu.'
+                'text' => 'Anda hanya bisa menonaktifkan kader, ketua posyandu, kades, atau bu kades.'
             ]);
         }
         if ($user->desa !== $currentUser->desa || $user->kecamatan !== $currentUser->kecamatan) {
@@ -1243,7 +1268,13 @@ class UserController extends Controller
             'deactivation_reason' => $validated['reason'],
         ]);
 
-        $roleLabel = $user->role === 'ketua-posyandu' ? 'Ketua Posyandu' : 'Kader';
+        $roleLabels = [
+            'ketua-posyandu' => 'Ketua Posyandu',
+            'kades' => 'Kades',
+            'bu-kades' => 'Bu Kades',
+            'kader' => 'Kader',
+        ];
+        $roleLabel = $roleLabels[$user->role] ?? ucfirst($user->role);
 
         UserHistory::create([
             'user_id' => $user->id,
@@ -1272,12 +1303,12 @@ class UserController extends Controller
             ]);
         }
 
-        $allowedRoles = ['kader', 'ketua-posyandu'];
+        $allowedRoles = ['kader', 'ketua-posyandu', 'kades', 'bu-kades'];
         if (!in_array($user->role, $allowedRoles)) {
             $this->auditDeniedUserAction($currentUser, $user, 'reactivate_scope');
             return redirect()->back()->with('swal_error', [
                 'title' => 'Role Tidak Valid',
-                'text' => 'Anda hanya bisa mengaktifkan kader atau ketua posyandu.'
+                'text' => 'Anda hanya bisa mengaktifkan kader, ketua posyandu, kades, atau bu kades.'
             ]);
         }
 

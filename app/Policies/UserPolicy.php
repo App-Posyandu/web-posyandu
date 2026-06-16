@@ -131,7 +131,7 @@ class UserPolicy
         }
 
         if ($actor->role === 'operator-desa') {
-            return $this->sameDesa($actor, $subject) && in_array($subject->role, ['kader', 'ketua-posyandu'], true);
+            return $this->sameDesa($actor, $subject) && in_array($subject->role, ['kades', 'bu-kades', 'kader', 'ketua-posyandu'], true);
         }
 
         if ($actor->role === 'admin-kabupaten') {
