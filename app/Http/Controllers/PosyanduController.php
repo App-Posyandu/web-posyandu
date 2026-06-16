@@ -251,30 +251,57 @@ class PosyanduController extends Controller
             }
         }
 
-        $posyandu = Posyandu::create([
-            'nama_posyandu' => $validated['nama_posyandu'],
-            'kabupaten' => $kabupatenName,
-            'kecamatan' => $kecamatanName,
-            'desa' => $desaName,
-            'rw_list' => $validated['rw_list'] ?? [],
-            'rt_mapping' => $validated['rt_mapping'] ?? [],
-        ]);
+        try {
+            $posyandu = Posyandu::create([
+                'nama_posyandu' => $validated['nama_posyandu'],
+                'kabupaten' => $kabupatenName,
+                'kecamatan' => $kecamatanName,
+                'desa' => $desaName,
+                'rw_list' => $validated['rw_list'] ?? [],
+                'rt_mapping' => $validated['rt_mapping'] ?? [],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal membuat posyandu', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'data' => $validated,
+            ]);
+            return redirect()->back()
+                ->withErrors(['nama_posyandu' => 'Gagal menyimpan posyandu: ' . $e->getMessage()])
+                ->withInput();
+        }
 
-        $this->createKadersForPosyandu($posyandu);
+        try {
+            $this->createKadersForPosyandu($posyandu);
+        } catch (\Exception $e) {
+            Log::error('Gagal membuat kader otomatis', [
+                'posyandu_id' => $posyandu->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            // Posyandu tetap berhasil dibuat, kader bisa dibuat manual nanti
+        }
 
-        UserHistory::create([
-            'user_id' => Auth::id(),
-            'action_by' => Auth::id(),
-            'action_type' => 'created',
-            'description' => "Posyandu {$posyandu->nama_posyandu} berhasil dibuat dengan " .
-                count($request->rw_list ?? []) . " RW dan " .
-                (!empty($validated['rt_mapping']) ? array_sum(array_map('count', $validated['rt_mapping'])) : 0) . " RT",
-            'new_data' => json_encode([
-                'nama_posyandu' => $posyandu->nama_posyandu,
-                'total_rw' => count($validated['rw_list'] ?? []),
-                'total_rt' => !empty($validated['rt_mapping']) ? array_sum(array_map('count', $validated['rt_mapping'])) : 0,
-            ]),
-        ]);
+        $rwCount = count($validated['rw_list'] ?? []);
+        $rtCount = !empty($validated['rt_mapping']) ? array_sum(array_map('count', $validated['rt_mapping'])) : 0;
+
+        try {
+            UserHistory::create([
+                'user_id' => Auth::id(),
+                'action_by' => Auth::id(),
+                'action_type' => 'created',
+                'description' => "Posyandu {$posyandu->nama_posyandu} berhasil dibuat dengan {$rwCount} RW dan {$rtCount} RT",
+                'new_data' => [
+                    'nama_posyandu' => $posyandu->nama_posyandu,
+                    'total_rw' => $rwCount,
+                    'total_rt' => $rtCount,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal menyimpan history pembuatan posyandu', [
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         return redirect()
             ->route('admin.posyandu.index')
@@ -285,6 +312,11 @@ class PosyanduController extends Controller
     {
         $bidangs = \App\Models\BidangPengajuan::orderBy('nama_bidang')->get();
 
+        if ($bidangs->isEmpty()) {
+            Log::warning("Tidak ada data bidang_pengajuans di database. Kader tidak dapat dibuat.");
+            return [];
+        }
+
         if ($bidangs->count() !== 6) {
             Log::warning("Expected 6 bidangs but found {$bidangs->count()}");
         }
@@ -293,55 +325,65 @@ class PosyanduController extends Controller
         $defaultPassword = 'password123';
 
         foreach ($bidangs as $index => $bidang) {
-            $bidangSlug = Str::slug($bidang->nama_bidang);
-            $posyanduSlug = Str::slug($posyandu->nama_posyandu);
-            $posyanduShort = substr($posyandu->id, 0, 8);
+            try {
+                $bidangSlug = Str::slug($bidang->nama_bidang);
+                $posyanduShort = substr($posyandu->id, 0, 8);
 
-            $email = "kader.{$bidangSlug}.{$posyanduShort}@posyandu.local";
+                $email = "kader.{$bidangSlug}.{$posyanduShort}@posyandu.local";
 
-            $phonePrefix = substr(str_replace('-', '', $posyandu->id), 0, 4);
-            $phoneSuffix = str_pad($index + 1, 4, '0', STR_PAD_LEFT);
+                // Cek apakah email sudah ada (hindari unique constraint violation)
+                if (User::where('email', $email)->exists()) {
+                    Log::warning("Email kader sudah ada, skip: {$email}");
+                    continue;
+                }
 
-            $kader = User::create([
-                'name' => "Kader " . $bidang->nama_bidang . " - " . $posyandu->nama_posyandu,
-                'email' => $email,
-                'password' => Hash::make($defaultPassword),
-                'role' => 'kader',
-                'bidang_id' => $bidang->id,
-                'posyandu_id' => $posyandu->id,
-                'kabupaten' => $posyandu->kabupaten,
-                'kabupaten_id' => $posyandu->kabupaten_id,
-                'kecamatan' => $posyandu->kecamatan,
-                'kecamatan_id' => $posyandu->kecamatan_id,
-                'desa' => $posyandu->desa,
-                'verified_at' => now(),
-                'verified_by' => Auth::id(),
-                'is_active' => true,
-                'nik' => null,
-                'alamat' => "Posyandu {$posyandu->nama_posyandu}, {$posyandu->desa}",
-                'tempat_lahir' => null,
-                'tanggal_lahir' => null,
-                'jenis_kelamin' => null,
-            ]);
-
-            UserHistory::create([
-                'user_id' => $kader->id,
-                'action_by' => Auth::id(),
-                'action_type' => 'created',
-                'description' => "Akun kader auto-generated untuk {$bidang->nama_bidang} di {$posyandu->nama_posyandu}",
-                'new_data' => json_encode([
+                $kader = User::create([
+                    'name' => "Kader " . $bidang->nama_bidang . " - " . $posyandu->nama_posyandu,
                     'email' => $email,
-                    'default_password' => $defaultPassword,
-                    'bidang' => $bidang->nama_bidang,
-                    'posyandu' => $posyandu->nama_posyandu,
-                ]),
-            ]);
+                    'password' => $defaultPassword,
+                    'role' => 'kader',
+                    'bidang_id' => $bidang->id,
+                    'posyandu_id' => $posyandu->id,
+                    'kabupaten' => $posyandu->kabupaten,
+                    'kabupaten_id' => $posyandu->kabupaten_id,
+                    'kecamatan' => $posyandu->kecamatan,
+                    'kecamatan_id' => $posyandu->kecamatan_id,
+                    'desa' => $posyandu->desa,
+                    'verified_at' => now(),
+                    'verified_by' => Auth::id(),
+                    'is_active' => true,
+                    'nik' => null,
+                    'alamat' => "Posyandu {$posyandu->nama_posyandu}, {$posyandu->desa}",
+                    'tempat_lahir' => null,
+                    'tanggal_lahir' => null,
+                    'jenis_kelamin' => null,
+                ]);
 
-            $createdKaders[] = [
-                'email' => $email,
-                'password' => $defaultPassword,
-                'bidang' => $bidang->nama_bidang,
-            ];
+                UserHistory::create([
+                    'user_id' => $kader->id,
+                    'action_by' => Auth::id(),
+                    'action_type' => 'created',
+                    'description' => "Akun kader auto-generated untuk {$bidang->nama_bidang} di {$posyandu->nama_posyandu}",
+                    'new_data' => [
+                        'email' => $email,
+                        'default_password' => $defaultPassword,
+                        'bidang' => $bidang->nama_bidang,
+                        'posyandu' => $posyandu->nama_posyandu,
+                    ],
+                ]);
+
+                $createdKaders[] = [
+                    'email' => $email,
+                    'password' => $defaultPassword,
+                    'bidang' => $bidang->nama_bidang,
+                ];
+            } catch (\Exception $e) {
+                Log::error("Gagal membuat kader untuk bidang {$bidang->nama_bidang}", [
+                    'posyandu_id' => $posyandu->id,
+                    'error' => $e->getMessage(),
+                ]);
+                continue;
+            }
         }
 
         session()->flash('created_kaders', $createdKaders);
@@ -663,18 +705,19 @@ class PosyanduController extends Controller
             'rt_mapping' => $validated['rt_mapping'] ?? [],
         ]);
 
+        $rwCount = count($validated['rw_list'] ?? []);
+        $rtCount = !empty($validated['rt_mapping']) ? array_sum(array_map('count', $validated['rt_mapping'])) : 0;
+
         UserHistory::create([
             'user_id' => Auth::id(),
             'action_by' => Auth::id(),
             'action_type' => 'updated',
-            'description' => "Data posyandu {$posyandu->nama_posyandu} diperbarui. Total RW: " .
-                count($request->rw_list ?? []) . ", Total RT: " .
-                (!empty($validated['rt_mapping']) ? array_sum(array_map('count', $validated['rt_mapping'])) : 0),
-            'new_data' => json_encode([
+            'description' => "Data posyandu {$posyandu->nama_posyandu} diperbarui. Total RW: {$rwCount}, Total RT: {$rtCount}",
+            'new_data' => [
                 'nama_posyandu' => $posyandu->nama_posyandu,
-                'total_rw' => count($validated['rw_list'] ?? []),
-                'total_rt' => !empty($validated['rt_mapping']) ? array_sum(array_map('count', $validated['rt_mapping'])) : 0,
-            ]),
+                'total_rw' => $rwCount,
+                'total_rt' => $rtCount,
+            ],
         ]);
 
         return redirect()->route('admin.posyandu.index')

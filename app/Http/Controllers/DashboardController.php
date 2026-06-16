@@ -63,10 +63,9 @@ class DashboardController extends Controller
         }
 
         // Default ke tahun terbaru yang punya data, bukan selalu tahun ini
-        $latestDataYear = Pengajuan::selectRaw('YEAR(created_at) as year')
-            ->orderByRaw('YEAR(created_at) DESC')
-            ->value('year');
-        $defaultYear = $request->query('year') ? $currentYear : ($latestDataYear ?? $currentYear);
+        $latestEntry   = Pengajuan::latest()->first();
+        $latestDataYear = $latestEntry ? (int) $latestEntry->created_at->year : null;
+        $defaultYear   = $request->query('year') ? $currentYear : ($latestDataYear ?? $currentYear);
 
         $selectedYear = YearParameter::resolveOrFallback($request->query('year'), $defaultYear, 2000, 2100);
 
@@ -220,10 +219,19 @@ class DashboardController extends Controller
 
             case 'admin-kecamatan':
                 if ($user->kecamatan) {
-                    $listQuery->whereHas('user', fn($q) => $q->where('kecamatan', 'LIKE', '%' . $user->kecamatan . '%'));
-                    $statsQuery->whereHas('user', fn($q) => $q->where('kecamatan', 'LIKE', '%' . $user->kecamatan . '%'));
+                    $kecScope = function ($q) use ($user): void {
+                        $q->where('kecamatan', 'LIKE', '%' . $user->kecamatan . '%');
+                        if ($user->kabupaten) {
+                            $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%');
+                        }
+                    };
+                    $listQuery->whereHas('user', $kecScope);
+                    $statsQuery->whereHas('user', $kecScope);
+                    $desasQuery->whereHas('user', $kecScope);
                     $actualCountsQuery->where('users.kecamatan', 'LIKE', '%' . $user->kecamatan . '%');
-                    $desasQuery->whereHas('user', fn($q) => $q->where('kecamatan', 'LIKE', '%' . $user->kecamatan . '%'));
+                    if ($user->kabupaten) {
+                        $actualCountsQuery->where('users.kabupaten', 'LIKE', '%' . $user->kabupaten . '%');
+                    }
                 } else {
                     $denyAll();
                 }

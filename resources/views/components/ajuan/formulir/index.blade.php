@@ -122,6 +122,7 @@
                     <textarea id="deskripsi_pengajuan" name="deskripsi_pengajuan"
                         class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
                         rows="4" placeholder="Jelaskan secara singkat tujuan atau detail pengajuan Anda di sini...">{{ old('deskripsi_pengajuan') }}</textarea>
+                    <p class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Minimal 10 karakter, maks. 2.000 karakter.</p>
                     <x-input-error :messages="$errors->get('deskripsi_pengajuan')" class="mt-2" />
                 </div>
             </div>

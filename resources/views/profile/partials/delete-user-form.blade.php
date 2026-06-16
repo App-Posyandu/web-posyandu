@@ -29,15 +29,20 @@
 
             <div class="mt-6">
                 <x-input-label for="password" value="{{ __('Password') }}" class="sr-only" />
-
-                <x-text-input
-                    id="password"
-                    name="password"
-                    type="password"
-                    class="mt-1 block w-3/4"
-                    placeholder="{{ __('Password') }}"
-                />
-
+                <div class="relative mt-1 w-3/4">
+                    <x-text-input
+                        id="password"
+                        name="password"
+                        type="password"
+                        class="block w-full pr-10"
+                        placeholder="{{ __('Password') }}"
+                    />
+                    <button type="button" onclick="toggleDeletePassword('password', this)"
+                        class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none"
+                        tabindex="-1">
+                        <i class="bi bi-eye text-lg"></i>
+                    </button>
+                </div>
                 <x-input-error :messages="$errors->userDeletion->get('password')" class="mt-2" />
             </div>
 
@@ -53,3 +58,17 @@
         </form>
     </x-modal>
 </section>
+
+<script>
+    function toggleDeletePassword(id, btn) {
+        const input = document.getElementById(id);
+        const icon = btn.querySelector('i');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.className = 'bi bi-eye-slash text-lg';
+        } else {
+            input.type = 'password';
+            icon.className = 'bi bi-eye text-lg';
+        }
+    }
+</script>

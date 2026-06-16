@@ -19,6 +19,14 @@ class DeactivateUserRequest extends FormRequest
         ];
     }
 
+    public function messages(): array
+    {
+        return [
+            'reason.required' => 'Alasan penonaktifan wajib diisi.',
+            'reason.max'      => 'Alasan maksimal 500 karakter.',
+        ];
+    }
+
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {

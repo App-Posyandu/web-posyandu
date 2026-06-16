@@ -34,6 +34,32 @@ class UpdateUserRequest extends FormRequest
         ];
     }
 
+    public function messages(): array
+    {
+        return [
+            // Identitas
+            'name.required'         => 'Nama lengkap wajib diisi.',
+            'name.max'              => 'Nama maksimal 255 karakter.',
+            'tanggal_lahir.date'    => 'Format tanggal lahir tidak valid.',
+            'jenis_kelamin.in'      => 'Jenis kelamin tidak valid.',
+            // NIK
+            'nik.digits'            => 'NIK harus tepat 16 digit angka.',
+            'nik.unique'            => 'NIK sudah terdaftar, gunakan NIK yang benar.',
+            // Email
+            'email.required'        => 'Email wajib diisi.',
+            'email.email'           => 'Format email tidak valid.',
+            'email.max'             => 'Email maksimal 255 karakter.',
+            'email.unique'          => 'Email sudah terdaftar, gunakan email lain.',
+            // No. Telepon
+            'no_telepon.max'        => 'Nomor WhatsApp maksimal 20 digit.',
+            // Password
+            'password.min'          => 'Password minimal 8 karakter.',
+            'password.confirmed'    => 'Konfirmasi password tidak cocok.',
+            // Alasan
+            'reason.max'            => 'Alasan maksimal 500 karakter.',
+        ];
+    }
+
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {
