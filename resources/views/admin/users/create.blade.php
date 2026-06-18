@@ -1566,6 +1566,8 @@
                 'bu-kades': 'Bu Kades',
             };
             let selectedRoleToCreate = null;
+            const importExcelUrl = @json(\Illuminate\Support\Facades\Route::has('admin.users.import') ? route('admin.users.import') : null);
+            const exportTemplateUrl = @json(\Illuminate\Support\Facades\Route::has('admin.users.export.template') ? route('admin.users.export.template') : null);
 
             const importBtn = document.getElementById('importBtn');
             if (importBtn) {
@@ -1774,7 +1776,17 @@
                                 formData.append('role', selectedRoleToCreate);
                             }
 
-                            fetch("{{ route('admin.users.import') }}", {
+                            if (!importExcelUrl) {
+                                Swal.fire({
+                                    icon: "error",
+                                    title: "Route Import Tidak Tersedia",
+                                    text: "Endpoint import user belum tersedia.",
+                                    confirmButtonColor: '#ef4444',
+                                });
+                                return;
+                            }
+
+                            fetch(importExcelUrl, {
                                     method: "POST",
                                     headers: {
                                         "X-CSRF-TOKEN": "{{ csrf_token() }}"
@@ -1823,7 +1835,16 @@
                     }
                 });
                 const roleParam = selectedRoleToCreate ? `?role=${encodeURIComponent(selectedRoleToCreate)}` : '';
-                const url = "{{ route('admin.users.export.template') }}" + roleParam;
+                if (!exportTemplateUrl) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Route Template Tidak Tersedia',
+                        text: 'Endpoint template user belum tersedia.',
+                        confirmButtonColor: '#ef4444'
+                    });
+                    return;
+                }
+                const url = exportTemplateUrl + roleParam;
                 window.location.href = url;
                 setTimeout(() => {
                     const roleLabel = roleLabels[selectedRoleToCreate] || 'User';
