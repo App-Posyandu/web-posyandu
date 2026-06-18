@@ -663,7 +663,7 @@
             }
 
             // All posyandu data with has_ketua flag
-            const ALL_POSYANDUS = @json($posyandus->map(fn($p) => [
+            const ALL_POSYANDUS = {!! json_encode($posyandus->map(fn($p) => [
                 'id' => $p->id,
                 'label' => $p->nama_posyandu . ' - ' . $p->kecamatan,
                 'kabupaten' => $p->kabupaten,
@@ -672,7 +672,7 @@
                 'kecamatan_id' => $p->kecamatan_id,
                 'desa' => $p->desa,
                 'has_ketua' => in_array($p->id, $posyandusWithKetua),
-            ]));
+            ])) !!};
 
             function rebuildPosyanduOptions(role, search) {
                 const select = document.getElementById('posyandu_select');
@@ -760,7 +760,7 @@
                     open: false,
                     search: '',
                     selectedKabupaten: '{{ old('kabupaten') }}',
-                    kabupatens: @json($kabupatenList ?? []),
+                    kabupatens: {!! json_encode($kabupatenList ?? []) !!},
 
                     init() {
                         @if (auth()->user()->kabupaten)
@@ -825,7 +825,7 @@
                     open: false,
                     search: '',
                     selectedKota: '{{ old('kota') }}',
-                    kotas: @json($kotaList ?? []),
+                    kotas: {!! json_encode($kotaList ?? []) !!},
 
                     getKotaName(value) {
                         if (!value) return '';
@@ -1019,8 +1019,8 @@
                     }
                 }));
             });
-            const POSYANDU_RT_MAPPING = @json(auth()->user()->posyandu?->rt_mapping ?? []);
-            const POSYANDU_RW_LIST = @json(auth()->user()->posyandu?->rw_list ?? []);
+            const POSYANDU_RT_MAPPING = {!! json_encode(auth()->user()->posyandu?->rt_mapping ?? []) !!};
+            const POSYANDU_RW_LIST = {!! json_encode(auth()->user()->posyandu?->rw_list ?? []) !!};
             const kecamatanApiUrl = @json(\Illuminate\Support\Facades\Route::has('api.kecamatan') ? route('api.kecamatan') : url('/api/kecamatan'));
             const desaApiUrl = @json(\Illuminate\Support\Facades\Route::has('api.desa') ? route('api.desa') : url('/api/desa'));
 
@@ -1356,9 +1356,19 @@
                     if (role === 'kabid') {
                         bidangField.style.display = 'block';
                         bidangSelect.required = true;
+                    }
 
-                        // jenisWilayahField.style.display = 'block';
-                        // jenisWilayahSelect.required = true;
+                    if (role === 'kabid' || role === 'ketua-timpembina-posyandu') {
+                        if (currentUserRole !== 'admin-kabupaten' && currentUserRole !== 'operator-desa') {
+                            kabupatenField.style.display = 'block';
+                            kecamatanField.style.display = 'block';
+                            desaField.style.display = 'block';
+                        } else if (currentUserRole === 'admin-kabupaten') {
+                            kecamatanField.style.display = 'block';
+                            kecamatanField.removeAttribute('hidden');
+                            desaField.style.display = 'block';
+                            desaField.removeAttribute('hidden');
+                        }
                     }
 
                     if (role === 'admin-kecamatan') {
@@ -1370,6 +1380,8 @@
                     if (role === 'kades' || role === 'bu-kades') {
                         if (currentUserRole !== 'admin-kabupaten' && currentUserRole !== 'operator-desa') {
                             kabupatenField.style.display = 'block';
+                            kecamatanField.style.display = 'block';
+                            desaField.style.display = 'block';
                         } else if (currentUserRole !== 'operator-desa') {
                             kecamatanField.style.display = 'block';
                             desaField.style.display = 'block';
@@ -1387,6 +1399,8 @@
                     if (role === 'operator-desa') {
                         if (currentUserRole !== 'admin-kabupaten' && currentUserRole !== 'operator-desa') {
                             kabupatenField.style.display = 'block';
+                            kecamatanField.style.display = 'block';
+                            desaField.style.display = 'block';
                         }
 
                         if (currentUserRole === 'admin-kabupaten') {
@@ -1442,11 +1456,11 @@
                     const currentUserRole = '{{ auth()->user()->role }}';
                     if (currentUserRole !== 'admin-kabupaten') return;
 
-                    const rolesNeedingKecamatan = ['admin-kecamatan', 'kades', 'bu-kades', 'operator-desa'];
+                    const rolesNeedingKecamatan = ['admin-kecamatan', 'kades', 'bu-kades', 'operator-desa', 'kabid', 'ketua-timpembina-posyandu'];
                     if (!rolesNeedingKecamatan.includes(role)) return;
 
                     const rawName = '{{ auth()->user()->kabupaten }}';
-                    const kabupatenList = @json($kabupatenList ?? []);
+                    const kabupatenList = {!! json_encode($kabupatenList ?? []) !!};
 
                     const normalize = s => (s || '').toLowerCase().replace(/^kabupaten\s+/i, '').trim();
                     const adminNorm = normalize(rawName);
@@ -1470,20 +1484,17 @@
                 }
 
                 function toggleWilayahField() {
-                    kabupatenField.style.display = 'none';
-                    kotaField.style.display = 'none';
-                    kecamatanField.style.display = 'none';
+                    if (roleSelect.value === 'admin-kabupaten') {
+                        kabupatenField.style.display = 'none';
+                        kotaField.style.display = 'none';
 
-                    const jenisWilayah = jenisWilayahSelect.value;
+                        const jenisWilayah = jenisWilayahSelect.value;
 
-                    if (jenisWilayah === 'kabupaten') {
-                        kabupatenField.style.display = 'block';
-                    } else if (jenisWilayah === 'kota') {
-                        kotaField.style.display = 'block';
-                    }
-
-                    if (roleSelect.value === 'admin-kecamatan') {
-                        kecamatanField.style.display = 'block';
+                        if (jenisWilayah === 'kabupaten') {
+                            kabupatenField.style.display = 'block';
+                        } else if (jenisWilayah === 'kota') {
+                            kotaField.style.display = 'block';
+                        }
                     }
                 }
 
