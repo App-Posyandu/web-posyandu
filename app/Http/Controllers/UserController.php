@@ -192,7 +192,7 @@ class UserController extends Controller
         $posyandus = Posyandu::orderBy('nama_posyandu')->get();
         $bidangs = BidangPengajuan::orderBy('nama_bidang')->get();
 
-        $kabupatens = Kabupaten::orderBy('jenis')->orderBy('nama_kabupaten')->get();
+        $kabupatens = collect();
         $kecamatans = collect();
 
         if ($currentUser->role === 'ketua-posyandu') {
@@ -208,11 +208,8 @@ class UserController extends Controller
             $posyandus = Posyandu::where('kabupaten_id', $currentUser->kabupaten_id)
                 ->orderBy('nama_posyandu')->get();
 
-            $kecamatans = Kecamatan::where('kabupaten_id', $currentUser->kabupaten_id)
-                ->orderBy('nama_kecamatan')->get();
         } elseif (in_array($currentUser->role, ['admin'])) {
             $posyandus = Posyandu::orderBy('nama_posyandu')->get();
-            $kecamatans = Kecamatan::orderBy('nama_kecamatan')->get();
         }
 
         $kabupatenList = [];
