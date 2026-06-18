@@ -189,27 +189,34 @@ class UserController extends Controller
     public function create(Request $request)
     {
         $currentUser = Auth::user();
-        $posyandus = Posyandu::orderBy('nama_posyandu')->get();
-        $bidangs = BidangPengajuan::orderBy('nama_bidang')->get();
-
+        $posyandus = collect();
+        $bidangs = collect();
         $kabupatens = collect();
         $kecamatans = collect();
 
-        if ($currentUser->role === 'ketua-posyandu') {
-            $posyandus = Posyandu::where('id', $currentUser->posyandu_id)->get();
-        } elseif ($currentUser->role === 'operator-desa') {
-            $posyandus = Posyandu::where('desa', $currentUser->desa)
-                ->where('kecamatan', $currentUser->kecamatan)
-                ->orderBy('nama_posyandu')->get();
-        } elseif ($currentUser->role === 'admin-kecamatan') {
-            $posyandus = Posyandu::where('kecamatan_id', $currentUser->kecamatan_id)
-                ->orderBy('nama_posyandu')->get();
-        } elseif ($currentUser->role === 'kabid') {
-            $posyandus = Posyandu::where('kabupaten_id', $currentUser->kabupaten_id)
-                ->orderBy('nama_posyandu')->get();
-
-        } elseif (in_array($currentUser->role, ['admin'])) {
+        try {
             $posyandus = Posyandu::orderBy('nama_posyandu')->get();
+            $bidangs = BidangPengajuan::orderBy('nama_bidang')->get();
+
+            if ($currentUser->role === 'ketua-posyandu') {
+                $posyandus = Posyandu::where('id', $currentUser->posyandu_id)->get();
+            } elseif ($currentUser->role === 'operator-desa') {
+                $posyandus = Posyandu::where('desa', $currentUser->desa)
+                    ->where('kecamatan', $currentUser->kecamatan)
+                    ->orderBy('nama_posyandu')->get();
+            } elseif ($currentUser->role === 'admin-kecamatan') {
+                $posyandus = Posyandu::where('kecamatan_id', $currentUser->kecamatan_id)
+                    ->orderBy('nama_posyandu')->get();
+            } elseif ($currentUser->role === 'kabid') {
+                $posyandus = Posyandu::where('kabupaten_id', $currentUser->kabupaten_id)
+                    ->orderBy('nama_posyandu')->get();
+            }
+        } catch (\Throwable $e) {
+            Log::error('Create user form data error', [
+                'user_id' => $currentUser?->id,
+                'role' => $currentUser?->role,
+                'error' => $e->getMessage(),
+            ]);
         }
 
         $kabupatenList = [];
@@ -221,10 +228,21 @@ class UserController extends Controller
                 'kabupatens_jateng'
             );
 
-            foreach (($wilayahData['data'] ?? []) as $wilayah) {
-                if (stripos($wilayah['name'], 'Kota ') === 0) {
+            $wilayahItems = $wilayahData['data'] ?? [];
+            if (!is_iterable($wilayahItems)) {
+                $wilayahItems = [];
+            }
+
+            foreach ($wilayahItems as $wilayah) {
+                $wilayahName = is_array($wilayah) ? ($wilayah['name'] ?? '') : ($wilayah->name ?? '');
+
+                if (!is_string($wilayahName) || $wilayahName === '') {
+                    continue;
+                }
+
+                if (stripos($wilayahName, 'Kota ') === 0) {
                     $kotaList[] = $wilayah;
-                } elseif (stripos($wilayah['name'], 'Kabupaten ') === 0) {
+                } elseif (stripos($wilayahName, 'Kabupaten ') === 0) {
                     $kabupatenList[] = $wilayah;
                 }
             }
@@ -236,10 +254,19 @@ class UserController extends Controller
         }
 
         // IDs of posyandus that already have a ketua-posyandu assigned
-        $posyandusWithKetua = User::where('role', 'ketua-posyandu')
-            ->whereNotNull('posyandu_id')
-            ->pluck('posyandu_id')
-            ->toArray();
+        $posyandusWithKetua = [];
+        try {
+            $posyandusWithKetua = User::where('role', 'ketua-posyandu')
+                ->whereNotNull('posyandu_id')
+                ->pluck('posyandu_id')
+                ->toArray();
+        } catch (\Throwable $e) {
+            Log::error('Create user ketua lookup error', [
+                'user_id' => $currentUser?->id,
+                'role' => $currentUser?->role,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         return view('admin.users.create', compact(
             'posyandus',
