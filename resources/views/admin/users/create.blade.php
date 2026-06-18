@@ -338,7 +338,7 @@
                         </div>
                         @if (auth()->user()->role === 'operator-desa')
                             <input type="hidden" id="operator-desa-kecamatan" name="operator_desa_kecamatan"
-                                value="{{ auth()->user()->desa }}" disabled>
+                                value="{{ auth()->user()->kecamatan }}" disabled>
                             <div id="kecamatan-display-field" style="display: none;" class="md:col-span-2">
                                 <x-input-label for="kecamatan-display" :value="__('Kecamatan')" />
                                 <div
@@ -523,7 +523,7 @@
                                         <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
                                             Posyandu</p>
                                         <p class="text-sm font-bold text-gray-800">
-                                            {{ auth()->user()->posyandu->nama_posyandu ?? 'Tidak Tersedia' }}
+                                            {{ auth()->user()->posyandu?->nama_posyandu ?? 'Tidak Tersedia' }}
                                         </p>
                                     </div>
                                 </div>
@@ -566,7 +566,7 @@
 
                                         <p class="mt-2 text-xs text-gray-600">
                                             RW yang tersedia di Posyandu
-                                            {{ auth()->user()->posyandu->nama_posyandu ?? '' }}
+                                            {{ auth()->user()->posyandu?->nama_posyandu ?? '' }}
                                         </p>
 
                                         <x-input-error :messages="$errors->get('rw')" class="mt-2" />
@@ -1020,8 +1020,8 @@
                     }
                 }));
             });
-            const POSYANDU_RT_MAPPING = @json(auth()->user()->posyandu->rt_mapping ?? []);
-            const POSYANDU_RW_LIST = @json(auth()->user()->posyandu->rw_list ?? []);
+            const POSYANDU_RT_MAPPING = @json(auth()->user()->posyandu?->rt_mapping ?? []);
+            const POSYANDU_RW_LIST = @json(auth()->user()->posyandu?->rw_list ?? []);
 
             console.log('=== KADER CREATE MASYARAKAT DEBUG ===');
             console.log('Posyandu RW List:', POSYANDU_RW_LIST);
