@@ -41,8 +41,8 @@ class UserController extends Controller
 
     private function fetchWilayahData($endpoint, $cacheKey)
     {
-        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($endpoint) {
-            try {
+        try {
+            return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($endpoint) {
                 $response = Http::timeout(self::API_TIMEOUT)
                     ->retry(2, 100)
                     ->get(env('API_WILAYAH_URL') . $endpoint);
@@ -52,11 +52,11 @@ class UserController extends Controller
                 }
 
                 return ['data' => []];
-            } catch (\Exception $e) {
-                Log::error("Wilayah API Error: {$endpoint}", ['error' => $e->getMessage()]);
-                return ['data' => []];
-            }
-        });
+            });
+        } catch (\Throwable $e) {
+            Log::error("Wilayah API Error: {$endpoint}", ['error' => $e->getMessage()]);
+            return ['data' => []];
+        }
     }
 
     public function index(UserIndexFilterRequest $request)
