@@ -188,6 +188,15 @@ class UserController extends Controller
 
     public function create(Request $request)
     {
+        try {
+            return $this->createUserResponse($request);
+        } catch (\Throwable $e) {
+            return $this->createUserDebugResponse($e, Auth::user(), 'Create user page error');
+        }
+    }
+
+    private function createUserResponse(Request $request)
+    {
         $currentUser = Auth::user();
         $posyandus = collect();
         $bidangs = collect();
@@ -268,16 +277,97 @@ class UserController extends Controller
             ]);
         }
 
-        return view('admin.users.create', compact(
-            'posyandus',
-            'bidangs',
-            'kabupatens',
-            'kecamatans',
-            'kabupatenList',
-            'kotaList',
-            'defaultRole',
-            'posyandusWithKetua'
-        ));
+        return $this->renderCreateUserView([
+            'posyandus' => $posyandus,
+            'bidangs' => $bidangs,
+            'kabupatens' => $kabupatens,
+            'kecamatans' => $kecamatans,
+            'kabupatenList' => $kabupatenList,
+            'kotaList' => $kotaList,
+            'defaultRole' => $defaultRole,
+            'posyandusWithKetua' => $posyandusWithKetua,
+        ], $currentUser);
+    }
+
+    private function renderCreateUserView(array $viewData, User $currentUser)
+    {
+        try {
+            return response(view('admin.users.create', $viewData)->render());
+        } catch (\Throwable $e) {
+            return $this->createUserDebugResponse($e, $currentUser, 'Create user page render error');
+        }
+    }
+
+    private function createUserDebugResponse(\Throwable $e, ?User $currentUser, string $logMessage)
+    {
+        Log::error($logMessage, [
+            'user_id' => $currentUser?->id,
+            'role' => $currentUser?->role,
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+            'trace' => $e->getTraceAsString(),
+        ]);
+
+        if ($currentUser?->role !== 'admin') {
+            throw $e;
+        }
+
+        $debug = [
+            'message' => $e->getMessage(),
+            'exception' => get_class($e),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+            'trace' => collect($e->getTrace())->take(20)->values()->all(),
+        ];
+
+        $debugJson = json_encode($debug, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+        return response(<<<HTML
+<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Create User Debug</title>
+    <style>
+        body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f8fafc; color: #0f172a; margin: 0; padding: 32px; }
+        .panel { max-width: 960px; margin: 0 auto; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px; box-shadow: 0 10px 25px rgba(15, 23, 42, .08); }
+        h1 { margin: 0 0 12px; font-size: 24px; }
+        code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+        pre { white-space: pre-wrap; overflow-wrap: anywhere; background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: 16px; max-height: 460px; overflow: auto; }
+        .muted { color: #64748b; }
+    </style>
+</head>
+<body>
+    <div class="panel">
+        <h1>Debug Create User</h1>
+        <p class="muted">Detail error juga sudah dikirim ke browser console sebagai <code>Create User Debug</code>.</p>
+        <p><strong>{$this->escapeDebugText($debug['exception'])}</strong>: {$this->escapeDebugText($debug['message'])}</p>
+        <p><code>{$this->escapeDebugText($debug['file'])}:{$this->escapeDebugText((string) $debug['line'])}</code></p>
+        <pre id="debug-json"></pre>
+    </div>
+    <script>
+        const createUserDebug = {$debugJson};
+        console.group('Create User Debug');
+        console.error(createUserDebug.message);
+        console.table({
+            exception: createUserDebug.exception,
+            file: createUserDebug.file,
+            line: createUserDebug.line
+        });
+        console.log('Trace:', createUserDebug.trace);
+        console.groupEnd();
+        document.getElementById('debug-json').textContent = JSON.stringify(createUserDebug, null, 2);
+    </script>
+</body>
+</html>
+HTML, 500);
+    }
+
+    private function escapeDebugText(string $value): string
+    {
+        return e($value);
     }
 
     public function store(StoreUserRequest $request)
