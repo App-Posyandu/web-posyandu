@@ -67,7 +67,7 @@
         </div>
     @endif
 
-    <form action="{{ route('admin.users.import.process') }}" method="POST" enctype="multipart/form-data">
+    <form action="{{ route('admin.import.importProcess') }}" method="POST" enctype="multipart/form-data">
         @csrf
         <input type="hidden" name="role" value="{{ $roleToCreateKey }}">
         

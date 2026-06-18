@@ -1567,27 +1567,30 @@
             };
             let selectedRoleToCreate = null;
 
-            document.getElementById('importBtn').addEventListener('click', function() {
-                const allowedRoles = roleTargets[currentUserRole] || [];
+            const importBtn = document.getElementById('importBtn');
+            if (importBtn) {
+                importBtn.addEventListener('click', function() {
+                    const allowedRoles = roleTargets[currentUserRole] || [];
 
-                if (allowedRoles.length === 0) {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Tidak Ada Akses',
-                        text: 'Role Anda tidak memiliki akses untuk import user.',
-                        confirmButtonColor: '#f87171'
-                    });
-                    return;
-                }
+                    if (allowedRoles.length === 0) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Tidak Ada Akses',
+                            text: 'Role Anda tidak memiliki akses untuk import user.',
+                            confirmButtonColor: '#f87171'
+                        });
+                        return;
+                    }
 
-                if (allowedRoles.length > 1) {
-                    showRoleSelection(allowedRoles);
-                    return;
-                }
+                    if (allowedRoles.length > 1) {
+                        showRoleSelection(allowedRoles);
+                        return;
+                    }
 
-                selectedRoleToCreate = allowedRoles[0];
-                showMainMenu();
-            });
+                    selectedRoleToCreate = allowedRoles[0];
+                    showMainMenu();
+                });
+            }
 
             function showRoleSelection(roles) {
                 const rolesHtml = roles.map(role => {
