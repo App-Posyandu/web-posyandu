@@ -903,8 +903,7 @@
                         document.getElementById('kecamatan-hidden').value = '';
 
                         try {
-                            const response = await fetch(
-                                `{{ route('api.kecamatan') }}?kab_id=${parentId}`);
+                            const response = await fetch(`${kecamatanApiUrl}?kab_id=${parentId}`);
                             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
                             const data = await response.json();
@@ -986,7 +985,7 @@
                         document.getElementById('desa-hidden').value = '';
 
                         try {
-                            const response = await fetch(`{{ route('api.desa') }}?kec_id=${parentId}`);
+                            const response = await fetch(`${desaApiUrl}?kec_id=${parentId}`);
                             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
                             const data = await response.json();
@@ -1022,6 +1021,8 @@
             });
             const POSYANDU_RT_MAPPING = @json(auth()->user()->posyandu?->rt_mapping ?? []);
             const POSYANDU_RW_LIST = @json(auth()->user()->posyandu?->rw_list ?? []);
+            const kecamatanApiUrl = @json(\Illuminate\Support\Facades\Route::has('api.kecamatan') ? route('api.kecamatan') : url('/api/kecamatan'));
+            const desaApiUrl = @json(\Illuminate\Support\Facades\Route::has('api.desa') ? route('api.desa') : url('/api/desa'));
 
             console.log('=== KADER CREATE MASYARAKAT DEBUG ===');
             console.log('Posyandu RW List:', POSYANDU_RW_LIST);
