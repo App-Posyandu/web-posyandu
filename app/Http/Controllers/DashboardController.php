@@ -160,47 +160,7 @@ class DashboardController extends Controller
             $desasQuery->whereRaw('1 = 0');
         };
 
-        $applyKadesRegionScope = function () use ($user, $listQuery, $statsQuery, $actualCountsQuery, $desasQuery, $denyAll): void {
-            if (!$user->posyandu_id && !$user->desa) {
-                $denyAll();
-                return;
-            }
 
-            $scopeUserQuery = function ($q) use ($user): void {
-                $q->where(function ($scope) use ($user): void {
-                    if ($user->posyandu_id) {
-                        $scope->orWhere('posyandu_id', $user->posyandu_id);
-                    }
-
-                    if ($user->desa) {
-                        $scope->orWhere('desa', 'LIKE', '%' . $user->desa . '%')
-                            ->orWhere('alamat', 'LIKE', '%' . $user->desa . '%')
-                            ->orWhereHas('posyandu', function ($posyanduQuery) use ($user): void {
-                                $posyanduQuery->where('desa', 'LIKE', '%' . $user->desa . '%')
-                                    ->orWhere('nama_posyandu', 'LIKE', '%' . $user->desa . '%');
-                            });
-                    }
-                });
-            };
-
-            $listQuery->whereHas('user', $scopeUserQuery);
-            $statsQuery->whereHas('user', $scopeUserQuery);
-            $desasQuery->whereHas('user', $scopeUserQuery);
-
-            $actualCountsQuery->leftJoin('posyandus', 'users.posyandu_id', '=', 'posyandus.id')
-                ->where(function ($scope) use ($user): void {
-                    if ($user->posyandu_id) {
-                        $scope->orWhere('users.posyandu_id', $user->posyandu_id);
-                    }
-
-                    if ($user->desa) {
-                        $scope->orWhere('users.desa', 'LIKE', '%' . $user->desa . '%')
-                            ->orWhere('users.alamat', 'LIKE', '%' . $user->desa . '%')
-                            ->orWhere('posyandus.desa', 'LIKE', '%' . $user->desa . '%')
-                            ->orWhere('posyandus.nama_posyandu', 'LIKE', '%' . $user->desa . '%');
-                    }
-                });
-        };
 
         // -------------------------
         // Filter per role
@@ -272,16 +232,29 @@ class DashboardController extends Controller
                 break;
 
             case 'operator-desa':
-                if ($user->posyandu_id) {
-                    $listQuery->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
-                    $statsQuery->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
-                    $actualCountsQuery->where('users.posyandu_id', $user->posyandu_id);
-                    $desasQuery->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
-                } elseif ($user->desa) {
-                    $listQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
-                    $statsQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
+            case 'kades':
+            case 'bu-kades':
+                if ($user->desa) {
+                    $scope = function ($q) use ($user): void {
+                        $q->where('desa', $user->desa);
+                        if ($user->kecamatan) {
+                            $q->where('kecamatan', $user->kecamatan);
+                        }
+                        if ($user->kabupaten) {
+                            $q->where('kabupaten', $user->kabupaten);
+                        }
+                    };
+                    $listQuery->whereHas('user', $scope);
+                    $statsQuery->whereHas('user', $scope);
+                    $desasQuery->whereHas('user', $scope);
+
                     $actualCountsQuery->where('users.desa', $user->desa);
-                    $desasQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
+                    if ($user->kecamatan) {
+                        $actualCountsQuery->where('users.kecamatan', $user->kecamatan);
+                    }
+                    if ($user->kabupaten) {
+                        $actualCountsQuery->where('users.kabupaten', $user->kabupaten);
+                    }
                 } else {
                     $denyAll();
                 }
@@ -299,11 +272,6 @@ class DashboardController extends Controller
                 } else {
                     $denyAll();
                 }
-                break;
-
-            case 'kades':
-            case 'bu-kades':
-                $applyKadesRegionScope();
                 break;
 
             case 'ketua-timpembina-posyandu':
