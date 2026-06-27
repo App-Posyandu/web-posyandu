@@ -66,7 +66,7 @@
                                     <x-untitledui-upload class="w-5 h-5" />
                                 </label>
                                 <input id="ktp" class="hidden" type="file" name="ktp"
-                                    accept="image/jpeg,image/jpg,image/png" capture="environment"
+                                    accept="image/jpeg,image/jpg,image/png"
                                     @change="
                                         let file = $event.target.files[0];
                                         if (file) {
@@ -154,7 +154,7 @@
                                     <x-untitledui-upload class="w-5 h-5" />
                                 </label>
                                 <input id="kk" class="hidden" type="file" name="kk"
-                                    accept="image/jpeg,image/jpg,image/png" capture="environment"
+                                    accept="image/jpeg,image/jpg,image/png"
                                     @change="
                                         let file = $event.target.files[0];
                                         if (file) {
@@ -243,7 +243,7 @@
                                     <x-untitledui-upload class="w-5 h-5" />
                                 </label>
                                 <input id="{{ $key }}" class="hidden" type="file"
-                                    name="{{ $key }}" accept="image/jpeg,image/jpg,image/png" capture="environment"
+                                    name="{{ $key }}" accept="image/jpeg,image/jpg,image/png"
                                     @change="
                                         let file = $event.target.files[0];
                                         if (file) {

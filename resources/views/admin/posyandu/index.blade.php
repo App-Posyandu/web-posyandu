@@ -119,7 +119,7 @@
                     @elseif (auth()->user()->role === 'admin-kabupaten')
                         <div class="text-sm text-gray-500">
                             <i class="bi bi-eye mr-1"></i>
-                            Menampilkan semua posyandu di <strong>{{ auth()->user()->kabupaten ?? '-' }}</strong>
+                            Menampilkan semua posyandu di <strong>{{ auth()->user()->kabupaten ? auth()->user()->kabupaten : '-' }}</strong>
                         </div>
                     @elseif (auth()->user()->role === 'ketua-posyandu')
                         <div class="text-sm text-gray-500">
@@ -243,9 +243,9 @@
                                         @endif
                                     </td>
                                     <td class="px-6 py-4">
-                                        <div class="text-sm text-gray-900">{{ $posyandu->desa }}</div>
-                                        <div class="text-xs text-gray-500">{{ $posyandu->kecamatan }},
-                                            {{ $posyandu->kabupaten }}</div>
+                                        <div class="text-sm text-gray-900">{{ $posyandu->desa ? $posyandu->desa : '' }}</div>
+                                        <div class="text-xs text-gray-500">{{ $posyandu->kecamatan ? $posyandu->kecamatan : '' }},
+                                            {{ $posyandu->kabupaten ? $posyandu->kabupaten : '' }}</div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center">
                                         <span

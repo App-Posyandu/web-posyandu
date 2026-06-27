@@ -236,7 +236,7 @@
                 <div class="flex items-start">
                     <i class="bi bi-info-circle-fill text-pink-500 mr-2 mt-0.5 flex-shrink-0"></i>
                     <p class="text-sm text-gray-700">
-                        Anda mengelola pengajuan di <strong>Kecamatan {{ auth()->user()->kecamatan }}</strong>
+                        Anda mengelola pengajuan di <strong>Kecamatan <span>{{ auth()->user()->kecamatan }}</span></strong>
                     </p>
                 </div>
             </div>

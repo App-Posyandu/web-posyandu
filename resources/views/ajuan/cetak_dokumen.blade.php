@@ -247,7 +247,7 @@
                         <td>
                             <h3>Nama Pemohon</h3>
                         </td>
-                        <td>: {{ $ajuan->user->name }}</td>
+                        <td>: <span>{{ $ajuan->user?->name ? $ajuan->user->name : '-' }}</span></td>
                     </tr>
                     <tr>
                         <td>
@@ -265,7 +265,7 @@
                         <td>
                             <h3>Nama Posyandu</h3>
                         </td>
-                        <td>: {{ $ajuan->user?->posyandu?->nama_posyandu ?? '-' }}</td>
+                        <td>: <span>{{ $ajuan->user?->posyandu?->nama_posyandu ? $ajuan->user->posyandu->nama_posyandu : '-' }}</span></td>
                     </tr>
                     <tr>
                         <td>
@@ -277,13 +277,13 @@
                         <td>
                             <h3>Desa/Kelurahan</h3>
                         </td>
-                        <td>: {{ $ajuan->user?->posyandu?->desa ?? '-' }}</td>
+                        <td>: <span>{{ $ajuan->user?->posyandu?->desa ? $ajuan->user?->posyandu?->desa : '-' }}</span></td>
                     </tr>
                     <tr>
                         <td>
                             <h3>Kecamatan</h3>
                         </td>
-                        <td>: {{ $ajuan->user?->posyandu?->kecamatan ?? '-' }}</td>
+                        <td>: <span>{{ $ajuan->user?->posyandu?->kecamatan ? $ajuan->user?->posyandu?->kecamatan : '-' }}</span></td>
                     </tr>
                 </table>
 

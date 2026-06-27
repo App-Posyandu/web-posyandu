@@ -272,7 +272,7 @@
                 <div class="info-grid">
                     <div class="info-row">
                         <div class="info-label">Nama Pemohon</div>
-                        <div class="info-value">: {{ $ajuan->user->name }}</div>
+                        <div class="info-value">: <span>{{ $ajuan->user?->name ? $ajuan->user->name : '-' }}</span></div>
                     </div>
                     <div class="info-row">
                         <div class="info-label">Alamat</div>
@@ -288,7 +288,7 @@
                 <div class="info-grid">
                     <div class="info-row">
                         <div class="info-label">Nama Posyandu</div>
-                        <div class="info-value">: {{ $ajuan->user?->posyandu?->nama_posyandu ?? '-' }}</div>
+                        <div class="info-value">: <span>{{ $ajuan->user?->posyandu?->nama_posyandu ? $ajuan->user->posyandu->nama_posyandu : '-' }}</span></div>
                     </div>
                     <div class="info-row">
                         <div class="info-label">RW / RT</div>
@@ -297,11 +297,11 @@
                     </div>
                     <div class="info-row">
                         <div class="info-label">Desa/Kelurahan</div>
-                        <div class="info-value">: {{ $ajuan->user?->posyandu?->desa ?? '-' }}</div>
+                        <div class="info-value">: <span>{{ $ajuan->user?->posyandu?->desa ? $ajuan->user?->posyandu?->desa : '-' }}</span></div>
                     </div>
                     <div class="info-row">
                         <div class="info-label">Kecamatan</div>
-                        <div class="info-value">: {{ $ajuan->user?->posyandu?->kecamatan ?? '-' }}</div>
+                        <div class="info-value">: <span>{{ $ajuan->user?->posyandu?->kecamatan ? $ajuan->user?->posyandu?->kecamatan : '-' }}</span></div>
                     </div>
                 </div>
             </div>
@@ -317,7 +317,7 @@
 
         <h4 class="sub-title">Detail Permohonan Dipilih</h4>
         <table class="table-content">
-            @forelse ($ajuan->formulir_items as $item)
+            @forelse ($ajuan->formulir_items ?? [] as $item)
                 <tr>
                     <td class="cell-left">{{ $item }}</td>
                     <td>

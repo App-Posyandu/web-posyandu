@@ -23,10 +23,10 @@
                     </td>
                     <td class="px-2 md:px-4 py-1 md:py-2 whitespace-nowrap text-sm font-medium text-gray-900">
                         <div class="font-medium text-gray-900">
-                            {{ $ajuan->user?->name ?? 'Pengguna Dihapus' }}
+                            {{ $ajuan->user?->name ? $ajuan->user->name : 'Pengguna Dihapus' }}
                         </div>
                         <div class="text-xs text-gray-500">
-                            {{ $ajuan->user?->posyandu?->nama_posyandu ?? 'Belum Terdaftar' }}
+                            {{ $ajuan->user?->posyandu?->nama_posyandu ? $ajuan->user->posyandu->nama_posyandu : 'Belum Terdaftar' }}
                         </div>
                         <div class="text-xs text-gray-400">
                             RW {{ $ajuan->user?->rw ?? '-' }} / RT {{ $ajuan->user?->rt ?? '-' }}
@@ -224,12 +224,12 @@
                             {{ strtoupper(substr($ajuan->user?->name ?? 'U', 0, 1)) }}
                         </div>
                         <div>
-                            <h3 class="text-sm font-semibold text-gray-900">
-                                {{ $ajuan->user?->name ?? 'Pengguna Dihapus' }}
-                            </h3>
-                            <p class="text-xs text-gray-500">
-                                {{ $ajuan->user?->posyandu?->nama_posyandu ?? 'Belum Terdaftar' }}
-                            </p>
+                            <div class="font-medium text-gray-900">
+                                {{ $ajuan->user?->name ? $ajuan->user->name : 'Pengguna Dihapus' }}
+                            </div>
+                            <div class="text-xs text-gray-500">
+                                {{ $ajuan->user?->posyandu?->nama_posyandu ? $ajuan->user->posyandu->nama_posyandu : 'Belum Terdaftar' }}
+                            </div>
                             <p class="text-xs text-gray-400">
                                 RW {{ $ajuan->user?->rw ?? '-' }} / RT {{ $ajuan->user?->rt ?? '-' }}
                             </p>

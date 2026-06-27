@@ -349,7 +349,7 @@
                     <div>
                         <h3 class="font-semibold mb-2">Detail Permohonan Dipilih</h3>
                         <ul class="space-y-2">
-                            @forelse ($ajuan->formulir_items as $item)
+                            @forelse ($ajuan->formulir_items ?? [] as $item)
                                 <li class="flex items-center text-gray-700">
                                     <i class="bi bi-check-square-fill text-green-500 mr-3"></i>
                                     <span>{{ $item }}</span>
@@ -362,7 +362,7 @@
                     <div>
                         <h3 class="font-semibold mb-2">Dokumen Terlampir</h3>
                         <ul class="space-y-2">
-                            @forelse ($ajuan->administrasi_items as $key => $path)
+                            @forelse ($ajuan->administrasi_items ?? [] as $key => $path)
                                 <li class="flex items-center">
                                     <a href="{{ route('ajuan.dokumen.download', ['ajuan' => $ajuan, 'key' => $key]) }}"
                                         target="_blank" class="text-blue-600 hover:underline flex items-center">

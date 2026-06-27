@@ -24,6 +24,7 @@ class DashboardController extends Controller
 
         switch ($user->role) {
             case 'kader':
+            case 'kabid':
                 return redirect()->route('ajuan.index');
 
             case 'operator-desa':
@@ -31,7 +32,6 @@ class DashboardController extends Controller
 
             case 'masyarakat':
             case 'admin':
-            case 'kabid':
             case 'admin-kabupaten':
             case 'admin-kecamatan':
             case 'ketua-posyandu':
@@ -173,11 +173,12 @@ class DashboardController extends Controller
                     }
 
                     if ($user->desa) {
-                        $scope->orWhere('desa', 'LIKE', '%' . $user->desa . '%')
-                            ->orWhere('alamat', 'LIKE', '%' . $user->desa . '%')
-                            ->orWhereHas('posyandu', function ($posyanduQuery) use ($user): void {
-                                $posyanduQuery->where('desa', 'LIKE', '%' . $user->desa . '%')
-                                    ->orWhere('nama_posyandu', 'LIKE', '%' . $user->desa . '%');
+                        $desaUpper = strtoupper($user->desa);
+                        $scope->orWhereRaw('UPPER(desa) LIKE ?', ['%' . $desaUpper . '%'])
+                            ->orWhereRaw('UPPER(alamat) LIKE ?', ['%' . $desaUpper . '%'])
+                            ->orWhereHas('posyandu', function ($posyanduQuery) use ($desaUpper): void {
+                                $posyanduQuery->whereRaw('UPPER(desa) LIKE ?', ['%' . $desaUpper . '%'])
+                                    ->orWhereRaw('UPPER(nama_posyandu) LIKE ?', ['%' . $desaUpper . '%']);
                             });
                     }
                 });
@@ -194,10 +195,11 @@ class DashboardController extends Controller
                     }
 
                     if ($user->desa) {
-                        $scope->orWhere('users.desa', 'LIKE', '%' . $user->desa . '%')
-                            ->orWhere('users.alamat', 'LIKE', '%' . $user->desa . '%')
-                            ->orWhere('posyandus.desa', 'LIKE', '%' . $user->desa . '%')
-                            ->orWhere('posyandus.nama_posyandu', 'LIKE', '%' . $user->desa . '%');
+                        $desaUpper = strtoupper($user->desa);
+                        $scope->orWhereRaw('UPPER(users.desa) LIKE ?', ['%' . $desaUpper . '%'])
+                            ->orWhereRaw('UPPER(users.alamat) LIKE ?', ['%' . $desaUpper . '%'])
+                            ->orWhereRaw('UPPER(posyandus.desa) LIKE ?', ['%' . $desaUpper . '%'])
+                            ->orWhereRaw('UPPER(posyandus.nama_posyandu) LIKE ?', ['%' . $desaUpper . '%']);
                     }
                 });
         };
@@ -208,10 +210,10 @@ class DashboardController extends Controller
         switch ($user->role) {
             case 'admin-kabupaten':
                 if ($user->kabupaten) {
-                    $listQuery->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%'));
-                    $statsQuery->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%'));
-                    $actualCountsQuery->where('users.kabupaten', 'LIKE', '%' . $user->kabupaten . '%');
-                    $desasQuery->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%'));
+                    $listQuery->whereHas('user', fn($q) => $q->whereRaw('UPPER(kabupaten) LIKE ?', ['%' . strtoupper($user->kabupaten) . '%']));
+                    $statsQuery->whereHas('user', fn($q) => $q->whereRaw('UPPER(kabupaten) LIKE ?', ['%' . strtoupper($user->kabupaten) . '%']));
+                    $actualCountsQuery->whereRaw('UPPER(users.kabupaten) LIKE ?', ['%' . strtoupper($user->kabupaten) . '%']);
+                    $desasQuery->whereHas('user', fn($q) => $q->whereRaw('UPPER(kabupaten) LIKE ?', ['%' . strtoupper($user->kabupaten) . '%']));
                 } else {
                     $denyAll();
                 }
@@ -220,17 +222,17 @@ class DashboardController extends Controller
             case 'admin-kecamatan':
                 if ($user->kecamatan) {
                     $kecScope = function ($q) use ($user): void {
-                        $q->where('kecamatan', 'LIKE', '%' . $user->kecamatan . '%');
+                        $q->whereRaw('UPPER(kecamatan) LIKE ?', ['%' . strtoupper($user->kecamatan) . '%']);
                         if ($user->kabupaten) {
-                            $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%');
+                            $q->whereRaw('UPPER(kabupaten) LIKE ?', ['%' . strtoupper($user->kabupaten) . '%']);
                         }
                     };
                     $listQuery->whereHas('user', $kecScope);
                     $statsQuery->whereHas('user', $kecScope);
                     $desasQuery->whereHas('user', $kecScope);
-                    $actualCountsQuery->where('users.kecamatan', 'LIKE', '%' . $user->kecamatan . '%');
+                    $actualCountsQuery->whereRaw('UPPER(users.kecamatan) LIKE ?', ['%' . strtoupper($user->kecamatan) . '%']);
                     if ($user->kabupaten) {
-                        $actualCountsQuery->where('users.kabupaten', 'LIKE', '%' . $user->kabupaten . '%');
+                        $actualCountsQuery->whereRaw('UPPER(users.kabupaten) LIKE ?', ['%' . strtoupper($user->kabupaten) . '%']);
                     }
                 } else {
                     $denyAll();
@@ -239,10 +241,10 @@ class DashboardController extends Controller
 
             case 'kabid':
                 if ($user->kabupaten) {
-                    $listQuery->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%'));
-                    $statsQuery->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%'));
-                    $actualCountsQuery->where('users.kabupaten', 'LIKE', '%' . $user->kabupaten . '%');
-                    $desasQuery->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%'));
+                    $listQuery->whereHas('user', fn($q) => $q->whereRaw('UPPER(kabupaten) LIKE ?', ['%' . strtoupper($user->kabupaten) . '%']));
+                    $statsQuery->whereHas('user', fn($q) => $q->whereRaw('UPPER(kabupaten) LIKE ?', ['%' . strtoupper($user->kabupaten) . '%']));
+                    $actualCountsQuery->whereRaw('UPPER(users.kabupaten) LIKE ?', ['%' . strtoupper($user->kabupaten) . '%']);
+                    $desasQuery->whereHas('user', fn($q) => $q->whereRaw('UPPER(kabupaten) LIKE ?', ['%' . strtoupper($user->kabupaten) . '%']));
                 } else {
                     $denyAll();
                 }
@@ -262,10 +264,10 @@ class DashboardController extends Controller
                     $actualCountsQuery->where('users.posyandu_id', $user->posyandu_id);
                     $desasQuery->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
                 } elseif ($user->desa) {
-                    $listQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
-                    $statsQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
-                    $actualCountsQuery->where('users.desa', $user->desa);
-                    $desasQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
+                    $listQuery->whereHas('user', fn($q) => $q->whereRaw('UPPER(desa) = ?', [strtoupper($user->desa)]));
+                    $statsQuery->whereHas('user', fn($q) => $q->whereRaw('UPPER(desa) = ?', [strtoupper($user->desa)]));
+                    $actualCountsQuery->whereRaw('UPPER(users.desa) = ?', [strtoupper($user->desa)]);
+                    $desasQuery->whereHas('user', fn($q) => $q->whereRaw('UPPER(desa) = ?', [strtoupper($user->desa)]));
                 } else {
                     $denyAll();
                 }
@@ -278,10 +280,10 @@ class DashboardController extends Controller
                     $actualCountsQuery->where('users.posyandu_id', $user->posyandu_id);
                     $desasQuery->whereHas('user', fn($q) => $q->where('posyandu_id', $user->posyandu_id));
                 } elseif ($user->desa) {
-                    $listQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
-                    $statsQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
-                    $actualCountsQuery->where('users.desa', $user->desa);
-                    $desasQuery->whereHas('user', fn($q) => $q->where('desa', $user->desa));
+                    $listQuery->whereHas('user', fn($q) => $q->whereRaw('UPPER(desa) = ?', [strtoupper($user->desa)]));
+                    $statsQuery->whereHas('user', fn($q) => $q->whereRaw('UPPER(desa) = ?', [strtoupper($user->desa)]));
+                    $actualCountsQuery->whereRaw('UPPER(users.desa) = ?', [strtoupper($user->desa)]);
+                    $desasQuery->whereHas('user', fn($q) => $q->whereRaw('UPPER(desa) = ?', [strtoupper($user->desa)]));
                 } else {
                     $denyAll();
                 }

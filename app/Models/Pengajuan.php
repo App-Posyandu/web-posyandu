@@ -52,8 +52,8 @@ class Pengajuan extends Model
         'administrasi_items' => 'array',
         'sudah_verifikasi' => 'boolean',
         'kunjungan_lapangan' => 'boolean',
-        'verified_formulir_items',
-        'verified_administrasi_items',
+        'verified_formulir_items' => 'array',
+        'verified_administrasi_items' => 'array',
         'ttd_kader' => 'boolean',
         'foto_kunjungan' => 'array',
         // Workflow: Ketua Posyandu

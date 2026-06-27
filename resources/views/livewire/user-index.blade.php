@@ -207,10 +207,10 @@
                                         {{ $user->posyandu?->nama_posyandu ?? 'Belum Terdaftar' }}
                                     @elseif ($user->kecamatan)
                                         <i class="bi bi-pin-map-fill text-xs mr-1"></i>
-                                        Kec. {{ $user->kecamatan ?? '-' }}
+                                        Kec. <span>{{ $user->kecamatan ? $user->kecamatan : '-' }}</span>
                                     @elseif ($user->kabupaten)
                                         <i class="bi bi-building text-xs mr-1"></i>
-                                        {{ $user->kabupaten ?? '-' }}
+                                        <span>{{ $user->kabupaten ? $user->kabupaten : '-' }}</span>
                                     @else
                                         -
                                     @endif
@@ -409,10 +409,10 @@
                                             {{ $user->posyandu?->nama_posyandu ?? 'Belum Terdaftar' }}
                                         @elseif ($user->role === 'admin-kecamatan')
                                             <i class="bi bi-pin-map-fill mr-1"></i>
-                                            Kec. {{ $user->kecamatan ?? '-' }}
+                                            Kec. <span>{{ $user->kecamatan ? $user->kecamatan : '-' }}</span>
                                         @elseif ($user->role === 'kabid')
                                             <i class="bi bi-building mr-1"></i>
-                                            {{ $user->kabupaten ?? '-' }}
+                                            <span>{{ $user->kabupaten ? $user->kabupaten : '-' }}</span>
                                         @else
                                             -
                                         @endif
