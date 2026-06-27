@@ -53,9 +53,10 @@ class AjuanController extends Controller
                                 $inner->orWhere('kabupaten', $currentUser->kabupaten);
                             }
                         });
-                    });
+                    })->where('submitted_to_desa', true);
                 } elseif ($currentUser->kabupaten) {
-                    $query->whereHas('user', fn($q) => $q->where('kabupaten', $currentUser->kabupaten));
+                    $query->whereHas('user', fn($q) => $q->where('kabupaten', $currentUser->kabupaten))
+                          ->where('submitted_to_desa', true);
                 } else {
                     abort(403, 'Unauthorized');
                 }
@@ -74,9 +75,10 @@ class AjuanController extends Controller
                                 $inner->orWhere('kabupaten', $currentUser->kabupaten);
                             }
                         });
-                    });
+                    })->where('submitted_to_desa', true);
                 } elseif ($currentUser->kabupaten) {
-                    $query->whereHas('user', fn($q) => $q->where('kabupaten', $currentUser->kabupaten));
+                    $query->whereHas('user', fn($q) => $q->where('kabupaten', $currentUser->kabupaten))
+                          ->where('submitted_to_desa', true);
                 } else {
                     abort(403, 'Unauthorized');
                 }
@@ -94,14 +96,14 @@ class AjuanController extends Controller
                         if ($currentUser->kabupaten) {
                             $q->where('kabupaten', 'LIKE', '%' . $currentUser->kabupaten . '%');
                         }
-                    });
+                    })->where('submitted_to_desa', true);
                 } elseif ($currentUser->kecamatan) {
                     $query->whereHas('user', function ($q) use ($currentUser) {
                         $q->where('kecamatan', $currentUser->kecamatan);
                         if ($currentUser->kabupaten) {
                             $q->where('kabupaten', 'LIKE', '%' . $currentUser->kabupaten . '%');
                         }
-                    });
+                    })->where('submitted_to_desa', true);
                 } else {
                     abort(403, 'Unauthorized');
                 }
@@ -118,7 +120,7 @@ class AjuanController extends Controller
                     if ($currentUser->kabupaten) {
                         $q->where('kabupaten', $currentUser->kabupaten);
                     }
-                });
+                })->where('submitted_to_desa', true);
                 break;
 
             case 'ketua-posyandu':
@@ -1133,7 +1135,7 @@ class AjuanController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role !== 'kades') {
+        if (!in_array($user->role, ['kades', 'bu-kades'])) {
             AccessAudit::record(request(), $user, 'pengajuan', 'kades_approval', false, 403, [
                 'target_pengajuan_id' => $ajuan->id,
             ]);
@@ -1172,13 +1174,13 @@ class AjuanController extends Controller
                 'tindak_lanjut' => $request->tindak_lanjut ?? $ajuan->deskripsi_pengajuan,
             ]));
 
-            $status = 'Disetujui Kades';
+            $status = $user->role === 'kades' ? 'Disetujui Kades' : 'Disetujui Bu Kades';
         } else {
             $ajuan->update(array_merge($desaSubmission, [
                 'status_pengajuan' => 'Ditolak',
             ]));
 
-            $status = 'Ditolak Kades';
+            $status = $user->role === 'kades' ? 'Ditolak Kades' : 'Ditolak Bu Kades';
         }
 
         History::create([
@@ -1187,7 +1189,7 @@ class AjuanController extends Controller
             'pilih_keputusan' => $request->keputusan,
             'catatan' => $request->catatan ?? '-',
             'diubah_oleh' => $user->id,
-            'action_by_role' => 'kades',
+            'action_by_role' => $user->role,
             'created_at' => now(),
         ]);
 

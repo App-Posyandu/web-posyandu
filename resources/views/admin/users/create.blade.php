@@ -166,8 +166,8 @@
                                     </option>
                                     <option value="ketua-posyandu"
                                         {{ isset($defaultRole) && $defaultRole === 'ketua-posyandu' ? 'selected' : '' }}>
-                                        Ketua
-                                        Kader</option>
+                                        Ketua Posyandu
+                                    </option>
                                     <option value="operator-desa"
                                         {{ isset($defaultRole) && $defaultRole === 'operator-desa' ? 'selected' : '' }}>
                                         Operator Desa</option>
@@ -185,8 +185,8 @@
                                 @elseif ($currentUserRole === 'admin-kecamatan')
 
                                 @elseif ($currentUserRole === 'operator-desa')
-                                    <option value="kades">Kades</option>
-                                    <option value="bu-kades">Bu Kades</option>
+                                    <!-- <option value="kades">Kades</option> -->
+                                    <!-- <option value="bu-kades">Bu Kades</option> -->
                                     <option value="ketua-posyandu">Ketua Posyandu</option>
                                     <option value="kader">Kader</option>
                                 @elseif ($currentUserRole === 'ketua-posyandu')
@@ -412,22 +412,11 @@
                         @endif
 
                         <div id="posyandu-field" style="display: none;" class="md:col-span-2">
-                            <x-input-label for="posyandu_search_input" :value="__('Pilih Posyandu')" />
+                            <x-input-label for="posyandu_select" :value="__('Pilih Posyandu')" />
 
-                            {{-- Search input for posyandu --}}
-                            <div class="relative mt-1 mb-2">
-                                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                    <i class="bi bi-search text-gray-400 text-sm"></i>
-                                </div>
-                                <input type="text" id="posyandu_search_input"
-                                    placeholder="Cari posyandu..."
-                                    class="block w-full pl-9 pr-4 py-2 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
-                                    oninput="rebuildPosyanduOptions(document.getElementById('role')?.value, this.value)"
-                                    autocomplete="off">
-                            </div>
-
-                            {{-- The actual select (hidden visually but functional for JS/form) --}}
+                            {{-- The actual select --}}
                             <select id="posyandu_select" name="posyandu_id"
+
                                 class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                                 <option value="" disabled selected>Pilih Posyandu</option>
                                 @foreach ($posyandus as $posyandu)
@@ -649,7 +638,11 @@
     </div>
 
     @push('scripts')
+        <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
         <script>
+            let posyanduTomSelect = null;
+
             function togglePassword(id, btn) {
                 const input = document.getElementById(id);
                 const icon = btn.querySelector('i');
@@ -663,16 +656,21 @@
             }
 
             // All posyandu data with has_ketua flag
-            const ALL_POSYANDUS = @json($posyandus->map(fn($p) => [
-                'id' => $p->id,
-                'label' => $p->nama_posyandu . ' - ' . $p->kecamatan,
-                'kabupaten' => $p->kabupaten,
-                'kabupaten_id' => $p->kabupaten_id,
-                'kecamatan' => $p->kecamatan,
-                'kecamatan_id' => $p->kecamatan_id,
-                'desa' => $p->desa,
-                'has_ketua' => in_array($p->id, $posyandusWithKetua),
-            ]));
+            @php
+                $posyanduList = $posyandus->map(function($p) use ($posyandusWithKetua) {
+                    return [
+                        'id' => $p->id,
+                        'label' => $p->nama_posyandu . ' - ' . $p->kecamatan,
+                        'kabupaten' => $p->kabupaten,
+                        'kabupaten_id' => $p->kabupaten_id,
+                        'kecamatan' => $p->kecamatan,
+                        'kecamatan_id' => $p->kecamatan_id,
+                        'desa' => $p->desa,
+                        'has_ketua' => in_array($p->id, $posyandusWithKetua),
+                    ];
+                })->values()->all();
+            @endphp
+            const ALL_POSYANDUS = @json($posyanduList);
 
             function rebuildPosyanduOptions(role, search) {
                 const select = document.getElementById('posyandu_select');
@@ -704,6 +702,18 @@
                     if (p.id == currentValue) opt.selected = true;
                     select.appendChild(opt);
                 });
+
+                if (posyanduTomSelect) {
+                    posyanduTomSelect.sync();
+                } else {
+                    posyanduTomSelect = new TomSelect('#posyandu_select', {
+                        create: false,
+                        sortField: {
+                            field: "text",
+                            direction: "asc"
+                        }
+                    });
+                }
 
                 // Update helper text based on role
                 const helperText = document.getElementById('posyandu-helper-text');
@@ -1409,18 +1419,16 @@
                         if (currentUserRole === 'operator-desa') {
                             posyanduField.style.display = 'block';
                             posyanduSelect.required = true;
-                            const searchInput = document.getElementById('posyandu_search_input');
-                            if (searchInput) searchInput.value = '';
                             rebuildPosyanduOptions('kader', '');
+
                         } else if (currentUserRole === 'ketua-posyandu') {
                             posyanduField.style.display = 'none';
                             posyanduSelect.required = false;
                         } else {
                             posyanduField.style.display = 'block';
                             posyanduSelect.required = true;
-                            const searchInput = document.getElementById('posyandu_search_input');
-                            if (searchInput) searchInput.value = '';
                             rebuildPosyanduOptions('kader', '');
+
                         }
                     }
 

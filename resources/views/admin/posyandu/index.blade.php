@@ -468,9 +468,19 @@
                         <div class="mb-3">
                             <span class="inline-block px-2 py-0.5 bg-pink-500 text-white text-xs rounded font-medium mb-1">Ketua Posyandu</span>
                             ${ketua ? `
-                                        <div class="ml-2 text-sm">
+                                        <div class="ml-2 text-sm border bg-white p-2 rounded">
                                             <p class="font-medium text-gray-800">${ketua.name}</p>
-                                            <p class="text-gray-500 text-xs">${ketua.email || '-'}</p>
+                                            <p class="text-gray-500 text-xs mb-1">${ketua.email || '-'}</p>
+                                            <div class="flex items-center gap-2 mt-1 p-1 bg-amber-50 rounded border border-amber-200 w-fit">
+                                                <div class="flex-1 min-w-0">
+                                                    <span class="text-xs text-amber-700 font-medium">Password:</span>
+                                                    <code class="ml-1 text-xs text-red-600 font-bold">password123</code>
+                                                </div>
+                                                <button type="button" onclick="copyKaderPassword('${ketua.email}', 'password123')"
+                                                    class="flex-shrink-0 px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition flex items-center gap-1">
+                                                    <i class="bi bi-clipboard"></i> Copy
+                                                </button>
+                                            </div>
                                         </div>
                                     ` : '<p class="ml-2 text-sm text-gray-400 italic">Belum ada</p>'}
                         </div>
@@ -479,9 +489,19 @@
                         <div class="mb-3">
                             <span class="inline-block px-2 py-0.5 bg-indigo-500 text-white text-xs rounded font-medium mb-1">Operator Desa</span>
                             ${operator ? `
-                                        <div class="ml-2 text-sm">
+                                        <div class="ml-2 text-sm border bg-white p-2 rounded">
                                             <p class="font-medium text-gray-800">${operator.name}</p>
-                                            <p class="text-gray-500 text-xs">${operator.email || '-'}</p>
+                                            <p class="text-gray-500 text-xs mb-1">${operator.email || '-'}</p>
+                                            <div class="flex items-center gap-2 mt-1 p-1 bg-amber-50 rounded border border-amber-200 w-fit">
+                                                <div class="flex-1 min-w-0">
+                                                    <span class="text-xs text-amber-700 font-medium">Password:</span>
+                                                    <code class="ml-1 text-xs text-red-600 font-bold">password123</code>
+                                                </div>
+                                                <button type="button" onclick="copyKaderPassword('${operator.email}', 'password123')"
+                                                    class="flex-shrink-0 px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition flex items-center gap-1">
+                                                    <i class="bi bi-clipboard"></i> Copy
+                                                </button>
+                                            </div>
                                         </div>
                                     ` : '<p class="ml-2 text-sm text-gray-400 italic">Belum ada</p>'}
                         </div>

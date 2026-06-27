@@ -708,10 +708,49 @@
                                         <div class="mb-6">
                                             <label class="block font-medium text-sm text-gray-700 mb-2">Upload Foto
                                                 Kunjungan (Opsional)</label>
-                                            <input type="file" name="foto_kunjungan[]" multiple accept="image/*"
+                                            <input type="file" name="foto_kunjungan[]" multiple accept="image/*" capture="environment"
                                                 {{ $ajuan->kunjungan_lapangan ? 'disabled' : '' }}
-                                                class="block w-full border-gray-300 rounded-md shadow-sm">
-                                            <p class="text-xs text-gray-500 mt-1">Anda dapat upload beberapa foto sekaligus
+                                                class="block w-full border-gray-300 rounded-md shadow-sm"
+                                                @change="
+                                                    let files = $event.target.files;
+                                                    if (files.length > 0) {
+                                                        Swal.fire({
+                                                            title: 'Memproses File...',
+                                                            text: 'Mohon tunggu sebentar',
+                                                            allowOutsideClick: false,
+                                                            didOpen: () => Swal.showLoading()
+                                                        });
+                                                        
+                                                        (async () => {
+                                                            try {
+                                                                const dataTransfer = new DataTransfer();
+                                                                let hasError = false;
+                                                                for (let i = 0; i < files.length; i++) {
+                                                                    let file = files[i];
+                                                                    if (file.size > 2048000) {
+                                                                        file = await compressImage(file, 2);
+                                                                    }
+                                                                    if (file.size > 2048000) {
+                                                                        hasError = true;
+                                                                    } else {
+                                                                        dataTransfer.items.add(file);
+                                                                    }
+                                                                }
+                                                                $event.target.files = dataTransfer.files;
+                                                                Swal.close();
+                                                                
+                                                                if (hasError) {
+                                                                    alert('Beberapa file masih terlalu besar (> 2MB) setelah dikompresi dan tidak disertakan.');
+                                                                }
+                                                            } catch (e) {
+                                                                console.error('Compression failed', e);
+                                                                Swal.close();
+                                                                alert('Terjadi kesalahan saat memproses file.');
+                                                            }
+                                                        })();
+                                                    }
+                                                ">
+                                            <p class="text-xs text-gray-500 mt-1">Anda dapat upload beberapa foto sekaligus. Maksimal 2MB per foto.
                                             </p>
                                         </div>
 
@@ -828,8 +867,8 @@
             </div>
         @endif
 
-        {{-- KADES: Approval Final --}}
-        @if (in_array(auth()->user()->role, ['kades', 'admin']) && ($ajuan->submitted_to_desa || $ajuan->approved_by_ketua) && $ajuan->status_pengajuan === 'Diproses')
+        {{-- KADES / BU KADES: Approval Final --}}
+        @if (in_array(auth()->user()->role, ['kades', 'bu-kades', 'admin']) && ($ajuan->submitted_to_desa || $ajuan->approved_by_ketua) && $ajuan->status_pengajuan === 'Diproses')
             <div class="w-full mx-8">
                 <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-4 md:p-8 mx-0 md:mx-8">
                     <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Persetujuan Kepala Desa</h2>
@@ -885,6 +924,59 @@
     </div>
     @push('scripts')
         <script>
+            async function compressImage(file, maxSizeMB = 2) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
+                    reader.onload = event => {
+                        const img = new Image();
+                        img.src = event.target.result;
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            let width = img.width;
+                            let height = img.height;
+                            
+                            const maxDim = 1920;
+                            if (width > maxDim || height > maxDim) {
+                                if (width > height) {
+                                    height = Math.round((height *= maxDim / width));
+                                    width = maxDim;
+                                } else {
+                                    width = Math.round((width *= maxDim / height));
+                                    height = maxDim;
+                                }
+                            }
+                            
+                            canvas.width = width;
+                            canvas.height = height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, width, height);
+                            
+                            let quality = 0.8;
+                            const maxSizeBytes = maxSizeMB * 1024 * 1024;
+                            
+                            const attemptCompress = (q) => {
+                                canvas.toBlob(blob => {
+                                    if (blob.size <= maxSizeBytes || q <= 0.2) {
+                                        const newFile = new File([blob], file.name, {
+                                            type: 'image/jpeg',
+                                            lastModified: Date.now()
+                                        });
+                                        resolve(newFile);
+                                    } else {
+                                        attemptCompress(q - 0.15);
+                                    }
+                                }, 'image/jpeg', q);
+                            };
+                            
+                            attemptCompress(quality);
+                        };
+                        img.onerror = error => reject(error);
+                    };
+                    reader.onerror = error => reject(error);
+                });
+            }
+
             document.addEventListener('DOMContentLoaded', function() {
 
                 // ===== STEP 1: Verifikasi Dokumen =====

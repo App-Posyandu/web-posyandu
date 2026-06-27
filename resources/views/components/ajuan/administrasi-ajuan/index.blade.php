@@ -66,12 +66,29 @@
                                     <x-untitledui-upload class="w-5 h-5" />
                                 </label>
                                 <input id="ktp" class="hidden" type="file" name="ktp"
-                                    accept="image/jpeg,image/jpg,image/png"
+                                    accept="image/jpeg,image/jpg,image/png" capture="environment"
                                     @change="
-                                        const file = $event.target.files[0];
+                                        let file = $event.target.files[0];
                                         if (file) {
                                             if (file.size > 2048000) {
-                                                alert('Ukuran file terlalu besar! Maksimal 2 MB.');
+                                                Swal.fire({
+                                                    title: 'Mengkompresi File...',
+                                                    text: 'Mohon tunggu sebentar',
+                                                    allowOutsideClick: false,
+                                                    didOpen: () => Swal.showLoading()
+                                                });
+                                                try {
+                                                    file = await compressImage(file, 2);
+                                                    const dataTransfer = new DataTransfer();
+                                                    dataTransfer.items.add(file);
+                                                    $event.target.files = dataTransfer.files;
+                                                } catch (e) {
+                                                    console.error('Compression failed', e);
+                                                }
+                                                Swal.close();
+                                            }
+                                            if (file.size > 2048000) {
+                                                alert('Ukuran file masih terlalu besar meskipun sudah dikompresi! Maksimal 2 MB.');
                                                 $event.target.value = '';
                                                 return;
                                             }
@@ -137,12 +154,29 @@
                                     <x-untitledui-upload class="w-5 h-5" />
                                 </label>
                                 <input id="kk" class="hidden" type="file" name="kk"
-                                    accept="image/jpeg,image/jpg,image/png"
+                                    accept="image/jpeg,image/jpg,image/png" capture="environment"
                                     @change="
-                                        const file = $event.target.files[0];
+                                        let file = $event.target.files[0];
                                         if (file) {
                                             if (file.size > 2048000) {
-                                                alert('Ukuran file terlalu besar! Maksimal 2 MB.');
+                                                Swal.fire({
+                                                    title: 'Mengkompresi File...',
+                                                    text: 'Mohon tunggu sebentar',
+                                                    allowOutsideClick: false,
+                                                    didOpen: () => Swal.showLoading()
+                                                });
+                                                try {
+                                                    file = await compressImage(file, 2);
+                                                    const dataTransfer = new DataTransfer();
+                                                    dataTransfer.items.add(file);
+                                                    $event.target.files = dataTransfer.files;
+                                                } catch (e) {
+                                                    console.error('Compression failed', e);
+                                                }
+                                                Swal.close();
+                                            }
+                                            if (file.size > 2048000) {
+                                                alert('Ukuran file masih terlalu besar meskipun sudah dikompresi! Maksimal 2 MB.');
                                                 $event.target.value = '';
                                                 return;
                                             }
@@ -209,12 +243,29 @@
                                     <x-untitledui-upload class="w-5 h-5" />
                                 </label>
                                 <input id="{{ $key }}" class="hidden" type="file"
-                                    name="{{ $key }}" accept="image/jpeg,image/jpg,image/png"
+                                    name="{{ $key }}" accept="image/jpeg,image/jpg,image/png" capture="environment"
                                     @change="
-                                        const file = $event.target.files[0];
+                                        let file = $event.target.files[0];
                                         if (file) {
                                             if (file.size > 2048000) {
-                                                alert('Ukuran file terlalu besar! Maksimal 2 MB.');
+                                                Swal.fire({
+                                                    title: 'Mengkompresi File...',
+                                                    text: 'Mohon tunggu sebentar',
+                                                    allowOutsideClick: false,
+                                                    didOpen: () => Swal.showLoading()
+                                                });
+                                                try {
+                                                    file = await compressImage(file, 2);
+                                                    const dataTransfer = new DataTransfer();
+                                                    dataTransfer.items.add(file);
+                                                    $event.target.files = dataTransfer.files;
+                                                } catch (e) {
+                                                    console.error('Compression failed', e);
+                                                }
+                                                Swal.close();
+                                            }
+                                            if (file.size > 2048000) {
+                                                alert('Ukuran file masih terlalu besar meskipun sudah dikompresi! Maksimal 2 MB.');
                                                 $event.target.value = '';
                                                 return;
                                             }
@@ -263,6 +314,59 @@
         </form>
         @push('scripts')
             <script>
+                async function compressImage(file, maxSizeMB = 2) {
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.readAsDataURL(file);
+                        reader.onload = event => {
+                            const img = new Image();
+                            img.src = event.target.result;
+                            img.onload = () => {
+                                const canvas = document.createElement('canvas');
+                                let width = img.width;
+                                let height = img.height;
+                                
+                                const maxDim = 1920;
+                                if (width > maxDim || height > maxDim) {
+                                    if (width > height) {
+                                        height = Math.round((height *= maxDim / width));
+                                        width = maxDim;
+                                    } else {
+                                        width = Math.round((width *= maxDim / height));
+                                        height = maxDim;
+                                    }
+                                }
+                                
+                                canvas.width = width;
+                                canvas.height = height;
+                                const ctx = canvas.getContext('2d');
+                                ctx.drawImage(img, 0, 0, width, height);
+                                
+                                let quality = 0.8;
+                                const maxSizeBytes = maxSizeMB * 1024 * 1024;
+                                
+                                const attemptCompress = (q) => {
+                                    canvas.toBlob(blob => {
+                                        if (blob.size <= maxSizeBytes || q <= 0.2) {
+                                            const newFile = new File([blob], file.name, {
+                                                type: 'image/jpeg',
+                                                lastModified: Date.now()
+                                            });
+                                            resolve(newFile);
+                                        } else {
+                                            attemptCompress(q - 0.15);
+                                        }
+                                    }, 'image/jpeg', q);
+                                };
+                                
+                                attemptCompress(quality);
+                            };
+                            img.onerror = error => reject(error);
+                        };
+                        reader.onerror = error => reject(error);
+                    });
+                }
+
                 let isSubmitting = false;
 
                 window.addEventListener('beforeunload', function(e) {
