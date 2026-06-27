@@ -29,13 +29,13 @@ class AjuanTestingSeeder extends Seeder
 
         // 2. Data Wilayah (Kabupaten & Kecamatan)
         $kabupatens = [
-            'KEBUMEN' => [
-                'AYAH' => ['DESA AYAH 1', 'DESA AYAH 2'],
-                'GOMBONG' => ['DESA GOMBONG 1', 'DESA GOMBONG 2']
+            'Kebumen' => [
+                'Ayah' => ['Desa Ayah 1', 'Desa Ayah 2'],
+                'Gombong' => ['Desa Gombong 1', 'Desa Gombong 2']
             ],
-            'BANYUMAS' => [
-                'BATURRADEN' => ['DESA BATURRADEN 1', 'DESA BATURRADEN 2'],
-                'PURWOKERTO' => ['DESA PURWOKERTO 1', 'DESA PURWOKERTO 2']
+            'Banyumas' => [
+                'Baturraden' => ['Desa Baturraden 1', 'Desa Baturraden 2'],
+                'Purwokerto' => ['Desa Purwokerto 1', 'Desa Purwokerto 2']
             ]
         ];
 
