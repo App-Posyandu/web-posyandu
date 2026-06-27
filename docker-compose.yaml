@@ -30,6 +30,7 @@ services:
       - DB_DATABASE=db_sapa
       - DB_USERNAME=postgres
       - DB_PASSWORD=s4p4masE
+      - REDIS_CLIENT=phpredis
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - SESSION_DRIVER=redis

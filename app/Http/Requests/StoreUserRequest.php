@@ -231,8 +231,6 @@ class StoreUserRequest extends FormRequest
                 'kader',
             ],
             'operator-desa' => [
-                'kades',
-                'bu-kades',
                 'ketua-posyandu',
                 'kader',
             ],
