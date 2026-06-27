@@ -338,7 +338,7 @@
                         </div>
                         @if (auth()->user()->role === 'operator-desa')
                             <input type="hidden" id="operator-desa-kecamatan" name="operator_desa_kecamatan"
-                                value="{{ auth()->user()->desa }}" disabled>
+                                value="{{ auth()->user()->kecamatan }}" disabled>
                             <div id="kecamatan-display-field" style="display: none;" class="md:col-span-2">
                                 <x-input-label for="kecamatan-display" :value="__('Kecamatan')" />
                                 <div
@@ -512,7 +512,7 @@
                                         <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
                                             Posyandu</p>
                                         <p class="text-sm font-bold text-gray-800">
-                                            {{ auth()->user()->posyandu->nama_posyandu ?? 'Tidak Tersedia' }}
+                                            {{ auth()->user()->posyandu?->nama_posyandu ?? 'Tidak Tersedia' }}
                                         </p>
                                     </div>
                                 </div>
@@ -555,7 +555,7 @@
 
                                         <p class="mt-2 text-xs text-gray-600">
                                             RW yang tersedia di Posyandu
-                                            {{ auth()->user()->posyandu->nama_posyandu ?? '' }}
+                                            {{ auth()->user()->posyandu?->nama_posyandu ?? '' }}
                                         </p>
 
                                         <x-input-error :messages="$errors->get('rw')" class="mt-2" />
@@ -656,21 +656,18 @@
             }
 
             // All posyandu data with has_ketua flag
-            @php
-                $posyanduList = $posyandus->map(function($p) use ($posyandusWithKetua) {
-                    return [
-                        'id' => $p->id,
-                        'label' => $p->nama_posyandu . ' - ' . $p->kecamatan,
-                        'kabupaten' => $p->kabupaten,
-                        'kabupaten_id' => $p->kabupaten_id,
-                        'kecamatan' => $p->kecamatan,
-                        'kecamatan_id' => $p->kecamatan_id,
-                        'desa' => $p->desa,
-                        'has_ketua' => in_array($p->id, $posyandusWithKetua),
-                    ];
-                })->values()->all();
-            @endphp
-            const ALL_POSYANDUS = @json($posyanduList);
+            const ALL_POSYANDUS = @json($posyandus->map(function($p) use ($posyandusWithKetua) {
+                return [
+                    'id' => $p->id,
+                    'label' => $p->nama_posyandu . ' - ' . $p->kecamatan,
+                    'kabupaten' => $p->kabupaten,
+                    'kabupaten_id' => $p->kabupaten_id,
+                    'kecamatan' => $p->kecamatan,
+                    'kecamatan_id' => $p->kecamatan_id,
+                    'desa' => $p->desa,
+                    'has_ketua' => in_array($p->id, $posyandusWithKetua),
+                ];
+            })->values()->all());
 
             function rebuildPosyanduOptions(role, search) {
                 const select = document.getElementById('posyandu_select');
@@ -770,7 +767,7 @@
                     open: false,
                     search: '',
                     selectedKabupaten: '{{ old('kabupaten') }}',
-                    kabupatens: @json($kabupatenList ?? []),
+                    kabupatens: {!! json_encode($kabupatenList ?? []) !!},
 
                     init() {
                         @if (auth()->user()->kabupaten)
@@ -835,7 +832,7 @@
                     open: false,
                     search: '',
                     selectedKota: '{{ old('kota') }}',
-                    kotas: @json($kotaList ?? []),
+                    kotas: {!! json_encode($kotaList ?? []) !!},
 
                     getKotaName(value) {
                         if (!value) return '';
@@ -913,8 +910,7 @@
                         document.getElementById('kecamatan-hidden').value = '';
 
                         try {
-                            const response = await fetch(
-                                `{{ route('api.kecamatan') }}?kab_id=${parentId}`);
+                            const response = await fetch(`${kecamatanApiUrl}?kab_id=${parentId}`);
                             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
                             const data = await response.json();
@@ -996,7 +992,7 @@
                         document.getElementById('desa-hidden').value = '';
 
                         try {
-                            const response = await fetch(`{{ route('api.desa') }}?kec_id=${parentId}`);
+                            const response = await fetch(`${desaApiUrl}?kec_id=${parentId}`);
                             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
                             const data = await response.json();
@@ -1030,8 +1026,10 @@
                     }
                 }));
             });
-            const POSYANDU_RT_MAPPING = @json(auth()->user()->posyandu->rt_mapping ?? []);
-            const POSYANDU_RW_LIST = @json(auth()->user()->posyandu->rw_list ?? []);
+            const POSYANDU_RT_MAPPING = {!! json_encode(auth()->user()->posyandu?->rt_mapping ?? []) !!};
+            const POSYANDU_RW_LIST = {!! json_encode(auth()->user()->posyandu?->rw_list ?? []) !!};
+            const kecamatanApiUrl = @json(\Illuminate\Support\Facades\Route::has('api.kecamatan') ? route('api.kecamatan') : url('/api/kecamatan'));
+            const desaApiUrl = @json(\Illuminate\Support\Facades\Route::has('api.desa') ? route('api.desa') : url('/api/desa'));
 
             console.log('=== KADER CREATE MASYARAKAT DEBUG ===');
             console.log('Posyandu RW List:', POSYANDU_RW_LIST);
@@ -1365,9 +1363,19 @@
                     if (role === 'kabid') {
                         bidangField.style.display = 'block';
                         bidangSelect.required = true;
+                    }
 
-                        // jenisWilayahField.style.display = 'block';
-                        // jenisWilayahSelect.required = true;
+                    if (role === 'kabid' || role === 'ketua-timpembina-posyandu') {
+                        if (currentUserRole !== 'admin-kabupaten' && currentUserRole !== 'operator-desa') {
+                            kabupatenField.style.display = 'block';
+                            kecamatanField.style.display = 'block';
+                            desaField.style.display = 'block';
+                        } else if (currentUserRole === 'admin-kabupaten') {
+                            kecamatanField.style.display = 'block';
+                            kecamatanField.removeAttribute('hidden');
+                            desaField.style.display = 'block';
+                            desaField.removeAttribute('hidden');
+                        }
                     }
 
                     if (role === 'admin-kecamatan') {
@@ -1379,6 +1387,8 @@
                     if (role === 'kades' || role === 'bu-kades') {
                         if (currentUserRole !== 'admin-kabupaten' && currentUserRole !== 'operator-desa') {
                             kabupatenField.style.display = 'block';
+                            kecamatanField.style.display = 'block';
+                            desaField.style.display = 'block';
                         } else if (currentUserRole !== 'operator-desa') {
                             kecamatanField.style.display = 'block';
                             desaField.style.display = 'block';
@@ -1396,6 +1406,8 @@
                     if (role === 'operator-desa') {
                         if (currentUserRole !== 'admin-kabupaten' && currentUserRole !== 'operator-desa') {
                             kabupatenField.style.display = 'block';
+                            kecamatanField.style.display = 'block';
+                            desaField.style.display = 'block';
                         }
 
                         if (currentUserRole === 'admin-kabupaten') {
@@ -1449,11 +1461,11 @@
                     const currentUserRole = '{{ auth()->user()->role }}';
                     if (currentUserRole !== 'admin-kabupaten') return;
 
-                    const rolesNeedingKecamatan = ['admin-kecamatan', 'kades', 'bu-kades', 'operator-desa'];
+                    const rolesNeedingKecamatan = ['admin-kecamatan', 'kades', 'bu-kades', 'operator-desa', 'kabid', 'ketua-timpembina-posyandu'];
                     if (!rolesNeedingKecamatan.includes(role)) return;
 
                     const rawName = '{{ auth()->user()->kabupaten }}';
-                    const kabupatenList = @json($kabupatenList ?? []);
+                    const kabupatenList = {!! json_encode($kabupatenList ?? []) !!};
 
                     const normalize = s => (s || '').toLowerCase().replace(/^kabupaten\s+/i, '').trim();
                     const adminNorm = normalize(rawName);
@@ -1477,20 +1489,17 @@
                 }
 
                 function toggleWilayahField() {
-                    kabupatenField.style.display = 'none';
-                    kotaField.style.display = 'none';
-                    kecamatanField.style.display = 'none';
+                    if (roleSelect.value === 'admin-kabupaten') {
+                        kabupatenField.style.display = 'none';
+                        kotaField.style.display = 'none';
 
-                    const jenisWilayah = jenisWilayahSelect.value;
+                        const jenisWilayah = jenisWilayahSelect.value;
 
-                    if (jenisWilayah === 'kabupaten') {
-                        kabupatenField.style.display = 'block';
-                    } else if (jenisWilayah === 'kota') {
-                        kotaField.style.display = 'block';
-                    }
-
-                    if (roleSelect.value === 'admin-kecamatan') {
-                        kecamatanField.style.display = 'block';
+                        if (jenisWilayah === 'kabupaten') {
+                            kabupatenField.style.display = 'block';
+                        } else if (jenisWilayah === 'kota') {
+                            kotaField.style.display = 'block';
+                        }
                     }
                 }
 
@@ -1574,28 +1583,33 @@
                 'bu-kades': 'Bu Kades',
             };
             let selectedRoleToCreate = null;
+            const importExcelUrl = @json(\Illuminate\Support\Facades\Route::has('admin.users.import') ? route('admin.users.import') : null);
+            const exportTemplateUrl = @json(\Illuminate\Support\Facades\Route::has('admin.users.export.template') ? route('admin.users.export.template') : null);
 
-            document.getElementById('importBtn').addEventListener('click', function() {
-                const allowedRoles = roleTargets[currentUserRole] || [];
+            const importBtn = document.getElementById('importBtn');
+            if (importBtn) {
+                importBtn.addEventListener('click', function() {
+                    const allowedRoles = roleTargets[currentUserRole] || [];
 
-                if (allowedRoles.length === 0) {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Tidak Ada Akses',
-                        text: 'Role Anda tidak memiliki akses untuk import user.',
-                        confirmButtonColor: '#f87171'
-                    });
-                    return;
-                }
+                    if (allowedRoles.length === 0) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Tidak Ada Akses',
+                            text: 'Role Anda tidak memiliki akses untuk import user.',
+                            confirmButtonColor: '#f87171'
+                        });
+                        return;
+                    }
 
-                if (allowedRoles.length > 1) {
-                    showRoleSelection(allowedRoles);
-                    return;
-                }
+                    if (allowedRoles.length > 1) {
+                        showRoleSelection(allowedRoles);
+                        return;
+                    }
 
-                selectedRoleToCreate = allowedRoles[0];
-                showMainMenu();
-            });
+                    selectedRoleToCreate = allowedRoles[0];
+                    showMainMenu();
+                });
+            }
 
             function showRoleSelection(roles) {
                 const rolesHtml = roles.map(role => {
@@ -1779,7 +1793,17 @@
                                 formData.append('role', selectedRoleToCreate);
                             }
 
-                            fetch("{{ route('admin.users.import') }}", {
+                            if (!importExcelUrl) {
+                                Swal.fire({
+                                    icon: "error",
+                                    title: "Route Import Tidak Tersedia",
+                                    text: "Endpoint import user belum tersedia.",
+                                    confirmButtonColor: '#ef4444',
+                                });
+                                return;
+                            }
+
+                            fetch(importExcelUrl, {
                                     method: "POST",
                                     headers: {
                                         "X-CSRF-TOKEN": "{{ csrf_token() }}"
@@ -1828,7 +1852,16 @@
                     }
                 });
                 const roleParam = selectedRoleToCreate ? `?role=${encodeURIComponent(selectedRoleToCreate)}` : '';
-                const url = "{{ route('admin.users.export.template') }}" + roleParam;
+                if (!exportTemplateUrl) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Route Template Tidak Tersedia',
+                        text: 'Endpoint template user belum tersedia.',
+                        confirmButtonColor: '#ef4444'
+                    });
+                    return;
+                }
+                const url = exportTemplateUrl + roleParam;
                 window.location.href = url;
                 setTimeout(() => {
                     const roleLabel = roleLabels[selectedRoleToCreate] || 'User';
