@@ -470,13 +470,19 @@
                             ${ketua ? `
                                         <div class="ml-2 text-sm border bg-white p-2 rounded">
                                             <p class="font-medium text-gray-800">${ketua.name}</p>
-                                            <p class="text-gray-500 text-xs mb-1">${ketua.email || '-'}</p>
-                                            <div class="flex items-center gap-2 mt-1 p-1 bg-amber-50 rounded border border-amber-200 w-fit">
+                                            <div class="flex items-center gap-2 mt-1 mb-1 p-1 bg-gray-50 rounded border border-gray-200 w-fit">
+                                                <div class="flex-1 min-w-0">
+                                                    <span class="text-xs text-gray-700 font-medium">Email:</span>
+                                                    <code class="ml-1 text-xs text-gray-800">${ketua.email || '-'}</code>
+                                                </div>
+                                                ${ketua.email ? `<button type="button" onclick="copyText('${ketua.email}', 'Email')" class="flex-shrink-0 px-2 py-1 bg-gray-200 text-gray-700 hover:bg-gray-300 text-xs rounded transition flex items-center gap-1"><i class="bi bi-clipboard"></i> Copy</button>` : ''}
+                                            </div>
+                                            <div class="flex items-center gap-2 p-1 bg-amber-50 rounded border border-amber-200 w-fit">
                                                 <div class="flex-1 min-w-0">
                                                     <span class="text-xs text-amber-700 font-medium">Password:</span>
                                                     <code class="ml-1 text-xs text-red-600 font-bold">password123</code>
                                                 </div>
-                                                <button type="button" onclick="copyKaderPassword('${ketua.email}', 'password123')"
+                                                <button type="button" onclick="copyText('password123', 'Password')"
                                                     class="flex-shrink-0 px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition flex items-center gap-1">
                                                     <i class="bi bi-clipboard"></i> Copy
                                                 </button>
@@ -491,13 +497,19 @@
                             ${operator ? `
                                         <div class="ml-2 text-sm border bg-white p-2 rounded">
                                             <p class="font-medium text-gray-800">${operator.name}</p>
-                                            <p class="text-gray-500 text-xs mb-1">${operator.email || '-'}</p>
-                                            <div class="flex items-center gap-2 mt-1 p-1 bg-amber-50 rounded border border-amber-200 w-fit">
+                                            <div class="flex items-center gap-2 mt-1 mb-1 p-1 bg-gray-50 rounded border border-gray-200 w-fit">
+                                                <div class="flex-1 min-w-0">
+                                                    <span class="text-xs text-gray-700 font-medium">Email:</span>
+                                                    <code class="ml-1 text-xs text-gray-800">${operator.email || '-'}</code>
+                                                </div>
+                                                ${operator.email ? `<button type="button" onclick="copyText('${operator.email}', 'Email')" class="flex-shrink-0 px-2 py-1 bg-gray-200 text-gray-700 hover:bg-gray-300 text-xs rounded transition flex items-center gap-1"><i class="bi bi-clipboard"></i> Copy</button>` : ''}
+                                            </div>
+                                            <div class="flex items-center gap-2 p-1 bg-amber-50 rounded border border-amber-200 w-fit">
                                                 <div class="flex-1 min-w-0">
                                                     <span class="text-xs text-amber-700 font-medium">Password:</span>
                                                     <code class="ml-1 text-xs text-red-600 font-bold">password123</code>
                                                 </div>
-                                                <button type="button" onclick="copyKaderPassword('${operator.email}', 'password123')"
+                                                <button type="button" onclick="copyText('password123', 'Password')"
                                                     class="flex-shrink-0 px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition flex items-center gap-1">
                                                     <i class="bi bi-clipboard"></i> Copy
                                                 </button>
@@ -514,18 +526,24 @@
                                             ${kaders.map((k, idx) => `
                                         <div class="text-sm p-2 bg-white rounded border">
                                             <p class="font-medium text-gray-800">${k.name}</p>
-                                            <p class="text-gray-500 text-xs">${k.email}</p>
-                                            <div class="flex items-center gap-1 mt-1">
-                                                <span class="px-1.5 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">${k.bidang}</span>
-                                            </div>
-                                            <div class="flex items-center gap-2 mt-2 p-1.5 bg-amber-50 rounded border border-amber-200">
-                                                <div class="flex-1 min-w-0">
-                                                    <span class="text-xs text-amber-700 font-medium">Password:</span>
-                                                    <code class="ml-1 text-xs text-red-600 font-bold">password123</code>
+                                            <div class="flex items-center gap-2 mt-1 mb-1 p-1 bg-gray-50 rounded border border-gray-200 w-full max-w-[200px]">
+                                                <div class="flex-1 min-w-0 overflow-hidden">
+                                                    <span class="text-xs text-gray-700 font-medium hidden">Email:</span>
+                                                    <code class="text-xs text-gray-800 truncate block">${k.email || '-'}</code>
                                                 </div>
-                                                <button type="button" onclick="copyKaderPassword('${k.email}', 'password123')"
-                                                    class="flex-shrink-0 px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition flex items-center gap-1">
-                                                    <i class="bi bi-clipboard"></i> Copy
+                                                ${k.email ? `<button type="button" onclick="copyText('${k.email}', 'Email')" class="flex-shrink-0 px-1.5 py-1 bg-gray-200 text-gray-700 hover:bg-gray-300 text-[10px] rounded transition"><i class="bi bi-clipboard"></i></button>` : ''}
+                                            </div>
+                                            <div class="flex items-center gap-1 mt-1 mb-1">
+                                                <span class="px-1.5 py-0.5 bg-gray-100 text-gray-600 text-[10px] rounded">${k.bidang}</span>
+                                            </div>
+                                            <div class="flex items-center gap-2 p-1 bg-amber-50 rounded border border-amber-200 w-full max-w-[200px]">
+                                                <div class="flex-1 min-w-0 overflow-hidden">
+                                                    <span class="text-xs text-amber-700 font-medium hidden">Password:</span>
+                                                    <code class="text-xs text-red-600 font-bold block">password123</code>
+                                                </div>
+                                                <button type="button" onclick="copyText('password123', 'Password')"
+                                                    class="flex-shrink-0 px-1.5 py-1 bg-blue-500 text-white text-[10px] rounded hover:bg-blue-600 transition">
+                                                    <i class="bi bi-clipboard"></i>
                                                 </button>
                                             </div>
                                         </div>
@@ -578,20 +596,19 @@
             }
         </script>
         <script>
-            function copyKaderPassword(email, password) {
-                const text = `Email: ${email}\nPassword: ${password}`;
+            function copyText(text, label) {
+                if (!text) return;
                 navigator.clipboard.writeText(text).then(() => {
                     Swal.fire({
                         toast: true,
                         position: 'top-end',
                         icon: 'success',
-                        title: 'Credentials berhasil disalin!',
+                        title: label + ' berhasil disalin!',
                         showConfirmButton: false,
                         timer: 2000,
                         timerProgressBar: true
                     });
                 }).catch(() => {
-                    // Fallback for older browsers
                     const textarea = document.createElement('textarea');
                     textarea.value = text;
                     document.body.appendChild(textarea);
@@ -602,7 +619,7 @@
                         toast: true,
                         position: 'top-end',
                         icon: 'success',
-                        title: 'Credentials berhasil disalin!',
+                        title: label + ' berhasil disalin!',
                         showConfirmButton: false,
                         timer: 2000,
                         timerProgressBar: true
