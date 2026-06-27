@@ -40,10 +40,10 @@ class AjuanController extends Controller
 
         switch ($currentUser->role) {
             case 'admin':
-            case 'ketua-timpembina-posyandu':
                 // No additional filter
                 break;
 
+            case 'ketua-timpembina-posyandu':
             case 'admin-kabupaten':
                 if ($currentUser->kabupaten_id) {
                     $query->whereHas('user', function ($q) use ($currentUser) {
@@ -112,15 +112,19 @@ class AjuanController extends Controller
             case 'operator-desa':
             case 'kades':
             case 'bu-kades':
-                $query->whereHas('user', function ($q) use ($currentUser) {
-                    $q->where('desa', 'ILIKE', $currentUser->desa);
-                    if ($currentUser->kecamatan) {
-                        $q->where('kecamatan', 'ILIKE', $currentUser->kecamatan);
-                    }
-                    if ($currentUser->kabupaten) {
-                        $q->where('kabupaten', 'ILIKE', $currentUser->kabupaten);
-                    }
-                })->where('submitted_to_desa', true);
+                if ($currentUser->desa) {
+                    $query->whereHas('user', function ($q) use ($currentUser) {
+                        $q->where('desa', 'ILIKE', $currentUser->desa);
+                        if ($currentUser->kecamatan) {
+                            $q->where('kecamatan', 'ILIKE', $currentUser->kecamatan);
+                        }
+                        if ($currentUser->kabupaten) {
+                            $q->where('kabupaten', 'ILIKE', $currentUser->kabupaten);
+                        }
+                    })->where('submitted_to_desa', true);
+                } else {
+                    abort(403, 'Unauthorized');
+                }
                 break;
 
             case 'ketua-posyandu':

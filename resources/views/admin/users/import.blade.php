@@ -39,9 +39,9 @@
             <li><strong>Role Anda:</strong> {{ ucfirst(str_replace('-', ' ', $currentUser->role)) }}</li>
             <li><strong>Akan membuat user:</strong> <span class="font-semibold text-blue-600">{{ $roleToCreate }}</span></li>
             @if($currentUser->role === 'ketua-posyandu')
-                <li><strong>Posyandu:</strong> {{ $currentUser->posyandu->nama_posyandu }}</li>
+                <li><strong>Posyandu:</strong> {{ $currentUser->posyandu?->nama_posyandu ?? '-' }}</li>
             @elseif($currentUser->role === 'operator-desa')
-                <li><strong>Desa:</strong> {{ $currentUser->posyandu->desa }}</li>
+                <li><strong>Desa:</strong> {{ $currentUser->posyandu?->desa ?? $currentUser->desa ?? '-' }}</li>
             @endif
             <li><strong>Catatan:</strong> Template Excel harus sesuai dengan format yang disediakan.</li>
         </ul>
@@ -67,7 +67,7 @@
         </div>
     @endif
 
-    <form action="{{ route('admin.users.import.process') }}" method="POST" enctype="multipart/form-data">
+    <form action="{{ route('admin.import.importProcess') }}" method="POST" enctype="multipart/form-data">
         @csrf
         <input type="hidden" name="role" value="{{ $roleToCreateKey }}">
         

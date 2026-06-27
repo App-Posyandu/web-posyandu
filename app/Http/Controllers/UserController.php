@@ -41,8 +41,8 @@ class UserController extends Controller
 
     private function fetchWilayahData($endpoint, $cacheKey)
     {
-        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($endpoint) {
-            try {
+        try {
+            return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($endpoint) {
                 $response = Http::timeout(self::API_TIMEOUT)
                     ->retry(2, 100)
                     ->get(env('API_WILAYAH_URL') . $endpoint);
@@ -52,11 +52,11 @@ class UserController extends Controller
                 }
 
                 return ['data' => []];
-            } catch (\Exception $e) {
-                Log::error("Wilayah API Error: {$endpoint}", ['error' => $e->getMessage()]);
-                return ['data' => []];
-            }
-        });
+            });
+        } catch (\Throwable $e) {
+            Log::error("Wilayah API Error: {$endpoint}", ['error' => $e->getMessage()]);
+            return ['data' => []];
+        }
     }
 
     public function index(UserIndexFilterRequest $request)
@@ -188,31 +188,44 @@ class UserController extends Controller
 
     public function create(Request $request)
     {
-        $currentUser = Auth::user();
-        $posyandus = Posyandu::orderBy('nama_posyandu')->get();
-        $bidangs = BidangPengajuan::orderBy('nama_bidang')->get();
+        try {
+            return $this->createUserResponse($request);
+        } catch (\Throwable $e) {
+            return $this->createUserDebugResponse($e, Auth::user(), 'Create user page error');
+        }
+    }
 
-        $kabupatens = Kabupaten::orderBy('jenis')->orderBy('nama_kabupaten')->get();
+    private function createUserResponse(Request $request)
+    {
+        $currentUser = Auth::user();
+        $posyandus = collect();
+        $bidangs = collect();
+        $kabupatens = collect();
         $kecamatans = collect();
 
-        if ($currentUser->role === 'ketua-posyandu') {
-            $posyandus = Posyandu::where('id', $currentUser->posyandu_id)->get();
-        } elseif ($currentUser->role === 'operator-desa') {
-            $posyandus = Posyandu::where('desa', $currentUser->desa)
-                ->where('kecamatan', $currentUser->kecamatan)
-                ->orderBy('nama_posyandu')->get();
-        } elseif ($currentUser->role === 'admin-kecamatan') {
-            $posyandus = Posyandu::where('kecamatan_id', $currentUser->kecamatan_id)
-                ->orderBy('nama_posyandu')->get();
-        } elseif ($currentUser->role === 'kabid') {
-            $posyandus = Posyandu::where('kabupaten_id', $currentUser->kabupaten_id)
-                ->orderBy('nama_posyandu')->get();
-
-            $kecamatans = Kecamatan::where('kabupaten_id', $currentUser->kabupaten_id)
-                ->orderBy('nama_kecamatan')->get();
-        } elseif (in_array($currentUser->role, ['admin'])) {
+        try {
             $posyandus = Posyandu::orderBy('nama_posyandu')->get();
-            $kecamatans = Kecamatan::orderBy('nama_kecamatan')->get();
+            $bidangs = BidangPengajuan::orderBy('nama_bidang')->get();
+
+            if ($currentUser->role === 'ketua-posyandu') {
+                $posyandus = Posyandu::where('id', $currentUser->posyandu_id)->get();
+            } elseif ($currentUser->role === 'operator-desa') {
+                $posyandus = Posyandu::where('desa', $currentUser->desa)
+                    ->where('kecamatan', $currentUser->kecamatan)
+                    ->orderBy('nama_posyandu')->get();
+            } elseif ($currentUser->role === 'admin-kecamatan') {
+                $posyandus = Posyandu::where('kecamatan_id', $currentUser->kecamatan_id)
+                    ->orderBy('nama_posyandu')->get();
+            } elseif ($currentUser->role === 'kabid') {
+                $posyandus = Posyandu::where('kabupaten_id', $currentUser->kabupaten_id)
+                    ->orderBy('nama_posyandu')->get();
+            }
+        } catch (\Throwable $e) {
+            Log::error('Create user form data error', [
+                'user_id' => $currentUser?->id,
+                'role' => $currentUser?->role,
+                'error' => $e->getMessage(),
+            ]);
         }
 
         $kabupatenList = [];
@@ -224,10 +237,21 @@ class UserController extends Controller
                 'kabupatens_jateng'
             );
 
-            foreach (($wilayahData['data'] ?? []) as $wilayah) {
-                if (stripos($wilayah['name'], 'Kota ') === 0) {
+            $wilayahItems = $wilayahData['data'] ?? [];
+            if (!is_iterable($wilayahItems)) {
+                $wilayahItems = [];
+            }
+
+            foreach ($wilayahItems as $wilayah) {
+                $wilayahName = is_array($wilayah) ? ($wilayah['name'] ?? '') : ($wilayah->name ?? '');
+
+                if (!is_string($wilayahName) || $wilayahName === '') {
+                    continue;
+                }
+
+                if (stripos($wilayahName, 'Kota ') === 0) {
                     $kotaList[] = $wilayah;
-                } elseif (stripos($wilayah['name'], 'Kabupaten ') === 0) {
+                } elseif (stripos($wilayahName, 'Kabupaten ') === 0) {
                     $kabupatenList[] = $wilayah;
                 }
             }
@@ -239,21 +263,111 @@ class UserController extends Controller
         }
 
         // IDs of posyandus that already have a ketua-posyandu assigned
-        $posyandusWithKetua = User::where('role', 'ketua-posyandu')
-            ->whereNotNull('posyandu_id')
-            ->pluck('posyandu_id')
-            ->toArray();
+        $posyandusWithKetua = [];
+        try {
+            $posyandusWithKetua = User::where('role', 'ketua-posyandu')
+                ->whereNotNull('posyandu_id')
+                ->pluck('posyandu_id')
+                ->toArray();
+        } catch (\Throwable $e) {
+            Log::error('Create user ketua lookup error', [
+                'user_id' => $currentUser?->id,
+                'role' => $currentUser?->role,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
-        return view('admin.users.create', compact(
-            'posyandus',
-            'bidangs',
-            'kabupatens',
-            'kecamatans',
-            'kabupatenList',
-            'kotaList',
-            'defaultRole',
-            'posyandusWithKetua'
-        ));
+        return $this->renderCreateUserView([
+            'posyandus' => $posyandus,
+            'bidangs' => $bidangs,
+            'kabupatens' => $kabupatens,
+            'kecamatans' => $kecamatans,
+            'kabupatenList' => $kabupatenList,
+            'kotaList' => $kotaList,
+            'defaultRole' => $defaultRole,
+            'posyandusWithKetua' => $posyandusWithKetua,
+        ], $currentUser);
+    }
+
+    private function renderCreateUserView(array $viewData, User $currentUser)
+    {
+        try {
+            return response(view('admin.users.create', $viewData)->render());
+        } catch (\Throwable $e) {
+            return $this->createUserDebugResponse($e, $currentUser, 'Create user page render error');
+        }
+    }
+
+    private function createUserDebugResponse(\Throwable $e, ?User $currentUser, string $logMessage)
+    {
+        Log::error($logMessage, [
+            'user_id' => $currentUser?->id,
+            'role' => $currentUser?->role,
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+            'trace' => $e->getTraceAsString(),
+        ]);
+
+        if ($currentUser?->role !== 'admin') {
+            throw $e;
+        }
+
+        $debug = [
+            'message' => $e->getMessage(),
+            'exception' => get_class($e),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+            'trace' => collect($e->getTrace())->take(20)->values()->all(),
+        ];
+
+        $debugJson = json_encode($debug, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+        return response(<<<HTML
+<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Create User Debug</title>
+    <style>
+        body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f8fafc; color: #0f172a; margin: 0; padding: 32px; }
+        .panel { max-width: 960px; margin: 0 auto; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px; box-shadow: 0 10px 25px rgba(15, 23, 42, .08); }
+        h1 { margin: 0 0 12px; font-size: 24px; }
+        code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+        pre { white-space: pre-wrap; overflow-wrap: anywhere; background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: 16px; max-height: 460px; overflow: auto; }
+        .muted { color: #64748b; }
+    </style>
+</head>
+<body>
+    <div class="panel">
+        <h1>Debug Create User</h1>
+        <p class="muted">Detail error juga sudah dikirim ke browser console sebagai <code>Create User Debug</code>.</p>
+        <p><strong>{$this->escapeDebugText($debug['exception'])}</strong>: {$this->escapeDebugText($debug['message'])}</p>
+        <p><code>{$this->escapeDebugText($debug['file'])}:{$this->escapeDebugText((string) $debug['line'])}</code></p>
+        <pre id="debug-json"></pre>
+    </div>
+    <script>
+        const createUserDebug = {$debugJson};
+        console.group('Create User Debug');
+        console.error(createUserDebug.message);
+        console.table({
+            exception: createUserDebug.exception,
+            file: createUserDebug.file,
+            line: createUserDebug.line
+        });
+        console.log('Trace:', createUserDebug.trace);
+        console.groupEnd();
+        document.getElementById('debug-json').textContent = JSON.stringify(createUserDebug, null, 2);
+    </script>
+</body>
+</html>
+HTML, 500);
+    }
+
+    private function escapeDebugText(string $value): string
+    {
+        return e($value);
     }
 
     public function store(StoreUserRequest $request)
