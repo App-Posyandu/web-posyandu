@@ -656,18 +656,21 @@
             }
 
             // All posyandu data with has_ketua flag
-            const ALL_POSYANDUS = @json($posyandus->map(function($p) use ($posyandusWithKetua) {
-                return [
-                    'id' => $p->id,
-                    'label' => $p->nama_posyandu . ' - ' . $p->kecamatan,
-                    'kabupaten' => $p->kabupaten,
-                    'kabupaten_id' => $p->kabupaten_id,
-                    'kecamatan' => $p->kecamatan,
-                    'kecamatan_id' => $p->kecamatan_id,
-                    'desa' => $p->desa,
-                    'has_ketua' => in_array($p->id, $posyandusWithKetua),
-                ];
-            })->values()->all());
+            @php
+                $posyanduList = $posyandus->map(function($p) use ($posyandusWithKetua) {
+                    return [
+                        'id' => $p->id,
+                        'label' => $p->nama_posyandu . ' - ' . $p->kecamatan,
+                        'kabupaten' => $p->kabupaten,
+                        'kabupaten_id' => $p->kabupaten_id,
+                        'kecamatan' => $p->kecamatan,
+                        'kecamatan_id' => $p->kecamatan_id,
+                        'desa' => $p->desa,
+                        'has_ketua' => in_array($p->id, $posyandusWithKetua),
+                    ];
+                })->values()->all();
+            @endphp
+            const ALL_POSYANDUS = @json($posyanduList);
 
             function rebuildPosyanduOptions(role, search) {
                 const select = document.getElementById('posyandu_select');
