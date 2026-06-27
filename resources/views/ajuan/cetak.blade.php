@@ -516,7 +516,7 @@
                         <td>
                             <h3>Nama Pemohon</h3>
                         </td>
-                        <td>: {{ $ajuan->user->name }}</td>
+                        <td>: <span>{{ $ajuan->user?->name ? $ajuan->user->name : '-' }}</span></td>
                     </tr>
                     <tr>
                         <td>
@@ -534,7 +534,7 @@
                         <td>
                             <h3>Nama Posyandu</h3>
                         </td>
-                        <td>: {{ $ajuan->user?->posyandu?->nama_posyandu ?? 'Nama Posyandu' }}</td>
+                        <td>: <span>{{ $ajuan->user?->posyandu?->nama_posyandu ? $ajuan->user->posyandu->nama_posyandu : 'Nama Posyandu' }}</span></td>
                     </tr>
                     <tr>
                         <td>
@@ -546,13 +546,13 @@
                         <td>
                             <h3>Desa/Kelurahan</h3>
                         </td>
-                        <td>: {{ $ajuan->user?->posyandu?->desa ?? 'Desa' }}</td>
+                        <td>: <span>{{ $ajuan->user?->posyandu?->desa ? $ajuan->user?->posyandu?->desa : 'Desa' }}</span></td>
                     </tr>
                     <tr>
                         <td>
                             <h3>Kecamatan</h3>
                         </td>
-                        <td>: {{ $ajuan->user?->posyandu?->kecamatan ?? 'Kecamatan' }}</td>
+                        <td>: <span>{{ $ajuan->user?->posyandu?->kecamatan ? $ajuan->user?->posyandu?->kecamatan : 'Kecamatan' }}</span></td>
                     </tr>
                 </table>
 
@@ -567,7 +567,7 @@
 
                 <h4 class="sub-title">Detail Permohonan Dipilih</h4>
                 <table class="table-content">
-                    @forelse ($ajuan->formulir_items as $item)
+                    @forelse ($ajuan->formulir_items ?? [] as $item)
                         <tr>
                             <td class="cell-left">{{ $item }}</td>
                             <td>

@@ -46,7 +46,7 @@
                             </div>
                             <div class="ml-4">
                                 <div class="text-sm font-medium text-gray-900">
-                                    {{ $ajuan->user?->name ?? 'Pengguna Dihapus' }}
+                                    {{ $ajuan->user?->name ? $ajuan->user->name : 'Pengguna Dihapus' }}
                                 </div>
                                 <div class="text-xs text-gray-500">
                                     RW {{ $ajuan->user?->rw ?? '-' }} / RT {{ $ajuan->user?->rt ?? '-' }}

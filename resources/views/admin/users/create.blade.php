@@ -257,7 +257,7 @@
                                 <x-input-label for="kabupaten-display" :value="__('Kabupaten')" />
                                 <div
                                     class="block mt-1 w-full px-3 py-2 border border-gray-300 bg-gray-100 rounded-md shadow-sm text-gray-700">
-                                    {{ str_replace('KABUPATEN ', '', strtoupper(auth()->user()->kabupaten)) }}
+                                    {{ str_replace('KABUPATEN ', '', auth()->user()->kabupaten) }}
                                 </div>
                                 <p class="mt-1 text-xs text-gray-500">
                                     <i class="bi bi-info-circle"></i>
@@ -343,7 +343,7 @@
                                 <x-input-label for="kecamatan-display" :value="__('Kecamatan')" />
                                 <div
                                     class="block mt-1 w-full px-3 py-2 border border-gray-300 bg-gray-100 rounded-md shadow-sm text-gray-700">
-                                    {{ str_replace('KECAMATAN ', '', strtoupper(auth()->user()->kecamatan)) }}
+                                    {{ str_replace('KECAMATAN ', '', auth()->user()->kecamatan) }}
                                 </div>
                                 <p class="mt-1 text-xs text-gray-500">
                                     <i class="bi bi-info-circle"></i>
@@ -402,7 +402,7 @@
                                 <x-input-label for="desa-display" :value="__('Desa')" />
                                 <div
                                     class="block mt-1 w-full px-3 py-2 border border-gray-300 bg-gray-100 rounded-md shadow-sm text-gray-700">
-                                    {{ str_replace('DESA ', '', strtoupper(auth()->user()->desa)) }}
+                                    {{ str_replace('DESA ', '', auth()->user()->desa) }}
                                 </div>
                                 <p class="mt-1 text-xs text-gray-500">
                                     <i class="bi bi-info-circle"></i>
