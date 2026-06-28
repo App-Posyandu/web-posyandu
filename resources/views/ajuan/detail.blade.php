@@ -552,7 +552,9 @@
                             @endphp
                             <div class="px-6 py-4 border-t">
                                 <form method="POST" action="{{ route('ajuan.verify', $ajuan) }}"
-                                    id="form-ajuan-verify">
+                                    id="form-ajuan-verify"
+                                    x-data
+                                    @submit.prevent="if(!$el.catatan.value.trim()) { alert('Catatan wajib diisi sebelum menyimpan verifikasi!'); } else { $el.submit(); }">
                                     @csrf
                                     @method('PATCH')
                                     <input type="hidden" name="verification_step" value="1">
@@ -716,7 +718,9 @@
                             <div x-show="step2Open" x-transition style="display: none;">
                                 <div class="px-6 py-4 border-t">
                                     <form method="POST" action="{{ route('ajuan.verify', $ajuan) }}"
-                                        enctype="multipart/form-data" id="form-kunjunganlapangan">
+                                        enctype="multipart/form-data" id="form-kunjunganlapangan"
+                                        x-data
+                                        @submit.prevent="if(!$el.catatan_kunjungan.value.trim()) { alert('Catatan kunjungan wajib diisi sebelum selesai kunjungan!'); } else { $el.submit(); }">
                                         @csrf
                                         @method('PATCH')
                                         <input type="hidden" name="verification_step" value="2">
@@ -819,7 +823,9 @@
                 <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-4 md:p-8 mx-0 md:mx-8">
                     <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Persetujuan Ketua Posyandu</h2>
 
-                    <form method="POST" action="{{ route('ajuan.verify', $ajuan) }}" id="form-keputusan-ketua">
+                    <form method="POST" action="{{ route('ajuan.verify', $ajuan) }}" id="form-keputusan-ketua"
+                        x-data
+                        @submit.prevent="if(!$el.catatan.value.trim()) { alert('Catatan wajib diisi sebelum menyimpan keputusan!'); } else { $el.submit(); }">
                         @csrf
                         @method('PATCH')
                         <input type="hidden" name="verification_step" value="3">
