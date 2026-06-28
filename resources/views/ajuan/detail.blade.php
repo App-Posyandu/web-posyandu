@@ -446,7 +446,7 @@
         {{-- Modal Preview Dokumen --}}
         <div x-show="showModal" x-cloak x-transition.opacity
             class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" @click.self="showModal = false">
-            <div class="bg-white rounded-xl shadow-2xl w-11/12 md:w-3/4 p-4 relative overflow-hidden flex flex-col">
+            <div class="bg-white rounded-xl shadow-2xl w-11/12 md:w-3/4 h-[85vh] p-4 relative overflow-hidden flex flex-col">
                 <div x-data="{ zoom: 1 }" class="w-full flex flex-col">
                     <div class="flex items-center justify-between pb-3 border-b mb-3">
                         <h3 class="text-lg font-bold text-gray-900" x-text="fileTitle">Dokumen KTP/KK</h3>
@@ -461,7 +461,7 @@
                         <button type="button" @click="showModal=false" class="text-gray-400 hover:text-gray-500 font-bold text-xl">✕</button>
                     </div>
 
-                    <div class="w-full h-[60vh] overflow-auto bg-gray-100 rounded-lg flex items-center justify-center border relative">
+                    <div class="w-full flex-1 overflow-auto bg-gray-100 rounded-lg border relative flex items-center justify-center">
                         <div x-show="isLoadingModal"
                              class="absolute inset-0 flex flex-col items-center justify-center bg-gray-100/80 z-10">
                             <div class="w-12 h-12 border-4 border-t-pink-500 border-gray-200 rounded-full animate-spin"></div>
@@ -470,11 +470,11 @@
                         <iframe x-show="fileType === 'pdf' || fileType === 'pdf_path'" :src="fileUrl"
                                 @load="isLoadingModal=false" class="w-full h-full border-0 rounded-lg"></iframe>
                         
-                        <img x-show="fileType === 'image'" :src="fileUrl" alt="Dokumen" 
-                             @load="isLoadingModal = false"
-                             class="shrink-0 transition-all duration-200"
-                             :style="zoom === 1 ? 'max-width: 100%; max-height: 100%; object-fit: contain;' : 'max-width: none; max-height: none; height: ' + (zoom * 100) + '%;'"
-                        >
+                        <div x-show="fileType === 'image'" class="flex justify-center items-center transition-all duration-200"
+                             :style="{ minWidth: (zoom * 100) + '%', minHeight: (zoom * 100) + '%' }">
+                            <img :src="fileUrl" alt="Dokumen" @load="isLoadingModal = false" class="max-w-full max-h-[80vh] object-contain"
+                                 :style="{ width: (zoom === 1 ? '100%' : '100%'), height: (zoom === 1 ? '100%' : 'auto') }">
+                        </div>
                     </div>
                 </div>
             </div>
