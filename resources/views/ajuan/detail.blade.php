@@ -461,7 +461,7 @@
                         <button type="button" @click="showModal=false" class="text-gray-400 hover:text-gray-500 font-bold text-xl">✕</button>
                     </div>
 
-                    <div class="w-full h-[75vh] overflow-auto bg-gray-800 rounded-lg flex items-start justify-center border relative">
+                    <div class="w-full h-[60vh] overflow-auto bg-gray-800 rounded-lg border relative">
                         <div x-show="isLoadingModal"
                              class="absolute inset-0 flex flex-col items-center justify-center bg-gray-800/80 z-10">
                             <div class="w-12 h-12 border-4 border-t-pink-500 border-gray-600 rounded-full animate-spin"></div>
@@ -469,11 +469,11 @@
                         </div>
                         <iframe x-show="fileType === 'pdf' || fileType === 'pdf_path'" :src="fileUrl"
                                 @load="isLoadingModal=false" class="w-full h-full border-0 rounded-lg"></iframe>
-                        <img x-show="fileType === 'image'" :src="fileUrl" alt="Dokumen" 
-                             @load="isLoadingModal = false"
-                             class="transition-all duration-200 origin-top"
-                             :style="zoom === 1 ? 'width: 100%; height: 100%; object-fit: contain;' : 'width: ' + (zoom * 100) + '%; height: auto; object-fit: contain; max-width: none;'"
-                        >
+                        
+                        <div x-show="fileType === 'image'" class="flex justify-center items-center transition-all duration-200 origin-top-left"
+                             :style="{ width: (zoom * 100) + '%', height: (zoom * 100) + '%' }">
+                            <img :src="fileUrl" alt="Dokumen" @load="isLoadingModal = false" class="w-full h-full object-contain">
+                        </div>
                     </div>
                 </div>
             </div>
