@@ -462,7 +462,7 @@
                     </div>
 
                     <div class="w-full flex-1 relative bg-gray-100 rounded-lg border">
-                        <div class="absolute inset-0 overflow-auto flex">
+                        <div class="absolute inset-0 overflow-auto flex" :class="zoom <= 1 ? 'items-center justify-center' : 'items-start justify-start'">
                             <div x-show="isLoadingModal"
                                  class="absolute inset-0 flex flex-col items-center justify-center bg-gray-100/80 z-10">
                                 <div class="w-12 h-12 border-4 border-t-pink-500 border-gray-200 rounded-full animate-spin"></div>
@@ -473,7 +473,6 @@
                             
                             <div x-show="fileType === 'image'" 
                                  class="transition-all duration-200 shrink-0"
-                                 :class="zoom <= 1 ? 'm-auto' : ''"
                                  :style="{ 
                                      width: (zoom * 100) + '%', 
                                      height: (zoom * 100) + '%' 
