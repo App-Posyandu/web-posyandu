@@ -241,6 +241,19 @@ class AjuanIndex extends Component
                 $query->where('status_pengajuan', 'Diproses')
                       ->where('kunjungan_lapangan', false);
             }
+        } elseif ($user->role === 'ketua-posyandu') {
+            if ($this->showArchived) {
+                // ARSIP KETUA: Sudah dikirim ke desa ATAU status akhir Disetujui/Ditolak
+                $query->where(function($q) use ($completedStatuses) {
+                    $q->where('submitted_to_desa', true)
+                      ->orWhereIn('status_pengajuan', $completedStatuses);
+                });
+            } else {
+                // AKTIF KETUA: Status diproses, Kunjungan selesai, TAPI belum dikirim ke desa
+                $query->where('status_pengajuan', 'Diproses')
+                      ->where('kunjungan_lapangan', true)
+                      ->where('submitted_to_desa', false);
+            }
         } else {
             if ($this->showArchived) {
                 $query->whereIn('status_pengajuan', $completedStatuses);
