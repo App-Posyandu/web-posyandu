@@ -447,14 +447,14 @@
         <div x-show="showModal" x-cloak x-transition.opacity
             class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" @click.self="showModal = false">
             <div class="bg-white rounded-xl shadow-2xl w-11/12 md:w-3/4 h-[85vh] p-4 relative overflow-hidden flex flex-col">
-                <div x-data="{ zoom: 1, baseW: 0, baseH: 0 }" class="w-full h-full flex flex-col">
+                <div x-data="{ zoom: 1 }" class="w-full h-full flex flex-col">
                     <div class="flex items-center justify-between pb-3 border-b mb-3 shrink-0">
                         <h3 class="text-lg font-bold text-gray-900" x-text="fileTitle">Dokumen KTP/KK</h3>
                         
                         <div x-show="fileType === 'image'" class="flex items-center space-x-2 bg-gray-100 px-2 py-1 rounded-lg border">
                             <button type="button" @click="zoom = Math.max(0.25, zoom - 0.25)" class="px-3 py-1 bg-white hover:bg-gray-200 rounded shadow-sm font-bold text-gray-700">-</button>
                             <span class="text-xs font-bold text-gray-600 w-12 text-center" x-text="Math.round(zoom * 100) + '%'"></span>
-                            <button type="button" @click="zoom += 0.25" class="px-3 py-1 bg-white hover:bg-gray-200 rounded shadow-sm font-bold text-gray-700">+</button>
+                            <button type="button" @click="zoom = Math.min(2, zoom + 0.25)" class="px-3 py-1 bg-white hover:bg-gray-200 rounded shadow-sm font-bold text-gray-700">+</button>
                             <button type="button" @click="zoom = 1" class="ml-2 px-3 py-1 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded shadow-sm text-xs font-bold">Reset</button>
                         </div>
                         
@@ -471,12 +471,12 @@
                                 @load="isLoadingModal=false" class="w-full h-full border-0 rounded-lg"></iframe>
                         
                         <div x-show="fileType === 'image'" class="min-w-full min-h-full flex items-center justify-center">
-                            <img x-ref="docImg" :src="fileUrl" alt="Dokumen" 
-                                 @load="isLoadingModal = false; zoom = 1; baseW = $refs.docImg.naturalWidth; baseH = $refs.docImg.naturalHeight;" 
-                                 class="transition-all duration-200 block shadow-sm"
+                            <img :src="fileUrl" alt="Dokumen" 
+                                 @load="isLoadingModal = false; zoom = 1;" 
+                                 class="transition-all duration-200 object-contain block shadow-sm"
                                  :style="{ 
-                                     width: (baseW * zoom) + 'px', 
-                                     height: (baseH * zoom) + 'px', 
+                                     width: (zoom * 100) + '%', 
+                                     height: (zoom * 100) + '%', 
                                      maxWidth: 'none', 
                                      maxHeight: 'none' 
                                  }">
