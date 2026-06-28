@@ -445,41 +445,35 @@
 
         {{-- Modal Preview Dokumen --}}
         <div x-show="showModal" x-cloak x-transition.opacity
-            x-data="{ scale: 1 }"
             class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" @click.self="showModal = false">
-            <div class="bg-white rounded-xl shadow-2xl w-11/12 md:w-3/4 h-[85vh] relative overflow-hidden flex flex-col">
-                <div class="flex items-center justify-between p-4 border-b">
-                    <!-- Kiri: Judul -->
-                    <h3 class="text-lg font-bold text-gray-900" x-text="fileTitle"></h3>
-                    
-                    <!-- Tengah: Kontrol Zoom -->
-                    <div x-show="fileType === 'image'" class="flex items-center space-x-1 bg-gray-100 p-1 rounded-lg">
-                        <button type="button" @click="scale > 0.5 ? scale -= 0.25 : scale" class="px-3 py-1 hover:bg-white rounded shadow-sm text-sm font-bold">-</button>
-                        <span class="px-2 text-xs font-semibold text-gray-600" x-text="Math.round(scale * 100) + '%'"></span>
-                        <button type="button" @click="scale += 0.25" class="px-3 py-1 hover:bg-white rounded shadow-sm text-sm font-bold">+</button>
-                        <button type="button" @click="scale = 1" class="ml-2 px-3 py-1 bg-white border border-gray-300 rounded shadow-sm text-xs font-medium text-red-600 hover:bg-red-50">Reset</button>
+            <div class="bg-white rounded-xl shadow-2xl w-11/12 md:w-3/4 p-4 relative overflow-hidden flex flex-col">
+                <div x-data="{ zoom: 1 }" class="w-full flex flex-col">
+                    <div class="flex items-center justify-between pb-3 border-b mb-3">
+                        <h3 class="text-lg font-bold text-gray-900" x-text="fileTitle">Dokumen KTP/KK</h3>
+                        
+                        <div x-show="fileType === 'image'" class="flex items-center space-x-2 bg-gray-100 px-2 py-1 rounded-lg border">
+                            <button type="button" @click="zoom = Math.max(1, zoom - 0.5)" class="px-3 py-1 bg-white hover:bg-gray-200 rounded shadow-sm font-bold text-gray-700">-</button>
+                            <span class="text-xs font-bold text-gray-600" x-text="(zoom * 100) + '%'"></span>
+                            <button type="button" @click="zoom += 0.5" class="px-3 py-1 bg-white hover:bg-gray-200 rounded shadow-sm font-bold text-gray-700">+</button>
+                            <button type="button" @click="zoom = 1" class="ml-2 px-3 py-1 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded shadow-sm text-xs font-bold">Reset</button>
+                        </div>
+                        
+                        <button type="button" @click="showModal=false" class="text-gray-400 hover:text-gray-500 font-bold text-xl">✕</button>
                     </div>
 
-                    <!-- Kanan: Tombol Close -->
-                    <button type="button" @click="showModal=false" class="text-gray-400 hover:text-gray-500 font-bold text-xl">✕</button>
-                </div>
-                <div class="flex-1 flex items-center justify-center bg-gray-100 relative">
-                    <div x-show="isLoadingModal"
-                        class="absolute inset-0 flex flex-col items-center justify-center bg-gray-100/80 z-10">
-                        <div class="w-12 h-12 border-4 border-t-pink-500 border-gray-200 rounded-full animate-spin"></div>
-                        <p class="text-gray-600 mt-3">Memuat dokumen...</p>
-                    </div>
-                    <iframe x-show="fileType === 'pdf' || fileType === 'pdf_path'" :src="fileUrl"
-                        @load="isLoadingModal=false" class="w-full h-full border-0 rounded-b-xl"></iframe>
-                    <div x-show="fileType === 'image'" class="w-full h-[75vh] overflow-auto bg-gray-800 rounded-b-xl flex items-start justify-center p-2">
-                        <img :src="fileUrl" alt="Dokumen" 
+                    <div class="w-full h-[75vh] overflow-auto bg-gray-800 rounded-lg flex items-start justify-center border relative">
+                        <div x-show="isLoadingModal"
+                             class="absolute inset-0 flex flex-col items-center justify-center bg-gray-800/80 z-10">
+                            <div class="w-12 h-12 border-4 border-t-pink-500 border-gray-600 rounded-full animate-spin"></div>
+                            <p class="text-gray-300 mt-3">Memuat dokumen...</p>
+                        </div>
+                        <iframe x-show="fileType === 'pdf' || fileType === 'pdf_path'" :src="fileUrl"
+                                @load="isLoadingModal=false" class="w-full h-full border-0 rounded-lg"></iframe>
+                        <img x-show="fileType === 'image'" :src="fileUrl" alt="Dokumen" 
                              @load="isLoadingModal = false"
-                             class="transition-all duration-200 object-contain"
-                             :style="{ 
-                                 height: (scale * 100) + '%', 
-                                 width: 'auto', 
-                                 maxWidth: 'none' 
-                             }">
+                             class="transition-all duration-200 origin-top"
+                             :style="zoom === 1 ? 'width: 100%; height: 100%; object-fit: contain;' : 'width: ' + (zoom * 100) + '%; height: auto; object-fit: contain; max-width: none;'"
+                        >
                     </div>
                 </div>
             </div>
