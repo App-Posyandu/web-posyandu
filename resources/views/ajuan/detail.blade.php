@@ -554,7 +554,7 @@
                                 <form method="POST" action="{{ route('ajuan.verify', $ajuan) }}"
                                     id="form-ajuan-verify"
                                     x-data
-                                    @submit.prevent="if(!$el.catatan.value.trim()) { alert('Catatan wajib diisi sebelum menyimpan verifikasi!'); } else { $el.submit(); }">
+                                    @submit.prevent="if(!$el.catatan.value.trim()) { Swal.fire({icon: 'warning', title: 'Perhatian', text: 'Catatan wajib diisi sebelum menyimpan verifikasi!'}); } else { $el.submit(); }">
                                     @csrf
                                     @method('PATCH')
                                     <input type="hidden" name="verification_step" value="1">
@@ -720,7 +720,7 @@
                                     <form method="POST" action="{{ route('ajuan.verify', $ajuan) }}"
                                         enctype="multipart/form-data" id="form-kunjunganlapangan"
                                         x-data
-                                        @submit.prevent="if(!$el.catatan_kunjungan.value.trim()) { alert('Catatan kunjungan wajib diisi sebelum selesai kunjungan!'); } else { $el.submit(); }">
+                                        @submit.prevent="if(!$el.catatan_kunjungan.value.trim()) { Swal.fire({icon: 'warning', title: 'Perhatian', text: 'Catatan kunjungan wajib diisi sebelum selesai kunjungan!'}); } else { $el.submit(); }">
                                         @csrf
                                         @method('PATCH')
                                         <input type="hidden" name="verification_step" value="2">
@@ -825,7 +825,7 @@
 
                     <form method="POST" action="{{ route('ajuan.verify', $ajuan) }}" id="form-keputusan-ketua"
                         x-data
-                        @submit.prevent="if(!$el.catatan.value.trim()) { alert('Catatan wajib diisi sebelum menyimpan keputusan!'); } else { $el.submit(); }">
+                        @submit.prevent="if(!$el.catatan.value.trim()) { Swal.fire({icon: 'warning', title: 'Perhatian', text: 'Catatan wajib diisi sebelum menyimpan keputusan!'}); } else { $el.submit(); }">
                         @csrf
                         @method('PATCH')
                         <input type="hidden" name="verification_step" value="3">
