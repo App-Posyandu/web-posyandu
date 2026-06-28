@@ -452,16 +452,16 @@
                         <h3 class="text-lg font-bold text-gray-900" x-text="fileTitle">Dokumen KTP/KK</h3>
                         
                         <div x-show="fileType === 'image'" class="flex items-center space-x-2 bg-gray-100 px-2 py-1 rounded-lg border">
-                            <button type="button" @click="zoom = Math.max(1, zoom - 0.5)" class="px-3 py-1 bg-white hover:bg-gray-200 rounded shadow-sm font-bold text-gray-700">-</button>
-                            <span class="text-xs font-bold text-gray-600" x-text="(zoom * 100) + '%'"></span>
-                            <button type="button" @click="zoom += 0.5" class="px-3 py-1 bg-white hover:bg-gray-200 rounded shadow-sm font-bold text-gray-700">+</button>
+                            <button type="button" @click="zoom = Math.max(0.25, zoom - 0.25)" class="px-3 py-1 bg-white hover:bg-gray-200 rounded shadow-sm font-bold text-gray-700">-</button>
+                            <span class="text-xs font-bold text-gray-600 w-12 text-center" x-text="Math.round(zoom * 100) + '%'"></span>
+                            <button type="button" @click="zoom += 0.25" class="px-3 py-1 bg-white hover:bg-gray-200 rounded shadow-sm font-bold text-gray-700">+</button>
                             <button type="button" @click="zoom = 1" class="ml-2 px-3 py-1 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded shadow-sm text-xs font-bold">Reset</button>
                         </div>
                         
                         <button type="button" @click="showModal=false" class="text-gray-400 hover:text-gray-500 font-bold text-xl">✕</button>
                     </div>
 
-                    <div class="w-full flex-1 overflow-auto bg-gray-100 rounded-lg border relative flex items-center justify-center">
+                    <div class="w-full flex-1 overflow-auto bg-gray-100 rounded-lg border relative flex">
                         <div x-show="isLoadingModal"
                              class="absolute inset-0 flex flex-col items-center justify-center bg-gray-100/80 z-10">
                             <div class="w-12 h-12 border-4 border-t-pink-500 border-gray-200 rounded-full animate-spin"></div>
@@ -470,11 +470,10 @@
                         <iframe x-show="fileType === 'pdf' || fileType === 'pdf_path'" :src="fileUrl"
                                 @load="isLoadingModal=false" class="w-full h-full border-0 rounded-lg"></iframe>
                         
-                        <div x-show="fileType === 'image'" class="flex justify-center items-center transition-all duration-200"
-                             :style="{ minWidth: (zoom * 100) + '%', minHeight: (zoom * 100) + '%' }">
-                            <img :src="fileUrl" alt="Dokumen" @load="isLoadingModal = false" class="max-w-full max-h-[80vh] object-contain"
-                                 :style="{ width: (zoom === 1 ? '100%' : '100%'), height: (zoom === 1 ? '100%' : 'auto') }">
-                        </div>
+                        <img x-show="fileType === 'image'" :src="fileUrl" alt="Dokumen" 
+                             @load="isLoadingModal = false" 
+                             class="m-auto transition-all duration-200 object-contain block"
+                             :style="{ width: (zoom * 100) + '%', height: (zoom * 100) + '%', maxWidth: 'none', maxHeight: 'none' }">
                     </div>
                 </div>
             </div>
