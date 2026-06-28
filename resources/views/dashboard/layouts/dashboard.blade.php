@@ -56,10 +56,7 @@
             <main class="flex-grow flex justify-center mt-0 md:mt-6 min-h-[70vh]">
                 @yield('content')
             </main>
-            <button id="pwa-install-btn"
-                style="display:none; position: fixed; bottom: 20px; right: 20px; padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 8px; z-index: 1000;">
-                Install App
-            </button>
+            @include('layouts.partials.pwa-banner', ['maxWidth' => 'w-full'])
 
             @include('layouts.partials.footer')
         </div>
@@ -68,7 +65,7 @@
     @if (app('view')->exists('sweetalert2::index'))
         @include('sweetalert2::index')
     @endif
-    <script src="{{ asset('pwa-install.js') }}"></script>
+
     @stack('scripts')
     <script>
         if ("serviceWorker" in navigator) {

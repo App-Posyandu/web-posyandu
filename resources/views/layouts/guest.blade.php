@@ -32,31 +32,17 @@
         <div class="w-full sm:max-w-3xl mt-6 px-6 py-8 bg-white shadow-md overflow-hidden sm:rounded-lg z-10">
             {{ $slot }}
         </div>
-    </div>
 
-    {{-- PWA Install Banner --}}
-    <div id="pwa-install-banner"
-        class="fixed bottom-0 left-0 right-0 z-50 hidden"
-        role="complementary" aria-label="Install aplikasi">
-        <div class="bg-white border-t border-gray-200 shadow-lg px-4 py-3 flex items-center justify-between gap-3">
-            <div class="flex items-center gap-3 min-w-0">
-                <img src="/assets/image/logo/app/logo_192x192.png"
-                    alt="Sapa Posyandu" class="w-12 h-12 rounded-xl flex-shrink-0">
-                <div class="min-w-0">
-                    <p class="text-sm font-semibold text-gray-900 truncate">Sapa Posyandu</p>
-                    <p class="text-xs text-gray-500">Install aplikasi untuk akses lebih mudah</p>
-                </div>
-            </div>
-            <div class="flex items-center gap-2 flex-shrink-0">
-                <button id="pwa-install-dismiss"
-                    class="text-xs text-gray-400 hover:text-gray-600 px-2 py-1">
-                    Nanti
-                </button>
-                <button id="pwa-install-btn"
-                    class="bg-pink-500 hover:bg-pink-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
-                    Install
-                </button>
-            </div>
+        <div class="w-full z-10">
+            @include('layouts.partials.pwa-banner', [
+                'maxWidth' => 'sm:max-w-3xl',
+                'paddingClass' => 'px-0',
+                'roundedClass' => 'sm:rounded-lg'
+            ])
+        </div>
+
+        <div class="w-full z-10 mt-auto">
+            @include('layouts.partials.footer')
         </div>
     </div>
 
@@ -68,40 +54,7 @@
             });
         }
 
-        // PWA Install Banner
-        let deferredPrompt = null;
-        const banner  = document.getElementById('pwa-install-banner');
-        const btnInstall  = document.getElementById('pwa-install-btn');
-        const btnDismiss  = document.getElementById('pwa-install-dismiss');
 
-        window.addEventListener('beforeinstallprompt', function (e) {
-            e.preventDefault();
-            deferredPrompt = e;
-
-            // Jangan tampilkan jika user sudah dismiss sebelumnya
-            if (!sessionStorage.getItem('pwa-banner-dismissed')) {
-                banner.classList.remove('hidden');
-            }
-        });
-
-        btnInstall.addEventListener('click', async function () {
-            if (!deferredPrompt) return;
-            banner.classList.add('hidden');
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            deferredPrompt = null;
-        });
-
-        btnDismiss.addEventListener('click', function () {
-            banner.classList.add('hidden');
-            sessionStorage.setItem('pwa-banner-dismissed', '1');
-        });
-
-        // Sembunyikan banner jika sudah terinstall
-        window.addEventListener('appinstalled', function () {
-            banner.classList.add('hidden');
-            deferredPrompt = null;
-        });
     </script>
 </body>
 
