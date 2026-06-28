@@ -458,13 +458,30 @@
                     </div>
                     <iframe x-show="fileType === 'pdf' || fileType === 'pdf_path'" :src="fileUrl"
                         @load="isLoadingModal=false" class="w-full h-full border-0 rounded-b-xl"></iframe>
-                    <div x-show="fileType === 'image'" x-data="{ isImageLoaded: false }" class="relative w-full h-[70vh] md:h-[80vh] flex items-center justify-center overflow-hidden bg-gray-50 rounded-b-xl">
-                        <div x-show="!isImageLoaded" class="flex flex-col items-center justify-center absolute inset-0 z-10">
-                            <div class="w-10 h-10 border-4 border-t-pink-500 border-gray-300 rounded-full animate-spin"></div>
-                            <p class="mt-2 text-sm text-gray-500 animate-pulse">Memuat gambar...</p>
+                    <div x-show="fileType === 'image'" x-data="{ scale: 1, isImageLoaded: false }" class="relative w-full h-full bg-gray-50 rounded-b-xl flex flex-col">
+                        <!-- Floating Zoom Controls -->
+                        <div class="absolute top-4 right-4 z-20 flex bg-white/90 backdrop-blur rounded-lg shadow border border-gray-200 overflow-hidden" x-show="isImageLoaded">
+                            <button @click="scale += 0.25" type="button" class="px-3 py-1.5 hover:bg-gray-100 text-gray-700 font-bold border-r" title="Zoom In">
+                                <i class="fa-solid fa-magnifying-glass-plus"></i> +
+                            </button>
+                            <button @click="scale = 1" type="button" class="px-3 py-1.5 hover:bg-gray-100 text-gray-700 font-bold border-r" title="Reset Zoom">
+                                ↺
+                            </button>
+                            <button @click="scale > 0.5 ? scale -= 0.25 : scale" type="button" class="px-3 py-1.5 hover:bg-gray-100 text-gray-700 font-bold" title="Zoom Out">
+                                <i class="fa-solid fa-magnifying-glass-minus"></i> -
+                            </button>
                         </div>
-                        <img :src="fileUrl" @load="isImageLoaded = true; isLoadingModal = false" x-show="isImageLoaded"
-                            class="w-full h-full object-contain">
+
+                        <!-- Scrollable Image Container -->
+                        <div class="w-full h-full overflow-auto flex justify-center items-start relative p-4">
+                            <div x-show="!isImageLoaded" class="flex flex-col items-center justify-center absolute inset-0 z-10 bg-gray-50">
+                                <div class="w-10 h-10 border-4 border-t-pink-500 border-gray-300 rounded-full animate-spin"></div>
+                                <p class="mt-2 text-sm text-gray-500 animate-pulse">Memuat gambar...</p>
+                            </div>
+                            <img :src="fileUrl" alt="Dokumen" @load="isImageLoaded = true; isLoadingModal = false" x-show="isImageLoaded"
+                                class="max-w-full h-auto object-contain transition-transform duration-200 shadow-sm"
+                                :style="'transform: scale(' + scale + '); transform-origin: top center;'">
+                        </div>
                     </div>
                 </div>
             </div>
