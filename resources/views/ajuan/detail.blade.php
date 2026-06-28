@@ -729,7 +729,6 @@
 
                                             <p class="text-sm text-blue-800">
                                                 Kunjungan lapangan adalah tahap wajib. Anda dapat upload foto kunjungan
-                                                (opsional).
                                             </p>
                                         </div>
                                         <div class="mb-6">
@@ -852,8 +851,11 @@
 
                         <div class="mb-6">
                             <label class="block font-medium text-sm text-gray-700 mb-2">Catatan</label>
-                            <textarea id="catatan_step3" name="catatan" rows="4"
+                            <textarea id="catatan_step3" name="catatan_step3" rows="4"
                                 class="block w-full border-gray-300 rounded-md shadow-sm"></textarea>
+                            @error('catatan_step3')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
                         </div>
 
                         <div class="flex justify-end">
@@ -938,6 +940,9 @@
                             <label class="block font-medium text-sm text-gray-700 mb-2">Catatan (Wajib)</label>
                             <textarea name="catatan" id="catatan_kades" rows="4"
                                 class="block w-full border-gray-300 rounded-md shadow-sm"></textarea>
+                            @error('catatan')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
                         </div>
 
                         <div class="flex justify-end gap-2">
@@ -1156,6 +1161,17 @@
                 if (btnKunjungan && formKunjungan) {
                     btnKunjungan.addEventListener('click', function(e) {
                         e.preventDefault();
+                        
+                        const inputFoto = formKunjungan.querySelector('input[name="foto_kunjungan[]"]');
+                        if (inputFoto && inputFoto.files.length === 0) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Foto Diperlukan!',
+                                text: 'Foto kunjungan wajib diupload.',
+                                confirmButtonColor: '#dc2626'
+                            });
+                            return;
+                        }
 
                         const catatanKunjungan = formKunjungan.querySelector(
                             'textarea[name="catatan_kunjungan"]');
@@ -1171,12 +1187,11 @@
                             return;
                         }
 
-                        const inputFoto = formKunjungan.querySelector('input[name="foto_kunjungan[]"]');
-                        if (inputFoto && inputFoto.files.length === 0) {
+                        if(catatanKunjungan.value.trim().length < 10) {
                             Swal.fire({
                                 icon: 'warning',
-                                title: 'Foto Diperlukan!',
-                                text: 'Foto kunjungan wajib diupload.',
+                                title: 'Catatan Tidak Memadai!',
+                                text: 'Catatan harus minimal 10 karakter.',
                                 confirmButtonColor: '#dc2626'
                             });
                             return;
@@ -1241,14 +1256,14 @@
                         }
 
                         // Validasi catatan untuk revisi dan tolak
-                        if ((keputusan === 'revisi' || keputusan === 'tidak-ditindaklanjuti' || keputusan ===
+                        if ((keputusan== 'ditindaklanjuti'||keputusan === 'revisi' || keputusan === 'tidak-ditindaklanjuti' || keputusan ===
                                 'tidak-diajukan') && !catatan.trim()) {
                             Swal.fire({
                                 icon: 'warning',
                                 title: 'Catatan Diperlukan!',
                                 text: 'Silakan berikan catatan untuk keputusan ' + (keputusan ===
                                     'revisi' ? 'revisi' : keputusan === 'tidak-ditindaklanjuti' ?
-                                    'tidak ditindaklanjuti' : 'tidak diajukan') + '.',
+                                    'Tidak Ditindaklanjuti' : 'Ditindaklanjuti') + '.',
                                 confirmButtonColor: '#dc2626'
                             });
                             return;
@@ -1378,11 +1393,31 @@
                             return;
                         }
 
+                        if (tindakLanjut.trim().length < 15) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Tindak Lanjut Terlalu Pendek',
+                                text: 'Silakan berikan tindak lanjut minimal 15 karakter.',
+                                confirmButtonColor: '#dc2626'
+                            });
+                            return;
+                        }
+
                         if (!catatan.trim()) {
                             Swal.fire({
                                 icon: 'warning',
                                 title: 'Catatan Diperlukan!',
                                 text: 'Silakan berikan catatan terlebih dahulu.',
+                                confirmButtonColor: '#dc2626'
+                            });
+                            return;
+                        }
+
+                        if (catatan.trim().length < 10) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Catatan Terlalu Pendek',
+                                text: 'Silakan berikan catatan minimal 10 karakter.',
                                 confirmButtonColor: '#dc2626'
                             });
                             return;
