@@ -447,7 +447,7 @@
         <div x-show="showModal" x-cloak x-transition.opacity
             class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" @click.self="showModal = false">
             <div class="bg-white rounded-xl shadow-2xl w-11/12 md:w-3/4 h-[85vh] p-4 relative overflow-hidden flex flex-col">
-                <div x-data="{ zoom: 1, baseW: 0, baseH: 0 }" class="w-full h-full flex flex-col">
+                <div x-data="{ zoom: 1 }" class="w-full h-full flex flex-col">
                     <div class="flex items-center justify-between pb-3 border-b mb-3 shrink-0">
                         <h3 class="text-lg font-bold text-gray-900" x-text="fileTitle">Dokumen KTP/KK</h3>
                         
@@ -471,14 +471,14 @@
                                 @load="isLoadingModal=false" class="w-full h-full border-0 rounded-lg"></iframe>
                         
                         <div x-show="fileType === 'image'" class="min-w-full min-h-full flex items-center justify-center">
-                            <img x-ref="docImg" :src="fileUrl" alt="Dokumen" 
-                                 @load="isLoadingModal = false; zoom = 1; baseW = $refs.docImg.clientWidth; baseH = $refs.docImg.clientHeight;" 
+                            <img :src="fileUrl" alt="Dokumen" 
+                                 @load="isLoadingModal = false; zoom = 1;" 
                                  class="transition-all duration-200 object-contain block shadow-sm"
                                  :style="{ 
-                                     width: zoom === 1 ? 'auto' : (baseW * zoom) + 'px', 
-                                     height: zoom === 1 ? 'auto' : (baseH * zoom) + 'px', 
-                                     maxWidth: zoom === 1 ? '100%' : 'none', 
-                                     maxHeight: zoom === 1 ? '100%' : 'none' 
+                                     width: (zoom * 100) + '%', 
+                                     height: (zoom * 100) + '%', 
+                                     maxWidth: 'none', 
+                                     maxHeight: 'none' 
                                  }">
                         </div>
                     </div>
