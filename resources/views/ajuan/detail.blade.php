@@ -461,19 +461,20 @@
                         <button type="button" @click="showModal=false" class="text-gray-400 hover:text-gray-500 font-bold text-xl">✕</button>
                     </div>
 
-                    <div class="w-full h-[60vh] overflow-auto bg-gray-800 rounded-lg border relative">
+                    <div class="w-full h-[60vh] overflow-auto bg-gray-100 rounded-lg flex items-center justify-center border relative">
                         <div x-show="isLoadingModal"
-                             class="absolute inset-0 flex flex-col items-center justify-center bg-gray-800/80 z-10">
-                            <div class="w-12 h-12 border-4 border-t-pink-500 border-gray-600 rounded-full animate-spin"></div>
-                            <p class="text-gray-300 mt-3">Memuat dokumen...</p>
+                             class="absolute inset-0 flex flex-col items-center justify-center bg-gray-100/80 z-10">
+                            <div class="w-12 h-12 border-4 border-t-pink-500 border-gray-200 rounded-full animate-spin"></div>
+                            <p class="text-gray-600 mt-3">Memuat dokumen...</p>
                         </div>
                         <iframe x-show="fileType === 'pdf' || fileType === 'pdf_path'" :src="fileUrl"
                                 @load="isLoadingModal=false" class="w-full h-full border-0 rounded-lg"></iframe>
                         
-                        <div x-show="fileType === 'image'" class="flex justify-center items-center transition-all duration-200 origin-top-left"
-                             :style="{ width: (zoom * 100) + '%', height: (zoom * 100) + '%' }">
-                            <img :src="fileUrl" alt="Dokumen" @load="isLoadingModal = false" class="w-full h-full object-contain">
-                        </div>
+                        <img x-show="fileType === 'image'" :src="fileUrl" alt="Dokumen" 
+                             @load="isLoadingModal = false"
+                             class="shrink-0 transition-all duration-200"
+                             :style="zoom === 1 ? 'max-width: 100%; max-height: 100%; object-fit: contain;' : 'max-width: none; max-height: none; height: ' + (zoom * 100) + '%;'"
+                        >
                     </div>
                 </div>
             </div>
