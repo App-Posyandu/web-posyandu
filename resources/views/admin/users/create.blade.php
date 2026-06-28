@@ -185,8 +185,8 @@
                                 @elseif ($currentUserRole === 'admin-kecamatan')
 
                                 @elseif ($currentUserRole === 'operator-desa')
-                                    <!-- <option value="kades">Kades</option> -->
-                                    <!-- <option value="bu-kades">Bu Kades</option> -->
+                                    <option value="kades">Kades</option>
+                                    <option value="bu-kades">Bu Kades</option>
                                     <option value="ketua-posyandu">Ketua Posyandu</option>
                                     <option value="kader">Kader</option>
                                 @elseif ($currentUserRole === 'ketua-posyandu')
