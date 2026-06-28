@@ -461,7 +461,7 @@
                         <button type="button" @click="showModal=false" class="text-gray-400 hover:text-gray-500 font-bold text-xl">✕</button>
                     </div>
 
-                    <div class="w-full flex-1 overflow-auto bg-gray-100 rounded-lg border relative flex">
+                    <div class="w-full flex-1 overflow-auto bg-gray-100 rounded-lg border relative">
                         <div x-show="isLoadingModal"
                              class="absolute inset-0 flex flex-col items-center justify-center bg-gray-100/80 z-10">
                             <div class="w-12 h-12 border-4 border-t-pink-500 border-gray-200 rounded-full animate-spin"></div>
@@ -470,15 +470,17 @@
                         <iframe x-show="fileType === 'pdf' || fileType === 'pdf_path'" :src="fileUrl"
                                 @load="isLoadingModal=false" class="w-full h-full border-0 rounded-lg"></iframe>
                         
-                        <img x-show="fileType === 'image'" x-ref="docImg" :src="fileUrl" alt="Dokumen" 
-                             @load="isLoadingModal = false; zoom = 1; baseW = $refs.docImg.clientWidth; baseH = $refs.docImg.clientHeight;" 
-                             class="m-auto transition-all duration-200 object-contain block shadow-sm"
-                             :style="{ 
-                                 width: zoom === 1 ? 'auto' : (baseW * zoom) + 'px', 
-                                 height: zoom === 1 ? 'auto' : (baseH * zoom) + 'px', 
-                                 maxWidth: zoom === 1 ? '100%' : 'none', 
-                                 maxHeight: zoom === 1 ? '100%' : 'none' 
-                             }">
+                        <div x-show="fileType === 'image'" class="min-w-full min-h-full flex items-center justify-center">
+                            <img x-ref="docImg" :src="fileUrl" alt="Dokumen" 
+                                 @load="isLoadingModal = false; zoom = 1; baseW = $refs.docImg.clientWidth; baseH = $refs.docImg.clientHeight;" 
+                                 class="transition-all duration-200 object-contain block shadow-sm"
+                                 :style="{ 
+                                     width: zoom === 1 ? 'auto' : (baseW * zoom) + 'px', 
+                                     height: zoom === 1 ? 'auto' : (baseH * zoom) + 'px', 
+                                     maxWidth: zoom === 1 ? '100%' : 'none', 
+                                     maxHeight: zoom === 1 ? '100%' : 'none' 
+                                 }">
+                        </div>
                     </div>
                 </div>
             </div>
