@@ -554,7 +554,7 @@
                                 <form method="POST" action="{{ route('ajuan.verify', $ajuan) }}"
                                     id="form-ajuan-verify"
                                     x-data
-                                    @submit.prevent="if(!$el.catatan.value.trim()) { Swal.fire({icon: 'warning', title: 'Perhatian', text: 'Catatan wajib diisi sebelum menyimpan verifikasi!'}); } else { $el.submit(); }">
+                                    @submit.prevent="if(!document.getElementById('catatan_step1').value.trim()) { window.Swal.fire({icon: 'warning', title: 'Perhatian', text: 'Catatan wajib diisi sebelum menyimpan verifikasi!'}); } else { $el.submit(); }">
                                     @csrf
                                     @method('PATCH')
                                     <input type="hidden" name="verification_step" value="1">
@@ -720,7 +720,7 @@
                                     <form method="POST" action="{{ route('ajuan.verify', $ajuan) }}"
                                         enctype="multipart/form-data" id="form-kunjunganlapangan"
                                         x-data
-                                        @submit.prevent="if(!$el.catatan_kunjungan.value.trim()) { Swal.fire({icon: 'warning', title: 'Perhatian', text: 'Catatan kunjungan wajib diisi sebelum selesai kunjungan!'}); } else { $el.submit(); }">
+                                        @submit.prevent="if(!document.getElementById('catatan_step2').value.trim()) { window.Swal.fire({icon: 'warning', title: 'Perhatian', text: 'Catatan kunjungan wajib diisi sebelum selesai kunjungan!'}); } else { $el.submit(); }">
                                         @csrf
                                         @method('PATCH')
                                         <input type="hidden" name="verification_step" value="2">
@@ -784,7 +784,7 @@
                                         <div class="mb-6">
                                             <label class="block font-medium text-sm text-gray-700 mb-2">Catatan
                                                 Kunjungan (Required)</label>
-                                            <textarea name="catatan_kunjungan" rows="4" {{ $ajuan->kunjungan_lapangan ? 'disabled' : '' }}
+                                            <textarea id="catatan_step2" name="catatan_kunjungan" rows="4" {{ $ajuan->kunjungan_lapangan ? 'disabled' : '' }}
                                                 class="block w-full border-gray-300 rounded-md shadow-sm" placeholder="Hasil kunjungan lapangan..."></textarea>
                                             @error('catatan_kunjungan')
                                                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -825,7 +825,7 @@
 
                     <form method="POST" action="{{ route('ajuan.verify', $ajuan) }}" id="form-keputusan-ketua"
                         x-data
-                        @submit.prevent="if(!$el.catatan.value.trim()) { Swal.fire({icon: 'warning', title: 'Perhatian', text: 'Catatan wajib diisi sebelum menyimpan keputusan!'}); } else { $el.submit(); }">
+                        @submit.prevent="if(!document.getElementById('catatan_step3').value.trim()) { window.Swal.fire({icon: 'warning', title: 'Perhatian', text: 'Catatan wajib diisi sebelum menyimpan keputusan!'}); } else { $el.submit(); }">
                         @csrf
                         @method('PATCH')
                         <input type="hidden" name="verification_step" value="3">
