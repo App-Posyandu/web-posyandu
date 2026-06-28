@@ -229,10 +229,24 @@ class AjuanIndex extends Component
                 break;
         }
 
-        if ($this->showArchived) {
-            $query->whereIn('status_pengajuan', $completedStatuses);
+        if ($user->role === 'kader') {
+            if ($this->showArchived) {
+                // ARSIP KADER: Kunjungan sudah selesai ATAU status sudah final (Disetujui/Ditolak)
+                $query->where(function($q) use ($completedStatuses) {
+                    $q->where('kunjungan_lapangan', true)
+                      ->orWhereIn('status_pengajuan', $completedStatuses);
+                });
+            } else {
+                // AKTIF KADER: Status masih diproses DAN kunjungan lapangan belum selesai
+                $query->where('status_pengajuan', 'Diproses')
+                      ->where('kunjungan_lapangan', false);
+            }
         } else {
-            $query->where('status_pengajuan', 'Diproses');
+            if ($this->showArchived) {
+                $query->whereIn('status_pengajuan', $completedStatuses);
+            } else {
+                $query->where('status_pengajuan', 'Diproses');
+            }
         }
 
         $safeStatus = $this->sanitizeStatus($this->status);

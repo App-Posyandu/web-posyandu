@@ -268,13 +268,19 @@
         @endif
 
         @if (auth()->user()->role === 'kader' && auth()->user()->bidang)
-            <div class="mb-4 p-3 bg-pink-50 border-l-4 border-pink-500 rounded-lg">
+            <div class="mb-4 w-full bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-md">
                 <div class="flex items-start">
-                    <i class="bi bi-info-circle-fill text-pink-500 mr-2 mt-0.5 flex-shrink-0"></i>
-                    <p class="text-sm text-gray-700">
-                        Anda mengelola pengajuan di <strong>{{ auth()->user()->bidang->nama_bidang }}</strong>
-                        untuk <strong>{{ auth()->user()->posyandu->nama_posyandu ?? 'Posyandu Anda' }}</strong>
-                    </p>
+                    <i class="bi bi-info-circle-fill text-yellow-500 mr-3 mt-0.5"></i>
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-yellow-900">Filter Otomatis Aktif</p>
+                        <p class="text-xs text-yellow-700 mt-1">
+                            Anda mengelola pengajuan di <strong>{{ auth()->user()->bidang->nama_bidang }}</strong> untuk <strong>{{ auth()->user()->posyandu->nama_posyandu ?? 'Posyandu Anda' }}</strong> dengan aturan:
+                        </p>
+                        <ul class="text-xs text-yellow-700 mt-2 space-y-1 list-disc list-inside">
+                            <li>Mode aktif: Memerlukan verifikasi dokumen atau belum dikunjungi</li>
+                            <li>Mode arsip: Kunjungan selesai, Disetujui, atau Ditolak</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         @endif
