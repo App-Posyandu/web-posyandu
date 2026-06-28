@@ -471,11 +471,15 @@
                     </div>
                     <iframe x-show="fileType === 'pdf' || fileType === 'pdf_path'" :src="fileUrl"
                         @load="isLoadingModal=false" class="w-full h-full border-0 rounded-b-xl"></iframe>
-                    <div x-show="fileType === 'image'" class="w-full h-[70vh] overflow-auto bg-gray-50 flex items-center justify-center">
+                    <div x-show="fileType === 'image'" class="w-full h-[75vh] overflow-auto bg-gray-800 rounded-b-xl flex items-start justify-center p-2">
                         <img :src="fileUrl" alt="Dokumen" 
                              @load="isLoadingModal = false"
-                             class="object-contain transition-all duration-200"
-                             :style="'width: ' + (scale * 100) + '%; height: ' + (scale * 100) + '%; max-width: none; min-width: 100%; min-height: 100%;'">
+                             class="transition-all duration-200 object-contain"
+                             :style="{ 
+                                 height: (scale * 100) + '%', 
+                                 width: 'auto', 
+                                 maxWidth: 'none' 
+                             }">
                     </div>
                 </div>
             </div>
