@@ -458,8 +458,14 @@
                     </div>
                     <iframe x-show="fileType === 'pdf' || fileType === 'pdf_path'" :src="fileUrl"
                         @load="isLoadingModal=false" class="w-full h-full border-0 rounded-b-xl"></iframe>
-                    <img x-show="fileType === 'image'" :src="fileUrl" @load="isLoadingModal = false"
-                        class="max-h-full max-w-full object-contain rounded-b-xl">
+                    <div x-show="fileType === 'image'" x-data="{ isImageLoaded: false }" class="w-full h-full flex flex-col items-center justify-center relative">
+                        <div x-show="!isImageLoaded" class="flex flex-col items-center justify-center absolute inset-0 z-10">
+                            <div class="w-10 h-10 border-4 border-t-pink-500 border-gray-300 rounded-full animate-spin"></div>
+                            <p class="mt-2 text-sm text-gray-500 animate-pulse">Memuat gambar...</p>
+                        </div>
+                        <img :src="fileUrl" @load="isImageLoaded = true; isLoadingModal = false" x-show="isImageLoaded"
+                            class="max-w-full max-h-[80vh] object-contain mx-auto rounded-b-xl">
+                    </div>
                 </div>
             </div>
         </div>
