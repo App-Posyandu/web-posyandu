@@ -257,12 +257,19 @@
         @endif
 
         @if (auth()->user()->role === 'ketua-posyandu' && auth()->user()->posyandu)
-            <div class="mb-4 p-3 bg-pink-50 border-l-4 border-pink-500 rounded-lg">
+            <div class="w-full bg-blue-50 border-l-4 border-blue-500 p-4 rounded-md mb-6">
                 <div class="flex items-start">
-                    <i class="bi bi-info-circle-fill text-pink-500 mr-2 mt-0.5 flex-shrink-0"></i>
-                    <p class="text-sm text-gray-700">
-                        Anda mengelola pengajuan di <strong>{{ auth()->user()->posyandu->nama_posyandu }}</strong>
-                    </p>
+                    <i class="bi bi-info-circle-fill text-blue-500 mr-3 mt-0.5"></i>
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-blue-900">Filter Otomatis Aktif</p>
+                        <p class="text-xs text-blue-700 mt-1">
+                            Anda hanya melihat pengajuan di posyandu Anda dengan aturan:
+                        </p>
+                        <ul class="text-xs text-blue-700 mt-2 space-y-1 list-disc list-inside">
+                            <li>Mode aktif: Kunjungan selesai oleh kader & menunggu Anda kirim ke Desa.</li>
+                            <li>Mode arsip: Sudah dikirim ke Desa, Disetujui, atau Ditolak.</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         @endif
