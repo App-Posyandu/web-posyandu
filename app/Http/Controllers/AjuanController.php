@@ -1030,10 +1030,13 @@ class AjuanController extends Controller
             if ($step == 2) {
                 $request->validate([
                     'catatan_kunjungan' => 'required|string|min:10',
-                    'foto_kunjungan.*' => 'nullable|image|mimes:jpg,jpeg,png|max:10240',
+                    'foto_kunjungan' => 'required|array|min:1',
+                    'foto_kunjungan.*' => 'image|mimes:jpeg,png,jpg|max:10240',
                 ], [
                     'catatan_kunjungan.required' => 'Catatan kunjungan wajib diisi.',
                     'catatan_kunjungan.min' => 'Catatan minimal 10 karakter.',
+                    'foto_kunjungan.required' => 'Foto kunjungan wajib diupload.',
+                    'foto_kunjungan.min' => 'Minimal 1 foto kunjungan harus diupload.',
                     'foto_kunjungan.*.image' => 'File harus berupa gambar.',
                     'foto_kunjungan.*.max' => 'Ukuran foto maksimal 10MB.',
                 ]);

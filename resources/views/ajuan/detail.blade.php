@@ -554,7 +554,7 @@
                                 <form method="POST" action="{{ route('ajuan.verify', $ajuan) }}"
                                     id="form-ajuan-verify"
                                     x-data
-                                    @submit.prevent="if(!document.getElementById('catatan_step1').value.trim()) { window.Swal.fire({icon: 'warning', title: 'Perhatian', text: 'Catatan wajib diisi sebelum menyimpan verifikasi!'}); } else { $el.submit(); }">
+                                    @submit.prevent="if(!$el.catatan.value.trim()) { Swal.fire({icon: 'warning', title: 'Perhatian', text: 'Catatan wajib diisi sebelum menyimpan verifikasi!'}); } else { $el.submit(); }">
                                     @csrf
                                     @method('PATCH')
                                     <input type="hidden" name="verification_step" value="1">
@@ -720,7 +720,7 @@
                                     <form method="POST" action="{{ route('ajuan.verify', $ajuan) }}"
                                         enctype="multipart/form-data" id="form-kunjunganlapangan"
                                         x-data
-                                        @submit.prevent="if(!document.getElementById('catatan_step2').value.trim()) { window.Swal.fire({icon: 'warning', title: 'Perhatian', text: 'Catatan kunjungan wajib diisi sebelum selesai kunjungan!'}); } else { $el.submit(); }">
+                                        @submit.prevent="if(!$el.catatan_kunjungan.value.trim()) { Swal.fire({icon: 'warning', title: 'Perhatian', text: 'Catatan kunjungan wajib diisi sebelum selesai kunjungan!'}); } else { $el.submit(); }">
                                         @csrf
                                         @method('PATCH')
                                         <input type="hidden" name="verification_step" value="2">
@@ -734,8 +734,8 @@
                                         </div>
                                         <div class="mb-6">
                                             <label class="block font-medium text-sm text-gray-700 mb-2">Upload Foto
-                                                Kunjungan (Opsional)</label>
-                                            <input type="file" name="foto_kunjungan[]" multiple accept="image/*" capture="environment"
+                                                Kunjungan (Wajib)</label>
+                                            <input type="file" name="foto_kunjungan[]" required multiple accept="image/*" capture="environment"
                                                 {{ $ajuan->kunjungan_lapangan ? 'disabled' : '' }}
                                                 class="block w-full border-gray-300 rounded-md shadow-sm"
                                                 @change="
@@ -754,6 +754,10 @@
                                                                 let hasError = false;
                                                                 for (let i = 0; i < files.length; i++) {
                                                                     let file = files[i];
+                                                                    if (file.size > 10485760) {
+                                                                        alert('File maksimal 10MB');
+                                                                        continue;
+                                                                    }
                                                                     if (file.size > 2048000) {
                                                                         file = await compressImage(file, 2);
                                                                     }
@@ -777,14 +781,14 @@
                                                         })();
                                                     }
                                                 ">
-                                            <p class="text-xs text-gray-500 mt-1">Anda dapat upload beberapa foto sekaligus. Maksimal 2MB per foto.
+                                            <p class="text-xs text-gray-500 mt-1">Wajib diisi. Anda dapat upload beberapa foto sekaligus. Maksimal 10MB per foto (otomatis dikompresi hingga < 2MB).
                                             </p>
                                         </div>
 
                                         <div class="mb-6">
                                             <label class="block font-medium text-sm text-gray-700 mb-2">Catatan
                                                 Kunjungan (Required)</label>
-                                            <textarea id="catatan_step2" name="catatan_kunjungan" rows="4" {{ $ajuan->kunjungan_lapangan ? 'disabled' : '' }}
+                                            <textarea name="catatan_kunjungan" rows="4" {{ $ajuan->kunjungan_lapangan ? 'disabled' : '' }}
                                                 class="block w-full border-gray-300 rounded-md shadow-sm" placeholder="Hasil kunjungan lapangan..."></textarea>
                                             @error('catatan_kunjungan')
                                                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -825,7 +829,7 @@
 
                     <form method="POST" action="{{ route('ajuan.verify', $ajuan) }}" id="form-keputusan-ketua"
                         x-data
-                        @submit.prevent="if(!document.getElementById('catatan_step3').value.trim()) { window.Swal.fire({icon: 'warning', title: 'Perhatian', text: 'Catatan wajib diisi sebelum menyimpan keputusan!'}); } else { $el.submit(); }">
+                        @submit.prevent="if(!$el.catatan.value.trim()) { Swal.fire({icon: 'warning', title: 'Perhatian', text: 'Catatan wajib diisi sebelum menyimpan keputusan!'}); } else { $el.submit(); }">
                         @csrf
                         @method('PATCH')
                         <input type="hidden" name="verification_step" value="3">
@@ -1060,6 +1064,26 @@
                                 });
                                 return;
                             }
+
+                            if(!catatan) {
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: 'Catatan Diperlukan!',
+                                    text: 'Silakan berikan catatan sebelum melanjutkan ke kunjungan lapangan.',
+                                    confirmButtonColor: '#dc2626'
+                                });
+                                return;
+                            }
+
+                            if(catatan.trim().length < 10) {
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: 'Catatan Tidak Memadai!',
+                                    text: 'Catatan harus minimal 10 karakter.',
+                                    confirmButtonColor: '#dc2626'
+                                });
+                                return;
+                            }
                         }
 
                         // Validasi catatan untuk revisi dan tolak
@@ -1142,6 +1166,17 @@
                                 icon: 'warning',
                                 title: 'Catatan Diperlukan!',
                                 text: 'Silakan isi catatan hasil kunjungan lapangan.',
+                                confirmButtonColor: '#dc2626'
+                            });
+                            return;
+                        }
+
+                        const inputFoto = formKunjungan.querySelector('input[name="foto_kunjungan[]"]');
+                        if (inputFoto && inputFoto.files.length === 0) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Foto Diperlukan!',
+                                text: 'Foto kunjungan wajib diupload.',
                                 confirmButtonColor: '#dc2626'
                             });
                             return;
