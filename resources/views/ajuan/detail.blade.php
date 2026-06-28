@@ -462,25 +462,25 @@
                     </div>
 
                     <div class="w-full flex-1 relative bg-gray-100 rounded-lg border">
-                        <div class="absolute inset-0 overflow-auto">
+                        <div class="absolute inset-0 overflow-auto flex">
                             <div x-show="isLoadingModal"
                                  class="absolute inset-0 flex flex-col items-center justify-center bg-gray-100/80 z-10">
                                 <div class="w-12 h-12 border-4 border-t-pink-500 border-gray-200 rounded-full animate-spin"></div>
                                 <p class="text-gray-600 mt-3">Memuat dokumen...</p>
                             </div>
                             <iframe x-show="fileType === 'pdf' || fileType === 'pdf_path'" :src="fileUrl"
-                                    @load="isLoadingModal=false" class="w-full h-full border-0 rounded-lg"></iframe>
+                                    @load="isLoadingModal=false" class="w-full h-full border-0 rounded-lg shrink-0"></iframe>
                             
-                            <div x-show="fileType === 'image'" class="min-w-full min-h-full flex items-center justify-center p-2">
-                                <div class="transition-all duration-200 flex items-center justify-center"
-                                     :style="{ 
-                                         width: (zoom * 100) + '%', 
-                                         height: (zoom * 100) + '%' 
-                                     }">
-                                    <img :src="fileUrl" alt="Dokumen" 
-                                         @load="isLoadingModal = false; zoom = 1;" 
-                                         class="max-w-full max-h-full object-contain shadow-sm">
-                                </div>
+                            <div x-show="fileType === 'image'" 
+                                 class="transition-all duration-200 shrink-0"
+                                 :class="zoom <= 1 ? 'm-auto' : ''"
+                                 :style="{ 
+                                     width: (zoom * 100) + '%', 
+                                     height: (zoom * 100) + '%' 
+                                 }">
+                                <img :src="fileUrl" alt="Dokumen" 
+                                     @load="isLoadingModal = false; zoom = 1;" 
+                                     class="w-full h-full object-contain block shadow-sm">
                             </div>
                         </div>
                     </div>
