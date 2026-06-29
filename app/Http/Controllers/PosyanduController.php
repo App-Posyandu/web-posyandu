@@ -111,6 +111,7 @@ class PosyanduController extends Controller
     {
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:100', 'regex:/^[\pL\pN\s@\._\-,()]+$/u'],
+            'perPage' => ['nullable', 'integer', 'in:10,25,50,100'],
         ]);
 
         $currentUser = Auth::user();
@@ -119,18 +120,19 @@ class PosyanduController extends Controller
         if (!empty($filters['search'])) {
             $searchTerm = $filters['search'];
             $query->where(function ($q) use ($searchTerm) {
-                $q->where('nama_posyandu', 'like', '%' . $searchTerm . '%')
-                    ->orWhere('desa', 'like', '%' . $searchTerm . '%')
-                    ->orWhere('kecamatan', 'like', '%' . $searchTerm . '%')
-                    ->orWhere('kabupaten', 'like', '%' . $searchTerm . '%')
+                $q->where('nama_posyandu', 'ilike', '%' . $searchTerm . '%')
+                    ->orWhere('desa', 'ilike', '%' . $searchTerm . '%')
+                    ->orWhere('kecamatan', 'ilike', '%' . $searchTerm . '%')
+                    ->orWhere('kabupaten', 'ilike', '%' . $searchTerm . '%')
                     ->orWhereHas('users', function ($subQ) use ($searchTerm) {
-                        $subQ->where('name', 'like', '%' . $searchTerm . '%')
+                        $subQ->where('name', 'ilike', '%' . $searchTerm . '%')
                             ->where('role', 'ketua-posyandu');
                     });
             });
         }
 
-        $posyandus = $query->paginate(10)->withQueryString();
+        $perPage = $filters['perPage'] ?? 10;
+        $posyandus = $query->paginate($perPage)->withQueryString();
 
         return view('admin.posyandu.index', compact('posyandus'));
     }
@@ -792,7 +794,7 @@ class PosyanduController extends Controller
 
         $desa = $validated['desa'];
 
-        $posyandus = Posyandu::where('desa', 'LIKE', "%{$desa}%")
+        $posyandus = Posyandu::where('desa', 'ilike', "%{$desa}%")
             ->orderBy('nama_posyandu')
             ->get(['id', 'nama_posyandu']);
 
@@ -817,7 +819,7 @@ class PosyanduController extends Controller
             ->where('kecamatan', $kecamatanName)
             ->where('desa', $desaName)
             ->when($search, function ($query, $search) {
-                return $query->where('nama_posyandu', 'like', "%{$search}%");
+                return $query->where('nama_posyandu', 'ilike', "%{$search}%");
             })
             ->orderBy('nama_posyandu')
             ->get(['id', 'nama_posyandu']);

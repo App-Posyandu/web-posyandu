@@ -432,9 +432,9 @@ class DashboardController extends Controller
 
         if (!empty($searchTerm)) {
             $myAjuanQuery->where(function ($q) use ($searchTerm) {
-                $q->where('deskripsi_pengajuan', 'like', '%' . $searchTerm . '%')
-                    ->orWhere('status_pengajuan', 'like', '%' . $searchTerm . '%')
-                    ->orWhereHas('bidang', fn($b) => $b->where('nama_bidang', 'like', '%' . $searchTerm . '%'));
+                $q->where('deskripsi_pengajuan', 'ilike', '%' . $searchTerm . '%')
+                    ->orWhere('status_pengajuan', 'ilike', '%' . $searchTerm . '%')
+                    ->orWhereHas('bidang', fn($b) => $b->where('nama_bidang', 'ilike', '%' . $searchTerm . '%'));
             });
         }
 

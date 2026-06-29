@@ -18,6 +18,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\CheckRole::class,
             'admin.access' => \App\Http\Middleware\AuthorizeAdminRoute::class,
         ]);
+        $middleware->web(append: [
+            \App\Http\Middleware\PreventBackHistory::class,
+        ]);
     })->withProviders([
         App\Providers\AuthServiceProvider::class
     ])

@@ -130,7 +130,7 @@ class UserController extends Controller
         } elseif ($currentUser->role === 'admin-kecamatan') {
             $kecamatanName = explode('_', $currentUser->kecamatan)[1] ?? $currentUser->kecamatan;
             $query->where(function ($q) use ($kecamatanName, $currentUser) {
-                $q->where('kecamatan', 'LIKE', "%{$kecamatanName}%")
+                $q->where('kecamatan', 'ilike', "%{$kecamatanName}%")
                     ->orWhere(function ($subQ) use ($currentUser) {
                         $subQ->where('role', 'admin-kecamatan')
                             ->where('kecamatan', $currentUser->kecamatan);
@@ -163,9 +163,9 @@ class UserController extends Controller
         if (!empty($filters['search'])) {
             $searchTerm = $filters['search'];
             $query->where(function ($q) use ($searchTerm) {
-                $q->where('name', 'like', '%' . $searchTerm . '%')
-                    ->orWhere('email', 'like', '%' . $searchTerm . '%')
-                    ->orWhere('nik', 'like', '%' . $searchTerm . '%');
+                $q->where('name', 'ilike', '%' . $searchTerm . '%')
+                    ->orWhere('email', 'ilike', '%' . $searchTerm . '%')
+                    ->orWhere('nik', 'ilike', '%' . $searchTerm . '%');
             });
         }
 
@@ -961,7 +961,7 @@ HTML, 500);
 
                 case 'admin-kabupaten':
                     if ($currentUser->kabupaten) {
-                        $query->where('kabupaten', 'LIKE', "%{$currentUser->kabupaten}%");
+                        $query->where('kabupaten', 'ilike', "%{$currentUser->kabupaten}%");
                     }
                     break;
 
@@ -1337,7 +1337,7 @@ HTML, 500);
         }
 
         if (!empty($filters['search'])) {
-            $query->where('name', 'like', "%{$filters['search']}%");
+            $query->where('name', 'ilike', "%{$filters['search']}%");
         }
 
         $kaders = $query->paginate(15);

@@ -75,7 +75,7 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
 
             case 'admin-kecamatan':
                 if ($this->user->kecamatan) {
-                    $query->whereHas('user', fn($q) => $q->where('kecamatan', 'LIKE', '%' . $this->user->kecamatan . '%'));
+                    $query->whereHas('user', fn($q) => $q->where('kecamatan', 'ilike', '%' . $this->user->kecamatan . '%'));
                 } else {
                     $query->whereRaw('1 = 0');
                 }
@@ -83,7 +83,7 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
 
             case 'kabid':
                 if ($this->user->kabupaten) {
-                    $query->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $this->user->kabupaten . '%'));
+                    $query->whereHas('user', fn($q) => $q->where('kabupaten', 'ilike', '%' . $this->user->kabupaten . '%'));
                 } else {
                     $query->whereRaw('1 = 0');
                 }
@@ -97,7 +97,7 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping, WithEven
             case 'admin-kabupaten':
             case 'ketua-timpembina-posyandu':
                 if ($this->user->kabupaten) {
-                    $query->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $this->user->kabupaten . '%'));
+                    $query->whereHas('user', fn($q) => $q->where('kabupaten', 'ilike', '%' . $this->user->kabupaten . '%'));
                 } else {
                     $query->whereRaw('1 = 0');
                 }
