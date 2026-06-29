@@ -1,14 +1,14 @@
 @extends('errors.layout')
 
-@section('title', 'Halaman Tidak Ditemukan')
-@section('code', '404')
+@section('title', 'Kesalahan Sistem')
+@section('code', '500')
 
 @section('image/icon')
-    <i class="bi bi-search text-7xl text-pink-500 opacity-80"></i>
+    <i class="bi bi-hdd-network text-7xl text-pink-500 opacity-80"></i>
 @endsection
 
 @section('message')
-    Maaf, halaman yang Anda cari mungkin telah dihapus, dipindah, atau tidak pernah ada.
+    Ups! Terjadi kesalahan pada server kami. Tim teknis kami sedang berupaya memperbaikinya.
 @endsection
 
 @section('action')
