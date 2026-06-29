@@ -157,16 +157,16 @@ class AjuanController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('deskripsi_pengajuan', 'like', '%' . $search . '%')
+                $q->where('deskripsi_pengajuan', 'ilike', '%' . $search . '%')
                     ->orWhereHas(
                         'user',
                         fn($userQuery) =>
-                        $userQuery->where('name', 'like', '%' . $search . '%')
+                        $userQuery->where('name', 'ilike', '%' . $search . '%')
                     )
                     ->orWhereHas(
                         'bidang',
                         fn($bidangQuery) =>
-                        $bidangQuery->where('nama_bidang', 'like', '%' . $search . '%')
+                        $bidangQuery->where('nama_bidang', 'ilike', '%' . $search . '%')
                     );
             });
         }
