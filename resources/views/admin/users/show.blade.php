@@ -1,63 +1,69 @@
 @extends('dashboard.layouts.dashboard')
 @section('title', 'Detail Pengguna - ' . $user->name)
 @section('content')
-    <div class="py-12">
-        <div class="w-full mx-auto sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center mb-6">
-                <a href="{{ route('admin.users.index') }}" class="flex items-center text-gray-600 hover:text-gray-900">
+    <div class="w-full mx-auto sm:px-6 lg:px-8">
+        <div class="bg-white overflow-hidden sm:shadow-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 min-h-screen sm:min-h-0">
+            
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-4 border-b">
+                <a href="{{ route('admin.users.index') }}" class="flex items-center text-gray-600 hover:text-pink-600 font-medium">
                     <i class="bi bi-arrow-left mr-2"></i> Kembali ke Daftar
                 </a>
                 @can('update', $user)
                     <a href="{{ route('admin.users.edit', $user) }}"
-                        class="px-4 py-2 bg-yellow-500 text-white rounded-md text-sm font-semibold hover:bg-yellow-600 shadow-sm">
+                        class="w-full sm:w-auto text-center px-4 py-2 bg-yellow-500 text-white rounded-md text-sm font-semibold hover:bg-yellow-600 shadow-sm transition">
                         <i class="bi bi-pencil-square mr-2"></i> Ubah Data / Status
                     </a>
                 @endcan
             </div>
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-8 text-gray-900">
-                    <div class="flex flex-col md:flex-row items-start gap-6 mb-8 border-b pb-8">
-                        <div class="flex-shrink-0">
-                            <div
-                                class="w-24 h-24 bg-pink-500 rounded-full flex items-center justify-center text-white text-4xl font-bold shadow-md">
-                                {{ strtoupper(substr($user->name, 0, 1)) }}
-                            </div>
+            <div class="text-gray-900">
+                <div class="flex flex-col md:flex-row items-start gap-6 mb-8 border-b pb-8">
+                    <div class="flex-shrink-0">
+                        <div
+                            class="w-24 h-24 bg-pink-500 rounded-full flex items-center justify-center text-white text-4xl font-bold shadow-md">
+                            {{ strtoupper(substr($user->name, 0, 1)) }}
                         </div>
-                        <div class="flex-1 w-full">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <h2 class="text-3xl font-bold text-gray-900">{{ $user->name }}</h2>
-                                    <p class="text-gray-500">{{ $user->email }}</p>
-                                </div>
-                                <div class="flex flex-col items-end gap-2">
-                                    <span
-                                        class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-blue-100 text-blue-800 border border-blue-200">
-                                        {{ ucfirst($user->role) }}
+                    </div>
+                    <div class="flex-1 w-full">
+                        <div class="flex flex-col gap-1">
+                            <h2 class="text-2xl md:text-3xl font-bold text-gray-900">{{ $user->name }}</h2>
+                            <p class="text-gray-500 mb-1">{{ $user->email ?? 'Tidak ada email' }} • NIK: {{ $user->nik ?? '-' }}</p>
+                            
+                            <p class="text-gray-600 text-sm">
+                                <i class="bi bi-geo-alt-fill text-gray-400 mr-1"></i>
+                                @if ($user->desa || $user->kecamatan)
+                                    Desa {{ $user->desa ?? '-' }}, Kec. {{ $user->kecamatan ?? '-' }}
+                                @else
+                                    Belum ada info wilayah
+                                @endif
+                                @if (in_array($user->role, ['kader', 'ketua-posyandu']) && $user->posyandu)
+                                    <span class="ml-2 text-pink-600 font-semibold">• {{ $user->posyandu->nama_posyandu }}</span>
+                                @endif
+                            </p>
+
+                            <div class="flex flex-wrap items-center gap-2 mt-3">
+                                <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-bold uppercase border border-blue-200">
+                                    {{ str_replace('-', ' ', $user->role) }}
+                                </span>
+                                @if ($user->is_active)
+                                    <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold uppercase border border-green-200">
+                                        <i class="bi bi-check-circle-fill mr-1"></i> AKTIF
                                     </span>
-                                    @if ($user->is_active)
-                                        <span
-                                            class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-green-100 text-green-800 border border-green-200 flex items-center gap-1">
-                                            <i class="bi bi-check-circle-fill"></i> Aktif
-                                        </span>
-                                    @else
-                                        <span
-                                            class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-red-100 text-red-800 border border-red-200 flex items-center gap-1">
-                                            <i class="bi bi-x-circle-fill"></i> Nonaktif
-                                        </span>
-                                    @endif
-                                    @if ($user->verified_at)
-                                        <span
-                                            class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-teal-100 text-teal-800 border border-teal-200 flex items-center gap-1">
-                                            <i class="bi bi-shield-check"></i> Terverifikasi
-                                        </span>
-                                    @else
-                                        <span
-                                            class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-yellow-100 text-yellow-800 border border-yellow-200 flex items-center gap-1">
-                                            <i class="bi bi-hourglass-split"></i> Belum Verifikasi
-                                        </span>
-                                    @endif
-                                </div>
+                                @else
+                                    <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-bold uppercase border border-red-200">
+                                        <i class="bi bi-x-circle-fill mr-1"></i> NONAKTIF
+                                    </span>
+                                @endif
+                                @if ($user->verified_at)
+                                    <span class="px-3 py-1 bg-teal-100 text-teal-800 rounded-full text-xs font-bold uppercase border border-teal-200">
+                                        <i class="bi bi-shield-check mr-1"></i> TERVERIFIKASI
+                                    </span>
+                                @else
+                                    <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-bold uppercase border border-gray-200">
+                                        <i class="bi bi-shield-x mr-1"></i> BELUM VERIFIKASI
+                                    </span>
+                                @endif
+                            </div>
                             </div>
                             @if (!$user->is_active)
                                 <div class="mt-4 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-md">
@@ -210,5 +216,4 @@
                 </div>
             </div>
         </div>
-    </div>
 @endsection

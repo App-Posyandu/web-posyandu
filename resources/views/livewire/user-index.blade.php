@@ -105,18 +105,23 @@
                 </div>
             </div>
         @endif
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-            <h2 class="text-xl md:text-2xl font-bold text-gray-800">List Pengguna</h2>
-
-            <div class="flex flex-col md:flex-row items-stretch md:items-center gap-2 w-full md:w-auto">
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+            <!-- Kiri: Judul (50%) -->
+            <div class="w-full md:w-1/2">
+                <h2 class="text-xl md:text-2xl font-bold text-gray-800">List Pengguna</h2>
+            </div>
+            
+            <!-- Kanan: Filter & Search (50%) -->
+            <div class="w-full md:w-1/2 flex items-center justify-end gap-2">
                 @if (in_array(auth()->user()->role, ['admin', 'operator-desa', 'admin-kabupaten']))
                     <a href="{{ route('admin.users.create') }}"
-                        class="px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600 text-center transition-colors duration-150">
+                        class="whitespace-nowrap px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600 text-center transition-colors duration-150">
                         <i class="bi bi-plus-circle-fill mr-2"></i>Tambah User
                     </a>
                 @endif
-                <div class="flex flex-col md:flex-row gap-2 w-full md:w-auto">
-                    <select wire:model.live="role" class="border-gray-300 rounded-md shadow-sm text-sm">
+                
+                <div class="w-full max-w-[150px]">
+                    <select wire:model.live="role" class="w-full border-gray-300 rounded-md shadow-sm text-sm focus:ring-pink-500 focus:border-pink-500">
                         <option value="">Semua Role</option>
                         @foreach ($allowedRoles as $roleOption)
                             <option value="{{ $roleOption }}">
@@ -124,37 +129,36 @@
                             </option>
                         @endforeach
                     </select>
-
-                    <div class="relative w-full md:w-64">
-                        <input type="text" wire:model.live.debounce.300ms="search"
-                            placeholder="Cari nama, email, NIK..."
-                            class="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm focus:ring-pink-500 focus:border-pink-500">
-                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                            <i class="bi bi-search text-gray-400"></i>
-                        </div>
-                    </div>
-                    @if (auth()->user()->role === 'operator-desa')
-                        <div class="w-full sm:w-48">
-                            <select name="status"
-                                class="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
-                                onchange="this.form.submit()">
-                                <option value="">Semua Status</option>
-                                <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Aktif
-                                </option>
-                                <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>
-                                    Nonaktif</option>
-                            </select>
-                        </div>
-                    @endif
-
-                    @if ($search || $role)
-                        <button wire:click="resetFilters" type="button"
-                            class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors duration-150">
-                            <i class="bi bi-arrow-clockwise mr-1"></i>
-                            Reset
-                        </button>
-                    @endif
                 </div>
+                
+                <div class="flex-1 relative">
+                    <input type="text" wire:model.live.debounce.300ms="search"
+                        placeholder="Cari nama, email, NIK..."
+                        class="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm focus:ring-pink-500 focus:border-pink-500">
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <i class="bi bi-search text-gray-400"></i>
+                    </div>
+                </div>
+
+                @if (auth()->user()->role === 'operator-desa')
+                    <div class="w-full max-w-[150px]">
+                        <select name="status"
+                            class="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
+                            onchange="this.form.submit()">
+                            <option value="">Semua Status</option>
+                            <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Aktif</option>
+                            <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Nonaktif</option>
+                        </select>
+                    </div>
+                @endif
+
+                @if ($search || $role)
+                    <button wire:click="resetFilters" type="button"
+                        class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors duration-150">
+                        <i class="bi bi-arrow-clockwise mr-1"></i>
+                        Reset
+                    </button>
+                @endif
             </div>
         </div>
         <div wire:loading class="mb-4">
@@ -704,7 +708,7 @@
             </div>
         </div>
         <div class="mt-6">
-            {{ $users->links() }}
+            {{ $users->links('vendor.pagination.tailwind') }}
         </div>
 
         <script>

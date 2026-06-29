@@ -1,8 +1,8 @@
 @extends('dashboard.layouts.dashboard')
 @section('title', 'Manajemen Posyandu')
 @section('content')
-    <div class="w-full mx-auto sm:px-6 lg:px-8">
-        <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8">
+<div class="w-full mx-auto sm:px-6 lg:px-8">
+    <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8">
             @if (session('created_kaders'))
                 <div
                     class="mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl shadow-lg p-6">
@@ -106,59 +106,76 @@
                     </div>
                 </div>
             @endif
-            <div class="p-6 text-gray-900">
+            <div class="text-gray-900">
 
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800">List Posyandu</h2>
-
-                    @if (in_array(auth()->user()->role, ['admin', 'operator-desa']))
-                        <a href="{{ route('admin.posyandu.create') }}"
-                            class="px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600">
-                            Tambah Posyandu
-                        </a>
-                    @elseif (auth()->user()->role === 'admin-kabupaten')
-                        <div class="text-sm text-gray-500">
-                            <i class="bi bi-eye mr-1"></i>
-                            Menampilkan semua posyandu di <strong>{{ auth()->user()->kabupaten ? auth()->user()->kabupaten : '-' }}</strong>
-                        </div>
-                    @elseif (auth()->user()->role === 'ketua-posyandu')
-                        <div class="text-sm text-gray-500">
-                            <i class="bi bi-info-circle mr-1"></i>
-                            Anda mengelola: <strong>{{ auth()->user()->posyandu->nama_posyandu ?? '-' }}</strong>
-                        </div>
-                    @endif
+                <div class="px-4 sm:px-0">
+                    @include('components.all-notifications')
                 </div>
 
-                @include('components.all-notifications')
-
-                {{-- Search Filter --}}
-                <form method="GET" action="{{ route('admin.posyandu.index') }}" class="mb-6">
-                    <div class="flex gap-2">
-                        <div class="relative flex-1">
-                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                <i class="bi bi-search text-gray-400"></i>
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                    <!-- Kiri: Judul & Info (50%) -->
+                    <div class="w-full md:w-1/2 flex flex-col md:flex-row items-start md:items-center gap-4">
+                        <h2 class="text-2xl font-bold text-gray-800 whitespace-nowrap">List Posyandu</h2>
+                        @if (auth()->user()->role === 'admin-kabupaten')
+                            <div class="text-sm text-gray-500">
+                                <i class="bi bi-eye mr-1"></i>
+                                <strong>{{ auth()->user()->kabupaten ? auth()->user()->kabupaten : '-' }}</strong>
                             </div>
-                            <input type="text" name="search" value="{{ request('search') }}"
-                                placeholder="Cari nama posyandu, desa, kecamatan, atau ketua..."
-                                class="block w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md shadow-sm focus:border-pink-500 focus:ring-pink-500 text-sm">
-                        </div>
-                        <button type="submit"
-                            class="px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600 transition">
-                            Cari
-                        </button>
-                        @if (request('search'))
-                            <a href="{{ route('admin.posyandu.index') }}"
-                                class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md text-sm font-semibold hover:bg-gray-300 transition">
-                                Reset
-                            </a>
+                        @elseif (auth()->user()->role === 'ketua-posyandu')
+                            <div class="text-sm text-gray-500">
+                                <i class="bi bi-info-circle mr-1"></i>
+                                <strong>{{ auth()->user()->posyandu->nama_posyandu ?? '-' }}</strong>
+                            </div>
                         @endif
                     </div>
-                    @if (request('search'))
-                        <p class="mt-2 text-sm text-gray-500">
-                            Menampilkan hasil pencarian untuk: <strong>"{{ request('search') }}"</strong>
-                        </p>
-                    @endif
-                </form>
+
+                    <!-- Kanan: Filter & Search (50%) -->
+                    <div class="w-full md:w-1/2 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2">
+                        @if (in_array(auth()->user()->role, ['admin', 'operator-desa']))
+                            <a href="{{ route('admin.posyandu.create') }}"
+                                class="whitespace-nowrap w-full sm:w-auto text-center px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600 transition">
+                                Tambah
+                            </a>
+                        @endif
+
+                        <form method="GET" action="{{ route('admin.posyandu.index') }}" class="flex-1 flex flex-col sm:flex-row gap-2">
+                            <div class="w-full sm:w-auto">
+                                <select name="perPage" onchange="this.form.submit()" class="w-20 min-w-[105px] border-gray-300 rounded-md shadow-sm text-sm focus:ring-pink-500 focus:border-pink-500">
+                                    <option value="10" {{ request('perPage') == 10 ? 'selected' : '' }}>10 Baris</option>
+                                    <option value="25" {{ request('perPage') == 25 ? 'selected' : '' }}>25 Baris</option>
+                                    <option value="50" {{ request('perPage') == 50 ? 'selected' : '' }}>50 Baris</option>
+                                    <option value="100" {{ request('perPage') == 100 ? 'selected' : '' }}>100 Baris</option>
+                                </select>
+                            </div>
+                            
+                            <div class="flex-1 relative">
+                                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                    <i class="bi bi-search text-gray-400"></i>
+                                </div>
+                                <input type="text" name="search" value="{{ request('search') }}"
+                                    placeholder="Cari..."
+                                    class="block w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md shadow-sm focus:border-pink-500 focus:ring-pink-500 text-sm">
+                            </div>
+                            
+                            <button type="submit"
+                                class="w-full sm:w-auto px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600 transition">
+                                Cari
+                            </button>
+                            @if (request('search'))
+                                <a href="{{ route('admin.posyandu.index') }}"
+                                    class="w-full sm:w-auto text-center px-4 py-2 bg-gray-200 text-gray-700 rounded-md text-sm font-semibold hover:bg-gray-300 transition">
+                                    Reset
+                                </a>
+                            @endif
+                        </form>
+                    </div>
+                </div>    
+                
+                @if (request('search'))
+                    <p class="mt-2 text-sm text-gray-500">
+                        Menampilkan hasil pencarian untuk: <strong>"{{ request('search') }}"</strong>
+                    </p>
+                @endif
 
                 @if (auth()->user()->role === 'operator-desa')
                     <div class="mb-6 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
@@ -166,7 +183,7 @@
                             <i class="bi bi-info-circle-fill text-blue-500 mr-3 mt-0.5"></i>
                             <div class="text-sm text-blue-700">
                                 <p class="font-semibold mb-1">Informasi untuk Operator Desa</p>
-                                <ul class="list-disc list-inside space-y-1 ml-2">
+                                <ul class="list-disc list-outside space-y-1 ml-4">
                                     <li>Anda hanya dapat melihat dan mengelola <strong>1 posyandu</strong> yang ditugaskan
                                         kepada Anda</li>
                                     <li>Anda bertanggung jawab untuk setup <strong>RW/RT</strong> yang dilayani posyandu
@@ -182,7 +199,7 @@
                             <i class="bi bi-info-circle-fill text-purple-500 mr-3 mt-0.5"></i>
                             <div class="text-sm text-purple-700">
                                 <p class="font-semibold mb-1">Informasi untuk Admin Kabupaten</p>
-                                <ul class="list-disc list-inside space-y-1 ml-2">
+                                <ul class="list-disc list-outside space-y-1 ml-4">
                                     <li>Anda dapat <strong>melihat</strong> semua posyandu yang ada di kabupaten Anda</li>
                                     <li>Untuk <strong>mengelola</strong> posyandu (edit/hapus), silakan hubungi Operator
                                         Desa terkait</li>
@@ -192,8 +209,8 @@
                     </div>
                 @endif
 
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
+                <div class="hidden md:block w-full max-w-full overflow-x-auto">
+                    <table class="min-w-full whitespace-nowrap divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -345,12 +362,143 @@
                     </table>
                 </div>
 
+                <div class="block md:hidden space-y-4 mt-4">
+                    @forelse($posyandus as $index => $posyandu)
+                        <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+                            <div class="bg-gradient-to-r from-pink-50 to-purple-50 px-4 py-3 border-b border-gray-200">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="h-10 w-10 rounded-full bg-pink-100 flex items-center justify-center text-pink-600 font-bold text-lg">
+                                            {{ strtoupper(substr($posyandu->nama_posyandu, 0, 1)) }}
+                                        </div>
+                                        <div>
+                                            <h3 class="text-sm font-semibold text-gray-900">{{ $posyandu->nama_posyandu }}</h3>
+                                            <p class="text-xs text-gray-500">
+                                                <i class="bi bi-geo-alt-fill text-gray-400 mr-1"></i>
+                                                {{ $posyandu->desa ? $posyandu->desa : '' }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <span class="text-xs font-medium text-gray-500">
+                                        #{{ $posyandus->firstItem() + $index }}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="px-4 py-3 space-y-3">
+                                @php
+                                    $ketua = $posyandu->users->where('role', 'ketua-posyandu')->first();
+                                    $totalRt = 0;
+                                    if (is_array($posyandu->rt_mapping)) {
+                                        foreach ($posyandu->rt_mapping as $rtList) {
+                                            if (is_array($rtList)) {
+                                                $totalRt += count($rtList);
+                                            }
+                                        }
+                                    }
+                                    $ketuaPosyandu = $ketua;
+                                    $operatorPosyandu = \App\Models\User::where('role', 'operator-desa')
+                                        ->where('kabupaten', $posyandu->kabupaten)
+                                        ->where('kecamatan', $posyandu->kecamatan)
+                                        ->where('desa', $posyandu->desa)
+                                        ->first();
+                                    $kaders = $posyandu->users->where('role', 'kader')->values();
+                                    $posyanduData = [
+                                        'nama' => $posyandu->nama_posyandu,
+                                        'kabupaten' => $posyandu->kabupaten,
+                                        'kecamatan' => $posyandu->kecamatan,
+                                        'desa' => $posyandu->desa,
+                                        'rw_list' => $posyandu->rw_list ?? [],
+                                        'rt_mapping' => $posyandu->rt_mapping ?? [],
+                                        'ketua' => $ketuaPosyandu
+                                            ? [
+                                                'name' => $ketuaPosyandu->name,
+                                                'email' => $ketuaPosyandu->email,
+                                            ]
+                                            : null,
+                                        'operator' => $operatorPosyandu
+                                            ? [
+                                                'name' => $operatorPosyandu->name,
+                                                'email' => $operatorPosyandu->email,
+                                            ]
+                                            : null,
+                                        'kaders' => $kaders
+                                            ->map(
+                                                fn($k) => [
+                                                    'name' => $k->name,
+                                                    'email' => $k->email,
+                                                    'bidang' => $k->bidang->nama_bidang ?? '-',
+                                                ],
+                                            )
+                                            ->toArray(),
+                                    ];
+                                @endphp
+                                
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0 w-24 text-xs font-medium text-gray-500">Ketua</div>
+                                    <div class="flex-1">
+                                        @if ($ketua)
+                                            <p class="text-sm font-medium text-gray-900">{{ $ketua->name }}</p>
+                                            <p class="text-xs text-gray-500">{{ $ketua->email }}</p>
+                                        @else
+                                            <span class="text-xs text-gray-400 italic">Belum ada ketua</span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0 w-24 text-xs font-medium text-gray-500">Wilayah</div>
+                                    <div class="flex-1">
+                                        <p class="text-sm text-gray-900">
+                                            {{ count($posyandu->rw_list ?? []) }} RW / {{ $totalRt }} RT
+                                        </p>
+                                        <p class="text-xs text-gray-500 mt-0.5">
+                                            {{ $posyandu->kecamatan ? $posyandu->kecamatan : '' }}, {{ $posyandu->kabupaten ? $posyandu->kabupaten : '' }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex flex-col sm:flex-row gap-2 mt-4 pt-4 border-t border-gray-200 bg-gray-50 px-4 sm:px-6 pb-4">
+                                <button type="button"
+                                    onclick='showDetailPosyandu(@json($posyanduData))'
+                                    class="w-full sm:w-auto px-3 py-2 bg-green-500 text-white rounded-md text-sm font-medium text-center hover:bg-green-600 transition">
+                                    <i class="bi bi-eye mr-1"></i> Lihat Detail
+                                </button>
+
+                                @if (in_array(auth()->user()->role, ['admin', 'operator-desa']))
+                                    <a href="{{ route('admin.posyandu.edit', $posyandu) }}"
+                                        class="w-full sm:w-auto px-3 py-2 bg-blue-500 text-white rounded-md text-sm font-medium text-center hover:bg-blue-600 transition">
+                                        <i class="bi bi-pencil mr-1"></i> Edit
+                                    </a>
+                                    <form method="POST"
+                                        action="{{ route('admin.posyandu.destroy', $posyandu) }}"
+                                        id="delete-form-card-{{ $posyandu->id }}" class="w-full sm:w-auto">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="button"
+                                            onclick="confirmDeletePosyandu(event, '{{ $posyandu->id }}')"
+                                            class="w-full sm:w-auto px-3 py-2 bg-red-500 text-white rounded-md text-sm font-medium text-center hover:bg-red-600 transition">
+                                            <i class="bi bi-trash mr-1"></i> Hapus
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
+                        </div>
+                    @empty
+                        <div class="bg-white rounded-lg shadow-md p-8 text-center">
+                            <div class="flex flex-col items-center justify-center">
+                                <i class="bi bi-building text-5xl text-gray-300 mb-4"></i>
+                                <p class="text-gray-500 text-base font-medium">Belum ada data posyandu</p>
+                            </div>
+                        </div>
+                    @endforelse
+                </div>
+
                 <div class="mt-4">
-                    {{ $posyandus->links() }}
+                    {{ $posyandus->links('vendor.pagination.tailwind') }}
                 </div>
             </div>
-        </div>
-    </div>
+
     {{-- Modal Detail RW/RT --}}
     <div x-data="{
         show: false,
@@ -423,6 +571,7 @@
             </div>
         </div>
     </div>
+</div>
     @push('scripts')
         <script>
             function showDetailPosyandu(data) {
@@ -695,4 +844,6 @@
             }
         </script>
     @endpush
+    </div>
+</div>
 @endsection

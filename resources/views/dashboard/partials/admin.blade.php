@@ -54,7 +54,7 @@
                         @endif
 
                         <select name="year" id="yearFilter" onchange="this.form.submit()"
-                            class="block w-full md:w-auto px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                            class="block w-full md:min-w-[180px] px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
                             @foreach ($availableYears as $year)
                                 <option value="{{ $year }}" {{ $selectedYear == $year ? 'selected' : '' }}>
                                     {{ $year }}

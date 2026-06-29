@@ -1,6 +1,6 @@
     {{-- PWA Install Banner --}}
     <div id="pwa-install-banner"
-        class="w-full {{ $maxWidth ?? 'max-w-7xl' }} {{ $paddingClass ?? 'px-4 sm:px-6 lg:px-8' }} mx-auto hidden pb-6 mt-4"
+        class="w-full relative z-[60] {{ $maxWidth ?? 'max-w-7xl' }} {{ $paddingClass ?? 'px-4 sm:px-6 lg:px-8' }} mx-auto hidden pb-6 mt-4"
         role="complementary" aria-label="Install aplikasi">
         <div class="bg-white {{ $roundedClass ?? 'rounded-xl' }} shadow-md border border-gray-100 px-4 py-4 flex items-center justify-between gap-3">
             <div class="flex items-center gap-3 min-w-0">

@@ -170,11 +170,11 @@ class AjuanIndex extends Component
                             }
 
                             if ($user->desa) {
-                                $scope->orWhere('desa', 'LIKE', '%' . $user->desa . '%')
-                                    ->orWhere('alamat', 'LIKE', '%' . $user->desa . '%')
+                                $scope->orWhere('desa', 'ilike', '%' . $user->desa . '%')
+                                    ->orWhere('alamat', 'ilike', '%' . $user->desa . '%')
                                     ->orWhereHas('posyandu', function ($posyanduQuery) use ($user) {
-                                        $posyanduQuery->where('desa', 'LIKE', '%' . $user->desa . '%')
-                                            ->orWhere('nama_posyandu', 'LIKE', '%' . $user->desa . '%');
+                                        $posyanduQuery->where('desa', 'ilike', '%' . $user->desa . '%')
+                                            ->orWhere('nama_posyandu', 'ilike', '%' . $user->desa . '%');
                                     });
                             }
                         });
@@ -186,7 +186,7 @@ class AjuanIndex extends Component
 
             case 'ketua-timpembina-posyandu':
                 if ($user->kabupaten) {
-                    $query->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%'));
+                    $query->whereHas('user', fn($q) => $q->where('kabupaten', 'ilike', '%' . $user->kabupaten . '%'));
                 } else {
                     $query->whereRaw('1 = 0');
                 }
@@ -194,7 +194,10 @@ class AjuanIndex extends Component
 
             case 'admin-kecamatan':
                 if ($user->kecamatan) {
-                    $query->whereHas('user', fn($q) => $q->where('kecamatan', 'LIKE', '%' . $user->kecamatan . '%'));
+                    $query->whereHas('user', fn($q) => $q->where('kecamatan', 'ilike', '%' . $user->kecamatan . '%'));
+                    if ($user->kabupaten) {
+                        $query->whereHas('user', fn($q) => $q->where('kabupaten', 'ilike', '%' . $user->kabupaten . '%'));
+                    }
                 } else {
                     $query->whereRaw('1 = 0');
                 }
@@ -202,7 +205,7 @@ class AjuanIndex extends Component
 
             case 'kabid':
                 if ($user->kabupaten) {
-                    $query->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%'));
+                    $query->whereHas('user', fn($q) => $q->where('kabupaten', 'ilike', '%' . $user->kabupaten . '%'));
                 } else {
                     $query->whereRaw('1 = 0');
                 }
@@ -215,7 +218,7 @@ class AjuanIndex extends Component
 
             case 'admin-kabupaten':
                 if ($user->kabupaten) {
-                    $query->whereHas('user', fn($q) => $q->where('kabupaten', 'LIKE', '%' . $user->kabupaten . '%'));
+                    $query->whereHas('user', fn($q) => $q->where('kabupaten', 'ilike', '%' . $user->kabupaten . '%'));
                 } else {
                     $query->whereRaw('1 = 0');
                 }
@@ -270,21 +273,21 @@ class AjuanIndex extends Component
         $safeSearch = $this->sanitizeSearch($this->search);
         if (!empty($safeSearch)) {
             $query->where(function ($q) use ($safeSearch) {
-                $q->where('deskripsi_pengajuan', 'like', '%' . $safeSearch . '%')
-                    ->orWhere('status_pengajuan', 'like', '%' . $safeSearch . '%')
+                $q->where('deskripsi_pengajuan', 'ilike', '%' . $safeSearch . '%')
+                    ->orWhere('status_pengajuan', 'ilike', '%' . $safeSearch . '%')
                     ->orWhereHas('user', function ($userQuery) use ($safeSearch) {
-                        $userQuery->where('name', 'like', '%' . $safeSearch . '%')
-                            ->orWhere('alamat', 'like', '%' . $safeSearch . '%')
-                            ->orWhere('desa', 'like', '%' . $safeSearch . '%')
+                        $userQuery->where('name', 'ilike', '%' . $safeSearch . '%')
+                            ->orWhere('alamat', 'ilike', '%' . $safeSearch . '%')
+                            ->orWhere('desa', 'ilike', '%' . $safeSearch . '%')
                             ->orWhereHas('posyandu', function ($posyanduQuery) use ($safeSearch) {
-                                $posyanduQuery->where('nama_posyandu', 'like', '%' . $safeSearch . '%')
-                                    ->orWhere('desa', 'like', '%' . $safeSearch . '%')
-                                    ->orWhere('kecamatan', 'like', '%' . $safeSearch . '%')
-                                    ->orWhere('kabupaten', 'like', '%' . $safeSearch . '%');
+                                $posyanduQuery->where('nama_posyandu', 'ilike', '%' . $safeSearch . '%')
+                                    ->orWhere('desa', 'ilike', '%' . $safeSearch . '%')
+                                    ->orWhere('kecamatan', 'ilike', '%' . $safeSearch . '%')
+                                    ->orWhere('kabupaten', 'ilike', '%' . $safeSearch . '%');
                             });
                     })
                     ->orWhereHas('bidang', fn($bidangQuery) =>
-                    $bidangQuery->where('nama_bidang', 'like', '%' . $safeSearch . '%'));
+                    $bidangQuery->where('nama_bidang', 'ilike', '%' . $safeSearch . '%'));
             });
         }
 

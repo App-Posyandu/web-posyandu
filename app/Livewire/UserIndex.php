@@ -13,10 +13,12 @@ class UserIndex extends Component
 
     public $role = '';
     public $search = '';
+    public $perPage = 10;
 
     protected $queryString = [
         'role' => ['except' => ''],
         'search' => ['except' => ''],
+        'perPage' => ['except' => 10],
     ];
 
     public function mount(): void
@@ -40,6 +42,11 @@ class UserIndex extends Component
     public function updatedSearch($value): void
     {
         $this->search = $this->sanitizeSearch($value);
+        $this->resetPage();
+    }
+
+    public function updatedPerPage(): void
+    {
         $this->resetPage();
     }
 
@@ -177,10 +184,10 @@ class UserIndex extends Component
         if (!empty($safeSearch)) {
             $searchTerm = $safeSearch;
             $query->where(function ($q) use ($searchTerm) {
-                $q->where('name', 'like', '%' . $searchTerm . '%')
-                    ->orWhere('email', 'like', '%' . $searchTerm . '%')
-                    ->orWhere('nik', 'like', '%' . $searchTerm . '%')
-                    ->orWhere('no_telepon', 'like', '%' . $searchTerm . '%');
+                $q->where('name', 'ilike', '%' . $searchTerm . '%')
+                    ->orWhere('email', 'ilike', '%' . $searchTerm . '%')
+                    ->orWhere('nik', 'ilike', '%' . $searchTerm . '%')
+                    ->orWhere('no_telepon', 'ilike', '%' . $searchTerm . '%');
             });
         }
 
@@ -189,7 +196,7 @@ class UserIndex extends Component
             $query->where('role', $safeRole);
         }
 
-        $users = $query->paginate(10);
+        $users = $query->paginate($this->perPage);
 
         $allowedRoles = $this->getAllowedRoleTargets($currentUser->role);
 
