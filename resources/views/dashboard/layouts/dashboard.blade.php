@@ -45,7 +45,7 @@
 </head>
 
 <body class="font-sans antialiased">
-    <div class="relative min-h-screen bg-gray-100">
+    <div class="relative min-h-screen bg-white md:bg-gray-100">
 
         <x-colorful-background />
 
@@ -53,7 +53,7 @@
 
             @include('layouts.partials.header-new')
 
-            <main class="flex-grow flex justify-center mt-0 md:mt-6 min-h-[70vh]">
+            <main class="flex-grow flex w-full justify-center mt-0 md:mt-6 min-h-[70vh]">
                 @yield('content')
             </main>
             @include('layouts.partials.pwa-banner', ['maxWidth' => 'w-full'])

@@ -25,8 +25,9 @@
                 </div>
             </div>
         @endif
-        <div class="w-full flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-            <div class="w-full">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+            <!-- Kiri: Judul (50%) -->
+            <div class="w-full md:w-1/2">
                 <div>
                     @if (auth()->user()->role === 'kader' && auth()->user()->bidang)
                         <h2 class="text-xl sm:text-2xl font-bold text-gray-800">
@@ -38,8 +39,9 @@
                     @else
                         <h2 class="text-xl sm:text-2xl font-bold text-gray-800">List Pengajuan</h2>
                     @endif
-                    @if (auth()->user()->role === 'ketua-posyandu')
-                        <p class="text-sm text-gray-500 mt-1">
+                    
+                    <p class="text-sm text-gray-500 mt-1">
+                        @if (auth()->user()->role === 'ketua-posyandu')
                             Menampilkan pengajuan yang memerlukan persetujuan Anda
                         @elseif(auth()->user()->role === 'kades')
                             Menampilkan pengajuan yang diajukan ke Desa
@@ -49,115 +51,148 @@
                             Menampilkan pengajuan yang perlu diverifikasi
                         @else
                             Total: {{ $semuaAjuan->total() }} pengajuan
-                    @endif
+                        @endif
+                    </p>
                 </div>
-                @if (auth()->user()->role === 'ketua-posyandu')
-                    <div class="w-full bg-blue-50 border-l-4 border-blue-500 p-4 rounded-md">
-                        <div class="flex items-start">
-                            <i class="bi bi-info-circle-fill text-blue-500 mr-3 mt-0.5"></i>
-                            <div class="flex-1">
-                                <p class="text-sm font-medium text-blue-900">Filter Otomatis Aktif</p>
-                                <p class="text-xs text-blue-700 mt-1">
-                                    Anda hanya melihat pengajuan di posyandu Anda dengan aturan:
-                                </p>
-                                <ul class="text-xs text-blue-700 mt-2 space-y-1 list-disc list-inside">
-                                    <li>Mode aktif: status Diproses</li>
-                                    <li>Mode arsip: status Disetujui atau Ditolak</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                @elseif(auth()->user()->role === 'kades')
-                    <div class="w-full bg-purple-50 border-l-4 border-purple-500 p-4 rounded-md">
-                        <div class="flex items-start">
-                            <i class="bi bi-info-circle-fill text-purple-500 mr-3 mt-0.5"></i>
-                            <div class="flex-1">
-                                <p class="text-sm font-medium text-purple-900">Filter Otomatis Aktif</p>
-                                <p class="text-xs text-purple-700 mt-1">
-                                    Anda hanya melihat pengajuan yang sudah diajukan ke desa.
-                                    Mode aktif menampilkan status Diproses, mode arsip menampilkan Disetujui atau Ditolak.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                @elseif(auth()->user()->role === 'bu-kades')
-                    <div class="w-full bg-indigo-50 border-l-4 border-indigo-500 p-4 rounded-md">
-                        <div class="flex items-start">
-                            <i class="bi bi-info-circle-fill text-indigo-500 mr-3 mt-0.5"></i>
-                            <div class="flex-1">
-                                <p class="text-sm font-medium text-indigo-900">Mode Monitoring</p>
-                                <p class="text-xs text-indigo-700 mt-1">
-                                    Anda dapat melihat dan mencetak pengajuan, tetapi tidak dapat memberikan persetujuan
-                                    atau tindak lanjut.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                @elseif(auth()->user()->role === 'kader')
-                    <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-md">
-                        <div class="flex items-start">
-                            <i class="bi bi-info-circle-fill text-yellow-500 mr-3 mt-0.5"></i>
-                            <div class="flex-1">
-                                <p class="text-sm font-medium text-yellow-900">Filter Otomatis Aktif</p>
-                                <p class="text-xs text-yellow-700 mt-1">
-                                    Anda hanya melihat pengajuan dengan status "Diproses" yang memerlukan verifikasi
-                                    atau kunjungan lapangan
-                                </p>
-                            </div>
-                        </div>
+            </div>
+
+            <!-- Kanan: Filter & Search (50%) -->
+            <div class="w-full md:w-1/2 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2">
+                @if (in_array(auth()->user()->role, ['kader', 'masyarakat', 'admin']))
+                    <div class="w-full sm:w-auto">
+                        @if (auth()->user()->role === 'masyarakat')
+                            <a href="{{ route('dashboard.partials.pilih-layanan') }}"
+                                class="whitespace-nowrap w-full sm:w-auto flex items-center justify-center px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600 transition-colors duration-150">
+                                <i class="bi bi-plus-circle-fill mr-2"></i>
+                                <span>Tambah</span>
+                            </a>
+                        @else
+                            <a href="{{ route('dashboard.partials.pilih-user') }}"
+                                class="whitespace-nowrap w-full sm:w-auto flex items-center justify-center px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600 transition-colors duration-150">
+                                <i class="bi bi-plus-circle-fill mr-2"></i>
+                                <span>Tambah</span>
+                            </a>
+                        @endif
                     </div>
                 @endif
-                @if (in_array(auth()->user()->role, ['ketua-posyandu', 'kades', 'admin']))
-                    <div class="mt-4 pt-4 border-t border-gray-200">
-                        <p class="text-xs font-semibold text-gray-700 mb-2">Legenda Progress:</p>
-                        <div class="flex flex-wrap gap-4 text-xs">
-                            <div class="flex items-center gap-2">
-                                <span
-                                    class="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center text-white">
-                                    <i class="bi bi-check-lg text-xs"></i>
-                                </span>
-                                <span class="text-gray-600">Tahap Selesai</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <span
-                                    class="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center text-white">
-                                    <i class="bi bi-hourglass-split text-xs"></i>
-                                </span>
-                                <span class="text-gray-600">Sedang Proses</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <span
-                                    class="w-5 h-5 rounded-full bg-gray-300 flex items-center justify-center text-gray-500">
-                                    <i class="bi bi-lock-fill text-xs"></i>
-                                </span>
-                                <span class="text-gray-600">Belum Dimulai</span>
-                            </div>
-                        </div>
+                
+                <div class="w-full max-w-[150px]">
+                    <select wire:model.live="status"
+                        class="w-full border-gray-300 rounded-md shadow-sm text-sm focus:ring-pink-500 focus:border-pink-500">
+                        <option value="">Semua Status</option>
+                        <option value="Diproses">Diproses</option>
+                        <option value="Disetujui">Disetujui</option>
+                        <option value="Ditolak">Ditolak</option>
+                    </select>
+                </div>
+
+                <div class="flex-1 relative">
+                    <input type="text" wire:model.live.debounce.300ms="search" placeholder="Cari..."
+                        class="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm focus:ring-pink-500 focus:border-pink-500">
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <i class="bi bi-search text-gray-400"></i>
                     </div>
+                </div>
+
+                @if ($search || $status)
+                    <button wire:click="resetFilters" type="button"
+                        class="w-full sm:w-auto px-4 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors duration-150">
+                        <i class="bi bi-arrow-clockwise mr-1"></i>
+                        Reset
+                    </button>
                 @endif
             </div>
-            @if (in_array(auth()->user()->role, ['kader', 'masyarakat', 'admin']))
-                <div class="w-full sm:w-auto">
-                    @if (auth()->user()->role === 'masyarakat')
-                        <a href="{{ route('dashboard.partials.pilih-layanan') }}"
-                            class="w-full sm:w-auto flex items-center justify-center px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600 transition-colors duration-150">
-                            <i class="bi bi-plus-circle-fill mr-2"></i>
-                            <span class="hidden sm:inline whitespace-nowrap">Tambah Ajuan</span>
-                            <span class="sm:hidden">Buat Ajuan Baru</span>
-                        </a>
-                    @else
-                        <a href="{{ route('dashboard.partials.pilih-user') }}"
-                            class="w-full sm:w-auto flex items-center justify-center px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600 transition-colors duration-150">
-                            <i class="bi bi-plus-circle-fill mr-2"></i>
-                            <span class="hidden sm:inline whitespace-nowrap">Tambah Ajuan</span>
-                            <span class="sm:hidden">Buat Ajuan Baru</span>
-                        </a>
-                    @endif
+        </div>
+
+        <!-- Info Alerts -->
+        <div class="mb-6 space-y-4">
+            @if (auth()->user()->role === 'ketua-posyandu')
+                <div class="w-full bg-blue-50 border-l-4 border-blue-500 p-4 rounded-md">
+                    <div class="flex items-start">
+                        <i class="bi bi-info-circle-fill text-blue-500 mr-3 mt-0.5"></i>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-blue-900">Filter Otomatis Aktif</p>
+                            <p class="text-xs text-blue-700 mt-1">
+                                Anda hanya melihat pengajuan di posyandu Anda dengan aturan:
+                            </p>
+                            <ul class="text-xs text-blue-700 mt-2 space-y-1 list-disc list-inside">
+                                <li>Mode aktif: status Diproses</li>
+                                <li>Mode arsip: status Disetujui atau Ditolak</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            @elseif(auth()->user()->role === 'kades')
+                <div class="w-full bg-purple-50 border-l-4 border-purple-500 p-4 rounded-md">
+                    <div class="flex items-start">
+                        <i class="bi bi-info-circle-fill text-purple-500 mr-3 mt-0.5"></i>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-purple-900">Filter Otomatis Aktif</p>
+                            <p class="text-xs text-purple-700 mt-1">
+                                Anda hanya melihat pengajuan yang sudah diajukan ke desa.
+                                Mode aktif menampilkan status Diproses, mode arsip menampilkan Disetujui atau Ditolak.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            @elseif(auth()->user()->role === 'bu-kades')
+                <div class="w-full bg-indigo-50 border-l-4 border-indigo-500 p-4 rounded-md">
+                    <div class="flex items-start">
+                        <i class="bi bi-info-circle-fill text-indigo-500 mr-3 mt-0.5"></i>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-indigo-900">Mode Monitoring</p>
+                            <p class="text-xs text-indigo-700 mt-1">
+                                Anda dapat melihat dan mencetak pengajuan, tetapi tidak dapat memberikan persetujuan
+                                atau tindak lanjut.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            @elseif(auth()->user()->role === 'kader')
+                <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-md">
+                    <div class="flex items-start">
+                        <i class="bi bi-info-circle-fill text-yellow-500 mr-3 mt-0.5"></i>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-yellow-900">Filter Otomatis Aktif</p>
+                            <p class="text-xs text-yellow-700 mt-1">
+                                Anda hanya melihat pengajuan dengan status "Diproses" yang memerlukan verifikasi
+                                atau kunjungan lapangan
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            @endif
+            @if (in_array(auth()->user()->role, ['ketua-posyandu', 'kades', 'admin']))
+                <div class="pt-4 border-t border-gray-200">
+                    <p class="text-xs font-semibold text-gray-700 mb-2">Legenda Progress:</p>
+                    <div class="flex flex-wrap gap-4 text-xs">
+                        <div class="flex items-center gap-2">
+                            <span
+                                class="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center text-white">
+                                <i class="bi bi-check-lg text-xs"></i>
+                            </span>
+                            <span class="text-gray-600">Tahap Selesai</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span
+                                class="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center text-white">
+                                <i class="bi bi-hourglass-split text-xs"></i>
+                            </span>
+                            <span class="text-gray-600">Sedang Proses</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span
+                                class="w-5 h-5 rounded-full bg-gray-300 flex items-center justify-center text-gray-500">
+                                <i class="bi bi-lock-fill text-xs"></i>
+                            </span>
+                            <span class="text-gray-600">Belum Dimulai</span>
+                        </div>
+                    </div>
                 </div>
             @endif
         </div>
 
-        <div class="flex items-center justify-between mb-4 bg-gray-50 p-3 rounded-xl border border-gray-100">
+        <div class="flex items-center justify-between mb-6 bg-gray-50 p-3 rounded-xl border border-gray-100">
             <div class="flex items-center gap-3">
                 <div class="p-2 bg-white rounded-lg shadow-sm">
                     <i
@@ -178,34 +213,6 @@
                 <span
                     class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ $showArchived ? 'translate-x-5' : 'translate-x-0' }}"></span>
             </button>
-        </div>
-
-        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-6">
-            <div class="w-full sm:w-auto sm:flex-1 sm:max-w-xs">
-                <select wire:model.live="status"
-                    class="w-full border-gray-300 rounded-md shadow-sm text-sm focus:ring-pink-500 focus:border-pink-500">
-                    <option value="">Semua Status</option>
-                    <option value="Diproses">Diproses</option>
-                    <option value="Disetujui">Disetujui</option>
-                    <option value="Ditolak">Ditolak</option>
-                </select>
-            </div>
-
-            <div class="relative w-full sm:flex-1">
-                <input type="text" wire:model.live.debounce.300ms="search" placeholder="Cari berdasarkan nama..."
-                    class="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm focus:ring-pink-500 focus:border-pink-500">
-                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <i class="bi bi-search text-gray-400"></i>
-                </div>
-            </div>
-
-            @if ($search || $status)
-                <button wire:click="resetFilters" type="button"
-                    class="w-full sm:w-auto px-4 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors duration-150">
-                    <i class="bi bi-arrow-clockwise mr-1"></i>
-                    Reset Filter
-                </button>
-            @endif
         </div>
 
         @if (auth()->user()->role === 'admin-kabupaten' && auth()->user()->kabupaten || auth()->user()->role === 'ketua-timpembina-posyandu' && auth()->user()->kabupaten)
@@ -318,7 +325,7 @@
         </div>
         @include('ajuan.table', ['semuaAjuan' => $semuaAjuan])
         <div class="mt-6">
-            {{ $semuaAjuan->links() }}
+            {{ $semuaAjuan->links('vendor.pagination.tailwind') }}
         </div>
     </div>
 </div>

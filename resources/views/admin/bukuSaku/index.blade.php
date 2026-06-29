@@ -5,10 +5,12 @@
         showModal: false, 
         pdfUrl: '', 
         pdfTitle: '',
+        isLoading: true,
         closeModal() {
             this.showModal = false;
             this.pdfUrl = '';
             this.pdfTitle = '';
+            this.isLoading = true;
         }
     }" @keydown.escape.window="closeModal()">
 
@@ -24,16 +26,20 @@
                     <h3 class="text-lg font-semibold" x-text="pdfTitle">Preview Dokumen</h3>
                     <button @click="closeModal()" class="text-gray-400 hover:text-gray-600 text-3xl">&times;</button>
                 </div>
-                <div class="flex-grow p-4">
-                    <iframe x-show="pdfUrl" :src="pdfUrl" width="100%" height="100%" frameborder="0"></iframe>
+                <div class="flex-grow p-4 relative">
+                    <!-- Spinner -->
+                    <div x-show="isLoading" class="absolute inset-0 flex items-center justify-center bg-white rounded-b-lg">
+                        <div class="animate-spin rounded-full h-10 w-10 border-4 border-gray-200 border-t-pink-500"></div>
+                    </div>
+                    <!-- Iframe -->
+                    <iframe x-show="pdfUrl" :src="pdfUrl" @load="isLoading = false" class="w-full h-full rounded-b-lg" frameborder="0"></iframe>
                 </div>
             </div>
         </div>
 
-        <div class="py-12">
-            <div class=" w-full mx-auto sm:px-6 lg:px-8">
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6 text-gray-900">
+        <div class="w-full mx-auto sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden sm:shadow-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 min-h-screen sm:min-h-0">
+                <div class="text-gray-900">
 
                         {{-- Guidebook Management Container - Only for Admin --}}
                         @if (auth()->user()->role === 'admin')
@@ -66,7 +72,7 @@
                                                     </div>
                                                     <div class="flex gap-2 flex-wrap justify-end">
                                                         <button
-                                                            @click="showModal = true; pdfUrl = '{{ route('buku_saku.stream-file', $currentGuidebook) }}'; pdfTitle = '{{ $currentGuidebook->title }}'"
+                                                            @click="isLoading = true; showModal = true; pdfUrl = '{{ route('buku_saku.stream-file', $currentGuidebook) }}'; pdfTitle = '{{ $currentGuidebook->title }}'"
                                                             class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-md text-xs font-semibold whitespace-nowrap">
                                                             <i class="bi bi-eye mr-1"></i>Preview
                                                         </button>
@@ -130,7 +136,7 @@
                             </div>
                         @endif
 
-                        <div class="flex justify-between items-center mb-6">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                             <h2 class="text-2xl font-bold text-gray-800">Daftar Dokumen</h2>
                             @can('create', \App\Models\BukuSaku::class)
                                 <a href="{{ route('buku_saku.create') }}"
@@ -163,7 +169,7 @@
                                     </div>
                                     <div class="flex-shrink-0 flex gap-2 mt-4 sm:mt-0 flex-wrap">
                                         <button
-                                            @click="showModal = true; pdfUrl = '{{ route('buku_saku.stream-file', $buku) }}'; pdfTitle = '{{ $buku->title }}'"
+                                            @click="isLoading = true; showModal = true; pdfUrl = '{{ route('buku_saku.stream-file', $buku) }}'; pdfTitle = '{{ $buku->title }}'"
                                             class="px-3 py-1 bg-blue-500 text-white rounded-md text-xs hover:bg-blue-600">
                                             Preview
                                         </button>
@@ -208,7 +214,6 @@
                 </div>
             </div>
         </div>
-    </div>
 
     @push('scripts')
     <script>

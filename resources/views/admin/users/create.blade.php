@@ -68,7 +68,7 @@
                             <x-input-label for="no_telepon" :value="__('Nomor Whatsapp')" />
                             <x-text-input id="no_telepon" class="block mt-1 w-full" type="text" name="no_telepon"
                                 :value="old('no_telepon')" required placeholder="Contoh: 081234567890" />
-                            <p class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Nomor aktif WhatsApp, maks. 20 digit, dan unik.</p>
+                            <p class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>maksimal 20 digit.</p>
                             <x-input-error :messages="$errors->get('no_telepon')" class="mt-2" />
                         </div>
 

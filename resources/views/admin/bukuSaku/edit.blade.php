@@ -7,11 +7,10 @@
         </h2>
     </x-slot>
 
-    <div class="py-12 w-full">
-        <div class="max-w-5xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-8 text-gray-900">
-                    <form method="POST" action="{{ route('buku_saku.update', $bukuSaku) }}" enctype="multipart/form-data">
+    <div class="w-full mx-auto sm:px-6 lg:px-8">
+        <div class="bg-white overflow-hidden sm:shadow-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 min-h-screen sm:min-h-0">
+            <div class="text-gray-900">
+                <form method="POST" action="{{ route('buku_saku.update', $bukuSaku) }}" enctype="multipart/form-data">
                         @csrf
                         @method('PATCH')
 
@@ -70,8 +69,6 @@
                             </x-primary-button>
                         </div>
                     </form>
-                </div>
-            </div>
         </div>
     </div>
 @endsection

@@ -1,16 +1,17 @@
 @extends('dashboard.layouts.dashboard')
 @section('title', 'Edit Pengguna')
 @section('content')
-    <div class="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold text-gray-800">
-                <i class="bi bi-person-fill-gear mr-2 text-pink-600"></i>
-                Edit Pengguna: {{ $user->name }}
-            </h2>
-            <a href="{{ route('admin.users.index') }}" class="flex items-center text-gray-600 hover:text-gray-900">
-                <i class="bi bi-arrow-left mr-2"></i> Kembali
-            </a>
-        </div>
+    <div class="w-full bg-white min-h-[80vh]">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="flex items-center gap-3 mb-6">
+                <a href="{{ route('admin.users.index') }}" class="flex items-center text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg px-3 py-1.5 transition">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
+                <h2 class="text-xl font-bold text-gray-800 flex items-center">
+                    <i class="bi bi-person-fill-gear mr-2 text-pink-600"></i>
+                    Edit Pengguna: {{ $user->name }}
+                </h2>
+            </div>
 
         @if (auth()->user()->id === $user->id)
             <div class="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded">
@@ -61,7 +62,7 @@
                         <x-input-label for="no_telepon" :value="__('No. Telepon')" />
                         <x-text-input id="no_telepon" name="no_telepon" type="text" class="mt-1 block w-full"
                             :value="old('no_telepon', $user->no_telepon)" placeholder="Contoh: 081234567890" />
-                        <p class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Nomor aktif, maks. 20 digit, dan unik (belum digunakan akun lain).</p>
+                        <p class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>maksimal 20 digit.</p>
                         <x-input-error :messages="$errors->get('no_telepon')" class="mt-2" />
                     </div>
                     <div>
@@ -197,6 +198,7 @@
             </div>
         </form>
     </div>
+</div>
 
     @push('scripts')
         <script>
