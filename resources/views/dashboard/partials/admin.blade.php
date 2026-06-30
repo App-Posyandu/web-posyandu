@@ -1,6 +1,8 @@
 @section('content')
-    <div x-data="dashboardFilter" x-init="init()"
-        class="flex flex-col gap-4 md:gap-6 px-4 sm:px-6 lg:px-8 w-full mx-auto">
+    <div class="w-full mx-auto sm:px-6 lg:px-8">
+        <div class="bg-white overflow-hidden sm:shadow-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 min-h-screen sm:min-h-0">
+            <div x-data="dashboardFilter" x-init="init()"
+                class="flex flex-col gap-4 md:gap-6 w-full mx-auto">
         @if (!$isVerified)
             <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-3 md:p-4 rounded-lg" role="alert">
                 <div class="flex">
@@ -297,6 +299,8 @@
                 </div>
             </div>
         </div>
+    </div>
+    </div>
     </div>
 
     <script>
