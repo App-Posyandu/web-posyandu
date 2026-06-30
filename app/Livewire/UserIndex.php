@@ -178,6 +178,8 @@ class UserIndex extends Component
             } else {
                 $query->whereRaw('1 = 0');
             }
+        } elseif ($currentUser->role === 'admin-kabupaten') {
+            $query->where('kabupaten', $currentUser->kabupaten);
         }
 
         // Search filter
