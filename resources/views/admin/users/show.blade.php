@@ -125,26 +125,41 @@
 
                         <div class="space-y-8">
                             <div>
-                                <h3 class="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">Penugasan</h3>
-                                <div class="grid grid-cols-1 gap-4">
+                                <h3 class="text-lg font-bold text-gray-800 border-b border-gray-200 pb-2 mb-4">Penugasan</h3>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-gray-50 p-4 rounded-lg border border-gray-100">
+                                    <!-- Info Posyandu -->
                                     <div>
-                                        <dt class="text-xs uppercase tracking-wider text-gray-500 font-semibold">Posyandu
-                                        </dt>
-                                        <dd class="mt-1 text-base text-gray-900 flex items-center gap-2">
+                                        <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">Posyandu</p>
+                                        <p class="text-sm font-medium text-gray-800 flex items-center gap-2 mb-4">
                                             <i class="bi bi-hospital text-pink-500"></i>
-                                            {{ $user->posyandu?->nama_posyandu ?? 'Belum Terdaftar' }}
-                                        </dd>
-                                    </div>
-                                    @if ($user->role === 'kader')
-                                        <div>
-                                            <dt class="text-xs uppercase tracking-wider text-gray-500 font-semibold">Bidang
-                                                Tugas</dt>
-                                            <dd class="mt-1 text-base text-gray-900 flex items-center gap-2">
+                                            {{ $user->posyandu?->nama_posyandu ?? 'Belum Terdaftar / Tidak Relevan' }}
+                                        </p>
+
+                                        @if ($user->role === 'kader')
+                                            <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">Bidang Tugas</p>
+                                            <p class="text-sm font-medium text-gray-800 flex items-center gap-2">
                                                 <i class="bi bi-folder text-blue-500"></i>
                                                 {{ $user->bidang->nama_bidang ?? '-' }}
-                                            </dd>
+                                            </p>
+                                        @endif
+                                    </div>
+                                    
+                                    <!-- Info Wilayah (Desa/Kec/Kab) -->
+                                    <div>
+                                        <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">Wilayah Operasional</p>
+                                        <div class="text-sm font-medium text-gray-800 flex items-start gap-2">
+                                            <i class="bi bi-geo-alt-fill text-pink-500 mt-0.5"></i>
+                                            <div>
+                                                @if($user->desa || $user->kecamatan || $user->kabupaten)
+                                                    @if($user->desa) <span class="block">Desa {{ $user->desa }}</span> @endif
+                                                    @if($user->kecamatan) <span class="block">Kec. {{ $user->kecamatan }}</span> @endif
+                                                    @if($user->kabupaten) <span class="block">{{ $user->kabupaten }}</span> @endif
+                                                @else
+                                                    <span class="text-gray-400 italic">Belum ada data wilayah</span>
+                                                @endif
+                                            </div>
                                         </div>
-                                    @endif
+                                    </div>
                                 </div>
                             </div>
                             <div>
