@@ -109,11 +109,7 @@ class UserPolicy
         }
 
         return match ($actor->role) {
-            'admin-kabupaten' => $this->sameKabupaten($actor, $subject) && in_array($subject->role, [
-                'kabid', 'ketua-timpembina-posyandu', 'admin-kecamatan',
-                'kades', 'bu-kades', 'operator-desa',
-                'ketua-posyandu', 'kader', 'masyarakat',
-            ], true),
+            'admin-kabupaten' => $this->sameKabupaten($actor, $subject),
             'kabid' => $this->sameKabupaten($actor, $subject) && in_array($subject->role, ['admin-kecamatan', 'ketua-posyandu', 'operator-desa', 'kader', 'masyarakat'], true),
             'admin-kecamatan' => $this->sameKecamatan($actor, $subject) && in_array($subject->role, ['ketua-posyandu', 'operator-desa', 'kader', 'masyarakat'], true),
             'kades', 'bu-kades' => $this->sameDesa($actor, $subject) && in_array($subject->role, ['ketua-posyandu', 'operator-desa', 'kader', 'masyarakat'], true),
