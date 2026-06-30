@@ -231,14 +231,17 @@
                             </td>
 
                             <td class="px-4 py-3 text-gray-700 text-sm">
-                                <span
-                                    class="px-2 py-1 rounded-full text-xs font-semibold
-                            @if ($user->role === 'admin') bg-purple-100 text-purple-800
-                            @elseif($user->role === 'kabid') bg-blue-100 text-blue-800
-                            @elseif($user->role === 'admin-kecamatan') bg-indigo-100 text-indigo-800
-                            @elseif($user->role === 'ketua-posyandu') bg-green-100 text-green-800
-                            @elseif($user->role === 'kader') bg-yellow-100 text-yellow-800
-                            @else bg-gray-100 text-gray-800 @endif">
+                                @php
+                                    $roleClasses = [
+                                        'admin' => 'bg-purple-100 text-purple-800',
+                                        'kabid' => 'bg-blue-100 text-blue-800',
+                                        'admin-kecamatan' => 'bg-indigo-100 text-indigo-800',
+                                        'ketua-posyandu' => 'bg-green-100 text-green-800',
+                                        'kader' => 'bg-yellow-100 text-yellow-800',
+                                    ];
+                                    $roleClass = $roleClasses[$user->role] ?? 'bg-gray-100 text-gray-800';
+                                @endphp
+                                <span class="px-2 py-1 rounded-full text-xs font-semibold {{ $roleClass }}">
                                     {{ ucfirst(str_replace('-', ' ', $user->role)) }}
                                 </span>
                             </td>
@@ -443,14 +446,17 @@
                                 <span class="text-xs font-medium text-gray-500">Role</span>
                             </div>
                             <div class="flex-1">
-                                <span
-                                    class="px-2 py-1 text-xs font-semibold rounded-full
-                            @if ($user->role === 'admin') bg-purple-100 text-purple-800
-                            @elseif($user->role === 'kabid') bg-blue-100 text-blue-800
-                            @elseif($user->role === 'admin-kecamatan') bg-indigo-100 text-indigo-800
-                            @elseif($user->role === 'ketua-posyandu') bg-green-100 text-green-800
-                            @elseif($user->role === 'kader') bg-yellow-100 text-yellow-800
-                            @else bg-gray-100 text-gray-800 @endif">
+                                @php
+                                    $roleClasses = [
+                                        'admin' => 'bg-purple-100 text-purple-800',
+                                        'kabid' => 'bg-blue-100 text-blue-800',
+                                        'admin-kecamatan' => 'bg-indigo-100 text-indigo-800',
+                                        'ketua-posyandu' => 'bg-green-100 text-green-800',
+                                        'kader' => 'bg-yellow-100 text-yellow-800',
+                                    ];
+                                    $roleClass = $roleClasses[$user->role] ?? 'bg-gray-100 text-gray-800';
+                                @endphp
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $roleClass }}">
                                     {{ ucfirst(str_replace('-', ' ', $user->role)) }}
                                 </span>
                             </div>
