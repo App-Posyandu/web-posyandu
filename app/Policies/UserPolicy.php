@@ -90,7 +90,7 @@ class UserPolicy
         }
 
         return match ($actor->role) {
-            'admin-kabupaten' => $includeAdminKabupaten && $this->sameKabupaten($actor, $subject),
+            'admin-kabupaten' => true,
             'kabid' => $this->sameKabupaten($actor, $subject),
             'admin-kecamatan' => $this->sameKecamatan($actor, $subject),
             'kades', 'bu-kades' => $this->sameDesa($actor, $subject),
