@@ -307,12 +307,14 @@
                                                         ? [
                                                             'name' => $ketuaPosyandu->name,
                                                             'email' => $ketuaPosyandu->email,
+                                                            'password' => $ketuaPosyandu->default_password ?? 'password123',
                                                         ]
                                                         : null,
                                                     'operator' => $operatorPosyandu
                                                         ? [
                                                             'name' => $operatorPosyandu->name,
                                                             'email' => $operatorPosyandu->email,
+                                                            'password' => $operatorPosyandu->default_password ?? 'password123',
                                                         ]
                                                         : null,
                                                     'kaders' => $kaders
@@ -321,6 +323,7 @@
                                                                 'name' => $k->name,
                                                                 'email' => $k->email,
                                                                 'bidang' => $k->bidang->nama_bidang ?? '-',
+                                                                'password' => $k->default_password ?? 'password123',
                                                             ],
                                                         )
                                                         ->toArray(),
@@ -328,13 +331,13 @@
                                             @endphp
                                             <button type="button"
                                                 onclick='showDetailPosyandu(@json($posyanduData))'
-                                                class="px-3 py-2 bg-green-500 text-white text-xs font-semibold rounded hover:bg-green-600 transition">
-                                                Lihat
+                                                class="px-3 py-2 bg-green-500 text-white text-xs font-semibold rounded hover:bg-green-600 transition inline-flex items-center gap-1">
+                                                <i class="bi bi-eye"></i> Lihat
                                             </button>
                                             @if (in_array(auth()->user()->role, ['admin', 'operator-desa']))
                                                 <a href="{{ route('admin.posyandu.edit', $posyandu) }}"
-                                                    class="px-3 py-2 bg-blue-500 text-white text-xs font-semibold rounded hover:bg-blue-600 transition">
-                                                    Edit
+                                                    class="px-3 py-2 bg-blue-500 text-white text-xs font-semibold rounded hover:bg-blue-600 transition inline-flex items-center gap-1">
+                                                    <i class="bi bi-pencil"></i> Edit
                                                 </a>
                                                 <form method="POST"
                                                     action="{{ route('admin.posyandu.destroy', $posyandu) }}"
@@ -343,8 +346,8 @@
                                                     @method('DELETE')
                                                     <button type="button"
                                                         onclick="confirmDeletePosyandu(event, '{{ $posyandu->id }}')"
-                                                        class="px-3 py-2 bg-red-500 text-white text-xs font-semibold rounded hover:bg-red-600 transition">
-                                                        Hapus
+                                                        class="px-3 py-2 bg-red-500 text-white text-xs font-semibold rounded hover:bg-red-600 transition inline-flex items-center gap-1">
+                                                        <i class="bi bi-trash"></i> Hapus
                                                     </button>
                                                 </form>
                                             @endif
@@ -414,12 +417,14 @@
                                             ? [
                                                 'name' => $ketuaPosyandu->name,
                                                 'email' => $ketuaPosyandu->email,
+                                                'password' => $ketuaPosyandu->default_password ?? 'password123',
                                             ]
                                             : null,
                                         'operator' => $operatorPosyandu
                                             ? [
                                                 'name' => $operatorPosyandu->name,
                                                 'email' => $operatorPosyandu->email,
+                                                'password' => $operatorPosyandu->default_password ?? 'password123',
                                             ]
                                             : null,
                                         'kaders' => $kaders
@@ -428,6 +433,7 @@
                                                     'name' => $k->name,
                                                     'email' => $k->email,
                                                     'bidang' => $k->bidang->nama_bidang ?? '-',
+                                                    'password' => $k->default_password ?? 'password123',
                                                 ],
                                             )
                                             ->toArray(),
@@ -629,9 +635,9 @@
                                             <div class="flex items-center gap-2 p-1 bg-amber-50 rounded border border-amber-200 w-fit">
                                                 <div class="flex-1 min-w-0">
                                                     <span class="text-xs text-amber-700 font-medium">Password:</span>
-                                                    <code class="ml-1 text-xs text-red-600 font-bold">password123</code>
+                                                    <code class="ml-1 text-xs text-red-600 font-bold">${ketua.password}</code>
                                                 </div>
-                                                <button type="button" onclick="copyText('password123', 'Password')"
+                                                <button type="button" onclick="copyText('${ketua.password}', 'Password')"
                                                     class="flex-shrink-0 px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition flex items-center gap-1">
                                                     <i class="bi bi-clipboard"></i> Copy
                                                 </button>
@@ -656,9 +662,9 @@
                                             <div class="flex items-center gap-2 p-1 bg-amber-50 rounded border border-amber-200 w-fit">
                                                 <div class="flex-1 min-w-0">
                                                     <span class="text-xs text-amber-700 font-medium">Password:</span>
-                                                    <code class="ml-1 text-xs text-red-600 font-bold">password123</code>
+                                                    <code class="ml-1 text-xs text-red-600 font-bold">${operator.password}</code>
                                                 </div>
-                                                <button type="button" onclick="copyText('password123', 'Password')"
+                                                <button type="button" onclick="copyText('${operator.password}', 'Password')"
                                                     class="flex-shrink-0 px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition flex items-center gap-1">
                                                     <i class="bi bi-clipboard"></i> Copy
                                                 </button>
@@ -688,9 +694,9 @@
                                             <div class="flex items-center gap-2 p-1 bg-amber-50 rounded border border-amber-200 w-full max-w-[200px]">
                                                 <div class="flex-1 min-w-0 overflow-hidden">
                                                     <span class="text-xs text-amber-700 font-medium hidden">Password:</span>
-                                                    <code class="text-xs text-red-600 font-bold block">password123</code>
+                                                    <code class="text-xs text-red-600 font-bold block">${k.password}</code>
                                                 </div>
-                                                <button type="button" onclick="copyText('password123', 'Password')"
+                                                <button type="button" onclick="copyText('${k.password}', 'Password')"
                                                     class="flex-shrink-0 px-1.5 py-1 bg-blue-500 text-white text-[10px] rounded hover:bg-blue-600 transition">
                                                     <i class="bi bi-clipboard"></i>
                                                 </button>

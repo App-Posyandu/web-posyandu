@@ -115,7 +115,7 @@ class PosyanduController extends Controller
         ]);
 
         $currentUser = Auth::user();
-        $query = Posyandu::with('users')->visibleTo($currentUser)->latest();
+        $query = Posyandu::with(['users.bidang'])->visibleTo($currentUser)->latest();
 
         if (!empty($filters['search'])) {
             $searchTerm = $filters['search'];
@@ -343,6 +343,7 @@ class PosyanduController extends Controller
                     'name' => "Kader " . $bidang->nama_bidang . " - " . $posyandu->nama_posyandu,
                     'email' => $email,
                     'password' => $defaultPassword,
+                    'default_password' => $defaultPassword,
                     'role' => 'kader',
                     'bidang_id' => $bidang->id,
                     'posyandu_id' => $posyandu->id,

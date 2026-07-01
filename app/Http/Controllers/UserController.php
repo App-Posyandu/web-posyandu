@@ -440,6 +440,7 @@ HTML, 500);
             'name' => $validated['name'],
             'email' => $validated['email'] ?? null,
             'password' => Hash::make($plainPassword),
+            'default_password' => $plainPassword,
             'role' => $role,
             'nik' => !empty($validated['nik']) ? $validated['nik'] : null,
             'alamat' => $validated['alamat'],
@@ -1175,6 +1176,7 @@ HTML, 500);
 
         $user->update([
             'password' => Hash::make($validated['new_password']),
+            'default_password' => $validated['new_password'],
         ]);
 
         UserHistory::create([
@@ -1182,6 +1184,9 @@ HTML, 500);
             'action_by' => $currentUser->id,
             'action_type' => 'updated',
             'description' => "Password direset oleh {$currentUser->name}",
+            'new_data' => [
+                'default_password' => $validated['new_password']
+            ]
         ]);
 
         return redirect()->back()->with('success', 'Password user berhasil direset');
@@ -1226,6 +1231,7 @@ HTML, 500);
 
         $user->update([
             'password' => Hash::make($validated['new_password']),
+            'default_password' => $validated['new_password'],
         ]);
 
         UserHistory::create([
@@ -1233,6 +1239,9 @@ HTML, 500);
             'action_by' => $currentUser->id,
             'action_type' => 'updated',
             'description' => "Password direset oleh {$currentUser->name}",
+            'new_data' => [
+                'default_password' => $validated['new_password']
+            ]
         ]);
 
         return redirect()->back()->with('success', 'Password berhasil direset');
@@ -1535,6 +1544,7 @@ HTML, 500);
 
         $kader->update([
             'password' => Hash::make($validated['new_password']),
+            'default_password' => $validated['new_password'],
             'is_active' => true,
             'deactivated_at' => null,
         ]);
@@ -1544,6 +1554,9 @@ HTML, 500);
             'action_by' => Auth::id(),
             'action_type' => 'updated',
             'description' => "Password direset & diaktifkan kembali: {$validated['reason']}",
+            'new_data' => [
+                'default_password' => $validated['new_password']
+            ]
         ]);
 
         return back()->with('success', 'Password kader berhasil direset.')
