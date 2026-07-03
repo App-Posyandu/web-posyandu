@@ -45,18 +45,26 @@ class AjuanController extends Controller
 
             case 'ketua-timpembina-posyandu':
             case 'admin-kabupaten':
-                if ($currentUser->kabupaten_id) {
+                if ($currentUser->kabupaten_id || $currentUser->kabupaten) {
                     $query->whereHas('user', function ($q) use ($currentUser) {
                         $q->where(function ($inner) use ($currentUser) {
-                            $inner->where('kabupaten_id', $currentUser->kabupaten_id);
-                            if ($currentUser->kabupaten) {
-                                $inner->orWhere('kabupaten', 'ILIKE', $currentUser->kabupaten);
+                            if ($currentUser->kabupaten_id) {
+                                $inner->where('kabupaten_id', $currentUser->kabupaten_id);
                             }
+                            if ($currentUser->kabupaten) {
+                                $inner->orWhere('kabupaten', 'ILIKE', '%' . $currentUser->kabupaten . '%');
+                            }
+                            // Fallback: match via posyandu's kabupaten
+                            $inner->orWhereHas('posyandu', function ($posQ) use ($currentUser) {
+                                if ($currentUser->kabupaten_id) {
+                                    $posQ->where('kabupaten_id', $currentUser->kabupaten_id);
+                                }
+                                if ($currentUser->kabupaten) {
+                                    $posQ->orWhere('kabupaten', 'ILIKE', '%' . $currentUser->kabupaten . '%');
+                                }
+                            });
                         });
                     })->where('submitted_to_desa', true);
-                } elseif ($currentUser->kabupaten) {
-                    $query->whereHas('user', fn($q) => $q->where('kabupaten', 'ILIKE', $currentUser->kabupaten))
-                          ->where('submitted_to_desa', true);
                 } else {
                     abort(403, 'Unauthorized');
                 }
@@ -67,39 +75,50 @@ class AjuanController extends Controller
                     abort(403, 'Unauthorized');
                 }
                 $query->where('bidang_id', $currentUser->bidang_id);
-                if ($currentUser->kabupaten_id) {
+                if ($currentUser->kabupaten_id || $currentUser->kabupaten) {
                     $query->whereHas('user', function ($q) use ($currentUser) {
                         $q->where(function ($inner) use ($currentUser) {
-                            $inner->where('kabupaten_id', $currentUser->kabupaten_id);
-                            if ($currentUser->kabupaten) {
-                                $inner->orWhere('kabupaten', 'ILIKE', $currentUser->kabupaten);
+                            if ($currentUser->kabupaten_id) {
+                                $inner->where('kabupaten_id', $currentUser->kabupaten_id);
                             }
+                            if ($currentUser->kabupaten) {
+                                $inner->orWhere('kabupaten', 'ILIKE', '%' . $currentUser->kabupaten . '%');
+                            }
+                            $inner->orWhereHas('posyandu', function ($posQ) use ($currentUser) {
+                                if ($currentUser->kabupaten_id) {
+                                    $posQ->where('kabupaten_id', $currentUser->kabupaten_id);
+                                }
+                                if ($currentUser->kabupaten) {
+                                    $posQ->orWhere('kabupaten', 'ILIKE', '%' . $currentUser->kabupaten . '%');
+                                }
+                            });
                         });
                     })->where('submitted_to_desa', true);
-                } elseif ($currentUser->kabupaten) {
-                    $query->whereHas('user', fn($q) => $q->where('kabupaten', 'ILIKE', $currentUser->kabupaten))
-                          ->where('submitted_to_desa', true);
                 } else {
                     abort(403, 'Unauthorized');
                 }
                 break;
 
             case 'admin-kecamatan':
-                if ($currentUser->kecamatan_id) {
+                if ($currentUser->kecamatan_id || $currentUser->kecamatan) {
                     $query->whereHas('user', function ($q) use ($currentUser) {
                         $q->where(function ($inner) use ($currentUser) {
-                            $inner->where('kecamatan_id', $currentUser->kecamatan_id);
-                            if ($currentUser->kecamatan) {
-                                $inner->orWhere('kecamatan', 'ILIKE', $currentUser->kecamatan);
+                            if ($currentUser->kecamatan_id) {
+                                $inner->where('kecamatan_id', $currentUser->kecamatan_id);
                             }
+                            if ($currentUser->kecamatan) {
+                                $inner->orWhere('kecamatan', 'ILIKE', '%' . $currentUser->kecamatan . '%');
+                            }
+                            // Fallback: match via posyandu's kecamatan
+                            $inner->orWhereHas('posyandu', function ($posQ) use ($currentUser) {
+                                if ($currentUser->kecamatan_id) {
+                                    $posQ->where('kecamatan_id', $currentUser->kecamatan_id);
+                                }
+                                if ($currentUser->kecamatan) {
+                                    $posQ->orWhere('kecamatan', 'ILIKE', '%' . $currentUser->kecamatan . '%');
+                                }
+                            });
                         });
-                        if ($currentUser->kabupaten) {
-                            $q->where('kabupaten', 'ILIKE', '%' . $currentUser->kabupaten . '%');
-                        }
-                    })->where('submitted_to_desa', true);
-                } elseif ($currentUser->kecamatan) {
-                    $query->whereHas('user', function ($q) use ($currentUser) {
-                        $q->where('kecamatan', 'ILIKE', $currentUser->kecamatan);
                         if ($currentUser->kabupaten) {
                             $q->where('kabupaten', 'ILIKE', '%' . $currentUser->kabupaten . '%');
                         }
@@ -501,6 +520,7 @@ class AjuanController extends Controller
             'status' => 'Diajukan',
             'catatan' => 'Pengajuan baru telah dibuat oleh ' . $user->name . '.',
             'diubah_oleh' => $user->id,
+            'action_by_role' => $this->historyRole($user->role),
             'created_at' => now(),
         ]);
 

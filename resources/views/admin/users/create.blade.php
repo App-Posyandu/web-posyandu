@@ -292,7 +292,7 @@
                             </div>
                         </div>
 
-                        <div id="kecamatan-field" style="display: none;" class="md:col-span-2">
+                        <div id="kecamatan-field" style="display: none;">
 
                             <div x-data="kecamatanCombobox()" @region-selected.window="fetchKecamatan($event.detail.code)"
                                 @click.away="open = false" class="relative">
@@ -351,7 +351,7 @@
                                 </p>
                             </div>
                         @endif
-                        <div id="desa-field" style="display: none;" class="md:col-span-2">
+                        <div id="desa-field" style="display: none;">
 
                             <div x-data="desaCombobox()" @kecamatan-selected.window="fetchDesa($event.detail.code)"
                                 @click.away="open = false" class="relative">

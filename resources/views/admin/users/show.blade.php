@@ -2,19 +2,21 @@
 @section('title', 'Detail Pengguna - ' . $user->name)
 @section('content')
     <div class="w-full mx-auto sm:px-6 lg:px-8">
-        <div class="bg-white overflow-hidden sm:shadow-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 min-h-screen sm:min-h-0">
-            
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-4 border-b">
+        <div class="bg-white overflow-hidden sm:shadow-xl sm:rounded-2xl min-h-screen sm:min-h-0">
+
+            <div class="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3 flex flex-row justify-between items-center gap-4">
                 <a href="{{ route('admin.users.index') }}" class="flex items-center text-gray-600 hover:text-pink-600 font-medium">
-                    <i class="bi bi-arrow-left mr-2"></i> Kembali ke Daftar
+                    <i class="bi bi-arrow-left mr-2"></i> Kembali
                 </a>
                 @can('update', $user)
                     <a href="{{ route('admin.users.edit', $user) }}"
-                        class="w-full sm:w-auto text-center px-4 py-2 bg-yellow-500 text-white rounded-md text-sm font-semibold hover:bg-yellow-600 shadow-sm transition">
+                        class="px-4 py-2 bg-yellow-500 text-white rounded-md text-sm font-semibold hover:bg-yellow-600 shadow-sm transition whitespace-nowrap">
                         <i class="bi bi-pencil-square mr-2"></i> Ubah Data / Status
                     </a>
                 @endcan
             </div>
+
+            <div class="p-4 sm:p-6 lg:p-8">
 
             <div class="text-gray-900">
                 <div class="flex flex-col md:flex-row items-start gap-6 mb-8 border-b pb-8">
@@ -26,22 +28,9 @@
                     </div>
                     <div class="flex-1 w-full">
                         <div class="flex flex-col gap-1">
-                            <h2 class="text-2xl md:text-3xl font-bold text-gray-900">{{ $user->name }}</h2>
-                            <p class="text-gray-500 mb-1">{{ $user->email ?? 'Tidak ada email' }} • NIK: {{ $user->nik ?? '-' }}</p>
-                            
-                            <p class="text-gray-600 text-sm">
-                                <i class="bi bi-geo-alt-fill text-gray-400 mr-1"></i>
-                                @if ($user->desa || $user->kecamatan)
-                                    Desa {{ $user->desa ?? '-' }}, Kec. {{ $user->kecamatan ?? '-' }}
-                                @else
-                                    Belum ada info wilayah
-                                @endif
-                                @if (in_array($user->role, ['kader', 'ketua-posyandu']) && $user->posyandu)
-                                    <span class="ml-2 text-pink-600 font-semibold">• {{ $user->posyandu->nama_posyandu }}</span>
-                                @endif
-                            </p>
-
-                            <div class="flex flex-wrap items-center gap-2 mt-3">
+                            {{-- Title + Status badges in same flex-row --}}
+                            <div class="flex flex-row flex-wrap items-center gap-2">
+                                <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mr-2">{{ $user->name }}</h2>
                                 <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-bold uppercase border border-blue-200">
                                     {{ str_replace('-', ' ', $user->role) }}
                                 </span>
@@ -64,8 +53,20 @@
                                     </span>
                                 @endif
                             </div>
-                            </div>
-                            @if (!$user->is_active)
+                            <p class="text-gray-500 mt-1">{{ $user->email ?? 'Tidak ada email' }} • NIK: {{ $user->nik ?? '-' }}</p>
+                            <p class="text-gray-600 text-sm">
+                                <i class="bi bi-geo-alt-fill text-gray-400 mr-1"></i>
+                                @if ($user->desa || $user->kecamatan)
+                                    Desa {{ $user->desa ?? '-' }}, Kec. {{ $user->kecamatan ?? '-' }}
+                                @else
+                                    Belum ada info wilayah
+                                @endif
+                                @if (in_array($user->role, ['kader', 'ketua-posyandu']) && $user->posyandu)
+                                    <span class="ml-2 text-pink-600 font-semibold">• {{ $user->posyandu->nama_posyandu }}</span>
+                                @endif
+                            </p>
+                        </div>
+                        @if (!$user->is_active)
                                 <div class="mt-4 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-md">
                                     <h4 class="text-sm font-bold text-red-800 mb-1 flex items-center">
                                         <i class="bi bi-exclamation-triangle-fill mr-2"></i> Akun Dinonaktifkan
@@ -231,4 +232,5 @@
                 </div>
             </div>
         </div>
+    </div>
 @endsection

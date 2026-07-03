@@ -625,14 +625,14 @@
                             ${ketua ? `
                                         <div class="ml-2 text-sm border bg-white p-2 rounded">
                                             <p class="font-medium text-gray-800">${ketua.name}</p>
-                                            <div class="flex items-center gap-2 mt-1 mb-1 p-1 bg-gray-50 rounded border border-gray-200 w-fit">
+                                            <div class="flex items-center gap-2 mt-1 mb-1 p-1 bg-gray-50 rounded border border-gray-200 w-full">
                                                 <div class="flex-1 min-w-0">
                                                     <span class="text-xs text-gray-700 font-medium">Email:</span>
                                                     <code class="ml-1 text-xs text-gray-800">${ketua.email || '-'}</code>
                                                 </div>
                                                 ${ketua.email ? `<button type="button" onclick="copyText('${ketua.email}', 'Email')" class="flex-shrink-0 px-2 py-1 bg-gray-200 text-gray-700 hover:bg-gray-300 text-xs rounded transition flex items-center gap-1"><i class="bi bi-clipboard"></i> Copy</button>` : ''}
                                             </div>
-                                            <div class="flex items-center gap-2 p-1 bg-amber-50 rounded border border-amber-200 w-fit">
+                                            <div class="flex items-center gap-2 p-1 bg-amber-50 rounded border border-amber-200 w-full">
                                                 <div class="flex-1 min-w-0">
                                                     <span class="text-xs text-amber-700 font-medium">Password:</span>
                                                     <code class="ml-1 text-xs text-red-600 font-bold">${ketua.password}</code>
@@ -652,14 +652,14 @@
                             ${operator ? `
                                         <div class="ml-2 text-sm border bg-white p-2 rounded">
                                             <p class="font-medium text-gray-800">${operator.name}</p>
-                                            <div class="flex items-center gap-2 mt-1 mb-1 p-1 bg-gray-50 rounded border border-gray-200 w-fit">
+                                            <div class="flex items-center gap-2 mt-1 mb-1 p-1 bg-gray-50 rounded border border-gray-200 w-full">
                                                 <div class="flex-1 min-w-0">
                                                     <span class="text-xs text-gray-700 font-medium">Email:</span>
                                                     <code class="ml-1 text-xs text-gray-800">${operator.email || '-'}</code>
                                                 </div>
                                                 ${operator.email ? `<button type="button" onclick="copyText('${operator.email}', 'Email')" class="flex-shrink-0 px-2 py-1 bg-gray-200 text-gray-700 hover:bg-gray-300 text-xs rounded transition flex items-center gap-1"><i class="bi bi-clipboard"></i> Copy</button>` : ''}
                                             </div>
-                                            <div class="flex items-center gap-2 p-1 bg-amber-50 rounded border border-amber-200 w-fit">
+                                            <div class="flex items-center gap-2 p-1 bg-amber-50 rounded border border-amber-200 w-full">
                                                 <div class="flex-1 min-w-0">
                                                     <span class="text-xs text-amber-700 font-medium">Password:</span>
                                                     <code class="ml-1 text-xs text-red-600 font-bold">${operator.password}</code>
@@ -680,18 +680,16 @@
                                         <div class="ml-2 grid grid-cols-2 gap-2">
                                             ${kaders.map((k, idx) => `
                                         <div class="text-sm p-2 bg-white rounded border">
+                                            <p class="text-[10px] font-bold text-indigo-600 uppercase tracking-wide mb-0.5">Kader ${k.bidang}</p>
                                             <p class="font-medium text-gray-800">${k.name}</p>
-                                            <div class="flex items-center gap-2 mt-1 mb-1 p-1 bg-gray-50 rounded border border-gray-200 w-full max-w-[200px]">
+                                            <div class="flex items-center gap-2 mt-1 mb-1 p-1 bg-gray-50 rounded border border-gray-200 w-full">
                                                 <div class="flex-1 min-w-0 overflow-hidden">
                                                     <span class="text-xs text-gray-700 font-medium hidden">Email:</span>
                                                     <code class="text-xs text-gray-800 truncate block">${k.email || '-'}</code>
                                                 </div>
                                                 ${k.email ? `<button type="button" onclick="copyText('${k.email}', 'Email')" class="flex-shrink-0 px-1.5 py-1 bg-gray-200 text-gray-700 hover:bg-gray-300 text-[10px] rounded transition"><i class="bi bi-clipboard"></i></button>` : ''}
                                             </div>
-                                            <div class="flex items-center gap-1 mt-1 mb-1">
-                                                <span class="px-1.5 py-0.5 bg-gray-100 text-gray-600 text-[10px] rounded">${k.bidang}</span>
-                                            </div>
-                                            <div class="flex items-center gap-2 p-1 bg-amber-50 rounded border border-amber-200 w-full max-w-[200px]">
+                                            <div class="flex items-center gap-2 p-1 bg-amber-50 rounded border border-amber-200 w-full">
                                                 <div class="flex-1 min-w-0 overflow-hidden">
                                                     <span class="text-xs text-amber-700 font-medium hidden">Password:</span>
                                                     <code class="text-xs text-red-600 font-bold block">${k.password}</code>
