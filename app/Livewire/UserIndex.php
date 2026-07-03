@@ -189,7 +189,8 @@ class UserIndex extends Component
                 $q->where('name', 'ilike', '%' . $searchTerm . '%')
                     ->orWhere('email', 'ilike', '%' . $searchTerm . '%')
                     ->orWhere('nik', 'ilike', '%' . $searchTerm . '%')
-                    ->orWhere('no_telepon', 'ilike', '%' . $searchTerm . '%');
+                    ->orWhere('no_telepon', 'ilike', '%' . $searchTerm . '%')
+                    ->orWhere('desa', 'ilike', '%' . $searchTerm . '%');
             });
         }
 
@@ -198,7 +199,7 @@ class UserIndex extends Component
             $query->where('role', $safeRole);
         }
 
-        $users = $query->paginate($this->perPage);
+        $users = $query->paginate($this->perPage)->onEachSide(1);
 
         $allowedRoles = $this->getAllowedRoleTargets($currentUser->role);
 

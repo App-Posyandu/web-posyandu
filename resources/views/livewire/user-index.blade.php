@@ -123,9 +123,19 @@
                 <div class="w-full sm:w-auto min-w-[150px]">
                     <select wire:model.live="role" class="w-full border-gray-300 rounded-md shadow-sm text-sm focus:ring-pink-500 focus:border-pink-500 py-2" style="height: 38px;">
                         <option value="">Semua Role</option>
+                        @php
+                            $roleLabels = [
+                                'ketua-timpembina-posyandu' => 'Ketua Tim Pembina',
+                                'admin-kabupaten' => 'Admin Kabupaten',
+                                'admin-kecamatan' => 'Admin Kecamatan',
+                                'ketua-posyandu' => 'Ketua Posyandu',
+                                'operator-desa' => 'Operator Desa',
+                                'bu-kades' => 'Bu Kades',
+                            ];
+                        @endphp
                         @foreach ($allowedRoles as $roleOption)
                             <option value="{{ $roleOption }}">
-                                {{ ucfirst(str_replace('-', ' ', $roleOption)) }}
+                                {{ $roleLabels[$roleOption] ?? ucfirst(str_replace('-', ' ', $roleOption)) }}
                             </option>
                         @endforeach
                     </select>
@@ -262,6 +272,46 @@
                             </td>
 
                             <td class="px-4 py-3">
+                                @if(auth()->user()->role === 'admin-kabupaten')
+                                    {{-- 2x2 grid: Detail(blue) Ubah(yellow) / Reset(orange) Nonaktif(red) --}}
+                                    <div class="grid grid-cols-2 gap-1">
+                                        <a href="{{ route('admin.users.show', $user) }}"
+                                            class="px-2 py-1 bg-blue-500 text-white rounded-md text-xs text-center hover:bg-blue-600 transition-colors duration-150">
+                                            <i class="bi bi-eye-fill"></i> Detail
+                                        </a>
+                                        @can('update', $user)
+                                            <a href="{{ route('admin.users.edit', $user) }}"
+                                                class="px-2 py-1 bg-yellow-500 text-white rounded-md text-xs text-center hover:bg-yellow-600 transition-colors duration-150">
+                                                <i class="bi bi-pencil-fill"></i> Ubah
+                                            </a>
+                                        @else
+                                            <span></span>
+                                        @endcan
+                                        <button type="button"
+                                            onclick="openResetPasswordModalKabid('{{ $user->id }}', '{{ $user->name }}')"
+                                            class="px-2 py-1 bg-orange-500 text-white rounded-md text-xs hover:bg-orange-600 transition-colors duration-150">
+                                            <i class="bi bi-key"></i> Reset
+                                        </button>
+                                        @if ($user->is_active)
+                                            <button type="button"
+                                                onclick="openDeactivateModalKabid('{{ $user->id }}', '{{ $user->name }}')"
+                                                class="px-2 py-1 bg-red-500 text-white rounded-md text-xs hover:bg-red-600 transition-colors duration-150">
+                                                <i class="bi bi-x-circle"></i> Nonaktif
+                                            </button>
+                                        @else
+                                            <form id="reactivate-form-kabid-{{ $user->id }}" action="{{ route('admin.users.reactivate-kabid', $user) }}"
+                                                method="POST" class="inline">
+                                                @csrf
+                                                @method('PATCH')
+                                                <button type="button"
+                                                    onclick="confirmReactivateKabid('{{ $user->id }}', '{{ $user->name }}')"
+                                                    class="w-full px-2 py-1 bg-green-500 text-white rounded-md text-xs hover:bg-green-600 transition-colors duration-150">
+                                                    <i class="bi bi-check-circle"></i> Aktif
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </div>
+                                @else
                                 <div class="flex flex-col gap-2">
                                     <a href="{{ route('admin.users.show', $user) }}"
                                         class="px-3 py-1 bg-blue-500 text-white rounded-md text-xs text-center hover:bg-blue-600 transition-colors duration-150">
@@ -352,34 +402,9 @@
                                                 </form>
                                             @endif
                                         </div>
-                                    @elseif(auth()->user()->role === 'admin-kabupaten')
-                                        <div class="flex justify-between gap-3">
-                                            <button type="button"
-                                                onclick="openResetPasswordModalKabid('{{ $user->id }}', '{{ $user->name }}')"
-                                                class="w-full px-3 py-1 bg-yellow-500 text-white rounded-md text-xs hover:bg-yellow-600">
-                                                <i class="bi bi-key"></i> Reset
-                                            </button>
-                                            @if ($user->is_active)
-                                                <button type="button"
-                                                    onclick="openDeactivateModalKabid('{{ $user->id }}', '{{ $user->name }}')"
-                                                    class="w-full px-3 py-1 bg-red-500 text-white rounded-md text-xs hover:bg-red-600">
-                                                    <i class="bi bi-x-circle"></i> Nonaktifkan
-                                                </button>
-                                            @else
-                                                <form id="reactivate-form-kabid-{{ $user->id }}" action="{{ route('admin.users.reactivate-kabid', $user) }}"
-                                                    class="w-full" method="POST" class="inline">
-                                                    @csrf
-                                                    @method('PATCH')
-                                                    <button type="button"
-                                                        onclick="confirmReactivateKabid('{{ $user->id }}', '{{ $user->name }}')"
-                                                        class="w-full px-3 py-1 bg-green-500 text-white rounded-md text-xs hover:bg-green-600">
-                                                        <i class="bi bi-check-circle"></i> Aktifkan
-                                                    </button>
-                                                </form>
-                                            @endif
-                                        </div>
                                     @endif
                                 </div>
+                                @endif
                             </td>
                         </tr>
                     @empty

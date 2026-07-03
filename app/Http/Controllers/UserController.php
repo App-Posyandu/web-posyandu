@@ -1219,8 +1219,9 @@ HTML, 500);
             return redirect()->back()->with('error', 'Unauthorized');
         }
 
+        $allowedRoles = ['ketua-timpembina-posyandu', 'kabid', 'admin-kecamatan', 'kades', 'bu-kades', 'operator-desa', 'ketua-posyandu'];
         if (
-            !in_array($user->role, ['kabid', 'ketua-posyandu']) ||
+            !in_array($user->role, $allowedRoles) ||
             $user->kabupaten !== $currentUser->kabupaten
         ) {
             $this->auditDeniedUserAction($currentUser, $user, 'reset_password_scope');
