@@ -133,8 +133,8 @@
                 
                 <div class="flex-1 min-w-[200px] relative">
                     <input type="text" wire:model.live.debounce.300ms="search"
-                        placeholder="Cari nama, email, NIK..."
-                        class="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm focus:ring-pink-500 focus:border-pink-500" style="height: 38px;">
+                        placeholder="Cari nama, email, NIK, No. Telepon, desa..."
+                        class="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm focus:ring-pink-500 focus:border-pink-500">
                     <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                         <i class="bi bi-search text-gray-400"></i>
                     </div>
