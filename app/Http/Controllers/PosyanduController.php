@@ -132,7 +132,7 @@ class PosyanduController extends Controller
         }
 
         $perPage = $filters['perPage'] ?? 10;
-        $posyandus = $query->paginate($perPage)->withQueryString();
+        $posyandus = $query->paginate($perPage)->onEachSide(1)->withQueryString();
 
         return view('admin.posyandu.index', compact('posyandus'));
     }
