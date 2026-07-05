@@ -33,9 +33,9 @@
                                     $requestedDate = \Carbon\Carbon::parse($ajuan->revision_requested_at);
 
                                     // ✅ FIX: Pakai SystemSetting dari database, bukan config()
-                                    $debugMode = \App\Models\SystemSetting::get('revision_debug_mode', false);
-                                    $debugMinutes = \App\Models\SystemSetting::get('revision_debug_minutes', 5);
-                                    $productionDays = \App\Models\SystemSetting::get('auto_reject_days', 5);
+                                    $debugMode = (bool) \App\Models\SystemSetting::get('revision_debug_mode', false);
+                                    $debugMinutes = (int) \App\Models\SystemSetting::get('revision_debug_minutes', 5);
+                                    $productionDays = (int) \App\Models\SystemSetting::get('auto_reject_days', 5);
 
                                     if ($debugMode) {
                                         $revisionDeadline = $requestedDate->copy()->addMinutes($debugMinutes);
@@ -112,10 +112,10 @@
                         $requestedDate = \Carbon\Carbon::parse($ajuan->revision_requested_at);
 
                         // ✅ FIX: Pakai SystemSetting dari database, bukan config()
-                        $enableAutoReject = \App\Models\SystemSetting::get('enable_auto_reject', true);
-                        $debugMode = \App\Models\SystemSetting::get('revision_debug_mode', false);
-                        $debugMinutes = \App\Models\SystemSetting::get('revision_debug_minutes', 5);
-                        $productionDays = \App\Models\SystemSetting::get('auto_reject_days', 5);
+                        $enableAutoReject = (bool) \App\Models\SystemSetting::get('enable_auto_reject', true);
+                        $debugMode = (bool) \App\Models\SystemSetting::get('revision_debug_mode', false);
+                        $debugMinutes = (int) \App\Models\SystemSetting::get('revision_debug_minutes', 5);
+                        $productionDays = (int) \App\Models\SystemSetting::get('auto_reject_days', 5);
 
                         if ($debugMode) {
                             $revisionDeadline = $requestedDate->copy()->addMinutes($debugMinutes);
