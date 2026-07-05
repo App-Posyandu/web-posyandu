@@ -27,6 +27,7 @@
     "require-dev": {
         "barryvdh/laravel-ide-helper": "^3.6",
         "fakerphp/faker": "^1.23",
+        "laravel-lang/common": "*",
         "laravel/boost": "^1.3",
         "laravel/breeze": "^2.3",
         "laravel/pail": "^1.2.2",
