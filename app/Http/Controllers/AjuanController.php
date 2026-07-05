@@ -496,12 +496,12 @@ class AjuanController extends Controller
                 $path = $this->compressAndStoreImage($request->file($key), 'ajuan_dokumen');
                 $uploadedFiles[$key] = $path;
 
-                // Auto-update profil masyarakat jika KTP/KK belum ada
-                if ($key === 'ktp' && empty($targetUser->ktp)) {
+                // Auto-update profil masyarakat dengan KTP/KK yang baru diunggah
+                if ($key === 'ktp') {
                     $targetUser->ktp = $path;
                     $targetUserUpdated = true;
                 }
-                if ($key === 'kk' && empty($targetUser->kk)) {
+                if ($key === 'kk') {
                     $targetUser->kk = $path;
                     $targetUserUpdated = true;
                 }
