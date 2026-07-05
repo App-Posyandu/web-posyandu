@@ -496,24 +496,30 @@ class AjuanController extends Controller
                 $path = $this->compressAndStoreImage($request->file($key), 'ajuan_dokumen');
                 $uploadedFiles[$key] = $path;
 
-                // Auto-update profil masyarakat dengan KTP/KK yang baru diunggah
+                // Auto-update profil masyarakat dengan KTP/KK yang baru diunggah (konversi ke Base64 sesuai standar profile)
                 if ($key === 'ktp') {
-                    $targetUser->ktp = $path;
+                    $file = $request->file('ktp');
+                    $targetUser->ktp = 'data:' . $file->getMimeType() . ';base64,' . base64_encode(file_get_contents($file->getRealPath()));
                     $targetUserUpdated = true;
                 }
                 if ($key === 'kk') {
-                    $targetUser->kk = $path;
+                    $file = $request->file('kk');
+                    $targetUser->kk = 'data:' . $file->getMimeType() . ';base64,' . base64_encode(file_get_contents($file->getRealPath()));
                     $targetUserUpdated = true;
                 }
             } elseif ($key === 'ktp' && $request->input('ktp_mode') === 'claimed' && $targetUser->ktp) {
-                $uploadedFiles[$key] = $targetUser->ktp;
+                $uploadedFiles[$key] = $targetUser->ktp; // Wait, this stores base64 into the pengajuan if claimed. Is that intended? Yes, previously it did exactly this.
             } elseif ($key === 'kk' && $request->input('kk_mode') === 'claimed' && $targetUser->kk) {
                 $uploadedFiles[$key] = $targetUser->kk;
             }
         }
 
         if ($targetUserUpdated) {
-            $targetUser->save();
+            // Force update via array to bypass any state checks
+            $targetUser->update([
+                'ktp' => $targetUser->ktp,
+                'kk' => $targetUser->kk,
+            ]);
         }
 
         $finalChecklistData = $ajuanData['selected_formulir_items'];
