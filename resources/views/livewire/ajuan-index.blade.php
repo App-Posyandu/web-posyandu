@@ -104,93 +104,32 @@
             </div>
         </div>
 
-        <!-- Info Alerts -->
-        <div class="mb-6 space-y-4">
-            @if (auth()->user()->role === 'ketua-posyandu')
-                <div class="w-full bg-blue-50 border-l-4 border-blue-500 p-4 rounded-md">
-                    <div class="flex items-start">
-                        <i class="bi bi-info-circle-fill text-blue-500 mr-3 mt-0.5"></i>
-                        <div class="flex-1">
-                            <p class="text-sm font-medium text-blue-900">Filter Otomatis Aktif</p>
-                            <p class="text-xs text-blue-700 mt-1">
-                                Anda hanya melihat pengajuan di posyandu Anda dengan aturan:
-                            </p>
-                            <ul class="text-xs text-blue-700 mt-2 space-y-1 list-disc list-inside">
-                                <li>Mode aktif: status Diproses</li>
-                                <li>Mode arsip: status Disetujui atau Ditolak</li>
-                            </ul>
-                        </div>
+        <!-- Info Alerts / Legenda -->
+        @if (in_array(auth()->user()->role, ['ketua-posyandu', 'kades', 'admin']))
+            <div class="mb-6">
+                <p class="text-xs font-semibold text-gray-700 mb-2">Legenda Progress:</p>
+                <div class="flex flex-wrap gap-4 text-xs">
+                    <div class="flex items-center gap-2">
+                        <span class="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center text-white">
+                            <i class="bi bi-check-lg text-xs"></i>
+                        </span>
+                        <span class="text-gray-600">Tahap Selesai</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center text-white">
+                            <i class="bi bi-hourglass-split text-xs"></i>
+                        </span>
+                        <span class="text-gray-600">Sedang Proses</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-5 h-5 rounded-full bg-gray-300 flex items-center justify-center text-gray-500">
+                            <i class="bi bi-lock-fill text-xs"></i>
+                        </span>
+                        <span class="text-gray-600">Belum Dimulai</span>
                     </div>
                 </div>
-            @elseif(auth()->user()->role === 'kades')
-                <div class="w-full bg-purple-50 border-l-4 border-purple-500 p-4 rounded-md">
-                    <div class="flex items-start">
-                        <i class="bi bi-info-circle-fill text-purple-500 mr-3 mt-0.5"></i>
-                        <div class="flex-1">
-                            <p class="text-sm font-medium text-purple-900">Filter Otomatis Aktif</p>
-                            <p class="text-xs text-purple-700 mt-1">
-                                Anda hanya melihat pengajuan yang sudah diajukan ke desa.
-                                Mode aktif menampilkan status Diproses, mode arsip menampilkan Disetujui atau Ditolak.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            @elseif(auth()->user()->role === 'bu-kades')
-                <div class="w-full bg-indigo-50 border-l-4 border-indigo-500 p-4 rounded-md">
-                    <div class="flex items-start">
-                        <i class="bi bi-info-circle-fill text-indigo-500 mr-3 mt-0.5"></i>
-                        <div class="flex-1">
-                            <p class="text-sm font-medium text-indigo-900">Mode Monitoring</p>
-                            <p class="text-xs text-indigo-700 mt-1">
-                                Anda dapat melihat dan mencetak pengajuan, tetapi tidak dapat memberikan persetujuan
-                                atau tindak lanjut.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            @elseif(auth()->user()->role === 'kader')
-                <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-md">
-                    <div class="flex items-start">
-                        <i class="bi bi-info-circle-fill text-yellow-500 mr-3 mt-0.5"></i>
-                        <div class="flex-1">
-                            <p class="text-sm font-medium text-yellow-900">Filter Otomatis Aktif</p>
-                            <p class="text-xs text-yellow-700 mt-1">
-                                Anda hanya melihat pengajuan dengan status "Diproses" yang memerlukan verifikasi
-                                atau kunjungan lapangan
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            @endif
-            @if (in_array(auth()->user()->role, ['ketua-posyandu', 'kades', 'admin']))
-                <div class="pt-4 border-t border-gray-200">
-                    <p class="text-xs font-semibold text-gray-700 mb-2">Legenda Progress:</p>
-                    <div class="flex flex-wrap gap-4 text-xs">
-                        <div class="flex items-center gap-2">
-                            <span
-                                class="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center text-white">
-                                <i class="bi bi-check-lg text-xs"></i>
-                            </span>
-                            <span class="text-gray-600">Tahap Selesai</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span
-                                class="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center text-white">
-                                <i class="bi bi-hourglass-split text-xs"></i>
-                            </span>
-                            <span class="text-gray-600">Sedang Proses</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span
-                                class="w-5 h-5 rounded-full bg-gray-300 flex items-center justify-center text-gray-500">
-                                <i class="bi bi-lock-fill text-xs"></i>
-                            </span>
-                            <span class="text-gray-600">Belum Dimulai</span>
-                        </div>
-                    </div>
-                </div>
-            @endif
-        </div>
+            </div>
+        @endif
 
         <div class="flex items-center justify-between mb-6 bg-gray-50 p-3 rounded-xl border border-gray-100">
             <div class="flex items-center gap-3">
