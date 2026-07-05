@@ -17,6 +17,28 @@
             </div>
         </div>
 
+        <div class="mb-4 bg-gray-50 p-4 rounded-lg border flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <form id="searchTableForm" action="{{ route('admin.database.show', $table) }}" method="GET" class="w-full flex flex-col sm:flex-row gap-2 items-center">
+                <select id="searchColumnSelect" name="search_column" class="w-full sm:w-auto px-4 py-2 border rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500 text-sm">
+                    <option value="">-- Pilih Kolom --</option>
+                    @foreach ($columns as $column)
+                        <option value="{{ $column }}" {{ (isset($searchColumn) && $searchColumn == $column) ? 'selected' : '' }}>
+                            {{ $column }}
+                        </option>
+                    @endforeach
+                </select>
+                <input id="searchInput" type="text" name="search" value="{{ $search ?? '' }}" placeholder="Cari data..." class="w-full sm:w-1/2 px-4 py-2 border rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500 text-sm">
+                <button type="submit" class="w-full sm:w-auto px-4 py-2 bg-pink-500 text-white rounded-md text-sm font-semibold hover:bg-pink-600 transition">
+                    <i class="bi bi-search mr-1"></i> Cari
+                </button>
+                @if(isset($search) && $search !== '')
+                    <a href="{{ route('admin.database.show', $table) }}" class="w-full sm:w-auto px-4 py-2 bg-gray-200 text-gray-700 rounded-md text-sm font-semibold hover:bg-gray-300 transition text-center">
+                        Reset
+                    </a>
+                @endif
+            </form>
+        </div>
+
         <div class="text-gray-900">
             <div class="w-full max-w-full overflow-x-auto border rounded-lg">
                 <table class="min-w-full whitespace-nowrap divide-y divide-gray-200 table-auto">
@@ -60,4 +82,26 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var searchForm = document.getElementById('searchTableForm');
+    if(searchForm) {
+        searchForm.addEventListener('submit', function(e) {
+            var searchColumn = document.getElementById('searchColumnSelect').value;
+            var searchInput = document.getElementById('searchInput').value;
+            
+            if (searchInput.trim() !== '' && searchColumn === '') {
+                e.preventDefault();
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Pilih Kolom',
+                    text: 'Kolom pencarian wajib dipilih jika Anda memasukkan kata kunci!',
+                    confirmButtonColor: '#ec4899'
+                });
+            }
+        });
+    }
+});
+</script>
 @endsection

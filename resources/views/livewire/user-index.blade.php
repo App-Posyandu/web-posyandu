@@ -368,18 +368,18 @@
                                             </form>
                                         @endif
                                     @endif
-                                    @if (auth()->user()->role === 'operator-desa')
-                                        <div class="flex justify-between">
+                                    @if (in_array(auth()->user()->role, ['operator-desa', 'admin']))
+                                        <div class="grid grid-cols-2 gap-2">
                                             <button type="button"
                                                 onclick="openResetPasswordModal('{{ $user->id }}', '{{ $user->name }}')"
-                                                class="px-3 py-1 bg-yellow-500 text-white rounded-md text-xs hover:bg-yellow-600">
-                                                <i class="bi bi-key"></i> Reset
+                                                class="w-full flex items-center justify-center px-3 py-1 bg-yellow-500 text-white rounded-md text-xs hover:bg-yellow-600">
+                                                <i class="bi bi-key mr-1"></i> Reset
                                             </button>
                                             @if ($user->is_active)
                                                 <button type="button"
                                                     onclick="openDeactivateModal('{{ $user->id }}', '{{ $user->name }}')"
-                                                    class="px-3 py-1 bg-red-500 text-white rounded-md text-xs hover:bg-red-600">
-                                                    <i class="bi bi-x-circle"></i> Nonaktifkan
+                                                    class="w-full flex items-center justify-center px-3 py-1 bg-red-500 text-white rounded-md text-xs hover:bg-red-600">
+                                                    <i class="bi bi-x-circle mr-1"></i> Nonaktif
                                                 </button>
                                             @else
                                                 <form id="reactivate-form-{{ $user->id }}" action="{{ route('admin.users.reactivate', $user) }}"
@@ -396,8 +396,8 @@
                                                     @endphp
                                                     <button type="button"
                                                         onclick="confirmReactivate('{{ $user->id }}', '{{ $user->name }}', '{{ $roleLabel }}')"
-                                                        class="px-3 py-1 bg-green-500 text-white rounded-md text-xs hover:bg-green-600">
-                                                        <i class="bi bi-check-circle"></i> Aktifkan
+                                                        class="w-full flex items-center justify-center px-3 py-1 bg-green-500 text-white rounded-md text-xs hover:bg-green-600">
+                                                        <i class="bi bi-check-circle mr-1"></i> Aktif
                                                     </button>
                                                 </form>
                                             @endif
@@ -516,61 +516,142 @@
                     </div>
                     <div class="bg-gray-50 px-4 py-3 border-t border-gray-200">
                         <div class="flex flex-col gap-2">
-                            <a href="{{ route('admin.users.show', $user) }}"
-                                class="flex items-center justify-center px-3 py-2 bg-blue-500 text-white rounded-md text-sm font-medium hover:bg-blue-600 transition-colors duration-150">
-                                <i class="bi bi-eye-fill mr-2"></i>
-                                Lihat Detail
-                            </a>
-
-                            <div class="flex gap-2">
-                                @can('update', $user)
-                                    <a href="{{ route('admin.users.edit', $user) }}"
-                                        class="flex-1 flex items-center justify-center px-3 py-2 bg-yellow-500 text-white rounded-md text-sm font-medium hover:bg-yellow-600 transition-colors duration-150">
-                                        <i class="bi bi-pencil-fill mr-1"></i>
-                                        Ubah
+                            @if(auth()->user()->role === 'admin-kabupaten')
+                                <div class="grid grid-cols-2 gap-2">
+                                    <a href="{{ route('admin.users.show', $user) }}"
+                                        class="flex items-center justify-center px-3 py-2 bg-blue-500 text-white rounded-md text-sm font-medium hover:bg-blue-600 transition-colors duration-150">
+                                        <i class="bi bi-eye-fill mr-1"></i> Detail
                                     </a>
-                                @endcan
-
-                                @if ($currentUser->role === 'admin')
-                                    <form id="delete-form-card-{{ $user->id }}" action="{{ route('admin.users.destroy', $user) }}" method="POST" style="display: inline;">
-                                        @csrf
-                                        @method('DELETE')
+                                    @can('update', $user)
+                                        <a href="{{ route('admin.users.edit', $user) }}"
+                                            class="flex items-center justify-center px-3 py-2 bg-yellow-500 text-white rounded-md text-sm font-medium hover:bg-yellow-600 transition-colors duration-150">
+                                            <i class="bi bi-pencil-fill mr-1"></i> Ubah
+                                        </a>
+                                    @else
+                                        <span></span>
+                                    @endcan
+                                    <button type="button"
+                                        onclick="openResetPasswordModalKabid('{{ $user->id }}', '{{ $user->name }}')"
+                                        class="flex items-center justify-center px-3 py-2 bg-orange-500 text-white rounded-md text-sm font-medium hover:bg-orange-600 transition-colors duration-150">
+                                        <i class="bi bi-key mr-1"></i> Reset
+                                    </button>
+                                    @if ($user->is_active)
                                         <button type="button"
-                                            onclick="confirmDeleteUser('{{ $user->id }}', '{{ $user->name }}')"
-                                            class="flex-1 flex items-center justify-center px-3 py-2 bg-red-500 text-white rounded-md text-sm font-medium hover:bg-red-600 transition-colors duration-150">
-                                            <i class="bi bi-trash mr-1"></i>
-                                            Hapus
+                                            onclick="openDeactivateModalKabid('{{ $user->id }}', '{{ $user->name }}')"
+                                            class="flex items-center justify-center px-3 py-2 bg-red-500 text-white rounded-md text-sm font-medium hover:bg-red-600 transition-colors duration-150">
+                                            <i class="bi bi-x-circle mr-1"></i> Nonaktif
                                         </button>
-                                    </form>
-                                @endif
-
-                                @if (is_null($user->verified_at) && in_array($user->role, ['masyarakat', 'kader']))
-                                    @php
-                                        $canVerify = false;
-                                        if (
-                                            ($currentUser->role === 'kader' && $user->role === 'masyarakat') ||
-                                            ($currentUser->role === 'ketua-posyandu' && $user->role === 'kader') ||
-                                            ($currentUser->role === 'kabid' && $user->role === 'ketua-posyandu') ||
-                                            $currentUser->role === 'admin'
-                                        ) {
-                                            $canVerify = true;
-                                        }
-                                    @endphp
-
-                                    @if ($canVerify)
-                                        <form action="{{ route('admin.users.verify', $user) }}" method="POST"
-                                            class="flex-1">
+                                    @else
+                                        <form id="reactivate-form-mobile-kabid-{{ $user->id }}" action="{{ route('admin.users.reactivate-kabid', $user) }}"
+                                            method="POST" class="inline">
                                             @csrf
                                             @method('PATCH')
-                                            <button type="submit"
+                                            <button type="button"
+                                                onclick="confirmReactivateKabid('{{ $user->id }}', '{{ $user->name }}')"
                                                 class="w-full flex items-center justify-center px-3 py-2 bg-green-500 text-white rounded-md text-sm font-medium hover:bg-green-600 transition-colors duration-150">
-                                                <i class="bi bi-check-circle-fill mr-1"></i>
-                                                Verifikasi
+                                                <i class="bi bi-check-circle mr-1"></i> Aktif
                                             </button>
                                         </form>
                                     @endif
+                                </div>
+                            @else
+                                <a href="{{ route('admin.users.show', $user) }}"
+                                    class="flex items-center justify-center px-3 py-2 bg-blue-500 text-white rounded-md text-sm font-medium hover:bg-blue-600 transition-colors duration-150">
+                                    <i class="bi bi-eye-fill mr-2"></i>
+                                    Lihat Detail
+                                </a>
+
+                                <div class="flex gap-2">
+                                    @can('update', $user)
+                                        <a href="{{ route('admin.users.edit', $user) }}"
+                                            class="flex-1 flex items-center justify-center px-3 py-2 bg-yellow-500 text-white rounded-md text-sm font-medium hover:bg-yellow-600 transition-colors duration-150">
+                                            <i class="bi bi-pencil-fill mr-1"></i> Ubah
+                                        </a>
+                                    @endcan
+                                    
+                                    @if ($currentUser->role === 'kader' && $user->role === 'masyarakat' && $user->no_telepon)
+                                        <a href="{{ $this->generateWhatsAppLink($user) }}" target="_blank"
+                                            class="flex-1 flex items-center justify-center px-3 py-2 bg-green-500 text-white rounded-md text-sm font-medium hover:bg-green-600 transition-colors duration-150">
+                                            <i class="bi bi-whatsapp mr-1"></i> Kirim WA
+                                        </a>
+                                    @endif
+
+                                    @if ($currentUser->role === 'admin')
+                                        <form id="delete-form-mobile-{{ $user->id }}" action="{{ route('admin.users.destroy', $user) }}" method="POST" class="flex-1" style="display: inline;">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="button"
+                                                onclick="confirmDeleteUser('{{ $user->id }}', '{{ $user->name }}')"
+                                                class="w-full flex items-center justify-center px-3 py-2 bg-red-500 text-white rounded-md text-sm font-medium hover:bg-red-600 transition-colors duration-150">
+                                                <i class="bi bi-trash mr-1"></i> Hapus
+                                            </button>
+                                        </form>
+                                    @endif
+
+                                    @if (is_null($user->verified_at) && in_array($user->role, ['masyarakat', 'kader']))
+                                        @php
+                                            $canVerify = false;
+                                            if (
+                                                ($currentUser->role === 'kader' && $user->role === 'masyarakat') ||
+                                                ($currentUser->role === 'ketua-posyandu' && $user->role === 'kader') ||
+                                                ($currentUser->role === 'kabid' && $user->role === 'ketua-posyandu') ||
+                                                $currentUser->role === 'admin'
+                                            ) {
+                                                $canVerify = true;
+                                            }
+                                        @endphp
+
+                                        @if ($canVerify)
+                                            <form action="{{ route('admin.users.verify', $user) }}" method="POST"
+                                                class="flex-1">
+                                                @csrf
+                                                @method('PATCH')
+                                                <button type="submit"
+                                                    class="w-full flex items-center justify-center px-3 py-2 bg-green-500 text-white rounded-md text-sm font-medium hover:bg-green-600 transition-colors duration-150">
+                                                    <i class="bi bi-check-circle-fill mr-1"></i>
+                                                    Verifikasi
+                                                </button>
+                                            </form>
+                                        @endif
+                                    @endif
+                                </div>
+                                
+                                @if (in_array(auth()->user()->role, ['operator-desa', 'admin']))
+                                    <div class="flex gap-2">
+                                        <button type="button"
+                                            onclick="openResetPasswordModal('{{ $user->id }}', '{{ $user->name }}')"
+                                            class="flex-1 flex items-center justify-center px-3 py-2 bg-yellow-500 text-white rounded-md text-sm font-medium hover:bg-yellow-600">
+                                            <i class="bi bi-key mr-1"></i> Reset
+                                        </button>
+                                        @if ($user->is_active)
+                                            <button type="button"
+                                                onclick="openDeactivateModal('{{ $user->id }}', '{{ $user->name }}')"
+                                                class="flex-1 flex items-center justify-center px-3 py-2 bg-red-500 text-white rounded-md text-sm font-medium hover:bg-red-600">
+                                                <i class="bi bi-x-circle mr-1"></i> Nonaktifkan
+                                            </button>
+                                        @else
+                                            <form id="reactivate-form-mobile-{{ $user->id }}" action="{{ route('admin.users.reactivate', $user) }}"
+                                                method="POST" class="flex-1 flex">
+                                                @csrf
+                                                @method('PATCH')
+                                                @php
+                                                    $roleLabel = match ($user->role) {
+                                                        'kades' => 'Kades',
+                                                        'bu-kades' => 'Bu Kades',
+                                                        'ketua-posyandu' => 'Ketua Posyandu',
+                                                        default => 'Kader',
+                                                    };
+                                                @endphp
+                                                <button type="button"
+                                                    onclick="confirmReactivate('{{ $user->id }}', '{{ $user->name }}', '{{ $roleLabel }}')"
+                                                    class="w-full flex items-center justify-center px-3 py-2 bg-green-500 text-white rounded-md text-sm font-medium hover:bg-green-600">
+                                                    <i class="bi bi-check-circle mr-1"></i> Aktifkan
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </div>
                                 @endif
-                            </div>
+                            @endif
                         </div>
                     </div>
                 </div>

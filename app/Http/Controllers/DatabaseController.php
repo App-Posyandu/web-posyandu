@@ -29,7 +29,7 @@ class DatabaseController extends Controller
         return view('admin.database.index', compact('tableList'));
     }
 
-    public function show($table)
+    public function show(Request $request, $table)
     {
         // Prevent SQL injection by verifying the table actually exists
         if (!Schema::hasTable($table)) {
@@ -38,10 +38,19 @@ class DatabaseController extends Controller
 
         // Get columns
         $columns = Schema::getColumnListing($table);
+        
+        $search = $request->query('search');
+        $searchColumn = $request->query('search_column');
+        
+        $query = DB::table($table);
+        
+        if (!empty($search) && !empty($searchColumn) && in_array($searchColumn, $columns)) {
+            $query->where($searchColumn, 'like', '%' . $search . '%');
+        }
 
         // Get paginated data
-        $records = DB::table($table)->paginate(10)->withQueryString();
+        $records = $query->paginate(10)->withQueryString();
 
-        return view('admin.database.show', compact('table', 'columns', 'records'));
+        return view('admin.database.show', compact('table', 'columns', 'records', 'search', 'searchColumn'));
     }
 }
