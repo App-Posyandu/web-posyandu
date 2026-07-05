@@ -625,7 +625,7 @@
                                         <label for="keputusan_step1"
                                             class="block font-medium text-sm text-gray-700 mb-2">Keputusan</label>
                                         @php
-                                            $maxRevisionCount = \App\Models\SystemSetting::get('max_revision_count', 3);
+                                            $maxRevisionCount = (int) \App\Models\SystemSetting::get('max_revision_count', 3);
                                             $canRevise = $ajuan->revision_count < $maxRevisionCount;
                                         @endphp
                                         <select name="keputusan" id="keputusan_step1" required
