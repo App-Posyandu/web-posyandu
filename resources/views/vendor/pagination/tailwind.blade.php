@@ -1,3 +1,14 @@
+@php
+    if (!function_exists('safe_paginator_url')) {
+        function safe_paginator_url($url) {
+            if (!$url) return $url;
+            if (\Illuminate\Support\Str::startsWith($url, ['http://', 'https://', '/', '?'])) {
+                return $url;
+            }
+            return '/' . ltrim($url, '/');
+        }
+    }
+@endphp
 @if ($paginator->hasPages())
     <nav role="navigation" aria-label="{{ __('Pagination Navigation') }}" class="w-full flex items-center justify-between">
         <div class="flex justify-between flex-1 sm:hidden">
@@ -7,14 +18,14 @@
                     {!! __('pagination.previous') !!}
                 </span>
             @else
-                <a href="{{ $paginator->previousPageUrl() }}"
+                <a href="{{ safe_paginator_url($paginator->previousPageUrl()) }}"
                     class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 leading-5 rounded-md hover:text-gray-500 focus:outline-none focus:ring ring-gray-300 focus:border-blue-300 active:bg-gray-100 active:text-gray-700 transition ease-in-out duration-150 ">
                     {!! __('pagination.previous') !!}
                 </a>
             @endif
 
             @if ($paginator->hasMorePages())
-                <a href="{{ $paginator->nextPageUrl() }}"
+                <a href="{{ safe_paginator_url($paginator->nextPageUrl()) }}"
                     class="relative inline-flex items-center px-4 py-2 ml-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 leading-5 rounded-md hover:text-gray-500 focus:outline-none focus:ring ring-gray-300 focus:border-blue-300 active:bg-gray-100 active:text-gray-700 transition ease-in-out duration-150 ">
                     {!! __('pagination.next') !!}
                 </a>
@@ -59,7 +70,7 @@
                             </span>
                         </span>
                     @else
-                        <a href="{{ $paginator->previousPageUrl() }}" rel="prev"
+                        <a href="{{ safe_paginator_url($paginator->previousPageUrl()) }}" rel="prev"
                             class="relative inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-l-md leading-5 hover:text-gray-400 focus:z-10 focus:outline-none focus:ring ring-gray-300 focus:border-blue-300 active:bg-gray-100 active:text-gray-500 transition ease-in-out duration-150 "
                             aria-label="{{ __('pagination.previous') }}">
                             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -69,7 +80,38 @@
                             </svg>
                         </a>
                     @endif
-                    @foreach ($elements as $element)
+                    @php
+                        $customElements = [];
+                        $last = $paginator->lastPage();
+                        $current = $paginator->currentPage();
+                        
+                        if ($last <= 6) {
+                            $customElements[0] = [];
+                            for ($i = 1; $i <= $last; $i++) {
+                                $customElements[0][$i] = $paginator->url($i);
+                            }
+                        } else {
+                            $customElements[0] = [
+                                1 => $paginator->url(1),
+                                2 => $paginator->url(2),
+                                3 => $paginator->url(3),
+                            ];
+                            
+                            if ($current > 3 && $current < $last - 1) {
+                                $customElements[1] = '...';
+                                $customElements[2] = [$current => $paginator->url($current)];
+                                $customElements[3] = '...';
+                            } else {
+                                $customElements[1] = '...';
+                            }
+                            
+                            $customElements[4] = [
+                                $last - 1 => $paginator->url($last - 1),
+                                $last => $paginator->url($last),
+                            ];
+                        }
+                    @endphp
+                    @foreach ($customElements as $element)
                         @if (is_string($element))
                             <span aria-disabled="true">
                                 <span
@@ -84,7 +126,7 @@
                                             class="relative inline-flex items-center px-4 py-2 -ml-px text-sm font-medium text-white bg-pink-500 border border-pink-500 cursor-default leading-5">{{ $page }}</span>
                                     </span>
                                 @else
-                                    <a href="{{ $url }}"
+                                    <a href="{{ safe_paginator_url($url) }}"
                                         class="relative inline-flex items-center px-4 py-2 -ml-px text-sm font-medium text-gray-700 bg-white border border-gray-300 leading-5 hover:bg-pink-50 hover:text-pink-600 focus:z-10 focus:outline-none focus:ring ring-gray-300 focus:border-blue-300 active:bg-gray-100 active:text-gray-700 transition ease-in-out duration-150"
                                         aria-label="{{ __('Go to page :page', ['page' => $page]) }}">
                                         {{ $page }}
@@ -94,7 +136,7 @@
                         @endif
                     @endforeach
                     @if ($paginator->hasMorePages())
-                        <a href="{{ $paginator->nextPageUrl() }}" rel="next"
+                        <a href="{{ safe_paginator_url($paginator->nextPageUrl()) }}" rel="next"
                             class="relative inline-flex items-center px-2 py-2 -ml-px text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-r-md leading-5 hover:text-gray-400 focus:z-10 focus:outline-none focus:ring ring-gray-300 focus:border-blue-300 active:bg-gray-100 active:text-gray-500 transition ease-in-out duration-150 "
                             aria-label="{{ __('pagination.next') }}">
                             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">

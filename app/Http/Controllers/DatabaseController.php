@@ -40,7 +40,7 @@ class DatabaseController extends Controller
         $columns = Schema::getColumnListing($table);
 
         // Get paginated data
-        $records = DB::table($table)->paginate(50);
+        $records = DB::table($table)->paginate(10)->withQueryString();
 
         return view('admin.database.show', compact('table', 'columns', 'records'));
     }
