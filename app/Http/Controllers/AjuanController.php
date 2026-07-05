@@ -14,6 +14,7 @@ use App\Support\AccessAudit;
 use App\Support\YearParameter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -244,7 +245,7 @@ class AjuanController extends Controller
         $targetUserId = $this->getTargetUserId();
 
         if (!$actor || !$targetUserId) {
-            \Log::warning('[AjuanController] getTargetUser: actor or targetUserId null', [
+            Log::warning('[AjuanController] getTargetUser: actor or targetUserId null', [
                 'actor_id'       => $actor?->id,
                 'actor_role'     => $actor?->role,
                 'targetUserId'   => $targetUserId,
@@ -254,7 +255,7 @@ class AjuanController extends Controller
         }
 
         if (!\Illuminate\Support\Str::isUuid($targetUserId)) {
-            \Log::warning('[AjuanController] getTargetUser: targetUserId bukan UUID valid', [
+            Log::warning('[AjuanController] getTargetUser: targetUserId bukan UUID valid', [
                 'targetUserId' => $targetUserId,
                 'actor_id'     => $actor->id,
                 'actor_role'   => $actor->role,
@@ -265,7 +266,7 @@ class AjuanController extends Controller
         $target = User::find($targetUserId);
 
         if (!$target) {
-            \Log::warning('[AjuanController] getTargetUser: user tidak ditemukan di DB', [
+            Log::warning('[AjuanController] getTargetUser: user tidak ditemukan di DB', [
                 'targetUserId' => $targetUserId,
                 'actor_id'     => $actor->id,
             ]);
@@ -277,7 +278,7 @@ class AjuanController extends Controller
             $isMasyarakat  = $target->role === 'masyarakat';
 
             if (!$isMasyarakat || !$posyanduMatch) {
-                \Log::warning('[AjuanController] getTargetUser: gagal validasi kader', [
+                Log::warning('[AjuanController] getTargetUser: gagal validasi kader', [
                     'actor_id'           => $actor->id,
                     'actor_posyandu_id'  => $actor->posyandu_id,
                     'target_id'          => $target->id,
@@ -488,7 +489,7 @@ class AjuanController extends Controller
         $ajuanData = session('ajuan_data');
         $user = Auth::user();
 
-        \Log::info('[storeAdministrasi] dipanggil', [
+        Log::info('[storeAdministrasi] dipanggil', [
             'user_id'                => $user?->id,
             'user_role'              => $user?->role,
             'user_posyandu_id'       => $user?->posyandu_id,
@@ -499,7 +500,7 @@ class AjuanController extends Controller
         ]);
 
         if (!$ajuanData || !$user) {
-            \Log::error('[storeAdministrasi] sesi tidak valid – ajuanData atau user null', [
+            Log::error('[storeAdministrasi] sesi tidak valid – ajuanData atau user null', [
                 'has_ajuan_data' => !empty($ajuanData),
                 'has_user'       => !empty($user),
             ]);
@@ -508,7 +509,7 @@ class AjuanController extends Controller
 
         $targetUser = $this->getTargetUser();
         if (!$targetUser) {
-            \Log::error('[storeAdministrasi] getTargetUser() null – redirect ke dashboard', [
+            Log::error('[storeAdministrasi] getTargetUser() null – redirect ke dashboard', [
                 'user_id'          => $user->id,
                 'user_role'        => $user->role,
                 'on_behalf_of_id'  => session('ajuan_on_behalf_of_id'),
@@ -517,7 +518,7 @@ class AjuanController extends Controller
             return redirect()->route('dashboard')->with('error', 'User masyarakat yang dipilih tidak valid atau di luar posyandu Anda. Silakan pilih ulang masyarakat.');
         }
 
-        \Log::info('[storeAdministrasi] targetUser ditemukan, lanjut proses', [
+        Log::info('[storeAdministrasi] targetUser ditemukan, lanjut proses', [
             'target_user_id'          => $targetUser->id,
             'target_user_posyandu_id' => $targetUser->posyandu_id,
         ]);
@@ -597,14 +598,14 @@ class AjuanController extends Controller
                 'submitted_to_desa' => false,
             ]);
 
-            \Log::info('[storeAdministrasi] Pengajuan berhasil disimpan', [
+            Log::info('[storeAdministrasi] Pengajuan berhasil disimpan', [
                 'pengajuan_id'   => $pengajuan->id,
                 'tracking_code'  => $pengajuan->tracking_code,
                 'user_id'        => $targetUser->id,
                 'bidang_id'      => $ajuanData['bidang_id'],
             ]);
         } catch (\Throwable $e) {
-            \Log::error('[storeAdministrasi] GAGAL create Pengajuan', [
+            Log::error('[storeAdministrasi] GAGAL create Pengajuan', [
                 'error'         => $e->getMessage(),
                 'trace'         => $e->getTraceAsString(),
                 'target_user'   => $targetUser->id,
