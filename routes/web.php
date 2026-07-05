@@ -348,10 +348,10 @@ Route::middleware('auth')->group(function () {
             Route::get('export-posyandu/{desa}/{kecamatan}', [PosyanduController::class, 'exportByDesaKecamatan'])->name('posyandu.export.template');
         });
 
-        Route::get('/export-all/{desa}', [LaporanController::class, 'exportExcelAll'])->name('laporan.exportExcelAll');
-        Route::get('/export/{bidang}/{desa}', [LaporanController::class, 'exportExcelBidang'])->name('laporan.exportExcelBidang');
-        Route::get('/export-all-bidang-desa', [LaporanController::class, 'exportExcelAllBidangDanDesa'])->name('laporan.exportExcelAllBidangDanDesa');
-        Route::get('/export/{bidang}', [LaporanController::class, 'exportBidangAllDesa'])->name('laporan.exportBidangAllDesa');
+        Route::middleware('role:admin,ketua-timpembina-posyandu,admin-kabupaten,kabid,admin-kecamatan,ketua-posyandu,kades,bu-kades')->group(function () {
+            Route::get('/export', [LaporanController::class, 'exportUnified'])->name('laporan.export');
+            Route::get('/export-options', [LaporanController::class, 'getExportOptions'])->name('laporan.exportOptions');
+        });
     });
 
     // ========================================
