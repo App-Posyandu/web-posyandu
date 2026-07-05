@@ -3,6 +3,7 @@
 use App\Http\Controllers\AjuanController;
 use App\Http\Controllers\BukuSakuController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DatabaseController;
 use App\Http\Controllers\GoogleLoginController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\NotificationController;
@@ -359,6 +360,15 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware(['role:kabid,ketua-posyandu,kader,admin,admin-kecamatan,admin-kabupaten,operator-desa,ketua-timpembina-posyandu'])->prefix('admin')->name('admin.')->group(function () {
         Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
+    });
+
+    // ========================================
+    // ADMIN ROUTES - DATABASE
+    // ========================================
+
+    Route::middleware(['role:admin'])->prefix('admin')->name('admin.')->group(function () {
+        Route::get('/database', [DatabaseController::class, 'index'])->name('database.index');
+        Route::get('/database/{table}', [DatabaseController::class, 'show'])->name('database.show');
     });
 
     // ========================================
