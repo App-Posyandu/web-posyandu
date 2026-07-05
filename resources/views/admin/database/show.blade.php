@@ -33,7 +33,7 @@
                                             @if($record->$column === null)
                                                 <span class="text-gray-400 italic">NULL</span>
                                             @else
-                                                {{ Str::limit((string)$record->$column, 50) }}
+                                                {{ \Illuminate\Support\Str::limit((string)$record->$column, 50) }}
                                             @endif
                                         </td>
                                     @endforeach
