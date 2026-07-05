@@ -284,8 +284,8 @@ class AjuanController extends Controller
     {
         $ajuan = Pengajuan::findOrFail($ajuan->id);
 
-        $autoRejectDays = SystemSetting::get('auto_reject_days', 5);
-        $maxRevisionCount = SystemSetting::get('max_revision_count', 3);
+        $autoRejectDays = (int) SystemSetting::get('auto_reject_days', 5);
+        $maxRevisionCount = (int) SystemSetting::get('max_revision_count', 3);
 
         $request->validate([
             'catatan' => 'required|string|max:500'
@@ -645,10 +645,10 @@ class AjuanController extends Controller
 
         if ($ajuan->revision_requested_at && $ajuan->status_pengajuan === 'Diproses') {
 
-            $enableAutoReject = SystemSetting::get('enable_auto_reject', true);
-            $debugMode = SystemSetting::get('revision_debug_mode', false);
-            $debugMinutes = SystemSetting::get('revision_debug_minutes', 5);
-            $productionDays = SystemSetting::get('auto_reject_days', 5);
+            $enableAutoReject = (bool) SystemSetting::get('enable_auto_reject', true);
+            $debugMode = (bool) SystemSetting::get('revision_debug_mode', false);
+            $debugMinutes = (int) SystemSetting::get('revision_debug_minutes', 5);
+            $productionDays = (int) SystemSetting::get('auto_reject_days', 5);
 
             if ($enableAutoReject) {
                 if ($debugMode) {
@@ -686,7 +686,7 @@ class AjuanController extends Controller
             $templateData = ['formulir_items' => [], 'administrasi_items' => []];
         }
 
-        $maxRevisionCount = SystemSetting::get('max_revision_count', 3);
+        $maxRevisionCount = (int) SystemSetting::get('max_revision_count', 3);
         $canRevise = ($ajuan->revision_count ?? 0) < $maxRevisionCount;
 
         return view('ajuan.detail', [
@@ -709,10 +709,10 @@ class AjuanController extends Controller
 
         if ($ajuan->revision_requested_at) {
 
-            $enableAutoReject = SystemSetting::get('enable_auto_reject', true);
-            $debugMode = SystemSetting::get('revision_debug_mode', false);
-            $debugMinutes = SystemSetting::get('revision_debug_minutes', 5);
-            $productionDays = SystemSetting::get('auto_reject_days', 5);
+            $enableAutoReject = (bool) SystemSetting::get('enable_auto_reject', true);
+            $debugMode = (bool) SystemSetting::get('revision_debug_mode', false);
+            $debugMinutes = (int) SystemSetting::get('revision_debug_minutes', 5);
+            $productionDays = (int) SystemSetting::get('auto_reject_days', 5);
 
             if ($enableAutoReject) {
                 if ($debugMode) {
@@ -779,9 +779,9 @@ class AjuanController extends Controller
 
         $revisionDeadline = null;
         if ($pengajuan->revision_requested_at) {
-            $debugMode = SystemSetting::get('revision_debug_mode', false);
-            $debugMinutes = SystemSetting::get('revision_debug_minutes', 5);
-            $productionDays = SystemSetting::get('auto_reject_days', 5);
+            $debugMode = (bool) SystemSetting::get('revision_debug_mode', false);
+            $debugMinutes = (int) SystemSetting::get('revision_debug_minutes', 5);
+            $productionDays = (int) SystemSetting::get('auto_reject_days', 5);
 
             if ($debugMode) {
                 $revisionDeadline = \Carbon\Carbon::parse($pengajuan->revision_requested_at)
@@ -987,7 +987,7 @@ class AjuanController extends Controller
                 }
 
                 if ($keputusan === 'revisi') {
-                    $maxRevisionCount = SystemSetting::get('max_revision_count', 3);
+                    $maxRevisionCount = (int) SystemSetting::get('max_revision_count', 3);
                     if ($ajuan->revision_count >= $maxRevisionCount) {
                         return redirect()->back()->with('error', "Revisi tidak dapat diminta lagi. Pengajuan sudah mencapai batas maksimal revisi ({$maxRevisionCount}x).");
                     }
