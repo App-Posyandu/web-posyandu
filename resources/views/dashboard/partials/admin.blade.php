@@ -588,325 +588,293 @@
                     console.log('[Dashboard] Chart updated successfully');
                 },
 
-                exportData() {
-                    const userRole = "{{ auth()->user()->role }}";
-                    const userPosyanduDesa = "{{ auth()->user()?->posyandu?->desa ?? '' }}";
-                    const userDesa = "{{ auth()->user()->desa ?? '' }}";
-                    const userKecamatan = "{{ auth()->user()->kecamatan ?? '' }}";
-                    const userKabupaten = "{{ auth()->user()->kabupaten ?? '' }}";
-                    const bidangKabid = "{{ auth()->user()?->bidang?->nama_bidang ?? '' }}";
+                exportOptions: null,
 
-                    if (userRole === 'ketua-posyandu') {
-                        if (!userPosyanduDesa) {
-                            Swal.fire({
-                                icon: 'warning',
-                                title: 'Data Posyandu Tidak Ditemukan',
-                                text: 'Posyandu belum ditetapkan di profile Anda.',
-                                confirmButtonColor: '#f87171'
-                            });
+                async exportData() {
+                    const role = "{{ auth()->user()->role }}";
+                    const year = this.selectedYear;
+
+                    const type = await this.showExportStep1(role);
+                    if (!type) return;
+
+                    if (type === 'all') {
+                        window.location.href = `/admin/export?scope=all&year=${year}`;
+                        return;
+                    }
+
+                    // Lazy-load dropdown options from API
+                    if (!this.exportOptions) {
+                        try {
+                            const resp = await fetch('{{ route("laporan.exportOptions") }}');
+                            if (!resp.ok) throw new Error();
+                            this.exportOptions = await resp.json();
+                        } catch {
+                            Swal.fire({ icon: 'error', title: 'Gagal Memuat Data', text: 'Tidak dapat mengambil data filter. Silakan coba lagi.' });
                             return;
                         }
-
-                        const selectedYear = this.selectedYear;
-                        this.showKetuaKaderExportModal();
-                        return;
                     }
 
-                    if (userRole === 'kades' || userRole === 'bu-kades') {
-                        if (!userDesa) {
-                            Swal.fire({
-                                icon: 'warning',
-                                title: 'Data Desa Tidak Ditemukan',
-                                text: 'Desa belum ditetapkan di profile Anda.',
-                                confirmButtonColor: '#f87171'
-                            });
-                            return;
-                        }
+                    const result2 = await this.showExportStep2(type, year, this.exportOptions, this.desas);
+                    if (!result2) return;
+                    if (result2.back) { this.exportData(); return; }
 
-                        this.showKadesExportModal();
-                        return;
+                    if (result2.url) { window.location.href = result2.url; return; }
+
+                    // Step 3: posyandu → pilih bidang
+                    if (result2.posyanduId) {
+                        const result3 = await this.showExportStep3(result2.posyanduId, year);
+                        if (!result3) return;
+                        if (result3.back) { this.exportData(); return; }
+                        if (result3.url) window.location.href = result3.url;
                     }
-
-                    if (userRole === 'admin-kecamatan') {
-                        if (!userKecamatan) {
-                            Swal.fire({
-                                icon: 'warning',
-                                title: 'Data Kecamatan Tidak Ditemukan',
-                                text: 'Kecamatan belum ditetapkan di profile Anda.',
-                                confirmButtonColor: '#f87171'
-                            });
-                            return;
-                        }
-
-                        this.showAdminKecamatanExportModal();
-                        return;
-                    }
-
-                    if (userRole === 'kabid') {
-                        if (!bidangKabid) {
-                            Swal.fire({
-                                icon: 'warning',
-                                title: 'Bidang Kabid Belum Diset',
-                                text: 'Bidang kabid belum tersedia. Silakan lengkapi data bidang di profil.',
-                                confirmButtonColor: '#f87171'
-                            });
-                            return;
-                        }
-
-                        this.showKabidExportModal();
-                        return;
-                    }
-
-                    if (['ketua-timpembina-posyandu', 'admin-kabupaten', 'admin'].includes(userRole)) {
-                        window.location.href =
-                            `/admin/export-all-bidang-desa?year=${this.selectedYear}`;
-                        return;
-                    }
-                    window.location.href = `/admin/export-all-bidang-desa?year=${this.selectedYear}`;
                 },
 
-                showKetuaKaderExportModal() {
-                    const selectedYear = this.selectedYear;
-                    const userDesa = "{{ auth()->user()?->posyandu?->desa ?? '' }}";
+                async showExportStep1(role) {
+                    const TYPE_CONFIG = {
+                        admin: [
+                            { value: 'all',       label: 'Keseluruhan',   desc: 'Semua data pengajuan',              icon: 'bi-globe' },
+                            { value: 'kabupaten', label: 'Per Kabupaten',  desc: 'Data pada kabupaten tertentu',     icon: 'bi-building' },
+                            { value: 'kecamatan', label: 'Per Kecamatan',  desc: 'Data pada kecamatan tertentu',     icon: 'bi-building-fill' },
+                            { value: 'desa',      label: 'Per Desa',       desc: 'Data pada desa tertentu',          icon: 'bi-house-fill' },
+                            { value: 'posyandu',  label: 'Per Posyandu',   desc: 'Data pada posyandu tertentu',      icon: 'bi-hospital' },
+                            { value: 'bidang',    label: 'Per Bidang',     desc: 'Data pada bidang layanan tertentu', icon: 'bi-grid-3x3-gap' },
+                        ],
+                        'admin-kabupaten': [
+                            { value: 'all',       label: 'Keseluruhan',   desc: 'Semua data di kabupaten Anda',     icon: 'bi-globe' },
+                            { value: 'kecamatan', label: 'Per Kecamatan',  desc: 'Data pada kecamatan tertentu',    icon: 'bi-building-fill' },
+                            { value: 'desa',      label: 'Per Desa',       desc: 'Data pada desa tertentu',         icon: 'bi-house-fill' },
+                            { value: 'posyandu',  label: 'Per Posyandu',   desc: 'Data pada posyandu tertentu',     icon: 'bi-hospital' },
+                            { value: 'bidang',    label: 'Per Bidang',     desc: 'Data pada bidang tertentu',        icon: 'bi-grid-3x3-gap' },
+                        ],
+                        kabid: [
+                            { value: 'all',       label: 'Keseluruhan',   desc: 'Semua data di bidang Anda',        icon: 'bi-globe' },
+                            { value: 'kecamatan', label: 'Per Kecamatan',  desc: 'Data pada kecamatan tertentu',    icon: 'bi-building-fill' },
+                            { value: 'desa',      label: 'Per Desa',       desc: 'Data pada desa tertentu',         icon: 'bi-house-fill' },
+                        ],
+                        'admin-kecamatan': [
+                            { value: 'all',       label: 'Keseluruhan',   desc: 'Semua data di kecamatan Anda',     icon: 'bi-globe' },
+                            { value: 'desa',      label: 'Per Desa',       desc: 'Data pada desa tertentu',         icon: 'bi-house-fill' },
+                            { value: 'posyandu',  label: 'Per Posyandu',   desc: 'Data pada posyandu tertentu',     icon: 'bi-hospital' },
+                            { value: 'bidang',    label: 'Per Bidang',     desc: 'Data pada bidang tertentu',        icon: 'bi-grid-3x3-gap' },
+                        ],
+                        kades: [
+                            { value: 'all',       label: 'Keseluruhan',   desc: 'Semua data di desa Anda',          icon: 'bi-globe' },
+                            { value: 'posyandu',  label: 'Per Posyandu',   desc: 'Data pada posyandu tertentu',     icon: 'bi-hospital' },
+                            { value: 'bidang',    label: 'Per Bidang',     desc: 'Data pada bidang tertentu',        icon: 'bi-grid-3x3-gap' },
+                        ],
+                        'ketua-posyandu': [
+                            { value: 'all',       label: 'Keseluruhan',   desc: 'Semua data di posyandu Anda',      icon: 'bi-globe' },
+                            { value: 'bidang',    label: 'Per Bidang',     desc: 'Data pada bidang tertentu',        icon: 'bi-grid-3x3-gap' },
+                        ],
+                    };
+                    TYPE_CONFIG['bu-kades']                  = TYPE_CONFIG['kades'];
+                    TYPE_CONFIG['ketua-timpembina-posyandu'] = TYPE_CONFIG['admin-kabupaten'];
 
-                    Swal.fire({
-                        title: '<h2 class="text-lg md:text-xl font-bold text-gray-800 mb-2">Export Data Pengajuan</h2>',
-                        html: `
-            <div class="space-y-6">
-                <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-md">
-                    <div class="flex items-start">
-                        <i class="bi bi-info-circle-fill text-blue-500 mr-2 mt-0.5"></i>
-                        <div class="text-left">
-                            <p class="text-sm font-medium text-gray-900">Posyandu Anda</p>
-                            <p class="text-xs text-gray-600 mt-1">
-                                Export data hanya untuk posyandu Anda di desa: <strong>${userDesa}</strong>
-                            </p>
-                        </div>
-                    </div>
-                </div>
+                    const options = TYPE_CONFIG[role] ?? TYPE_CONFIG['admin'];
 
-                <div class="text-left">
-                    <label class="block text-start font-semibold mb-2 text-gray-700">Pilih Bidang:</label>
-                    <select id="ketuaKaderBidangSelect" class="w-full border border-gray-300 rounded-md p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        <option value="" disabled selected>Pilih Bidang</option>
-                        <option value="all">Semua Bidang</option>
-                        <option value="Bidang Perumahan Rakyat">Bidang Perumahan Rakyat</option>
-                        <option value="Bidang Pendidikan">Bidang Pendidikan</option>
-                        <option value="Bidang Kesehatan">Bidang Kesehatan</option>
-                        <option value="Bidang Sosial">Bidang Sosial</option>
-                        <option value="Bidang Pekerjaan Umum">Bidang Pekerjaan Umum</option>
-                        <option value="Bidang Trantibumlinmas">Bidang Trantibumlinmas</option>
-                    </select>
-                </div>
+                    return new Promise((resolve) => {
+                        let settled = false;
+                        const done = (val) => { if (!settled) { settled = true; resolve(val); } };
 
-                <div class="flex justify-between gap-4 mt-6">
-                    <button id="cancelKetuaKaderExport"
-                        class="bg-gray-500 text-white hover:bg-gray-600 font-medium rounded-md py-3 px-6 w-1/2 shadow transition-colors">
-                        Batal
-                    </button>
-                    <button id="confirmKetuaKaderExport"
-                        class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-md py-3 px-6 w-1/2 shadow transition-colors">
-                        <i class="bi bi-file-earmark-excel mr-2"></i>
-                        Export Data
-                    </button>
-                </div>
-            </div>
-        `,
-                        showConfirmButton: false,
-                        showCancelButton: false,
-                        width: 600,
-                        background: '#f9fafb',
-                        customClass: {
-                            popup: 'rounded-md md:rounded-2xl shadow-2xl p-6'
-                        }
-                    });
+                        const cols = options.length <= 2 ? 'grid-cols-1' : options.length <= 4 ? 'grid-cols-2' : 'grid-cols-2';
+                        const cardsHtml = options.map(o => `
+                            <label class="export-type-card flex items-center gap-3 p-3 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-all">
+                                <input type="radio" name="exportType" value="${o.value}" class="hidden">
+                                <i class="bi ${o.icon} text-blue-500 text-lg flex-shrink-0"></i>
+                                <div class="text-left">
+                                    <div class="font-semibold text-sm text-gray-800">${o.label}</div>
+                                    <div class="text-xs text-gray-500">${o.desc}</div>
+                                </div>
+                            </label>`).join('');
 
-                    const handleKetuaKaderExport = (e) => {
-                        if (e.target.id === 'cancelKetuaKaderExport') {
-                            Swal.close();
-                            document.removeEventListener('click', handleKetuaKaderExport);
-                        }
-
-                        if (e.target.id === 'confirmKetuaKaderExport') {
-                            const bidangSelect = document.getElementById('ketuaKaderBidangSelect');
-                            const selectedBidang = bidangSelect?.value;
-
-                            if (!selectedBidang) {
-                                Swal.fire({
-                                    icon: 'warning',
-                                    title: 'Bidang Belum Dipilih!',
-                                    text: 'Silakan pilih bidang terlebih dahulu.',
-                                    confirmButtonColor: '#f87171'
+                        Swal.fire({
+                            title: '<h2 class="text-lg font-bold text-gray-800">Export Data Pengajuan</h2>',
+                            html: `<p class="text-sm text-gray-500 mb-3 text-left">Pilih jenis data yang ingin diekspor:</p>
+                                   <div class="grid ${cols} gap-2 text-left" id="exportTypeGrid">${cardsHtml}</div>
+                                   <div class="flex gap-3 mt-5">
+                                       <button id="btnCancelStep1" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl py-2.5 text-sm">Batal</button>
+                                       <button id="btnNextStep1" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl py-2.5 text-sm">Lanjut &rarr;</button>
+                                   </div>`,
+                            showConfirmButton: false,
+                            width: 520,
+                            background: '#fff',
+                            customClass: { popup: 'rounded-2xl shadow-2xl p-6' },
+                            didOpen: (popup) => {
+                                popup.addEventListener('click', (e) => {
+                                    const card = e.target.closest('.export-type-card');
+                                    if (card) {
+                                        popup.querySelectorAll('.export-type-card').forEach(c => c.classList.remove('border-blue-500', 'bg-blue-50'));
+                                        card.classList.add('border-blue-500', 'bg-blue-50');
+                                        card.querySelector('input[type=radio]').checked = true;
+                                    }
+                                    if (e.target.id === 'btnCancelStep1') { Swal.close(); done(null); }
+                                    if (e.target.id === 'btnNextStep1') {
+                                        const sel = popup.querySelector('input[name="exportType"]:checked')?.value;
+                                        if (!sel) {
+                                            document.getElementById('exportTypeGrid').classList.add('ring-2', 'ring-red-300', 'rounded-xl', 'p-1');
+                                            setTimeout(() => document.getElementById('exportTypeGrid')?.classList.remove('ring-2','ring-red-300','rounded-xl','p-1'), 1500);
+                                            return;
+                                        }
+                                        Swal.close(); done(sel);
+                                    }
                                 });
-                                return;
-                            }
-                            if (selectedBidang === 'all') {
-                                window.location.href =
-                                    `/admin/export-all/${userDesa}?year=${selectedYear}`;
-                            } else {
-                                window.location.href =
-                                    `/admin/export/${encodeURIComponent(selectedBidang)}/${userDesa}?year=${selectedYear}`;
-                            }
-
-                            Swal.close();
-                            document.removeEventListener('click', handleKetuaKaderExport);
-                        }
-                    };
-
-                    document.addEventListener('click', handleKetuaKaderExport);
+                            },
+                            didDestroy: () => done(null),
+                        });
+                    });
                 },
 
-                showKadesExportModal() {
-                    const selectedYear = this.selectedYear;
-                    const userDesa = "{{ auth()->user()->desa ?? '' }}";
+                async showExportStep2(type, year, options, desas) {
+                    const BIDANG_LIST = [
+                        'Bidang Perumahan Rakyat', 'Bidang Pendidikan', 'Bidang Kesehatan',
+                        'Bidang Sosial', 'Bidang Pekerjaan Umum', 'Bidang Trantibumlinmas',
+                    ];
+                    const typeLabels = { kabupaten: 'Kabupaten', kecamatan: 'Kecamatan', desa: 'Desa', posyandu: 'Posyandu', bidang: 'Bidang' };
 
-                    Swal.fire({
-                        title: '<h2 class="text-lg md:text-xl font-bold text-gray-800 mb-2">Export Data Pengajuan</h2>',
-                        html: `
-            <div class="space-y-6">
-                <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-md">
-                    <div class="flex items-start">
-                        <i class="bi bi-info-circle-fill text-green-500 mr-2 mt-0.5"></i>
-                        <div class="text-left">
-                            <p class="text-sm font-medium text-gray-900">Desa Anda</p>
-                            <p class="text-xs text-gray-600 mt-1">
-                                Export data untuk semua bidang di desa: <strong>${userDesa}</strong>
-                            </p>
-                        </div>
-                    </div>
-                </div>
+                    let items = [];
+                    let isObject = false;
+                    switch (type) {
+                        case 'kabupaten': items = options.kabupatens ?? []; break;
+                        case 'kecamatan': items = options.kecamatans ?? []; break;
+                        case 'desa':      items = desas; break;
+                        case 'posyandu':  items = options.posyandus ?? []; isObject = true; break;
+                        case 'bidang':    items = BIDANG_LIST; break;
+                    }
 
-                <p class="text-sm text-gray-600 text-center">
-                    Data akan diekspor untuk semua bidang di desa Anda
-                </p>
-
-                <div class="flex justify-between gap-4 mt-6">
-                    <button id="cancelKadesExport"
-                        class="bg-gray-500 text-white hover:bg-gray-600 font-medium rounded-md py-3 px-6 w-1/2 shadow transition-colors">
-                        Batal
-                    </button>
-                    <button id="confirmKadesExport"
-                        class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-md py-3 px-6 w-1/2 shadow transition-colors">
-                        <i class="bi bi-file-earmark-excel mr-2"></i>
-                        Export Data
-                    </button>
-                </div>
-            </div>
-        `,
-                        showConfirmButton: false,
-                        showCancelButton: false,
-                        width: 600,
-                        background: '#f9fafb',
-                        customClass: {
-                            popup: 'rounded-md md:rounded-2xl shadow-2xl p-6'
+                    const buildOptHtml = (item) => {
+                        if (isObject) {
+                            const label = item.nama_posyandu ?? '';
+                            const sub   = [item.desa, item.kecamatan].filter(Boolean).join(' — ');
+                            return `<div class="searchable-opt px-4 py-2.5 cursor-pointer hover:bg-blue-50 border-b border-gray-50 last:border-0" data-value="${item.id}" data-label="${label}">
+                                        <div class="text-sm font-medium text-gray-800">${label}</div>
+                                        <div class="text-xs text-gray-400">${sub}</div>
+                                    </div>`;
                         }
-                    });
-
-                    const handleKadesExport = (e) => {
-                        if (e.target.id === 'cancelKadesExport') {
-                            Swal.close();
-                            document.removeEventListener('click', handleKadesExport);
-                        }
-
-                        if (e.target.id === 'confirmKadesExport') {
-                            window.location.href =
-                                `/admin/export-all/${userDesa}?year=${selectedYear}`;
-                            Swal.close();
-                            document.removeEventListener('click', handleKadesExport);
-                        }
+                        return `<div class="searchable-opt px-4 py-2.5 cursor-pointer hover:bg-blue-50 text-sm text-gray-800" data-value="${item}" data-label="${item}">${item}</div>`;
                     };
 
-                    document.addEventListener('click', handleKadesExport);
-                },
+                    return new Promise((resolve) => {
+                        let settled = false;
+                        const done = (val) => { if (!settled) { settled = true; resolve(val); } };
 
-                showAdminKecamatanExportModal() {
-                    const selectedYear = this.selectedYear;
-                    const userKecamatan = "{{ auth()->user()->kecamatan ?? '' }}";
-                    const desas = this.desas;
+                        const listHtml = items.length
+                            ? items.map(buildOptHtml).join('')
+                            : '<div class="px-4 py-3 text-sm text-gray-400">Tidak ada data tersedia.</div>';
 
-                    Swal.fire({
-                        title: '<h2 class="text-lg md:text-xl font-bold text-gray-800 mb-2">Export Data Pengajuan</h2>',
-                        html: `
-            <div class="space-y-6">
-                <div class="bg-purple-50 border-l-4 border-purple-500 p-4 rounded-md">
-                    <div class="flex items-start">
-                        <i class="bi bi-info-circle-fill text-purple-500 mr-2 mt-0.5"></i>
-                        <div class="text-left">
-                            <p class="text-sm font-medium text-gray-900">Kecamatan Anda</p>
-                            <p class="text-xs text-gray-600 mt-1">
-                                Export data untuk semua bidang dan desa di kecamatan: <strong>${userKecamatan}</strong>
-                            </p>
-                        </div>
-                    </div>
-                </div>
+                        Swal.fire({
+                            title: `<h2 class="text-lg font-bold text-gray-800">Pilih ${typeLabels[type]}</h2>`,
+                            html: `<p class="text-sm text-gray-500 mb-3 text-left">Pilih ${(typeLabels[type]??'').toLowerCase()} yang ingin diekspor:</p>
+                                   <div class="relative text-left">
+                                       <input type="text" id="sStep2Search" placeholder="Ketik untuk mencari..." autocomplete="off"
+                                           class="w-full border border-gray-300 rounded-xl p-3 pr-10 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                                       <button type="button" id="sStep2Toggle" class="absolute right-3 top-3 text-gray-400 text-xs">▼</button>
+                                       <input type="hidden" id="sStep2Value">
+                                       <div id="sStep2List" class="hidden absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-xl max-h-52 overflow-auto">${listHtml}</div>
+                                   </div>
+                                   <div class="flex gap-3 mt-5">
+                                       <button id="btnBackStep2" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl py-2.5 text-sm">&larr; Kembali</button>
+                                       <button id="btnConfirmStep2" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl py-2.5 text-sm flex items-center justify-center gap-2">
+                                           <i class="bi bi-file-earmark-excel-fill"></i> Export
+                                       </button>
+                                   </div>`,
+                            showConfirmButton: false,
+                            width: 480,
+                            background: '#fff',
+                            customClass: { popup: 'rounded-2xl shadow-2xl p-6' },
+                            didOpen: (popup) => {
+                                const search = popup.querySelector('#sStep2Search');
+                                const list   = popup.querySelector('#sStep2List');
+                                const toggle = popup.querySelector('#sStep2Toggle');
+                                const hidden = popup.querySelector('#sStep2Value');
+                                const allOpts = () => Array.from(list.querySelectorAll('.searchable-opt'));
 
-                <div class="text-left">
-                    <label class="block text-start font-semibold mb-2 text-gray-700">Pilih Desa:</label>
-                    <select id="adminKecamatanDesaSelect" class="w-full border border-gray-300 rounded-md p-3 focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
-                        <option value="" disabled selected>Pilih Desa</option>
-                        <option value="all" class="font-bold">📊 Semua Desa di ${userKecamatan}</option>
-                        <optgroup label="Desa Spesifik:">
-                            ${desas.map(d => `<option value="${d}">${d}</option>`).join('')}
-                        </optgroup>
-                    </select>
-                </div>
-
-                <div class="flex justify-between gap-4 mt-6">
-                    <button id="cancelAdminKecamatanExport"
-                        class="bg-gray-500 text-white hover:bg-gray-600 font-medium rounded-md py-3 px-6 w-1/2 shadow transition-colors">
-                        Batal
-                    </button>
-                    <button id="confirmAdminKecamatanExport"
-                        class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-md py-3 px-6 w-1/2 shadow transition-colors">
-                        <i class="bi bi-file-earmark-excel mr-2"></i>
-                        Export Data
-                    </button>
-                </div>
-            </div>
-        `,
-                        showConfirmButton: false,
-                        showCancelButton: false,
-                        width: 600,
-                        background: '#f9fafb',
-                        customClass: {
-                            popup: 'rounded-md md:rounded-2xl shadow-2xl p-6'
-                        }
-                    });
-
-                    const handleAdminKecamatanExport = (e) => {
-                        if (e.target.id === 'cancelAdminKecamatanExport') {
-                            Swal.close();
-                            document.removeEventListener('click', handleAdminKecamatanExport);
-                        }
-
-                        if (e.target.id === 'confirmAdminKecamatanExport') {
-                            const desaSelect = document.getElementById('adminKecamatanDesaSelect');
-                            const selectedDesa = desaSelect?.value;
-
-                            if (!selectedDesa) {
-                                Swal.fire({
-                                    icon: 'warning',
-                                    title: 'Desa Belum Dipilih!',
-                                    text: 'Silakan pilih desa terlebih dahulu.',
-                                    confirmButtonColor: '#f87171'
+                                search.addEventListener('focus', () => list.classList.remove('hidden'));
+                                toggle.addEventListener('click', e => { e.stopPropagation(); list.classList.toggle('hidden'); });
+                                search.addEventListener('input', e => {
+                                    const term = e.target.value.toLowerCase();
+                                    allOpts().forEach(o => { o.style.display = o.textContent.toLowerCase().includes(term) ? '' : 'none'; });
+                                    list.classList.remove('hidden');
                                 });
-                                return;
-                            }
+                                list.addEventListener('click', e => {
+                                    const opt = e.target.closest('.searchable-opt');
+                                    if (opt) { hidden.value = opt.dataset.value; search.value = opt.dataset.label; list.classList.add('hidden'); }
+                                });
+                                popup.addEventListener('click', e => {
+                                    if (!search.contains(e.target) && !list.contains(e.target) && !toggle.contains(e.target)) list.classList.add('hidden');
+                                    if (e.target.id === 'btnBackStep2') { Swal.close(); done({ back: true }); }
+                                    if (e.target.id === 'btnConfirmStep2') {
+                                        const val = hidden.value;
+                                        if (!val) { search.classList.add('ring-2','ring-red-400'); setTimeout(() => search.classList.remove('ring-2','ring-red-400'), 1500); return; }
+                                        Swal.close();
+                                        if (type === 'posyandu') { done({ posyanduId: val }); return; }
+                                        done({ url: `/admin/export?scope=${type}&${type}=${encodeURIComponent(val)}&year=${year}` });
+                                    }
+                                });
+                            },
+                            didDestroy: () => done(null),
+                        });
+                    });
+                },
 
-                            if (selectedDesa === 'all') {
-                                window.location.href =
-                                    `/admin/export-all/${selectedDesa}?year=${selectedYear}`;
-                            } else {
-                                window.location.href =
-                                    `/admin/export-all/${selectedDesa}?year=${selectedYear}`;
-                            }
+                async showExportStep3(posyanduId, year) {
+                    const BIDANG_LIST = [
+                        { value: 'all',                      label: 'Semua Bidang' },
+                        { value: 'Bidang Perumahan Rakyat',  label: 'Bidang Perumahan Rakyat' },
+                        { value: 'Bidang Pendidikan',        label: 'Bidang Pendidikan' },
+                        { value: 'Bidang Kesehatan',         label: 'Bidang Kesehatan' },
+                        { value: 'Bidang Sosial',            label: 'Bidang Sosial' },
+                        { value: 'Bidang Pekerjaan Umum',    label: 'Bidang Pekerjaan Umum' },
+                        { value: 'Bidang Trantibumlinmas',   label: 'Bidang Trantibumlinmas' },
+                    ];
 
-                            Swal.close();
-                            document.removeEventListener('click', handleAdminKecamatanExport);
-                        }
-                    };
+                    return new Promise((resolve) => {
+                        let settled = false;
+                        const done = (val) => { if (!settled) { settled = true; resolve(val); } };
 
-                    document.addEventListener('click', handleAdminKecamatanExport);
+                        const cardsHtml = BIDANG_LIST.map(b => `
+                            <label class="bidang-card flex items-center gap-3 p-3 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-emerald-400 hover:bg-emerald-50 transition-all">
+                                <input type="radio" name="posyanduBidang" value="${b.value}" class="hidden">
+                                <span class="text-sm font-medium text-gray-800">${b.label}</span>
+                            </label>`).join('');
+
+                        Swal.fire({
+                            title: '<h2 class="text-lg font-bold text-gray-800">Pilih Bidang</h2>',
+                            html: `<p class="text-sm text-gray-500 mb-3 text-left">Pilih bidang yang ingin diekspor dari posyandu ini:</p>
+                                   <div class="grid grid-cols-1 gap-2 text-left" id="bidangCardGrid">${cardsHtml}</div>
+                                   <div class="flex gap-3 mt-5">
+                                       <button id="btnBackStep3" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl py-2.5 text-sm">&larr; Kembali</button>
+                                       <button id="btnConfirmStep3" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl py-2.5 text-sm flex items-center justify-center gap-2">
+                                           <i class="bi bi-file-earmark-excel-fill"></i> Export
+                                       </button>
+                                   </div>`,
+                            showConfirmButton: false,
+                            width: 480,
+                            background: '#fff',
+                            customClass: { popup: 'rounded-2xl shadow-2xl p-6' },
+                            didOpen: (popup) => {
+                                popup.addEventListener('click', e => {
+                                    const card = e.target.closest('.bidang-card');
+                                    if (card) {
+                                        popup.querySelectorAll('.bidang-card').forEach(c => c.classList.remove('border-emerald-500', 'bg-emerald-50'));
+                                        card.classList.add('border-emerald-500', 'bg-emerald-50');
+                                        card.querySelector('input[type=radio]').checked = true;
+                                    }
+                                    if (e.target.id === 'btnBackStep3') { Swal.close(); done({ back: true }); }
+                                    if (e.target.id === 'btnConfirmStep3') {
+                                        const bidang = popup.querySelector('input[name="posyanduBidang"]:checked')?.value;
+                                        if (!bidang) {
+                                            popup.querySelector('#bidangCardGrid').classList.add('ring-2','ring-red-300','rounded-xl','p-1');
+                                            setTimeout(() => popup.querySelector('#bidangCardGrid')?.classList.remove('ring-2','ring-red-300','rounded-xl','p-1'), 1500);
+                                            return;
+                                        }
+                                        Swal.close();
+                                        done({ url: `/admin/export?scope=posyandu&posyandu_id=${encodeURIComponent(posyanduId)}&bidang=${encodeURIComponent(bidang)}&year=${year}` });
+                                    }
+                                });
+                            },
+                            didDestroy: () => done(null),
+                        });
+                    });
                 },
 
                 handlePagination(event) {
@@ -922,358 +890,8 @@
                     }
                 },
 
-                showKabidExportModal() {
-                    const bidangKabid = "{{ auth()->user()->bidang?->nama_bidang ?? '' }}";
-                    const kabupatenKabid = "{{ auth()->user()->kabupaten ?? '' }}";
-                    const desas = this.desas;
-
-                    Swal.fire({
-                        title: '<h2 class="text-lg md:text-xl font-bold text-gray-800 mb-2">Export Data Pengajuan</h2>',
-                        html: `
-            <div class="space-y-6">
-                <div class="bg-pink-50 border-l-4 border-pink-500 p-4 rounded-md">
-                    <div class="flex items-start">
-                        <i class="bi bi-info-circle-fill text-pink-500 mr-2 mt-0.5"></i>
-                        <div class="text-left">
-                            <p class="text-sm font-medium text-gray-900">Bidang Anda</p>
-                            <p class="text-xs text-gray-600 mt-1">
-                                Export data untuk bidang: <strong>${bidangKabid}</strong>
-                            </p>
-                            <p class="text-xs text-gray-600">
-                                Wilayah: <strong>${kabupatenKabid}</strong>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="text-left">
-                    <label class="block text-start font-semibold mb-2 text-gray-700">Pilih Desa:</label>
-                    <select id="kabidDesaSelect" class="w-full border border-gray-300 rounded-md p-3 focus:ring-2 focus:ring-pink-500 focus:border-pink-500">
-                        <option value="" disabled selected>Pilih Desa</option>
-                        <option value="all" class="font-bold">Semua Desa di ${kabupatenKabid}</option>
-                        <optgroup label="Desa Spesifik:">
-                            ${desas.map(d => `<option value="${d}">${d}</option>`).join('')}
-                        </optgroup>
-                    </select>
-                    <p class="text-xs text-gray-500 mt-2">
-                        <i class="bi bi-lightbulb"></i>
-                        Pilih "Semua Desa" untuk export seluruh data di ${kabupatenKabid}
-                    </p>
-                </div>
-
-                <div class="flex justify-between gap-4 mt-6">
-                    <button id="cancelKabidExport"
-                        class="bg-gray-500 text-white hover:bg-gray-600 font-medium rounded-md py-3 px-6 w-1/2 shadow transition-colors">
-                        Batal
-                    </button>
-                    <button id="confirmKabidExport"
-                        class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-md py-3 px-6 w-1/2 shadow transition-colors">
-                        <i class="bi bi-file-earmark-excel mr-2"></i>
-                        Export Data
-                    </button>
-                </div>
-            </div>
-        `,
-                        showConfirmButton: false,
-                        showCancelButton: false,
-                        width: 600,
-                        background: '#f9fafb',
-                        customClass: {
-                            popup: 'rounded-md md:rounded-2xl shadow-2xl p-6'
-                        }
-                    });
-
-                    const handleKabidExport = (e) => {
-                        if (e.target.id === 'cancelKabidExport') {
-                            Swal.close();
-                            document.removeEventListener('click', handleKabidExport);
-                        }
-
-                        if (e.target.id === 'confirmKabidExport') {
-                            const desaSelect = document.getElementById('kabidDesaSelect');
-                            const selectedDesa = desaSelect?.value;
-
-                            if (!selectedDesa) {
-                                Swal.fire({
-                                    icon: 'warning',
-                                    title: 'Desa Belum Dipilih!',
-                                    text: 'Silakan pilih desa terlebih dahulu.',
-                                    confirmButtonColor: '#f87171'
-                                });
-                                return;
-                            }
-
-                            const selectedYear = this.selectedYear;
-
-                            if (selectedDesa === 'all') {
-                                window.location.href =
-                                    `/admin/export/${encodeURIComponent(bidangKabid)}?year=${selectedYear}`;
-                            } else {
-                                window.location.href =
-                                    `/admin/export/${encodeURIComponent(bidangKabid)}/${encodeURIComponent(selectedDesa)}?year=${selectedYear}`;
-                            }
-
-                            Swal.close();
-                            document.removeEventListener('click', handleKabidExport);
-                        }
-                    };
-
-                    document.addEventListener('click', handleKabidExport);
-                }
             }));
         });
 
-        @php
-            use Illuminate\Support\Facades\Auth;
-            $desaUser = optional(optional(Auth::user()->posyandu)->desa);
-        @endphp
-
-        const userRole = "{{ Auth::user()->role }}";
-        const userDesa = "{{ Auth::user()?->posyandu?->desa ?? '' }}";
-        const bidangKabid = "{{ Auth::user()?->bidang?->nama_bidang ?? '' }}";
-
-        const exportExcelBtn = document.getElementById('exportExcelBtn');
-        if (exportExcelBtn) {
-            exportExcelBtn.addEventListener('click', function() {
-                let bidangSelectHTML = "";
-
-                if (userRole !== 'kabid') {
-                    bidangSelectHTML = `
-            <div class="flex flex-col justify-start">
-                <label class="block text-start font-semibold mb-1 text-gray-700">Pilih Bidang:</label>
-                <select id="selectBidang" class="w-full border rounded-md p-2" required>
-                    <option value="" disabled selected>Pilih Bidang</option>
-                    <option value="all">Semua Bidang</option>
-                    <option value="Bidang Perumahan Rakyat">Bidang Perumahan Rakyat</option>
-                    <option value="Bidang Pendidikan">Bidang Pendidikan</option>
-                    <option value="Bidang Kesehatan">Bidang Kesehatan</option>
-                    <option value="Bidang Sosial">Bidang Sosial</option>
-                    <option value="Bidang Pekerjaan Umum">Bidang Pekerjaan Umum</option>
-                    <option value="Bidang Trantibumlinmas">Bidang Trantibumlinmas</option>
-                </select>
-            </div>
-        `;
-                } else {
-                    bidangSelectHTML = `
-            <div class="bg-pink-50 border-l-4 border-pink-500 p-4 rounded-md">
-                <div class="flex items-start">
-                    <i class="bi bi-info-circle-fill text-pink-500 mr-2 mt-0.5"></i>
-                    <div>
-                        <p class="text-sm font-medium text-gray-900">Bidang Anda</p>
-                        <p class="text-xs text-gray-600 mt-1">
-                            Export data untuk bidang: <strong>${bidangKabid}</strong>
-                        </p>
-                    </div>
-                </div>
-            </div>
-        `;
-                }
-
-                let desaSelectHTML = "";
-
-                @if (Auth::user()->role === 'kabid')
-                    const desas = Alpine.$data(document.querySelector('[x-data="dashboardFilter"]'))?.desas ?? [];
-
-                    desaSelectHTML = `
-            <div class="relative text-left">
-                <label class="block text-start font-semibold mb-1 text-gray-700">Pilih Desa:</label>
-
-                <input type="hidden" id="desaValue">
-
-                <div class="relative">
-                    <input
-                        type="text"
-                        id="desaSearch"
-                        placeholder="Cari desa atau pilih 'Semua Desa'..."
-                        class="block w-full border border-gray-300 rounded-md p-2"
-                        autocomplete="off"
-                    >
-                    <button type="button" id="toggleDesaDropdown"
-                        class="absolute inset-y-0 right-0 flex items-center px-3">
-                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M19 9l-7 7-7-7"></path>
-                        </svg>
-                    </button>
-                </div>
-
-                <div id="desaDropdownList"
-                    class="hidden absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-                    <div id="desaOptions"></div>
-                </div>
-            </div>
-        `;
-                @endif
-
-                Swal.fire({
-                    title: '<h2 class="text-lg md:text-xl font-bold text-gray-800 mb-2">Export Data Pengajuan</h2>',
-                    html: `
-            <div class="space-y-8">
-                ${bidangSelectHTML}
-                ${desaSelectHTML}
-                <div class="flex justify-between gap-4 mt-6">
-                    <button id="cancelExportBtn"
-                        class="bg-red-500 text-white hover:bg-red-700 font-medium rounded-md py-3 px-6 w-1/2 shadow">
-                        Batal
-                    </button>
-                    <button id="confirmExportBtn"
-                        class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-md py-3 px-6 w-1/2 shadow">
-                        Export Data
-                    </button>
-                </div>
-            </div>
-        `,
-                    showConfirmButton: false,
-                    showCancelButton: false,
-                    width: 600,
-                    background: '#f9fafb',
-                    customClass: {
-                        popup: 'rounded-md md:rounded-2xl shadow-lg p-4 md:p-6'
-                    },
-                    didOpen: () => {
-                        @if (Auth::user()->role === 'kabid')
-                            const desas = ['all', ...(Alpine.$data(document.querySelector(
-                                '[x-data="dashboardFilter"]'))?.desas ?? [])];
-                            const searchInput = document.getElementById('desaSearch');
-                            const dropdownList = document.getElementById('desaDropdownList');
-                            const desaOptions = document.getElementById('desaOptions');
-                            const toggleBtn = document.getElementById('toggleDesaDropdown');
-                            const desaValue = document.getElementById('desaValue');
-
-                            function renderOptions(filter = '') {
-                                const filtered = filter ?
-                                    desas.filter(d => d.toLowerCase().includes(filter.toLowerCase())) :
-                                    desas;
-
-                                if (filtered.length === 0) {
-                                    desaOptions.innerHTML =
-                                        '<div class="px-4 py-2 text-gray-500 text-sm">Tidak ada hasil</div>';
-                                    return;
-                                }
-
-                                desaOptions.innerHTML = filtered.map(desa => {
-                                    const displayText = desa === 'all' ?
-                                        '<strong>Semua Desa</strong>' :
-                                        desa;
-
-                                    return `<div class="desa-option px-4 py-2 cursor-pointer hover:bg-indigo-50 ${desa === 'all' ? 'bg-indigo-50 border-b-2 border-indigo-200' : ''}" data-value="${desa}">
-                            ${displayText}
-                        </div>`;
-                                }).join('');
-
-                                document.querySelectorAll('.desa-option').forEach(option => {
-                                    option.addEventListener('click', function() {
-                                        const value = this.getAttribute('data-value');
-                                        searchInput.value = value === 'all' ?
-                                            'Semua Desa' :
-                                            value;
-                                        desaValue.value = value;
-                                        dropdownList.classList.add('hidden');
-                                    });
-                                });
-                            }
-
-                            renderOptions();
-
-                            searchInput.addEventListener('focus', () => {
-                                dropdownList.classList.remove('hidden');
-                            });
-
-                            searchInput.addEventListener('input', (e) => {
-                                renderOptions(e.target.value);
-                                dropdownList.classList.remove('hidden');
-                            });
-
-                            toggleBtn.addEventListener('click', (e) => {
-                                e.stopPropagation();
-                                dropdownList.classList.toggle('hidden');
-                            });
-
-                            document.addEventListener('click', (e) => {
-                                if (!searchInput.contains(e.target) && !dropdownList.contains(e
-                                        .target) && !toggleBtn.contains(e.target)) {
-                                    dropdownList.classList.add('hidden');
-                                }
-                            });
-                        @endif
-                    }
-                });
-
-                document.addEventListener('click', function handler(e) {
-                    if (e.target.id === 'cancelExportBtn') {
-                        Swal.close();
-                        document.removeEventListener('click', handler);
-                    }
-
-                    if (e.target.id === 'confirmExportBtn') {
-                        let bidang = null;
-                        let desa = null;
-
-                        if (userRole === 'kabid') {
-                            bidang = bidangKabid;
-                        } else if (userRole === 'ketua-posyandu') {
-                            bidang = document.getElementById('selectBidang')?.value;
-                            desa = userDesa;
-                        } else {
-                            bidang = document.getElementById('selectBidang')?.value;
-                        }
-
-                        if (userRole === 'kabid') {
-                            desa = document.getElementById('desaValue')?.value || '';
-                        }
-
-                        if (!bidang) {
-                            Swal.fire({
-                                icon: 'warning',
-                                title: 'Bidang Belum Dipilih!',
-                                text: 'Silakan pilih bidang terlebih dahulu sebelum export data.',
-                                confirmButtonColor: '#f87171',
-                                confirmButtonText: 'OK'
-                            });
-                            return;
-                        }
-
-                        if (userRole === 'kabid' && !desa) {
-                            Swal.fire({
-                                icon: 'warning',
-                                title: 'Desa Belum Dipilih!',
-                                text: 'Silakan pilih desa terlebih dahulu sebelum export data.',
-                                confirmButtonColor: '#f87171',
-                                confirmButtonText: 'OK'
-                            });
-                            return;
-                        }
-
-                        exportData(bidang, desa);
-                        document.removeEventListener('click', handler);
-                        Swal.close();
-                    }
-                });
-            });
-        }
-
-        function exportData(bidang, desa) {
-            const selectedYear = '{{ $selectedYear }}';
-
-            if (userRole === 'ketua-posyandu') {
-                const url = `/admin/export/${encodeURIComponent(bidang)}/${userDesa}?year=${selectedYear}`;
-                window.location.href = url;
-            } else if (userRole === "kabid") {
-                if (desa === 'all') {
-                    window.location.href =
-                        `/admin/export-all-bidang-desa?year=${selectedYear}&bidang=${encodeURIComponent(bidang)}`;
-                } else {
-                    const url =
-                        `/admin/export/${encodeURIComponent(bidang)}/${encodeURIComponent(desa)}?year=${selectedYear}`;
-                    window.location.href = url;
-                }
-            } else if (bidang === 'all' && userRole === 'ketua-timpembina-posyandu') {
-                window.location.href = `/admin/export-all/${desa}?year=${selectedYear}`;
-            } else {
-                const url = `/admin/export/${encodeURIComponent(bidang)}/${encodeURIComponent(desa)}?year=${selectedYear}`;
-                window.location.href = url;
-            }
-        }
     </script>
 @endsection
