@@ -452,8 +452,8 @@ class AjuanController extends Controller
 
         return view('components.ajuan.administrasi-ajuan.index', [
             'items' => $ajuanData['administrasi_items_template'],
-            'userKtp' => $targetUser?->ktp ?? $user->ktp,
-            'userKk' => $targetUser?->kk ?? $user->kk
+            'userKtp' => $targetUser ? $targetUser->ktp : $user->ktp,
+            'userKk' => $targetUser ? $targetUser->kk : $user->kk
         ]);
     }
 
@@ -489,16 +489,31 @@ class AjuanController extends Controller
         $request->validate($validationRules);
 
         $uploadedFiles = [];
-        foreach (array_keys($ajuanData['administrasi_items_template']) as $key) {
+        $targetUserUpdated = false;
 
+        foreach (array_keys($ajuanData['administrasi_items_template']) as $key) {
             if ($request->hasFile($key)) {
                 $path = $this->compressAndStoreImage($request->file($key), 'ajuan_dokumen');
                 $uploadedFiles[$key] = $path;
+
+                // Auto-update profil masyarakat jika KTP/KK belum ada
+                if ($key === 'ktp' && empty($targetUser->ktp)) {
+                    $targetUser->ktp = $path;
+                    $targetUserUpdated = true;
+                }
+                if ($key === 'kk' && empty($targetUser->kk)) {
+                    $targetUser->kk = $path;
+                    $targetUserUpdated = true;
+                }
             } elseif ($key === 'ktp' && $request->input('ktp_mode') === 'claimed' && $targetUser->ktp) {
                 $uploadedFiles[$key] = $targetUser->ktp;
             } elseif ($key === 'kk' && $request->input('kk_mode') === 'claimed' && $targetUser->kk) {
                 $uploadedFiles[$key] = $targetUser->kk;
             }
+        }
+
+        if ($targetUserUpdated) {
+            $targetUser->save();
         }
 
         $finalChecklistData = $ajuanData['selected_formulir_items'];
