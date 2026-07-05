@@ -246,24 +246,24 @@ class AjuanController extends Controller
 
         if (!$actor || !$targetUserId) {
             Log::warning('[AjuanController] getTargetUser: actor or targetUserId null', [
-                'actor_id'       => $actor?->id,
-                'actor_role'     => $actor?->role,
-                'targetUserId'   => $targetUserId,
-                'session_keys'   => array_keys(session()->all()),
-            ]);
-            return null;
-        }
-
-        if (!\Illuminate\Support\Str::isUuid($targetUserId)) {
-            Log::warning('[AjuanController] getTargetUser: targetUserId bukan UUID valid', [
+                'actor_id'     => $actor?->id,
+                'actor_role'   => $actor?->role,
                 'targetUserId' => $targetUserId,
-                'actor_id'     => $actor->id,
-                'actor_role'   => $actor->role,
+                'session_keys' => array_keys(session()->all()),
             ]);
             return null;
         }
 
-        $target = User::find($targetUserId);
+        // Cari user dengan try-catch untuk handle semua tipe ID (UUID maupun integer)
+        try {
+            $target = User::find($targetUserId);
+        } catch (\Throwable $e) {
+            Log::warning('[AjuanController] getTargetUser: exception saat find user', [
+                'targetUserId' => $targetUserId,
+                'error'        => $e->getMessage(),
+            ]);
+            return null;
+        }
 
         if (!$target) {
             Log::warning('[AjuanController] getTargetUser: user tidak ditemukan di DB', [
