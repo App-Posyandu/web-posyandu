@@ -23,6 +23,21 @@ class StorePengajuanRequest extends FormRequest
         ];
     }
 
+    public function messages(): array
+    {
+        return [
+            'bidang_pelayanan.required' => 'Bidang pelayanan wajib dipilih.',
+            'bidang_pelayanan.exists' => 'Bidang pelayanan yang dipilih tidak valid.',
+            
+            'deskripsi_pengajuan.required' => 'Deskripsi pengajuan wajib diisi.',
+            'deskripsi_pengajuan.min' => 'Inputan kurang dari :min karakter.',
+            'deskripsi_pengajuan.max' => 'Inputan melebihi batas maksimal :max karakter.',
+            
+            'permohonan_items.max' => 'Pilihan permohonan maksimal :max item.',
+            'lainnya_text.max' => 'Teks lainnya maksimal :max karakter.',
+        ];
+    }
+
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {

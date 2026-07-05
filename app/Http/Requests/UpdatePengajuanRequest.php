@@ -21,6 +21,20 @@ class UpdatePengajuanRequest extends FormRequest
         ];
     }
 
+    public function messages(): array
+    {
+        return [
+            'deskripsi_pengajuan.required' => 'Deskripsi pengajuan wajib diisi.',
+            'deskripsi_pengajuan.min' => 'Inputan kurang dari :min karakter.',
+            'deskripsi_pengajuan.max' => 'Inputan melebihi batas maksimal :max karakter.',
+            
+            'permohonan_items.required' => 'Minimal pilih 1 permohonan.',
+            'permohonan_items.min' => 'Minimal pilih 1 permohonan.',
+            'permohonan_items.max' => 'Pilihan permohonan maksimal :max item.',
+            'lainnya_text.max' => 'Teks lainnya maksimal :max karakter.',
+        ];
+    }
+
     protected function prepareForValidation(): void
     {
         $this->merge([
