@@ -25,10 +25,12 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6 items-start" x-data="{
+                original_ktp: '{{ $userKtp ?? '' }}',
                 ktp_mode: '{{ $userKtp ? 'claimed' : 'upload' }}',
                 ktp_preview: '{{ $userKtp ?? '' }}',
                 ktp_filename: '{{ $userKtp ? 'KTP Terdaftar' : 'Pilih file' }}',
                 ktp_size: 0,
+                original_kk: '{{ $userKk ?? '' }}',
                 kk_mode: '{{ $userKk ? 'claimed' : 'upload' }}',
                 kk_preview: '{{ $userKk ?? '' }}',
                 kk_filename: '{{ $userKk ? 'KK Terdaftar' : 'Pilih file' }}',
@@ -115,7 +117,7 @@
                             @if ($userKtp)
                                 <div x-data="{ ktpToast: false }">
                                     <button type="button"
-                                        @click="ktp_mode = 'claimed'; ktp_filename = 'KTP Terdaftar'; ktp_preview = '{{ $userKtp }}'; ktp_size = 0; ktpToast = true; setTimeout(() => ktpToast = false, 3000)"
+                                        @click="ktp_mode = 'claimed'; ktp_filename = 'KTP Terdaftar'; ktp_preview = original_ktp; ktp_size = 0; ktpToast = true; setTimeout(() => ktpToast = false, 3000)"
                                         class="mt-2 text-base text-green-600 underline hover:text-green-700 transition transform duration-300"
                                         :class="{ 'font-bold text-lg': ktp_mode == 'claimed' }">
                                         <i class="fa-solid fa-check-circle"></i> Gunakan KTP Terdaftar
@@ -203,7 +205,7 @@
                             @if ($userKk)
                                 <div x-data="{ kkToast: false }">
                                     <button type="button"
-                                        @click="kk_mode = 'claimed'; kk_filename = 'KK Terdaftar'; kk_preview = '{{ $userKk }}'; kk_size = 0; kkToast = true; setTimeout(() => kkToast = false, 3000)"
+                                        @click="kk_mode = 'claimed'; kk_filename = 'KK Terdaftar'; kk_preview = original_kk; kk_size = 0; kkToast = true; setTimeout(() => kkToast = false, 3000)"
                                         class="mt-2 text-base text-green-600 underline hover:text-green-700 transition transform duration-300"
                                         :class="{ 'font-bold text-lg': kk_mode == 'claimed' }">
                                         <i class="fa-solid fa-check-circle"></i> Gunakan KK Terdaftar
