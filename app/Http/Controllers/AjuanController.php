@@ -389,6 +389,12 @@ class AjuanController extends Controller
             return redirect()->route('dashboard')->with('error', 'Akun kader belum diatur bidangnya. Hubungi administrator.');
         }
 
+        // Kader wajib memilih masyarakat terlebih dahulu lewat pilih-user
+        if ($user && $user->role === 'kader' && !session()->has('ajuan_on_behalf_of_id')) {
+            return redirect()->route('dashboard.partials.pilih-user')
+                ->with('error', 'Silakan pilih masyarakat terlebih dahulu sebelum membuat pengajuan.');
+        }
+
         $allBidangs = BidangPengajuan::orderBy('nama_bidang')->get();
         $bidang = BidangPengajuan::where('slug', $bidang_slug)->firstOrFail();
 
@@ -446,8 +452,16 @@ class AjuanController extends Controller
         $ajuanData = session('ajuan_data');
         $user = Auth::user();
         $targetUser = $this->getTargetUser();
+
         if (! $ajuanData) {
             return redirect()->route('dashboard');
+        }
+
+        // Kader wajib punya masyarakat target yang valid sebelum upload dokumen
+        if ($user->role === 'kader' && !$targetUser) {
+            Session::forget(['ajuan_data', 'ajuan_on_behalf_of_id']);
+            return redirect()->route('dashboard.partials.pilih-user')
+                ->with('error', 'Sesi masyarakat tidak valid atau habis. Silakan pilih masyarakat kembali.');
         }
 
         return view('components.ajuan.administrasi-ajuan.index', [
@@ -468,8 +482,13 @@ class AjuanController extends Controller
 
         $targetUser = $this->getTargetUser();
         if (!$targetUser) {
-            Session::forget('ajuan_on_behalf_of_id');
-            return redirect()->route('dashboard')->with('error', 'User masyarakat yang dipilih tidak valid atau di luar posyandu Anda.');
+            Session::forget(['ajuan_on_behalf_of_id', 'ajuan_data']);
+            // Kader diarahkan kembali ke pilih-user agar bisa pilih masyarakat lagi
+            $redirectRoute = ($user->role === 'kader')
+                ? 'dashboard.partials.pilih-user'
+                : 'dashboard';
+            return redirect()->route($redirectRoute)
+                ->with('error', 'User masyarakat yang dipilih tidak valid atau sesi habis. Silakan pilih masyarakat kembali.');
         }
 
         $validationRules = [];
