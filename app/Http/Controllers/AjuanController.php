@@ -244,26 +244,52 @@ class AjuanController extends Controller
         $targetUserId = $this->getTargetUserId();
 
         if (!$actor || !$targetUserId) {
+            \Log::warning('[AjuanController] getTargetUser: actor or targetUserId null', [
+                'actor_id'       => $actor?->id,
+                'actor_role'     => $actor?->role,
+                'targetUserId'   => $targetUserId,
+                'session_keys'   => array_keys(session()->all()),
+            ]);
             return null;
         }
 
-        // Prevent 500 internal server error (PDOException: invalid input syntax for type uuid)
-        // by verifying if the ID is actually a valid UUID before querying PostgreSQL.
         if (!\Illuminate\Support\Str::isUuid($targetUserId)) {
+            \Log::warning('[AjuanController] getTargetUser: targetUserId bukan UUID valid', [
+                'targetUserId' => $targetUserId,
+                'actor_id'     => $actor->id,
+                'actor_role'   => $actor->role,
+            ]);
             return null;
         }
 
         $target = User::find($targetUserId);
 
         if (!$target) {
+            \Log::warning('[AjuanController] getTargetUser: user tidak ditemukan di DB', [
+                'targetUserId' => $targetUserId,
+                'actor_id'     => $actor->id,
+            ]);
             return null;
         }
 
         if ($actor->role === 'kader') {
-            return $target->role === 'masyarakat'
-                && (string) $target->posyandu_id === (string) $actor->posyandu_id
-                ? $target
-                : null;
+            $posyanduMatch = (string) $target->posyandu_id === (string) $actor->posyandu_id;
+            $isMasyarakat  = $target->role === 'masyarakat';
+
+            if (!$isMasyarakat || !$posyanduMatch) {
+                \Log::warning('[AjuanController] getTargetUser: gagal validasi kader', [
+                    'actor_id'           => $actor->id,
+                    'actor_posyandu_id'  => $actor->posyandu_id,
+                    'target_id'          => $target->id,
+                    'target_role'        => $target->role,
+                    'target_posyandu_id' => $target->posyandu_id,
+                    'is_masyarakat'      => $isMasyarakat,
+                    'posyandu_match'     => $posyanduMatch,
+                ]);
+                return null;
+            }
+
+            return $target;
         }
 
         if ($actor->role === 'masyarakat') {
@@ -462,15 +488,39 @@ class AjuanController extends Controller
         $ajuanData = session('ajuan_data');
         $user = Auth::user();
 
+        \Log::info('[storeAdministrasi] dipanggil', [
+            'user_id'                => $user?->id,
+            'user_role'              => $user?->role,
+            'user_posyandu_id'       => $user?->posyandu_id,
+            'has_ajuan_data'         => !empty($ajuanData),
+            'has_on_behalf_of'       => session()->has('ajuan_on_behalf_of_id'),
+            'on_behalf_of_id'        => session('ajuan_on_behalf_of_id'),
+            'ajuan_data_keys'        => $ajuanData ? array_keys($ajuanData) : [],
+        ]);
+
         if (!$ajuanData || !$user) {
-            return redirect()->route('dashboard')->with('error', 'Sesi tidak valid.');
+            \Log::error('[storeAdministrasi] sesi tidak valid – ajuanData atau user null', [
+                'has_ajuan_data' => !empty($ajuanData),
+                'has_user'       => !empty($user),
+            ]);
+            return redirect()->route('dashboard')->with('error', 'Sesi tidak valid. Silakan ulangi proses dari awal.');
         }
 
         $targetUser = $this->getTargetUser();
         if (!$targetUser) {
+            \Log::error('[storeAdministrasi] getTargetUser() null – redirect ke dashboard', [
+                'user_id'          => $user->id,
+                'user_role'        => $user->role,
+                'on_behalf_of_id'  => session('ajuan_on_behalf_of_id'),
+            ]);
             Session::forget('ajuan_on_behalf_of_id');
-            return redirect()->route('dashboard')->with('error', 'User masyarakat yang dipilih tidak valid atau di luar posyandu Anda.');
+            return redirect()->route('dashboard')->with('error', 'User masyarakat yang dipilih tidak valid atau di luar posyandu Anda. Silakan pilih ulang masyarakat.');
         }
+
+        \Log::info('[storeAdministrasi] targetUser ditemukan, lanjut proses', [
+            'target_user_id'          => $targetUser->id,
+            'target_user_posyandu_id' => $targetUser->posyandu_id,
+        ]);
 
         $validationRules = [];
         foreach ($ajuanData['administrasi_items_template'] as $key => $item) {
@@ -531,20 +581,38 @@ class AjuanController extends Controller
 
         $trackingCode = $this->generateTrackingCode();
 
-        $pengajuan = Pengajuan::create([
-            'user_id' => $targetUser->id,
-            'bidang_id' => $ajuanData['bidang_id'],
-            'status_pengajuan' => 'Diproses',
-            'formulir_items' => $finalChecklistData,
-            'administrasi_items' => $uploadedFiles,
-            'deskripsi_pengajuan' => $ajuanData['deskripsi_pengajuan'] ?? 'Tidak ada deskripsi.',
-            'tanggal_permohonan' => now(),
-            'tracking_code' => $trackingCode,
-            'kunjungan_lapangan' => false,
-            'sudah_verifikasi' => false,
-            'approved_by_ketua' => false,
-            'submitted_to_desa' => false,
-        ]);
+        try {
+            $pengajuan = Pengajuan::create([
+                'user_id' => $targetUser->id,
+                'bidang_id' => $ajuanData['bidang_id'],
+                'status_pengajuan' => 'Diproses',
+                'formulir_items' => $finalChecklistData,
+                'administrasi_items' => $uploadedFiles,
+                'deskripsi_pengajuan' => $ajuanData['deskripsi_pengajuan'] ?? 'Tidak ada deskripsi.',
+                'tanggal_permohonan' => now(),
+                'tracking_code' => $trackingCode,
+                'kunjungan_lapangan' => false,
+                'sudah_verifikasi' => false,
+                'approved_by_ketua' => false,
+                'submitted_to_desa' => false,
+            ]);
+
+            \Log::info('[storeAdministrasi] Pengajuan berhasil disimpan', [
+                'pengajuan_id'   => $pengajuan->id,
+                'tracking_code'  => $pengajuan->tracking_code,
+                'user_id'        => $targetUser->id,
+                'bidang_id'      => $ajuanData['bidang_id'],
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('[storeAdministrasi] GAGAL create Pengajuan', [
+                'error'         => $e->getMessage(),
+                'trace'         => $e->getTraceAsString(),
+                'target_user'   => $targetUser->id,
+                'bidang_id'     => $ajuanData['bidang_id'] ?? null,
+                'uploaded_keys' => array_keys($uploadedFiles),
+            ]);
+            return redirect()->back()->with('error', 'Gagal menyimpan pengajuan. Silakan coba lagi atau hubungi administrator.');
+        }
 
         History::create([
             'pengajuan_id' => $pengajuan->id,
