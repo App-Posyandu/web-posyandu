@@ -247,6 +247,12 @@ class AjuanController extends Controller
             return null;
         }
 
+        // Prevent 500 internal server error (PDOException: invalid input syntax for type uuid)
+        // by verifying if the ID is actually a valid UUID before querying PostgreSQL.
+        if (!\Illuminate\Support\Str::isUuid($targetUserId)) {
+            return null;
+        }
+
         $target = User::find($targetUserId);
 
         if (!$target) {
