@@ -540,6 +540,10 @@ class AjuanController extends Controller
             'deskripsi_pengajuan' => $ajuanData['deskripsi_pengajuan'] ?? 'Tidak ada deskripsi.',
             'tanggal_permohonan' => now(),
             'tracking_code' => $trackingCode,
+            'kunjungan_lapangan' => false,
+            'sudah_verifikasi' => false,
+            'approved_by_ketua' => false,
+            'submitted_to_desa' => false,
         ]);
 
         History::create([

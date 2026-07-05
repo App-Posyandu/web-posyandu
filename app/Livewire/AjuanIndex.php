@@ -240,9 +240,12 @@ class AjuanIndex extends Component
                       ->orWhereIn('status_pengajuan', $completedStatuses);
                 });
             } else {
-                // AKTIF KADER: Status masih diproses DAN kunjungan lapangan belum selesai
+                // AKTIF KADER: Status masih diproses DAN kunjungan lapangan belum selesai (false atau NULL)
                 $query->where('status_pengajuan', 'Diproses')
-                      ->where('kunjungan_lapangan', false);
+                      ->where(function ($q) {
+                          $q->where('kunjungan_lapangan', false)
+                            ->orWhereNull('kunjungan_lapangan');
+                      });
             }
         } elseif ($user->role === 'ketua-posyandu') {
             if ($this->showArchived) {
