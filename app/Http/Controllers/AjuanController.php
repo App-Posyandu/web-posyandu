@@ -896,84 +896,92 @@ class AjuanController extends Controller
     {
         $this->authorize('update', $ajuan);
 
-        $user = Auth::user();
-        $validated = $request->validated();
+        try {
+            $user = Auth::user();
+            $validated = $request->validated();
 
-        if ($ajuan->revision_requested_at) {
-            $revisionDeadline = \Carbon\Carbon::parse($ajuan->revision_requested_at)->addWeekdays(5);
-            if (now()->greaterThan($revisionDeadline)) {
-                return redirect()->route('ajuan.show', $ajuan)
-                    ->with('error', 'Masa revisi telah berakhir. Pengajuan ini tidak dapat diedit lagi.');
+            if ($ajuan->revision_requested_at) {
+                $revisionDeadline = \Carbon\Carbon::parse($ajuan->revision_requested_at)->addWeekdays(5);
+                if (now()->greaterThan($revisionDeadline)) {
+                    return redirect()->route('ajuan.show', $ajuan)
+                        ->with('error', 'Masa revisi telah berakhir. Pengajuan ini tidak dapat diedit lagi.');
+                }
             }
-        }
 
-        $ajuan->load('bidang');
+            $ajuan->load('bidang');
 
-        $finalChecklistData = $validated['permohonan_items'];
-        if (in_array('Lainnya...', $finalChecklistData, true) && !empty($validated['lainnya_text'])) {
-            $finalChecklistData = array_map(
-                fn($item) => $item === 'Lainnya...' ? 'Lainnya: ' . $validated['lainnya_text'] : $item,
-                $finalChecklistData
-            );
-        }
+            $finalChecklistData = $validated['permohonan_items'];
+            if (in_array('Lainnya...', $finalChecklistData, true) && !empty($validated['lainnya_text'])) {
+                $finalChecklistData = array_map(
+                    fn($item) => $item === 'Lainnya...' ? 'Lainnya: ' . $validated['lainnya_text'] : $item,
+                    $finalChecklistData
+                );
+            }
 
-        $dokumenData = $ajuan->administrasi_items ?? [];
+            $dokumenData = $ajuan->administrasi_items ?? [];
 
-        $templateData = $this->getBidangData($ajuan->bidang->slug);
-        if (!$templateData) {
-            return redirect()->back()->with('error', 'Template bidang tidak ditemukan.');
-        }
+            $templateData = $this->getBidangData($ajuan->bidang->slug);
+            if (!$templateData) {
+                return redirect()->back()->with('error', 'Template bidang tidak ditemukan.');
+            }
 
-        $administrasiItemsTemplate = $templateData['administrasi_items'] ?? [];
+            $administrasiItemsTemplate = $templateData['administrasi_items'] ?? [];
 
-        $validationRules = [];
-        foreach (array_keys($administrasiItemsTemplate) as $key) {
-            if (!isset($dokumenData[$key])) {
-                if (in_array($key, ['ktp', 'kk', 'kartu_bpjs'])) {
-                    $validationRules[$key] = ['nullable', 'file', 'mimes:jpg,jpeg,png', 'max:10240'];
+            $validationRules = [];
+            foreach (array_keys($administrasiItemsTemplate) as $key) {
+                if (!isset($dokumenData[$key])) {
+                    if (in_array($key, ['ktp', 'kk', 'kartu_bpjs'])) {
+                        $validationRules[$key] = ['nullable', 'file', 'mimes:jpg,jpeg,png', 'max:10240'];
+                    } else {
+                        $validationRules[$key] = ['required', 'file', 'mimes:jpg,jpeg,png', 'max:10240'];
+                    }
                 } else {
-                    $validationRules[$key] = ['required', 'file', 'mimes:jpg,jpeg,png', 'max:10240'];
+                    $validationRules[$key] = ['nullable', 'file', 'mimes:jpg,jpeg,png', 'max:10240'];
                 }
-            } else {
-                $validationRules[$key] = ['nullable', 'file', 'mimes:jpg,jpeg,png', 'max:10240'];
             }
-        }
 
-        $request->validate($validationRules);
+            $request->validate($validationRules);
 
-        foreach (array_keys($administrasiItemsTemplate) as $key) {
-            if ($request->hasFile($key)) {
-                if (isset($dokumenData[$key]) && !Str::startsWith($dokumenData[$key], 'data:')) {
-                    Storage::disk('public')->delete($dokumenData[$key]);
+            foreach (array_keys($administrasiItemsTemplate) as $key) {
+                if ($request->hasFile($key)) {
+                    if (isset($dokumenData[$key]) && !Str::startsWith($dokumenData[$key], 'data:')) {
+                        Storage::disk('public')->delete($dokumenData[$key]);
+                    }
+
+                    $path = $this->compressAndStoreImage($request->file($key), 'ajuan_dokumen');
+                    $dokumenData[$key] = $path;
                 }
-
-                $path = $this->compressAndStoreImage($request->file($key), 'ajuan_dokumen');
-                $dokumenData[$key] = $path;
             }
+
+            $ajuan->update([
+                'deskripsi_pengajuan' => $validated['deskripsi_pengajuan'],
+                'formulir_items' => $finalChecklistData,
+                'administrasi_items' => $dokumenData,
+                'status_pengajuan' => 'Diproses',
+                'revision_requested_at' => null,
+                'sudah_verifikasi' => false,
+                'kunjungan_lapangan' => false,
+                'approved_by_ketua' => false,
+            ]);
+
+            History::create([
+                'pengajuan_id' => $ajuan->id,
+                'status' => 'Direvisi & Diajukan Kembali',
+                'catatan' => 'Pengguna telah memperbarui pengajuan sesuai permintaan revisi.',
+                'diubah_oleh' => $user->id,
+                'action_by_role' => null,
+                'created_at' => now(),
+            ]);
+
+            return redirect()->route('ajuan.show', $ajuan)
+                ->with('success', 'Pengajuan berhasil diperbarui dan diajukan kembali. Menunggu verifikasi ulang dari kader.');
+
+        } catch (\Exception $e) {
+            \Log::error('[AjuanController@update] Error saat revisi pengajuan: ' . $e->getMessage());
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Terjadi kesalahan saat memproses revisi pengajuan. Silakan coba lagi.');
         }
-
-        $ajuan->update([
-            'deskripsi_pengajuan' => $validated['deskripsi_pengajuan'],
-            'formulir_items' => $finalChecklistData,
-            'administrasi_items' => $dokumenData,
-            'status_pengajuan' => 'Diproses',
-            'revision_requested_at' => null,
-            'sudah_verifikasi' => false,
-            'kunjungan_lapangan' => false,
-            'approved_by_ketua' => false,
-        ]);
-
-        History::create([
-            'pengajuan_id' => $ajuan->id,
-            'status' => 'Direvisi & Diajukan Kembali',
-            'catatan' => 'Pengguna telah memperbarui pengajuan sesuai permintaan revisi.',
-            'diubah_oleh' => $user->id,
-            'action_by_role' => null,
-            'created_at' => now(),
-        ]);
-
-        return redirect()->route('ajuan.show', $ajuan)
-            ->with('success', 'Pengajuan berhasil diperbarui dan diajukan kembali. Menunggu verifikasi ulang dari kader.');
     }
 
     public function downloadDokumen(Pengajuan $ajuan, $key)
