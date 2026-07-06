@@ -15,11 +15,6 @@
                     <div>
                         <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-3">
                             Detail Pengajuan
-                            @if(!empty($ajuan->tracking_code))
-                                <span class="bg-gray-100 text-gray-800 text-sm font-semibold px-2.5 py-0.5 rounded border border-gray-300">
-                                    #{{ $ajuan->tracking_code }}
-                                </span>
-                            @endif
                         </h2>
                         <p class="text-sm text-gray-500 mt-1">Diajukan pada:
                             {{ \Carbon\Carbon::parse($ajuan->tanggal_permohonan ?? $ajuan->created_at)->format('d F Y') }}

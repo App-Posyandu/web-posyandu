@@ -103,6 +103,8 @@ class BukuSakuController extends Controller
         }
 
         $path = $bukuSaku->file_path;
+        $extension = pathinfo($path, PATHINFO_EXTENSION);
+        $nama_file = $bukuSaku->title . '.' . $extension;
 
         $stream = Storage::disk('public')->readStream($path);
 
@@ -110,7 +112,7 @@ class BukuSakuController extends Controller
             fpassthru($stream);
         }, 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="' . basename($path) . '"'
+            'Content-Disposition' => 'inline; filename="' . $nama_file . '"'
         ]);
     }
 
@@ -123,13 +125,16 @@ class BukuSakuController extends Controller
         }
 
         $path = $bukuSaku->file_path;
+        $extension = pathinfo($path, PATHINFO_EXTENSION);
+        $nama_file = $bukuSaku->title . '.' . $extension;
+        
         $stream = Storage::disk('public')->readStream($path);
 
         return response()->stream(function () use ($stream) {
             fpassthru($stream);
         }, 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="' . basename($path) . '"'
+            'Content-Disposition' => 'inline; filename="' . $nama_file . '"'
         ]);
     }
 
@@ -177,13 +182,16 @@ class BukuSakuController extends Controller
         }
 
         $path = $bukuSaku->file_path;
+        $extension = pathinfo($path, PATHINFO_EXTENSION);
+        $nama_file = $bukuSaku->title . '.' . $extension;
+        
         $stream = Storage::disk('public')->readStream($path);
 
         return response()->stream(function () use ($stream) {
             fpassthru($stream);
         }, 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="' . basename($path) . '"'
+            'Content-Disposition' => 'inline; filename="' . $nama_file . '"'
         ]);
     }
 
