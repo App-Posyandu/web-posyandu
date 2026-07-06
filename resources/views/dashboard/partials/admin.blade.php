@@ -605,7 +605,7 @@
                     // Lazy-load dropdown options from API
                     if (!this.exportOptions) {
                         try {
-                            const resp = await fetch('{{ route("laporan.exportOptions") }}');
+                            const resp = await fetch('/admin/export-options');
                             if (!resp.ok) throw new Error();
                             this.exportOptions = await resp.json();
                         } catch {
