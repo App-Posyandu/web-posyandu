@@ -107,7 +107,7 @@
         @endif
         <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
             <!-- Kiri: Judul (50%) -->
-            <div class="w-full md:w-1/2">
+            <div class="w-full md:w-auto">
                 <h2 class="text-xl md:text-2xl font-bold text-gray-800">List Pengguna</h2>
             </div>
             
@@ -141,15 +141,6 @@
                     </select>
                 </div>
                 
-                <div class="flex-1 min-w-[200px] relative">
-                    <input type="text" wire:model.live.debounce.300ms="search"
-                        placeholder="Cari nama, email, NIK, No. Telepon, desa..."
-                        class="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm focus:ring-pink-500 focus:border-pink-500" style="height: 38px;">
-                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                        <i class="bi bi-search text-gray-400"></i>
-                    </div>
-                </div>
-
                 @if (auth()->user()->role === 'operator-desa')
                     <div class="w-full sm:w-auto min-w-[150px]">
                         <select wire:model.live="status"
@@ -160,6 +151,15 @@
                         </select>
                     </div>
                 @endif
+
+                <div class="flex-1 min-w-[200px] relative">
+                    <input type="text" wire:model.live.debounce.300ms="search"
+                        placeholder="Cari nama, email, NIK, No. Telepon, desa..."
+                        class="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md text-sm focus:ring-pink-500 focus:border-pink-500" style="height: 38px;">
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <i class="bi bi-search text-gray-400"></i>
+                    </div>
+                </div>
 
                 @if ($search || $role || $status)
                     <button wire:click="resetFilters" type="button"
