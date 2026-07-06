@@ -7,7 +7,7 @@
         fileTitle: '',
         fileType: '',
         isLoadingModal: false
-    }" class="flex-grow gap-5 flex-col flex items-center justify-center py-12">
+    }" class="flex-grow gap-5 flex-col flex items-center justify-center md:py-12">
         <div class="w-full mx-8">
             <div class="bg-white overflow-hidden shadow-xl md:mx-8 sm:rounded-2xl p-4 md:p-8">
 
