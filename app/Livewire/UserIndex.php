@@ -214,7 +214,7 @@ class UserIndex extends Component
             $query->where('is_active', false);
         }
 
-        $users = $query->paginate($this->perPage)->onEachSide(1);
+        $users = $query->paginate($this->perPage)->onEachSide(1)->withQueryString();
 
         $allowedRoles = $this->getAllowedRoleTargets($currentUser->role);
 

@@ -451,7 +451,7 @@ class DashboardController extends Controller
             ->pluck('total', 'nama_bidang');
 
         $ajuanCounts = $baseCounts->merge($desaStats);
-        $myAjuan     = $myAjuanQuery->latest()->paginate(5);
+        $myAjuan     = $myAjuanQuery->latest()->paginate(5)->withQueryString();
 
         $myAjuan->getCollection()->transform(function ($ajuan) {
             $latestRevisionRequest = $ajuan->histories->where('status', 'Revisi Diminta')->first();
