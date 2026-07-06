@@ -28,45 +28,44 @@
                 </div>
             @endif
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-4 sm:p-6 text-gray-900">
+            <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8">
                     <div class="flex justify-between items-center mb-6">
                         <h3 class="text-lg font-semibold text-gray-800">Daftar Kader Posyandu</h3>
                         <span class="text-sm text-gray-500">Total: {{ $kaders->count() }} Kader</span>
                     </div>
 
-                    <div class="w-full overflow-x-auto block">
-                        <table class="w-full min-w-max text-sm text-left divide-y divide-gray-200">
+                    <div class="w-full overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wide">
                                         Nama / Username</th>
                                     <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        class="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wide">
                                         Bidang</th>
                                     <th
-                                        class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        class="px-4 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wide">
                                         Status</th>
                                     <th
-                                        class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        class="px-4 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wide">
                                         Aksi</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @forelse($kaders as $kader)
                                     <tr class="hover:bg-gray-50">
-                                        <td class="px-6 py-4 whitespace-nowrap">
+                                        <td class="px-4 py-3 whitespace-nowrap">
                                             <div class="text-sm font-medium text-gray-900">{{ $kader->name }}</div>
                                             <div class="text-xs text-gray-500">{{ $kader->username ?? '-' }}</div>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
+                                        <td class="px-4 py-3 whitespace-nowrap">
                                             <span
                                                 class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
                                                 {{ $kader->bidang->nama_bidang ?? 'Tidak Ada Bidang' }}
                                             </span>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                                        <td class="px-4 py-3 whitespace-nowrap text-center">
                                             @if ($kader->is_active)
                                                 <span
                                                     class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
@@ -79,7 +78,7 @@
                                                 </span>
                                             @endif
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                                        <td class="px-4 py-3 whitespace-nowrap text-center">
                                             <button
                                                 @click="openModal('{{ $kader->id }}', '{{ $kader->name }}', {{ $kader->is_active ? 'true' : 'false' }})"
                                                 class="text-indigo-600 hover:text-indigo-900 font-medium text-sm border border-indigo-200 px-3 py-1 rounded hover:bg-indigo-50 transition">
@@ -89,7 +88,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="4" class="px-6 py-4 text-center text-gray-500 text-sm">
+                                        <td colspan="4" class="px-4 py-3 text-center text-gray-500 text-sm">
                                             Belum ada data kader di posyandu ini.
                                         </td>
                                     </tr>
@@ -97,7 +96,6 @@
                             </tbody>
                         </table>
                     </div>
-                </div>
             </div>
         </div>
         <div x-show="isOpen" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;"
