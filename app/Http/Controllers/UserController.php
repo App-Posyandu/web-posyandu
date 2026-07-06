@@ -1530,34 +1530,43 @@ HTML, 500);
     {
         $ketuaKader = Auth::user();
 
+        // Hanya ketua-posyandu di posyandu yang sama, dan hanya untuk akun kader
         if (
             $ketuaKader->role !== 'ketua-posyandu' ||
-            $kader->posyandu_id !== $ketuaKader->posyandu_id ||
-            $kader->is_active
+            (string) $kader->posyandu_id !== (string) $ketuaKader->posyandu_id ||
+            $kader->role !== 'kader'
         ) {
             $this->auditDeniedUserAction($ketuaKader, $kader, 'takeover_reset_password', [
                 'target_is_active' => $kader->is_active,
+                'target_role'      => $kader->role,
             ]);
             abort(403, 'Akses ditolak.');
         }
 
-        $validated = $request->validated();
+        $validated   = $request->validated();
+        $wasInactive = !$kader->is_active;
 
-        $kader->update([
-            'password' => Hash::make($validated['new_password']),
+        $updateData = [
+            'password'         => Hash::make($validated['new_password']),
             'default_password' => $validated['new_password'],
-            'is_active' => true,
-            'deactivated_at' => null,
-        ]);
+        ];
+
+        // Aktifkan kembali jika sebelumnya non-aktif
+        if ($wasInactive) {
+            $updateData['is_active']      = true;
+            $updateData['deactivated_at'] = null;
+        }
+
+        $kader->update($updateData);
+
+        $action = $wasInactive ? 'direset & diaktifkan kembali' : 'direset';
 
         UserHistory::create([
-            'user_id' => $kader->id,
-            'action_by' => Auth::id(),
+            'user_id'     => $kader->id,
+            'action_by'   => Auth::id(),
             'action_type' => 'updated',
-            'description' => "Password direset & diaktifkan kembali: {$validated['reason']}",
-            'new_data' => [
-                'default_password' => $validated['new_password']
-            ]
+            'description' => "Password {$action}: {$validated['reason']}",
+            'new_data'    => ['default_password' => $validated['new_password']],
         ]);
 
         return back()->with('success', 'Password kader berhasil direset.')
