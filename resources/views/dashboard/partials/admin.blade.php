@@ -166,8 +166,8 @@
                 <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6">Dashboard Ajuan Pelayanan -
                     <span class="text-pink-500">{{ $labels }}</span>
                 </h2>
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-                    <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                <div class="grid grid-cols-1 {{ auth()->user()->role === 'kabid' ? '' : 'lg:grid-cols-3' }} gap-4 md:gap-6">
+                    <div class="{{ auth()->user()->role === 'kabid' ? 'w-full' : 'lg:col-span-2 grid grid-cols-1 sm:grid-cols-2' }} gap-3 md:gap-4">
                         <template x-if="loading">
                             <div class="col-span-2 flex items-center justify-center py-12 text-gray-400">
                                 <svg class="animate-spin h-8 w-8 mr-2" fill="none" viewBox="0 0 24 24">
@@ -197,9 +197,11 @@
                             </template>
                         </template>
                     </div>
-                    <div class="bg-white p-3 md:p-4 rounded-lg">
-                        <canvas x-ref="pieChart"></canvas>
-                    </div>
+                    @if(auth()->user()->role !== 'kabid')
+                        <div class="bg-white p-3 md:p-4 rounded-lg">
+                            <canvas x-ref="pieChart"></canvas>
+                        </div>
+                    @endif
                 </div>
             </div>
         @endif
