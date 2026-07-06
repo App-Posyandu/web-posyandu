@@ -316,6 +316,8 @@ class AjuanController extends Controller
 
     public function requestRevision(Request $request, Pengajuan $ajuan)
     {
+        $this->authorize('requestRevision', $ajuan);
+
         $ajuan = Pengajuan::findOrFail($ajuan->id);
 
         $autoRejectDays = (int) SystemSetting::get('auto_reject_days', 5);
@@ -1292,7 +1294,7 @@ class AjuanController extends Controller
     {
         $user = Auth::user();
 
-        if (!in_array($user->role, ['kades', 'bu-kades'])) {
+        if ($user->role !== 'kades') {
             AccessAudit::record(request(), $user, 'pengajuan', 'kades_approval', false, 403, [
                 'target_pengajuan_id' => $ajuan->id,
             ]);
@@ -1331,13 +1333,13 @@ class AjuanController extends Controller
                 'tindak_lanjut' => $request->tindak_lanjut ?? $ajuan->deskripsi_pengajuan,
             ]));
 
-            $status = $user->role === 'kades' ? 'Disetujui Kades' : 'Disetujui Bu Kades';
+            $status = 'Disetujui Kades';
         } else {
             $ajuan->update(array_merge($desaSubmission, [
                 'status_pengajuan' => 'Ditolak',
             ]));
 
-            $status = $user->role === 'kades' ? 'Ditolak Kades' : 'Ditolak Bu Kades';
+            $status = 'Ditolak Kades';
         }
 
         History::create([

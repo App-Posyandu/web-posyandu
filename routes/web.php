@@ -287,7 +287,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/ajuan/{ajuan}/submit-to-pemdes', [AjuanController::class, 'submitToPemdes'])->name('ajuan.submit-to-pemdes');
     });
 
-    Route::middleware('role:kades,bu-kades')->group(function () {
+    Route::middleware('role:kades')->group(function () {
         Route::post('/ajuan/{ajuan}/kades-approval', [AjuanController::class, 'kadesApproval'])->name('ajuan.kades-approval');
     });
 
