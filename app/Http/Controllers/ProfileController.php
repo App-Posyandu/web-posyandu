@@ -68,9 +68,12 @@ class ProfileController extends Controller
             $user->kk = $kkBase64;
         }
 
-        $user->save();
-
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
+        try {
+            $user->save();
+            return Redirect::route('profile.edit')->with('success', 'Profile berhasil diperbarui!');
+        } catch (\Exception $e) {
+            return Redirect::route('profile.edit')->with('error', 'Gagal memperbarui profile. Silakan coba lagi.');
+        }
     }
 
     public function destroy(Request $request): RedirectResponse
