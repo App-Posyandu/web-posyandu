@@ -287,7 +287,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/ajuan/{ajuan}/submit-to-pemdes', [AjuanController::class, 'submitToPemdes'])->name('ajuan.submit-to-pemdes');
     });
 
-    Route::middleware('role:kades,bu-kades')->group(function () {
+    Route::middleware('role:kades')->group(function () {
         Route::post('/ajuan/{ajuan}/kades-approval', [AjuanController::class, 'kadesApproval'])->name('ajuan.kades-approval');
     });
 
@@ -336,7 +336,7 @@ Route::middleware('auth')->group(function () {
     // ADMIN ROUTES - POSYANDU MANAGEMENT
     // ========================================
 
-    Route::middleware(['role:kabid,admin-kecamatan,ketua-posyandu,operator-desa,admin-kabupaten,admin,ketua-timpembina-posyandu'])->prefix('admin')->name('admin.')->group(function () {
+    Route::middleware(['role:kabid,admin-kecamatan,ketua-posyandu,operator-desa,admin-kabupaten,admin,ketua-timpembina-posyandu,kades,bu-kades'])->prefix('admin')->name('admin.')->group(function () {
             Route::middleware('role:admin,admin-kabupaten,ketua-timpembina-posyandu,admin-kecamatan,operator-desa')->group(function () {
             Route::get('/posyandu/{posyandu}/print-credentials', [PosyanduController::class, 'printKaderCredentials'])->name('posyandu.print-credentials');
             Route::resource('posyandu', PosyanduController::class);
