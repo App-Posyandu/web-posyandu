@@ -336,7 +336,7 @@ Route::middleware('auth')->group(function () {
     // ADMIN ROUTES - POSYANDU MANAGEMENT
     // ========================================
 
-    Route::middleware(['role:kabid,admin-kecamatan,ketua-posyandu,operator-desa,admin-kabupaten,admin,ketua-timpembina-posyandu'])->prefix('admin')->name('admin.')->group(function () {
+    Route::middleware(['role:kabid,admin-kecamatan,ketua-posyandu,operator-desa,admin-kabupaten,admin,ketua-timpembina-posyandu,kades,bu-kades'])->prefix('admin')->name('admin.')->group(function () {
             Route::middleware('role:admin,admin-kabupaten,ketua-timpembina-posyandu,admin-kecamatan,operator-desa')->group(function () {
             Route::get('/posyandu/{posyandu}/print-credentials', [PosyanduController::class, 'printKaderCredentials'])->name('posyandu.print-credentials');
             Route::resource('posyandu', PosyanduController::class);
