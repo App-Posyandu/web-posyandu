@@ -48,7 +48,7 @@
     <div class="w-full mx-auto sm:px-6 lg:px-8">
         <div class="bg-white shadow-sm sm:rounded-lg">
             <div class="p-8 text-gray-900">
-                <form method="POST" action="{{ route('admin.users.store') }}" enctype="multipart/form-data">
+                <form method="POST" action="{{ route('admin.users.store') }}" enctype="multipart/form-data" x-data="{ role: '{{ old('role', $defaultRole ?? '') }}' }">
                     @csrf
                     @if (request()->has('source'))
                         <input type="hidden" name="source" value="{{ request('source') }}">
@@ -138,7 +138,7 @@
                         <div
                             class="{{ in_array(auth()->user()->role, ['ketua-posyandu', 'admin-kecamatan', 'kader']) ? 'hidden' : '' }}">
                             <x-input-label for="role" :value="__('Role')" />
-                            <select id="role" name="role"
+                            <select id="role" name="role" x-model="role"
                                 class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
                                 {{ isset($defaultRole) ? 'disabled' : '' }}>
                                 <option value="" disabled {{ !isset($defaultRole) ? 'selected' : '' }}>Pilih Role
@@ -581,11 +581,11 @@
                             </div>
                         </div>
 
-                        <div>
+                        <div x-show="role !== 'ketua-posyandu'">
                             <x-input-label for="password" :value="__('Password')" />
                             <div class="relative mt-1">
                                 <x-text-input id="password" class="block w-full pr-10" type="password" name="password"
-                                    required autocomplete="new-password" />
+                                    x-bind:required="role !== 'ketua-posyandu'" autocomplete="new-password" />
                                 <button type="button" onclick="togglePassword('password', this)"
                                     class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none"
                                     tabindex="-1">
@@ -599,11 +599,11 @@
                             @enderror
                         </div>
 
-                        <div>
+                        <div x-show="role !== 'ketua-posyandu'">
                             <x-input-label for="password_confirmation" :value="__('Konfirmasi Password')" />
                             <div class="relative mt-1">
                                 <x-text-input id="password_confirmation" class="block w-full pr-10" type="password"
-                                    name="password_confirmation" required />
+                                    name="password_confirmation" x-bind:required="role !== 'ketua-posyandu'" />
                                 <button type="button" onclick="togglePassword('password_confirmation', this)"
                                     class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none"
                                     tabindex="-1">

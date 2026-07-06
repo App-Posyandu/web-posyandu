@@ -13,11 +13,13 @@ class UserIndex extends Component
 
     public $role = '';
     public $search = '';
+    public $status = '';
     public $perPage = 10;
 
     protected $queryString = [
         'role' => ['except' => ''],
         'search' => ['except' => ''],
+        'status' => ['except' => ''],
         'perPage' => ['except' => 10],
     ];
 
@@ -45,6 +47,11 @@ class UserIndex extends Component
         $this->resetPage();
     }
 
+    public function updatedStatus($value): void
+    {
+        $this->resetPage();
+    }
+
     public function updatedPerPage(): void
     {
         $this->resetPage();
@@ -54,6 +61,7 @@ class UserIndex extends Component
     {
         $this->role = '';
         $this->search = '';
+        $this->status = '';
         $this->resetPage();
     }
 
@@ -197,6 +205,13 @@ class UserIndex extends Component
         // Role filter
         if (!empty($safeRole)) {
             $query->where('role', $safeRole);
+        }
+
+        // Status filter
+        if ($this->status === 'active') {
+            $query->where('is_active', true);
+        } elseif ($this->status === 'inactive') {
+            $query->where('is_active', false);
         }
 
         $users = $query->paginate($this->perPage)->onEachSide(1);
