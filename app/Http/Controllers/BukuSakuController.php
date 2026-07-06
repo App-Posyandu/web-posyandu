@@ -104,7 +104,7 @@ class BukuSakuController extends Controller
 
         $path = $bukuSaku->file_path;
         $extension = pathinfo($path, PATHINFO_EXTENSION);
-        $nama_file = \Illuminate\Support\Str::slug($bukuSaku->title) . '.' . $extension;
+        $nama_file = $bukuSaku->title . '.' . $extension;
 
         $stream = Storage::disk('public')->readStream($path);
 
@@ -126,7 +126,7 @@ class BukuSakuController extends Controller
 
         $path = $bukuSaku->file_path;
         $extension = pathinfo($path, PATHINFO_EXTENSION);
-        $nama_file = \Illuminate\Support\Str::slug($bukuSaku->title) . '.' . $extension;
+        $nama_file = $bukuSaku->title . '.' . $extension;
         
         $stream = Storage::disk('public')->readStream($path);
 
@@ -183,7 +183,7 @@ class BukuSakuController extends Controller
 
         $path = $bukuSaku->file_path;
         $extension = pathinfo($path, PATHINFO_EXTENSION);
-        $nama_file = \Illuminate\Support\Str::slug($bukuSaku->title) . '.' . $extension;
+        $nama_file = $bukuSaku->title . '.' . $extension;
         
         $stream = Storage::disk('public')->readStream($path);
 
