@@ -230,6 +230,7 @@
         <div class="header-title">
             <h1>Lampiran Dokumen Administrasi</h1>
             <h2>Layanan Standar Minimal Pelayanan Posyandu di Kabupaten Kebumen</h2>
+            <p style="margin-top: 5px; font-weight: bold; color: #374151;">Kode Tracking: {{ $ajuan->tracking_code ?? $ajuan->id }}</p>
         </div>
     </header>
 

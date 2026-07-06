@@ -24,6 +24,7 @@
                         <p class="text-sm text-gray-500 mt-1">Diajukan pada:
                             {{ \Carbon\Carbon::parse($ajuan->tanggal_permohonan ?? $ajuan->created_at)->format('d F Y') }}
                         </p>
+                        <p class="text-sm text-gray-500 mt-1">Kode Tracking: <span class="font-mono font-bold text-gray-800">{{ $ajuan->tracking_code ?? $ajuan->id }}</span></p>
                     </div>
                     <div class="flex gap-2">
                         <a href="{{ route('ajuan.index') }}"
