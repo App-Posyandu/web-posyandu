@@ -307,7 +307,7 @@ class PosyanduController extends Controller
 
         return redirect()
             ->route('admin.posyandu.index')
-            ->with('success', 'Posyandu, mapping RW/RT, dan 6 akun kader berhasil dibuat.');
+            ->with('success', 'Posyandu dan akun Kader berhasil dibuat dengan password default!');
     }
 
     private function createKadersForPosyandu(Posyandu $posyandu)
@@ -388,10 +388,6 @@ class PosyanduController extends Controller
                 continue;
             }
         }
-
-        session()->flash('created_kaders', $createdKaders);
-        session()->flash('posyandu_name', $posyandu->nama_posyandu);
-        session()->flash('posyandu_id', $posyandu->id);
 
         return $createdKaders;
     }
