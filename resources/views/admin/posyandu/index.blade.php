@@ -345,9 +345,9 @@
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="button"
-                                                        onclick="confirmDeletePosyandu(event, '{{ $posyandu->id }}')"
+                                                        onclick="confirmDeletePosyandu(event, 'delete-form-{{ $posyandu->id }}')"
                                                         class="px-3 py-2 bg-red-500 text-white text-xs font-semibold rounded hover:bg-red-600 transition inline-flex items-center gap-1">
-                                                        <i class="bi bi-trash"></i> Hapus
+                                                        <i class="bi bi-trash"></i> HAPUS
                                                     </button>
                                                 </form>
                                             @endif
@@ -482,9 +482,9 @@
                                         @csrf
                                         @method('DELETE')
                                         <button type="button"
-                                            onclick="confirmDeletePosyandu(event, '{{ $posyandu->id }}')"
+                                            onclick="confirmDeletePosyandu(event, 'delete-form-card-{{ $posyandu->id }}')"
                                             class="w-full sm:w-auto px-3 py-2 bg-red-500 text-white rounded-md text-sm font-medium text-center hover:bg-red-600 transition">
-                                            <i class="bi bi-trash mr-1"></i> Hapus
+                                            <i class="bi bi-trash mr-1"></i> HAPUS
                                         </button>
                                     </form>
                                 @endif
@@ -781,9 +781,9 @@
             }
         </script>
         <script>
-            function confirmDeletePosyandu(event, id) {
+            function confirmDeletePosyandu(event, formId) {
                 event.preventDefault();
-                console.log('Delete function called with ID:', id);
+                console.log('Delete function called with form ID:', formId);
                 Swal.fire({
                     title: 'Hapus Posyandu?',
                     text: 'Yakin ingin menghapus posyandu ini?',
@@ -795,7 +795,6 @@
                     cancelButtonColor: '#6b7280'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        const formId = 'delete-form-' + id;
                         console.log('Submitting form with ID:', formId);
                         document.getElementById(formId).submit();
                     }
