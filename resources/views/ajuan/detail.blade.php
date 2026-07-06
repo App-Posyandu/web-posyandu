@@ -928,8 +928,8 @@
             </div>
         @endif
 
-        {{-- KADES / BU KADES: Approval Final --}}
-        @if (in_array(auth()->user()->role, ['kades', 'bu-kades', 'admin']) && ($ajuan->submitted_to_desa || $ajuan->approved_by_ketua) && $ajuan->status_pengajuan === 'Diproses')
+        {{-- KADES: Approval Final (bu-kades hanya lihat, tidak bisa tindak lanjut) --}}
+        @if (auth()->user()->role === 'kades' && ($ajuan->submitted_to_desa || $ajuan->approved_by_ketua) && $ajuan->status_pengajuan === 'Diproses')
             <div class="w-full mx-8">
                 <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-4 md:p-8 mx-0 md:mx-8">
                     <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Persetujuan Kepala Desa</h2>
