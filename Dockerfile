@@ -43,15 +43,18 @@ COPY --from=composer:2.8 /usr/bin/composer /usr/bin/composer
 # Set work directory
 WORKDIR /var/www/html
 
-# Copy application source files
+# Copy composer files first so this layer is cached unless dependencies change
+COPY composer.json composer.lock ./
+
+# Install only production dependencies (no dev packages like pest/mockery/phpunit)
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev \
+    && rm -rf /root/.composer/cache
+
+# Copy the rest of the application
 COPY . .
 
 # Copy compiled frontend assets from Stage 1
 COPY --from=node-builder /app/public/build ./public/build
-
-# Run Composer installation for production
-RUN composer install --no-interaction --prefer-dist --optimize-autoloader --ignore-platform-reqs 2>/dev/null \
-    || composer update --no-interaction --prefer-dist --optimize-autoloader --ignore-platform-reqs
 
 # Copy PHP OPcache, upload settings, and FPM pool configuration
 COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
