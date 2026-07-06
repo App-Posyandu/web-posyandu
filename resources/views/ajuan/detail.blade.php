@@ -815,8 +815,8 @@
                                                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                                                         @foreach ($ajuan->foto_kunjungan as $foto)
                                                             <div class="relative group aspect-square rounded-lg overflow-hidden border border-gray-200">
-                                                                <img src="{{ Storage::url($foto) }}" alt="Bukti Kunjungan" class="object-cover w-full h-full">
-                                                                <a href="{{ Storage::url($foto) }}" target="_blank" class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                <img src="{{ \Storage::url($foto) }}" alt="Bukti Kunjungan" class="object-cover w-full h-full">
+                                                                <a href="{{ \Storage::url($foto) }}" target="_blank" class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                                                     <i class="bi bi-arrows-fullscreen text-white text-2xl"></i>
                                                                 </a>
                                                             </div>
