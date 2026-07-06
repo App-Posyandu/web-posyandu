@@ -787,7 +787,7 @@
                                                         })();
                                                     }
                                                 ">
-                                            <p class="text-xs text-gray-500 mt-1">Wajib diisi. Anda dapat upload beberapa foto sekaligus. Maksimal 10MB per foto (otomatis dikompresi hingga < 2MB).
+                                            <p class="text-xs text-gray-500 mt-1">Wajib diisi. Anda dapat upload beberapa foto sekaligus. Maksimal 10MB.
                                             </p>
                                         </div>
 
