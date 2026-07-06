@@ -18,7 +18,7 @@ class BukuSakuController extends Controller
     public function index()
     {
         $this->authorize('viewAny', BukuSaku::class);
-        $bukuSaku = BukuSaku::with('user')->latest()->paginate(10);
+        $bukuSaku = BukuSaku::with('user')->latest()->paginate(10)->withQueryString();
         return view('admin.bukuSaku.index', compact('bukuSaku'));
     }
 

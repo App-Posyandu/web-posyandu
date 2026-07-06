@@ -299,7 +299,7 @@ class AjuanIndex extends Component
             $query->where('status_pengajuan', $safeStatusFilter);
         }
 
-        $semuaAjuan = $query->latest()->paginate(10);
+        $semuaAjuan = $query->latest()->paginate(10)->withQueryString();
 
         $semuaAjuan->getCollection()->transform(function ($ajuan) {
             $latestRevisionRequest = $ajuan->histories
