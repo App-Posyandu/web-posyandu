@@ -432,8 +432,7 @@ HTML, 500);
             }
         }
 
-        // JIKA form password kosong (misal disembunyikan untuk role tertentu) atau berisi dummy 'PASSWORD', gunakan default
-        $plainPassword = $request->password && $request->password !== 'PASSWORD' ? $request->password : 'password123';
+        $plainPassword = $validated['password'];
 
         $locationData = $this->determineLocationData($request, $currentUser);
 
