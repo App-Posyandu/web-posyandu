@@ -29,14 +29,14 @@
             @endif
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900">
+                <div class="p-4 sm:p-6 text-gray-900">
                     <div class="flex justify-between items-center mb-6">
                         <h3 class="text-lg font-semibold text-gray-800">Daftar Kader Posyandu</h3>
                         <span class="text-sm text-gray-500">Total: {{ $kaders->count() }} Kader</span>
                     </div>
 
                     <div class="w-full overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
+                        <table class="w-full text-sm text-left divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th
