@@ -581,11 +581,11 @@
                             </div>
                         </div>
 
-                        <div x-show="role !== 'ketua-posyandu'">
+                        <div>
                             <x-input-label for="password" :value="__('Password')" />
                             <div class="relative mt-1">
                                 <x-text-input id="password" class="block w-full pr-10" type="password" name="password"
-                                    x-bind:required="role !== 'ketua-posyandu'" autocomplete="new-password" />
+                                    required autocomplete="new-password" />
                                 <button type="button" onclick="togglePassword('password', this)"
                                     class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none"
                                     tabindex="-1">
@@ -599,11 +599,11 @@
                             @enderror
                         </div>
 
-                        <div x-show="role !== 'ketua-posyandu'">
+                        <div>
                             <x-input-label for="password_confirmation" :value="__('Konfirmasi Password')" />
                             <div class="relative mt-1">
                                 <x-text-input id="password_confirmation" class="block w-full pr-10" type="password"
-                                    name="password_confirmation" x-bind:required="role !== 'ketua-posyandu'" />
+                                    name="password_confirmation" required />
                                 <button type="button" onclick="togglePassword('password_confirmation', this)"
                                     class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none"
                                     tabindex="-1">
