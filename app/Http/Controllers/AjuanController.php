@@ -30,9 +30,13 @@ class AjuanController extends Controller
         $this->authorize('viewAny', Pengajuan::class);
         $currentYear = now()->year;
 
-        $selectedYear = YearParameter::resolveOrFallback($request->query('year'), $currentYear, 2000, 2100);
+        // Default ke tahun data terbaru (sama seperti Dashboard), bukan selalu tahun ini
+        $latestEntry    = Pengajuan::latest()->first();
+        $latestDataYear = $latestEntry ? (int) $latestEntry->created_at->year : null;
+        $defaultYear    = $request->query('year') ? $currentYear : ($latestDataYear ?? $currentYear);
 
-        // ✅ Build query with validated year
+        $selectedYear = YearParameter::resolveOrFallback($request->query('year'), $defaultYear, 2000, 2100);
+
         $query = Pengajuan::with(['user', 'bidang'])
             ->whereYear('created_at', $selectedYear);
 
@@ -148,11 +152,14 @@ class AjuanController extends Controller
                 break;
 
             case 'ketua-posyandu':
-                $query->whereHas(
-                    'user',
-                    fn($q) =>
-                    $q->where('posyandu_id', $currentUser->posyandu_id)
-                );
+                if ($currentUser->posyandu_id) {
+                    $query->whereHas('user', fn($q) => $q->where('posyandu_id', $currentUser->posyandu_id));
+                } elseif ($currentUser->desa) {
+                    // Fallback: filter by desa jika posyandu_id belum ditetapkan
+                    $query->whereHas('user', fn($q) => $q->where('desa', 'ILIKE', $currentUser->desa));
+                } else {
+                    abort(403, 'Data posyandu tidak ditemukan. Silakan hubungi administrator.');
+                }
                 break;
 
             // ✅ FIXED: Kader only see their bidang
@@ -309,6 +316,8 @@ class AjuanController extends Controller
 
     public function requestRevision(Request $request, Pengajuan $ajuan)
     {
+        $this->authorize('requestRevision', $ajuan);
+
         $ajuan = Pengajuan::findOrFail($ajuan->id);
 
         $autoRejectDays = (int) SystemSetting::get('auto_reject_days', 5);
@@ -1293,7 +1302,7 @@ class AjuanController extends Controller
     {
         $user = Auth::user();
 
-        if (!in_array($user->role, ['kades', 'bu-kades'])) {
+        if ($user->role !== 'kades') {
             AccessAudit::record(request(), $user, 'pengajuan', 'kades_approval', false, 403, [
                 'target_pengajuan_id' => $ajuan->id,
             ]);
@@ -1332,13 +1341,13 @@ class AjuanController extends Controller
                 'tindak_lanjut' => $request->tindak_lanjut ?? $ajuan->deskripsi_pengajuan,
             ]));
 
-            $status = $user->role === 'kades' ? 'Disetujui Kades' : 'Disetujui Bu Kades';
+            $status = 'Disetujui Kades';
         } else {
             $ajuan->update(array_merge($desaSubmission, [
                 'status_pengajuan' => 'Ditolak',
             ]));
 
-            $status = $user->role === 'kades' ? 'Ditolak Kades' : 'Ditolak Bu Kades';
+            $status = 'Ditolak Kades';
         }
 
         History::create([
