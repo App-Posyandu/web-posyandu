@@ -801,6 +801,24 @@
                                                     Selesai Kunjungan
                                                 </button>
                                             </div>
+                                        @else
+                                            <div class="mt-4 border-t pt-4">
+                                                <h4 class="font-medium text-sm text-gray-700 mb-2">Bukti Kunjungan Lapangan:</h4>
+                                                @if (!empty($ajuan->foto_kunjungan) && is_array($ajuan->foto_kunjungan) && count($ajuan->foto_kunjungan) > 0)
+                                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                        @foreach ($ajuan->foto_kunjungan as $foto)
+                                                            <div class="relative group aspect-square rounded-lg overflow-hidden border border-gray-200">
+                                                                <img src="{{ $foto }}" alt="Bukti Kunjungan" class="object-cover w-full h-full">
+                                                                <a href="{{ $foto }}" target="_blank" class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                    <i class="bi bi-arrows-fullscreen text-white text-2xl"></i>
+                                                                </a>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                @else
+                                                    <p class="text-sm text-gray-500 italic">Tidak ada bukti kunjungan lapangan yang diunggah.</p>
+                                                @endif
+                                            </div>
                                         @endif
                                     </form>
                                 </div>
