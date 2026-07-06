@@ -21,5 +21,31 @@
                 </div>
             </div>
         @endif
+
+        @if(session('success'))
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: '{{ session('success') }}',
+                    confirmButtonColor: '#3085d6',
+                });
+            });
+        </script>
+        @endif
+
+        @if(session('error'))
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops...',
+                    text: '{{ session('error') }}',
+                    confirmButtonColor: '#d33',
+                });
+            });
+        </script>
+        @endif
     </div>
 @endsection
