@@ -210,6 +210,7 @@ class DashboardController extends Controller
                     $listQuery->where('bidang_id', $user->bidang_id);
                     $statsQuery->where('bidang_id', $user->bidang_id);
                     $actualCountsQuery->where('pengajuans.bidang_id', $user->bidang_id);
+                    $desasQuery->where('bidang_id', $user->bidang_id);
                 } else {
                     $denyAll();
                 }
@@ -324,7 +325,11 @@ class DashboardController extends Controller
         // -------------------------
         // Hitung data
         // -------------------------
-        $allBidangNames = BidangPengajuan::pluck('nama_bidang');
+        if ($user->role === 'kabid' && $user->bidang_id) {
+            $allBidangNames = BidangPengajuan::where('id', $user->bidang_id)->pluck('nama_bidang');
+        } else {
+            $allBidangNames = BidangPengajuan::pluck('nama_bidang');
+        }
         $baseCounts     = $allBidangNames->mapWithKeys(fn($nama) => [$nama => 0]);
 
         if ($isVerified) {
