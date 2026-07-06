@@ -334,22 +334,11 @@
                                                 class="px-3 py-2 bg-green-500 text-white text-xs font-semibold rounded hover:bg-green-600 transition inline-flex items-center gap-1">
                                                 <i class="bi bi-eye"></i> Lihat
                                             </button>
-                                            @if (in_array(auth()->user()->role, ['admin', 'operator-desa']))
+                                                @if (in_array(auth()->user()->role, ['admin', 'operator-desa']))
                                                 <a href="{{ route('admin.posyandu.edit', $posyandu) }}"
                                                     class="px-3 py-2 bg-blue-500 text-white text-xs font-semibold rounded hover:bg-blue-600 transition inline-flex items-center gap-1">
                                                     <i class="bi bi-pencil"></i> Edit
                                                 </a>
-                                                <form method="POST"
-                                                    action="{{ route('admin.posyandu.destroy', $posyandu) }}"
-                                                    id="delete-form-{{ $posyandu->id }}" class="inline">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="button"
-                                                        onclick="confirmDeletePosyandu(event, 'delete-form-{{ $posyandu->id }}')"
-                                                        class="px-3 py-2 bg-red-500 text-white text-xs font-semibold rounded hover:bg-red-600 transition inline-flex items-center gap-1">
-                                                        <i class="bi bi-trash"></i> HAPUS
-                                                    </button>
-                                                </form>
                                             @endif
                                         </div>
                                     </td>
@@ -476,17 +465,6 @@
                                         class="w-full sm:w-auto px-3 py-2 bg-blue-500 text-white rounded-md text-sm font-medium text-center hover:bg-blue-600 transition">
                                         <i class="bi bi-pencil mr-1"></i> Edit
                                     </a>
-                                    <form method="POST"
-                                        action="{{ route('admin.posyandu.destroy', $posyandu) }}"
-                                        id="delete-form-card-{{ $posyandu->id }}" class="w-full sm:w-auto">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="button"
-                                            onclick="confirmDeletePosyandu(event, 'delete-form-card-{{ $posyandu->id }}')"
-                                            class="w-full sm:w-auto px-3 py-2 bg-red-500 text-white rounded-md text-sm font-medium text-center hover:bg-red-600 transition">
-                                            <i class="bi bi-trash mr-1"></i> HAPUS
-                                        </button>
-                                    </form>
                                 @endif
                             </div>
                         </div>
