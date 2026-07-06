@@ -152,17 +152,16 @@
 
                 @if (auth()->user()->role === 'operator-desa')
                     <div class="w-full sm:w-auto min-w-[150px]">
-                        <select name="status"
-                            class="w-full border-gray-300 rounded-md shadow-sm text-sm focus:ring-pink-500 focus:border-pink-500 py-2" style="height: 38px;"
-                            onchange="window.location.href = '?status=' + this.value">
+                        <select wire:model.live="status"
+                            class="w-full border-gray-300 rounded-md shadow-sm text-sm focus:ring-pink-500 focus:border-pink-500 py-2" style="height: 38px;">
                             <option value="">Semua Status</option>
-                            <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Aktif</option>
-                            <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Nonaktif</option>
+                            <option value="active">Aktif</option>
+                            <option value="inactive">Nonaktif</option>
                         </select>
                     </div>
                 @endif
 
-                @if ($search || $role)
+                @if ($search || $role || $status)
                     <button wire:click="resetFilters" type="button"
                         class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors duration-150 flex items-center justify-center" style="height: 38px;">
                         <i class="bi bi-arrow-clockwise mr-1"></i>
