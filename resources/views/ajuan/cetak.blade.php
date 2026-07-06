@@ -561,7 +561,7 @@
 
                 @if ($ajuan->deskripsi_pengajuan)
                     <h4 class="sub-title">Deskripsi Permohonan</h4>
-                    <div class="description-box">
+                    <div class="description-box" style="margin-bottom: 20px;">
                         <p>{{ $ajuan->deskripsi_pengajuan }}</p>
                     </div>
                 @endif
