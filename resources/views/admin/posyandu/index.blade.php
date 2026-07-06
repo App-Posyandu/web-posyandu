@@ -3,109 +3,7 @@
 @section('content')
 <div class="w-full mx-auto sm:px-6 lg:px-8">
     <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8">
-            @if (session('created_kaders'))
-                <div
-                    class="mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl shadow-lg p-6">
-                    <div class="flex items-start gap-4">
-                        <div class="flex-shrink-0">
-                            <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M5 13l4 4L19 7"></path>
-                                </svg>
-                            </div>
-                        </div>
 
-                        <div class="flex-1">
-                            <h3 class="text-xl font-bold text-green-800 mb-3">
-                                Posyandu & 6 Akun Kader Berhasil Dibuat!
-                            </h3>
-
-                            <div class="bg-white rounded-lg p-4 mb-4">
-                                <p class="text-sm text-gray-700 mb-3">
-                                    <strong>PENTING:</strong> Salin dan simpan credentials di bawah ini.
-                                    Informasi ini hanya ditampilkan sekali!
-                                </p>
-
-                                <div class="space-y-3">
-                                    @foreach (session('created_kaders') as $index => $kaderInfo)
-                                        <div class="border-l-4 border-blue-500 bg-blue-50 p-3 rounded">
-                                            <div class="flex items-start justify-between">
-                                                <div class="flex-1">
-                                                    <p class="font-semibold text-gray-800">
-                                                        {{ $index + 1 }}. Kader {{ $kaderInfo['bidang'] }}
-                                                    </p>
-                                                    <div class="mt-2 space-y-1 text-sm">
-                                                        <div class="flex items-center gap-2">
-                                                            <span class="text-gray-600 w-32">Email:</span>
-                                                            <code class="bg-white px-2 py-1 rounded border text-gray-800">
-                                                                {{ $kaderInfo['email'] }}
-                                                            </code>
-                                                        </div>
-                                                        <div class="flex items-center gap-2">
-                                                            <span class="text-gray-600 w-32">Password:</span>
-                                                            <code
-                                                                class="bg-white px-2 py-1 rounded border text-red-600 font-bold">
-                                                                {{ $kaderInfo['password'] }}
-                                                            </code>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {{-- Copy Button --}}
-                                                <button onclick="copyKaderCredentials({{ $index }})"
-                                                    class="ml-4 px-3 py-2 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition">
-                                                    Copy
-                                                </button>
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
-
-                            <div class="bg-amber-50 border border-amber-300 rounded-lg p-4">
-                                <p class="text-sm text-amber-800">
-                                    <strong>Catatan:</strong>
-                                </p>
-                                <ul class="list-disc list-inside text-sm text-amber-700 mt-2 space-y-1">
-                                    <li>Semua kader sudah <strong>terverifikasi</strong> dan <strong>aktif</strong></li>
-                                    <li>Password default: <code class="bg-white px-2 py-1 rounded">password123</code></li>
-                                    <li>Kader dapat login menggunakan <strong>email</strong> atau <strong>nomor
-                                            telepon</strong></li>
-                                    <li>Ketua Posyandu dapat <strong>melengkapi data</strong> kader (NIK, tanggal lahir,
-                                        dll)
-                                    </li>
-                                    <li>Ketua Posyandu dapat <strong>reset password</strong> kader jika diperlukan</li>
-                                </ul>
-                            </div>
-
-                            {{-- Action Buttons --}}
-                            <div class="mt-4 flex gap-3">
-                                <a href="{{ route('admin.posyandu.print-credentials', session('posyandu_id')) }}"
-                                    target="_blank"
-                                    class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition flex items-center gap-2">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z">
-                                        </path>
-                                    </svg>
-                                    Print Credentials (PDF)
-                                </a>
-
-                                <button onclick="downloadKaderCredentials()"
-                                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-                                        </path>
-                                    </svg>
-                                    Download as TXT
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            @endif
             <div class="text-gray-900">
 
                 <div class="px-4 sm:px-0">
@@ -334,22 +232,11 @@
                                                 class="px-3 py-2 bg-green-500 text-white text-xs font-semibold rounded hover:bg-green-600 transition inline-flex items-center gap-1">
                                                 <i class="bi bi-eye"></i> Lihat
                                             </button>
-                                            @if (in_array(auth()->user()->role, ['admin', 'operator-desa']))
+                                                @if (in_array(auth()->user()->role, ['admin', 'operator-desa']))
                                                 <a href="{{ route('admin.posyandu.edit', $posyandu) }}"
                                                     class="px-3 py-2 bg-blue-500 text-white text-xs font-semibold rounded hover:bg-blue-600 transition inline-flex items-center gap-1">
                                                     <i class="bi bi-pencil"></i> Edit
                                                 </a>
-                                                <form method="POST"
-                                                    action="{{ route('admin.posyandu.destroy', $posyandu) }}"
-                                                    id="delete-form-{{ $posyandu->id }}" class="inline">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="button"
-                                                        onclick="confirmDeletePosyandu(event, '{{ $posyandu->id }}')"
-                                                        class="px-3 py-2 bg-red-500 text-white text-xs font-semibold rounded hover:bg-red-600 transition inline-flex items-center gap-1">
-                                                        <i class="bi bi-trash"></i> Hapus
-                                                    </button>
-                                                </form>
                                             @endif
                                         </div>
                                     </td>
@@ -476,17 +363,6 @@
                                         class="w-full sm:w-auto px-3 py-2 bg-blue-500 text-white rounded-md text-sm font-medium text-center hover:bg-blue-600 transition">
                                         <i class="bi bi-pencil mr-1"></i> Edit
                                     </a>
-                                    <form method="POST"
-                                        action="{{ route('admin.posyandu.destroy', $posyandu) }}"
-                                        id="delete-form-card-{{ $posyandu->id }}" class="w-full sm:w-auto">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="button"
-                                            onclick="confirmDeletePosyandu(event, '{{ $posyandu->id }}')"
-                                            class="w-full sm:w-auto px-3 py-2 bg-red-500 text-white rounded-md text-sm font-medium text-center hover:bg-red-600 transition">
-                                            <i class="bi bi-trash mr-1"></i> Hapus
-                                        </button>
-                                    </form>
                                 @endif
                             </div>
                         </div>
@@ -781,9 +657,9 @@
             }
         </script>
         <script>
-            function confirmDeletePosyandu(event, id) {
+            function confirmDeletePosyandu(event, formId) {
                 event.preventDefault();
-                console.log('Delete function called with ID:', id);
+                console.log('Delete function called with form ID:', formId);
                 Swal.fire({
                     title: 'Hapus Posyandu?',
                     text: 'Yakin ingin menghapus posyandu ini?',
@@ -795,7 +671,6 @@
                     cancelButtonColor: '#6b7280'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        const formId = 'delete-form-' + id;
                         console.log('Submitting form with ID:', formId);
                         document.getElementById(formId).submit();
                     }
@@ -803,50 +678,7 @@
                 return false;
             }
         </script>
-        <script>
-            function downloadKaderCredentials() {
-                const kaders = @json(session('created_kaders'));
 
-                if (!kaders || kaders.length === 0) {
-                    alert('Data credentials tidak tersedia');
-                    return;
-                }
-
-                let content = '==============================================\n';
-                content += '   CREDENTIALS KADER AUTO-GENERATED\n';
-                content += '==============================================\n\n';
-                content += 'Tanggal: ' + new Date().toLocaleString('id-ID') + '\n';
-                content += '----------------------------------------------\n\n';
-
-                kaders.forEach((kader, i) => {
-                    content += (i + 1) + '. Kader ' + kader.bidang + '\n';
-                    content += '   Email    : ' + kader.email + '\n';
-                    content += '   Password : ' + kader.password + '\n';
-                    content += '----------------------------------------------\n';
-                });
-
-                content += '\n';
-                content += 'PENTING:\n';
-                content += '- Simpan file ini dengan aman!\n';
-                content += '- Password default: password123\n';
-                content += '- Kader dapat login menggunakan email atau nomor telepon\n';
-                content += '- Ketua Posyandu wajib meminta kader untuk mengganti password\n';
-                content += '\n';
-                content += '==============================================\n';
-
-                const blob = new Blob([content], {
-                    type: 'text/plain;charset=utf-8'
-                });
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'kader_credentials_' + Date.now() + '.txt';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                window.URL.revokeObjectURL(url);
-            }
-        </script>
     @endpush
     </div>
 </div>

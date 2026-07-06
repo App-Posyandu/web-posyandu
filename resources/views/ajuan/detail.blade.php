@@ -13,10 +13,18 @@
 
                 <div class="flex justify-between items-start mb-6">
                     <div>
-                        <h2 class="text-2xl font-bold text-gray-800">Detail Pengajuan</h2>
-                        <p class="text-sm text-gray-500">Diajukan pada:
+                        <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-3">
+                            Detail Pengajuan
+                            @if(!empty($ajuan->tracking_code))
+                                <span class="bg-gray-100 text-gray-800 text-sm font-semibold px-2.5 py-0.5 rounded border border-gray-300">
+                                    #{{ $ajuan->tracking_code }}
+                                </span>
+                            @endif
+                        </h2>
+                        <p class="text-sm text-gray-500 mt-1">Diajukan pada:
                             {{ \Carbon\Carbon::parse($ajuan->tanggal_permohonan ?? $ajuan->created_at)->format('d F Y') }}
                         </p>
+                        <p class="text-sm text-gray-500 mt-1">Kode Tracking: <span class="font-mono font-bold text-gray-800">{{ $ajuan->tracking_code ?? $ajuan->id }}</span></p>
                     </div>
                     <div class="flex gap-2">
                         <a href="{{ route('ajuan.index') }}"
@@ -780,7 +788,7 @@
                                                         })();
                                                     }
                                                 ">
-                                            <p class="text-xs text-gray-500 mt-1">Wajib diisi. Anda dapat upload beberapa foto sekaligus. Maksimal 10MB per foto (otomatis dikompresi hingga < 2MB).
+                                            <p class="text-xs text-gray-500 mt-1">Wajib diisi. Anda dapat upload beberapa foto sekaligus. Maksimal 10MB.
                                             </p>
                                         </div>
 
@@ -800,6 +808,24 @@
                                                     class="px-6 py-2 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700">
                                                     Selesai Kunjungan
                                                 </button>
+                                            </div>
+                                        @else
+                                            <div class="mt-4 border-t pt-4">
+                                                <h4 class="font-medium text-sm text-gray-700 mb-2">Bukti Kunjungan Lapangan:</h4>
+                                                @if (!empty($ajuan->foto_kunjungan) && is_array($ajuan->foto_kunjungan) && count($ajuan->foto_kunjungan) > 0)
+                                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                        @foreach ($ajuan->foto_kunjungan as $foto)
+                                                            <div class="relative group aspect-square rounded-lg overflow-hidden border border-gray-200">
+                                                                <img src="{{ asset('storage/' . str_replace('public/', '', $foto)) }}" alt="Bukti Kunjungan" class="object-cover w-full h-full">
+                                                                <a href="{{ asset('storage/' . str_replace('public/', '', $foto)) }}" target="_blank" class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                    <i class="bi bi-arrows-fullscreen text-white text-2xl"></i>
+                                                                </a>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                @else
+                                                    <p class="text-sm text-gray-500 italic">Tidak ada bukti kunjungan lapangan yang diunggah.</p>
+                                                @endif
                                             </div>
                                         @endif
                                     </form>

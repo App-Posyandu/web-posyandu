@@ -107,7 +107,7 @@
         @endif
         <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
             <!-- Kiri: Judul (50%) -->
-            <div class="w-full md:w-1/2">
+            <div class="w-full md:w-auto">
                 <h2 class="text-xl md:text-2xl font-bold text-gray-800">List Pengguna</h2>
             </div>
             
@@ -141,6 +141,17 @@
                     </select>
                 </div>
                 
+                @if (auth()->user()->role === 'operator-desa')
+                    <div class="w-full sm:w-auto min-w-[150px]">
+                        <select wire:model.live="status"
+                            class="w-full border-gray-300 rounded-md shadow-sm text-sm focus:ring-pink-500 focus:border-pink-500 py-2" style="height: 38px;">
+                            <option value="">Semua Status</option>
+                            <option value="active">Aktif</option>
+                            <option value="inactive">Nonaktif</option>
+                        </select>
+                    </div>
+                @endif
+
                 <div class="flex-1 min-w-[200px] relative">
                     <input type="text" wire:model.live.debounce.300ms="search"
                         placeholder="Cari nama, email, NIK, No. Telepon, desa..."
@@ -150,19 +161,7 @@
                     </div>
                 </div>
 
-                @if (auth()->user()->role === 'operator-desa')
-                    <div class="w-full sm:w-auto min-w-[150px]">
-                        <select name="status"
-                            class="w-full border-gray-300 rounded-md shadow-sm text-sm focus:ring-pink-500 focus:border-pink-500 py-2" style="height: 38px;"
-                            onchange="window.location.href = '?status=' + this.value">
-                            <option value="">Semua Status</option>
-                            <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Aktif</option>
-                            <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Nonaktif</option>
-                        </select>
-                    </div>
-                @endif
-
-                @if ($search || $role)
+                @if ($search || $role || $status)
                     <button wire:click="resetFilters" type="button"
                         class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors duration-150 flex items-center justify-center" style="height: 38px;">
                         <i class="bi bi-arrow-clockwise mr-1"></i>

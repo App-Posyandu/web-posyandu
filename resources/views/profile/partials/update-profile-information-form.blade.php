@@ -36,8 +36,8 @@
             <div class="md:col-span-2">
                 <x-input-label for="email" :value="__('Email')" />
                 <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" :value="old('email', $user->email)"
-                    required placeholder="Contoh: nama@domain.com" />
-                <p class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Format email valid dan unik (belum digunakan akun lain).</p>
+                    placeholder="Contoh: nama@domain.com" />
+                <p class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Gunakan email anda yang aktif.</p>
                 <x-input-error class="mt-2" :messages="$errors->get('email')" />
             </div>
 

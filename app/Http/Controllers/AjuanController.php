@@ -1647,11 +1647,13 @@ class AjuanController extends Controller
 
         $storagePath = $dir . '/' . $filename;
 
-        $source = match ($extension) {
-            'png'        => imagecreatefrompng($file->getPathname()),
-            'jpg', 'jpeg' => imagecreatefromjpeg($file->getPathname()),
-            default      => imagecreatefromjpeg($file->getPathname()),
-        };
+        $source = @imagecreatefromstring(file_get_contents($file->getPathname()));
+
+        if (!$source) {
+            throw new \Illuminate\Http\Exceptions\HttpResponseException(
+                back()->with('error', 'File gambar tidak valid atau rusak. Silakan upload ulang foto yang benar.')
+            );
+        }
 
         // Flatten PNG transparency to white background before JPEG conversion
         if ($extension === 'png') {

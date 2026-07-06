@@ -30,7 +30,7 @@ class SystemSettingSeeder extends Seeder
                 'type' => 'boolean',
                 'category' => 'revision',
                 'label' => 'Mode Debug Revisi',
-                'description' => 'Aktifkan mode debug untuk testing (menggunakan menit instead of hari)',
+                'description' => 'Aktifkan mode debug untuk testing (menggunakan menit dibandingkan hari)',
                 'is_public' => false,
                 'created_at' => now(),
                 'updated_at' => now(),

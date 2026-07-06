@@ -3,11 +3,11 @@
 @section('title', 'Kelola Akses Kader')
 
 @section('content')
-    <div class="py-12" x-data="takeoverHandler()">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="w-full mx-auto sm:px-6 lg:px-8" x-data="takeoverHandler()">
+        <div class="bg-white overflow-hidden shadow-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8">
+            
             @if (session('success') && session('new_password'))
-                <div class="mb-6 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-sm relative"
-                    role="alert">
+                <div class="mb-6 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-sm relative" role="alert">
                     <p class="font-bold">Berhasil!</p>
                     <p>{{ session('success') }}</p>
                     <div class="mt-2 p-3 bg-white rounded border border-green-200">
@@ -28,79 +28,128 @@
                 </div>
             @endif
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-lg font-semibold text-gray-800">Daftar Kader Posyandu</h3>
-                        <span class="text-sm text-gray-500">Total: {{ $kaders->count() }} Kader</span>
-                    </div>
-
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Nama / Username</th>
-                                    <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Bidang</th>
-                                    <th
-                                        class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Status</th>
-                                    <th
-                                        class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                @forelse($kaders as $kader)
-                                    <tr class="hover:bg-gray-50">
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm font-medium text-gray-900">{{ $kader->name }}</div>
-                                            <div class="text-xs text-gray-500">{{ $kader->username ?? '-' }}</div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span
-                                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                {{ $kader->bidang->nama_bidang ?? 'Tidak Ada Bidang' }}
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                                            @if ($kader->is_active)
-                                                <span
-                                                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                    Aktif
-                                                </span>
-                                            @else
-                                                <span
-                                                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                                                    Non-Aktif
-                                                </span>
-                                            @endif
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                                            <button
-                                                @click="openModal('{{ $kader->id }}', '{{ $kader->name }}', {{ $kader->is_active ? 'true' : 'false' }})"
-                                                class="text-indigo-600 hover:text-indigo-900 font-medium text-sm border border-indigo-200 px-3 py-1 rounded hover:bg-indigo-50 transition">
-                                                {{ $kader->is_active ? 'Reset Password' : 'Aktifkan & Reset' }}
-                                            </button>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="4" class="px-6 py-4 text-center text-gray-500 text-sm">
-                                            Belum ada data kader di posyandu ini.
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+            <!-- Header ala List Posyandu -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                <div class="w-full md:w-1/2 flex flex-col md:flex-row items-start md:items-center gap-4">
+                    <h2 class="text-2xl font-bold text-gray-800 whitespace-nowrap">Daftar Kader Posyandu</h2>
+                    <div class="text-sm text-gray-500">
+                        <i class="bi bi-people mr-1"></i>
+                        <strong>Total: {{ $kaders->count() }} Kader</strong>
                     </div>
                 </div>
             </div>
+
+            <!-- VIEW DESKTOP: TABEL -->
+            <div class="hidden md:block w-full max-w-full overflow-x-auto">
+                <table class="min-w-full whitespace-nowrap divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama / Username</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bidang</th>
+                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        @forelse($kaders as $kader)
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900">{{ $kader->name }}</div>
+                                    <div class="text-xs text-gray-500">{{ $kader->username ?? '-' }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                        {{ $kader->bidang->nama_bidang ?? 'Tidak Ada Bidang' }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    @if ($kader->is_active)
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Aktif</span>
+                                    @else
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Non-Aktif</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
+                                    <button @click="openModal('{{ $kader->id }}', '{{ $kader->name }}', {{ $kader->is_active ? 'true' : 'false' }})"
+                                        class="px-3 py-2 bg-indigo-50 text-indigo-600 text-xs font-semibold rounded border border-indigo-200 hover:bg-indigo-100 transition inline-flex items-center gap-1">
+                                        <i class="bi bi-key"></i> {{ $kader->is_active ? 'Reset Password' : 'Aktifkan & Reset' }}
+                                    </button>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4" class="px-6 py-4 text-center text-gray-500 text-sm">
+                                    Belum ada data kader di posyandu ini.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- VIEW MOBILE: CARD ALA LIST POSYANDU -->
+            <div class="block md:hidden space-y-4 mt-4">
+                @forelse($kaders as $index => $kader)
+                    <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+                        <div class="bg-gradient-to-r from-indigo-50 to-blue-50 px-4 py-3 border-b border-gray-200">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-lg">
+                                        {{ strtoupper(substr($kader->name, 0, 1)) }}
+                                    </div>
+                                    <div>
+                                        <h3 class="text-sm font-semibold text-gray-900">{{ $kader->name }}</h3>
+                                        <p class="text-xs text-gray-500">
+                                            <i class="bi bi-person text-gray-400 mr-1"></i>
+                                            {{ $kader->username ?? '-' }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="px-4 py-3 space-y-3">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 w-24 text-xs font-medium text-gray-500">Bidang</div>
+                                <div class="flex-1">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                        {{ $kader->bidang->nama_bidang ?? 'Tidak Ada Bidang' }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 w-24 text-xs font-medium text-gray-500">Status</div>
+                                <div class="flex-1">
+                                    @if ($kader->is_active)
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Aktif</span>
+                                    @else
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Non-Aktif</span>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex flex-col sm:flex-row gap-2 mt-4 pt-4 border-t border-gray-200 bg-gray-50 px-4 sm:px-6 pb-4">
+                            <button type="button" @click="openModal('{{ $kader->id }}', '{{ $kader->name }}', {{ $kader->is_active ? 'true' : 'false' }})"
+                                class="w-full sm:w-auto px-3 py-2 border border-indigo-200 bg-white text-indigo-600 rounded-md text-sm font-medium text-center hover:bg-indigo-50 transition flex justify-center items-center gap-1">
+                                <i class="bi bi-key"></i> {{ $kader->is_active ? 'Reset Password' : 'Aktifkan & Reset' }}
+                            </button>
+                        </div>
+                    </div>
+                @empty
+                    <div class="bg-white rounded-lg shadow-md p-8 text-center">
+                        <div class="flex flex-col items-center justify-center">
+                            <i class="bi bi-people text-5xl text-gray-300 mb-4"></i>
+                            <p class="text-gray-500 text-base font-medium">Belum ada data kader di posyandu ini.</p>
+                        </div>
+                    </div>
+                @endforelse
+            </div>
+
         </div>
-        <div x-show="isOpen" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;"
+
+        <!-- MODAL (Tidak Diubah) -->
+        <div x-show="isOpen" class="fixed inset-0 z-[9999] overflow-y-auto" style="display: none;"
             x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
             x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
             x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
@@ -121,18 +170,15 @@
 
                         <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                             <div class="sm:flex sm:items-start">
-                                <div
-                                    class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                                    <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                                        stroke="currentColor">
+                                <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                                    <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round"
                                             d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
                                     </svg>
                                 </div>
                                 <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
                                     <h3 class="text-base font-semibold leading-6 text-gray-900" id="modal-title">
-                                        <span
-                                            x-text="isActive ? 'Reset Password Kader' : 'Aktifkan & Reset Password'"></span>
+                                        <span x-text="isActive ? 'Reset Password Kader' : 'Aktifkan & Reset Password'"></span>
                                     </h3>
                                     <div class="mt-2">
                                         <p class="text-sm text-gray-500 mb-4">
@@ -140,11 +186,10 @@
                                         </p>
 
                                         <div class="mb-4">
-                                            <label for="new_password"
-                                                class="block text-sm font-medium text-gray-700">Password Baru</label>
+                                            <label for="new_password" class="block text-sm font-medium text-gray-700">Password Baru</label>
                                             <div class="relative mt-1">
-                                                <input type="password" name="new_password" id="new_password" required minlength="8"
-                                                    oninput="validateTakeoverPassword()"
+                                                <input type="password" name="new_password" id="new_password" required
+                                                    minlength="8" oninput="validateTakeoverPassword()"
                                                     class="block w-full pr-10 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                                 <button type="button" onclick="toggleTakeoverPassword('new_password', this)"
                                                     class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none"
@@ -157,11 +202,9 @@
                                         </div>
 
                                         <div class="mb-4">
-                                            <label for="new_password_confirmation"
-                                                class="block text-sm font-medium text-gray-700">Konfirmasi Password</label>
+                                            <label for="new_password_confirmation" class="block text-sm font-medium text-gray-700">Konfirmasi Password</label>
                                             <div class="relative mt-1">
-                                                <input type="password" name="new_password_confirmation"
-                                                    id="new_password_confirmation" required
+                                                <input type="password" name="new_password_confirmation" id="new_password_confirmation" required
                                                     oninput="validateTakeoverPassword()"
                                                     class="block w-full pr-10 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                                 <button type="button" onclick="toggleTakeoverPassword('new_password_confirmation', this)"
@@ -175,8 +218,7 @@
                                         </div>
 
                                         <div class="mb-2">
-                                            <label for="reason" class="block text-sm font-medium text-gray-700">Alasan
-                                                Reset (Wajib)</label>
+                                            <label for="reason" class="block text-sm font-medium text-gray-700">Alasan Reset (Wajib)</label>
                                             <textarea name="reason" id="reason" rows="2" required placeholder="Contoh: Kader lupa password..."
                                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"></textarea>
                                             <p class="mt-1 text-xs text-gray-500"><i class="bi bi-info-circle mr-1"></i>Wajib diisi, maks. 500 karakter.</p>

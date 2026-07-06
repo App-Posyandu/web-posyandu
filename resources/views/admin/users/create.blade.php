@@ -48,7 +48,7 @@
     <div class="w-full mx-auto sm:px-6 lg:px-8">
         <div class="bg-white shadow-sm sm:rounded-lg">
             <div class="p-8 text-gray-900">
-                <form method="POST" action="{{ route('admin.users.store') }}" enctype="multipart/form-data">
+                <form method="POST" action="{{ route('admin.users.store') }}" enctype="multipart/form-data" x-data="{ role: '{{ old('role', $defaultRole ?? '') }}' }">
                     @csrf
                     @if (request()->has('source'))
                         <input type="hidden" name="source" value="{{ request('source') }}">
@@ -138,7 +138,7 @@
                         <div
                             class="{{ in_array(auth()->user()->role, ['ketua-posyandu', 'admin-kecamatan', 'kader']) ? 'hidden' : '' }}">
                             <x-input-label for="role" :value="__('Role')" />
-                            <select id="role" name="role"
+                            <select id="role" name="role" x-model="role"
                                 class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
                                 {{ isset($defaultRole) ? 'disabled' : '' }}>
                                 <option value="" disabled {{ !isset($defaultRole) ? 'selected' : '' }}>Pilih Role

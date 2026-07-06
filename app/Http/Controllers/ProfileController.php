@@ -26,7 +26,7 @@ class ProfileController extends Controller
 
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique(User::class)->ignore($user->id)],
+            'email' => ['nullable', 'string', 'email', 'max:255', Rule::unique(User::class)->ignore($user->id)],
 
             'nik' => ['nullable', 'string', 'digits:16', Rule::unique(User::class)->ignore($user->id)],
             'alamat' => ['nullable', 'string'],
@@ -38,7 +38,6 @@ class ProfileController extends Controller
             'kk' => ['nullable', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:2048'],
         ], [
             'name.required'      => 'Nama lengkap wajib diisi.',
-            'email.required'     => 'Email wajib diisi.',
             'email.email'        => 'Format email tidak valid.',
             'email.unique'       => 'Email sudah terdaftar, gunakan email lain.',
             'nik.digits'         => 'NIK harus tepat 16 digit angka.',
@@ -69,9 +68,12 @@ class ProfileController extends Controller
             $user->kk = $kkBase64;
         }
 
-        $user->save();
-
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
+        try {
+            $user->save();
+            return Redirect::route('profile.edit')->with('success', 'Profile berhasil diperbarui!');
+        } catch (\Exception $e) {
+            return Redirect::route('profile.edit')->with('error', 'Gagal memperbarui profile. Silakan coba lagi.');
+        }
     }
 
     public function destroy(Request $request): RedirectResponse
