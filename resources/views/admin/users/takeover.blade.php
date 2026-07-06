@@ -35,8 +35,8 @@
                         <span class="text-sm text-gray-500">Total: {{ $kaders->count() }} Kader</span>
                     </div>
 
-                    <div class="w-full overflow-x-auto">
-                        <table class="w-full text-sm text-left divide-y divide-gray-200">
+                    <div class="w-full overflow-x-auto block">
+                        <table class="w-full min-w-max text-sm text-left divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th
