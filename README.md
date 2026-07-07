@@ -149,14 +149,30 @@ Ikuti langkah-langkah standar berikut untuk menjalankan project ini secara lokal
 
 ## 👥 Role & Hak Akses (RBAC)
 
-Aplikasi ini menggunakan sistem hierarki akses tingkat lanjut. Berikut rangkuman perannya:
+Aplikasi ini menggunakan sistem hierarki akses dan *Data Isolation* tingkat lanjut yang didefinisikan secara ketat dalam *Database Migration*, *Middleware*, dan *Policies*. Terdapat **11 Role (Peran)** yang diakomodasi:
 
-1. **Masyarakat (Public User):** Mengajukan permohonan baru, melihat status pengajuan diri sendiri (aktif atau arsip), mengunggah revisi dokumen jika diminta, dan mendownload bukti/cetak.
-2. **Kader & Ketua Posyandu:** Melakukan verifikasi lapangan, memproses dokumen permohonan, meneruskan status (*Submit to Pemdes*), serta melihat analitik dan mengelola anggota kader dalam cakupan satu posyandu saja.
-3. **Operator Desa, Kades, & Bu Kades:** Menyetujui atau menolak permohonan (Kades Approval) berdasarkan hasil pengecekan lapangan dari pihak posyandu tingkat desa yang dipimpin. Bu Kades bersifat read-only / viewer analitik khusus satu desa.
-4. **Admin Kecamatan & Kabupaten:** Pengawasan, validasi laporan agregat, rekap pergerakan data pengajuan lintas Posyandu dalam area kewenangannya.
-5. **Kabid (Kepala Bidang):** Memantau Dashboard statistik khusus kategori bidangnya saja. Data dan chart difilter murni tanpa menampilkan data departemen/bidang lain.
-6. **Ketua Tim Pembina Posyandu & Admin Master:** Akses paripurna. Bisa menonaktifkan pengguna, melihat metrik global, mengubah master data dan melakukan manajemen *system settings*.
+**1. Tingkat Master (Global Access)**
+- **admin**: Memiliki akses paripurna. Dapat mengelola pengaturan sistem utama, memanajemen semua *user* lintas wilayah, memodifikasi master data Posyandu, serta melihat/mengekspor seluruh laporan tanpa batasan wilayah.
+- **ketua-timpembina-posyandu**: Memiliki akses eksekutif tingkat atas. Dapat melihat seluruh laporan, analitik, dan detail pengajuan secara global, namun tidak memiliki wewenang untuk memodifikasi master data pengaturan sistem atau akun *user*.
+
+**2. Tingkat Bidang & Kabupaten (Isolasi Data Kabupaten/Bidang)**
+- **admin-kabupaten**: Mengelola *user*, master data Posyandu, dan memonitor laporan agregat khusus di lingkup wilayah kabupaten miliknya saja. Tidak dapat mengelola pengaturan sistem *root*.
+- **kabid (Kepala Bidang)**: Mengawasi dan melihat laporan analitik serta pengajuan khusus pada **Bidang** dan **Kabupaten** yang menjadi tanggung jawabnya. Dapat memilih *user* untuk mendaftarkan permohonan administrasi secara administratif dari sisi dinas.
+
+**3. Tingkat Kecamatan (Isolasi Data Kecamatan)**
+- **admin-kecamatan**: Mengawasi, mengelola master data posyandu, memanajemen akun (seperti kader/operator), serta melihat laporan rekap khusus di lingkup wilayah kecamatannya sendiri.
+
+**4. Tingkat Desa / Kelurahan (Isolasi Data Desa)**
+- **kades (Kepala Desa)**: Penentu keputusan administratif desa. Memiliki hak akses eksekusi khusus untuk menyetujui atau menolak permohonan warga (*Kades Approval*) sebelum dilanjutkan ke dinas/kabid. Juga berhak memantau laporan seluruh posyandu di desanya.
+- **operator-desa**: Admin teknis tingkat desa yang bertugas mengelola akun pengguna, mengatur *mapping* data posyandu di wilayah desa tersebut, dan memonitor data laporan desa.
+- **bu-kades**: Berperan sebagai pengawas tingkat desa (*Viewer-Only*). Dapat melihat statistik, memantau laporan, dan progres pengajuan seluruh posyandu di desanya tanpa hak eksekusi persetujuan atau modifikasi data.
+
+**5. Tingkat Posyandu (Isolasi Data Posyandu)**
+- **ketua-posyandu**: Pemimpin unit posyandu. Memiliki wewenang esensial untuk memverifikasi dokumen warga dan meneruskannya ke tingkat desa (*Submit to Pemdes*). Berhak memverifikasi akun kader di posyandunya serta melihat semua permohonan yang masuk ke unitnya.
+- **kader**: Pelaksana teknis lapangan. Mengelola/mengaktifkan akun masyarakat, membantu pembuatan draf pengajuan, dan memiliki batasan hanya bisa mengakses data pengajuan yang *bidang*-nya sama dan berada di posyandu tempat ia ditugaskan.
+
+**6. Tingkat Pengguna Umum**
+- **masyarakat**: Pengguna publik biasa. Hanya memiliki hak akses untuk membuat pengajuan permohonan baru, mengunggah revisi bila ditolak/dikembalikan, melacak status permohonannya sendiri, serta mencetak bukti *tracking*.
 
 ---
 
