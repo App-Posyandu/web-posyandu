@@ -33,6 +33,11 @@ class GoogleLoginController extends Controller
             $user = User::where('email', $googleUser->getEmail())->first();
 
             if ($user) {
+                // Hormati kontrol deaktivasi akun — samakan dengan login email/password.
+                if (!$user->is_active) {
+                    return redirect('/login')->with('error', 'Akun Anda telah dinonaktifkan oleh Administrator.');
+                }
+
                 Auth::login($user, true);
                 return redirect('/dashboard');
             }

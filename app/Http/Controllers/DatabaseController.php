@@ -56,6 +56,11 @@ class DatabaseController extends Controller
             abort(404, 'Tabel tidak ditemukan.');
         }
 
+        // Tabel internal framework (sessions, password_reset_tokens, dll) tidak boleh dibaca.
+        if (in_array($table, $this->protectedTables)) {
+            abort(403, 'Tabel ini dilindungi dan tidak dapat diakses.');
+        }
+
         // Get columns
         $columns = Schema::getColumnListing($table);
 
@@ -89,6 +94,10 @@ class DatabaseController extends Controller
             return response()->json(['error' => 'Tabel tidak ditemukan.'], 404);
         }
 
+        if (in_array($table, $this->protectedTables)) {
+            return response()->json(['error' => 'Tabel ini dilindungi dan tidak dapat diakses.'], 403);
+        }
+
         $columns = $this->getColumnMetadata($table);
         $primaryKey = $this->getPrimaryKey($table);
 
@@ -106,6 +115,10 @@ class DatabaseController extends Controller
     {
         if (!Schema::hasTable($table)) {
             return response()->json(['error' => 'Tabel tidak ditemukan.'], 404);
+        }
+
+        if (in_array($table, $this->protectedTables)) {
+            return response()->json(['error' => 'Tabel ini dilindungi dan tidak dapat diakses.'], 403);
         }
 
         $primaryKey = $this->getPrimaryKey($table);
@@ -128,6 +141,10 @@ class DatabaseController extends Controller
     {
         if (!Schema::hasTable($table)) {
             return response()->json(['error' => 'Tabel tidak ditemukan.'], 404);
+        }
+
+        if (in_array($table, $this->protectedTables)) {
+            return response()->json(['error' => 'Tabel ini dilindungi dan tidak dapat diakses.'], 403);
         }
 
         $columns = $this->getColumnMetadata($table);

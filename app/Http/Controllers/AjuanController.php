@@ -995,6 +995,8 @@ class AjuanController extends Controller
 
     public function downloadDokumen(Pengajuan $ajuan, $key)
     {
+        $this->authorize('viewAjuan', $ajuan);
+
         $ajuan->load(['user', 'bidang']);
 
         $dokumenData = $ajuan->administrasi_items;

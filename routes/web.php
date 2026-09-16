@@ -102,7 +102,7 @@ Route::get('/cetak-laporan-teknologi', function () {
 
     $pdf = Pdf::loadHTML($html);
     return $pdf->stream('Laporan-Teknologi-Posyandu.pdf');
-});
+})->middleware(['auth', 'role:admin']);
 
 Route::prefix('api/wilayah')->group(function () {
     Route::get('kabupaten', function () {

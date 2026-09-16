@@ -326,12 +326,29 @@ class PosyanduController extends Controller
         $createdKaders = [];
         $defaultPassword = 'password123';
 
+        // Slug posyandu yang mudah dihafal (tanpa kata "Posyandu"), dijaga unik antar posyandu.
+        // Kalau ada nama posyandu kembar, tambahkan angka di belakang (mis. melati -> melati2).
+        $posyanduBaseSlug = Str::slug(str_ireplace('Posyandu', '', $posyandu->nama_posyandu));
+        if ($posyanduBaseSlug === '') {
+            $posyanduBaseSlug = substr($posyandu->id, 0, 4);
+        }
+        $posyanduSlug = $posyanduBaseSlug;
+        $suffix = 1;
+        while (
+            User::where('email', 'like', '%.' . $posyanduSlug . '@posyandu.local')
+                ->where('posyandu_id', '!=', $posyandu->id)
+                ->exists()
+        ) {
+            $suffix++;
+            $posyanduSlug = $posyanduBaseSlug . $suffix;
+        }
+
         foreach ($bidangs as $index => $bidang) {
             try {
-                $bidangSlug = Str::slug($bidang->nama_bidang);
-                $posyanduShort = substr($posyandu->id, 0, 8);
+                // Nama bidang tanpa kata "Bidang" agar username pendek (mis. kesehatan.melati)
+                $bidangSlug = Str::slug(str_ireplace('Bidang', '', $bidang->nama_bidang));
 
-                $email = "kader.{$bidangSlug}.{$posyanduShort}@posyandu.local";
+                $email = "{$bidangSlug}.{$posyanduSlug}@posyandu.local";
 
                 // Cek apakah email sudah ada (hindari unique constraint violation)
                 if (User::where('email', $email)->exists()) {
