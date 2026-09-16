@@ -102,7 +102,7 @@ Route::get('/cetak-laporan-teknologi', function () {
 
     $pdf = Pdf::loadHTML($html);
     return $pdf->stream('Laporan-Teknologi-Posyandu.pdf');
-});
+})->middleware(['auth', 'role:admin']);
 
 Route::prefix('api/wilayah')->group(function () {
     Route::get('kabupaten', function () {
@@ -368,6 +368,12 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware(['role:admin'])->prefix('admin')->name('admin.')->group(function () {
         Route::get('/database', [DatabaseController::class, 'index'])->name('database.index');
+        Route::get('/database/{table}/columns', [DatabaseController::class, 'getColumns'])->name('database.columns');
+        Route::get('/database/{table}/fk-options', [DatabaseController::class, 'getForeignKeyOptions'])->name('database.fk-options');
+        Route::post('/database/{table}', [DatabaseController::class, 'store'])->name('database.store');
+        Route::get('/database/{table}/{id}', [DatabaseController::class, 'getRow'])->name('database.row');
+        Route::put('/database/{table}/{id}', [DatabaseController::class, 'update'])->name('database.update');
+        Route::delete('/database/{table}/{id}', [DatabaseController::class, 'destroy'])->name('database.destroy');
         Route::get('/database/{table}', [DatabaseController::class, 'show'])->name('database.show');
     });
 
