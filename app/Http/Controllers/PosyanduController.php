@@ -326,39 +326,36 @@ class PosyanduController extends Controller
         $createdKaders = [];
         $defaultPassword = 'password123';
 
-        // Slug posyandu yang mudah dihafal (tanpa kata "Posyandu"), dijaga unik antar posyandu.
-        // Kalau ada nama posyandu kembar, tambahkan angka di belakang (mis. melati -> melati2).
-        $posyanduBaseSlug = Str::slug(str_ireplace('Posyandu', '', $posyandu->nama_posyandu));
-        if ($posyanduBaseSlug === '') {
-            $posyanduBaseSlug = substr($posyandu->id, 0, 4);
-        }
-        $posyanduSlug = $posyanduBaseSlug;
-        $suffix = 1;
-        while (
-            User::where('email', 'like', '%.' . $posyanduSlug . '@posyandu.local')
-                ->where('posyandu_id', '!=', $posyandu->id)
-                ->exists()
-        ) {
-            $suffix++;
-            $posyanduSlug = $posyanduBaseSlug . $suffix;
+        // Kode wilayah BPS (4 digit, 2 digit awal = kode provinsi). Mis. Kebumen = 3305.
+        $kodeWilayah = $posyandu->kabupaten_id
+            ? \App\Models\Kabupaten::whereKey($posyandu->kabupaten_id)->value('kode')
+            : null;
+        if (empty($kodeWilayah)) {
+            $kodeWilayah = '0000';
         }
 
         foreach ($bidangs as $index => $bidang) {
             try {
-                // Nama bidang tanpa kata "Bidang" agar username pendek (mis. kesehatan.melati)
-                $bidangSlug = Str::slug(str_ireplace('Bidang', '', $bidang->nama_bidang));
+                // Kode bidang 2 huruf (PR, SO, PE, PU, KE, TR).
+                $bidangCode = $this->kodeBidang($bidang);
 
-                $email = "{$bidangSlug}.{$posyanduSlug}@posyandu.local";
+                // Username: kader_[KODEBIDANG]_[KODEWILAYAH]_[NNN], nomor urut per kabupaten + bidang.
+                $seq = User::where('role', 'kader')
+                    ->where('bidang_id', $bidang->id)
+                    ->where('kabupaten_id', $posyandu->kabupaten_id)
+                    ->count() + 1;
 
-                // Cek apakah email sudah ada (hindari unique constraint violation)
-                if (User::where('email', $email)->exists()) {
-                    Log::warning("Email kader sudah ada, skip: {$email}");
-                    continue;
+                $username = sprintf('kader_%s_%s_%03d', $bidangCode, $kodeWilayah, $seq);
+
+                // Jaga unik — kalau ada anomali/data terhapus, naikkan nomornya.
+                while (User::where('username', $username)->exists()) {
+                    $seq++;
+                    $username = sprintf('kader_%s_%s_%03d', $bidangCode, $kodeWilayah, $seq);
                 }
 
                 $kader = User::create([
                     'name' => "Kader " . $bidang->nama_bidang . " - " . $posyandu->nama_posyandu,
-                    'email' => $email,
+                    'username' => $username,
                     'password' => $defaultPassword,
                     'default_password' => $defaultPassword,
                     'role' => 'kader',
@@ -385,7 +382,7 @@ class PosyanduController extends Controller
                     'action_type' => 'created',
                     'description' => "Akun kader auto-generated untuk {$bidang->nama_bidang} di {$posyandu->nama_posyandu}",
                     'new_data' => [
-                        'email' => $email,
+                        'username' => $username,
                         'default_password' => $defaultPassword,
                         'bidang' => $bidang->nama_bidang,
                         'posyandu' => $posyandu->nama_posyandu,
@@ -393,7 +390,8 @@ class PosyanduController extends Controller
                 ]);
 
                 $createdKaders[] = [
-                    'email' => $email,
+                    'username' => $username,
+                    'email' => null,
                     'password' => $defaultPassword,
                     'bidang' => $bidang->nama_bidang,
                 ];
@@ -407,6 +405,31 @@ class PosyanduController extends Controller
         }
 
         return $createdKaders;
+    }
+
+    /**
+     * Kode bidang 2 huruf untuk username kader.
+     */
+    private function kodeBidang($bidang): string
+    {
+        $map = [
+            'perumahan-rakyat' => 'PR',
+            'sosial'           => 'SO',
+            'pendidikan'       => 'PE',
+            'pekerjaan-umum'   => 'PU',
+            'kesehatan'        => 'KE',
+            'trantibumlinmas'  => 'TR',
+        ];
+
+        $slug = $bidang->slug ?? Str::slug(str_ireplace('Bidang', '', $bidang->nama_bidang));
+
+        if (isset($map[$slug])) {
+            return $map[$slug];
+        }
+
+        // Fallback: 2 huruf pertama dari slug (huruf saja), uppercase.
+        $letters = preg_replace('/[^a-zA-Z]/', '', $slug);
+        return strtoupper(substr($letters, 0, 2)) ?: 'XX';
     }
 
     public function editRwRt(Posyandu $posyandu)
@@ -1079,14 +1102,15 @@ class PosyanduController extends Controller
             ->where('role', 'kader')
             ->with('bidang')
             ->orderBy('created_at')
-            ->get(['name', 'email', 'no_telepon', 'bidang_id'])
+            ->get(['name', 'email', 'username', 'no_telepon', 'bidang_id'])
             ->map(function ($user) {
                 return [
                     'nama_lengkap' => $user->name,
                     'email' => $user->email,
                     'no_hp' => $user->no_telepon,
-                    'username' => $user->email,
-                    'password' => 'password123',
+                    // Username login: kolom username untuk akun baru, fallback email untuk akun lama.
+                    'username' => $user->username ?? $user->email,
+                    'password' => $user->default_password ?? 'password123',
                     'bidang' => $user->bidang->nama_bidang ?? '-'
                 ];
             })

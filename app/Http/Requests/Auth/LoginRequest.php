@@ -44,12 +44,19 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        $loginType = filter_var($this->input('login'), FILTER_VALIDATE_EMAIL)
-            ? 'email'
-            : 'no_telepon';
+        $login = $this->input('login');
+
+        if (filter_var($login, FILTER_VALIDATE_EMAIL)) {
+            $loginType = 'email';
+        } elseif (\App\Models\User::where('username', $login)->exists()) {
+            // Username akun kader auto-generate (mis. kader_KE_3305_001).
+            $loginType = 'username';
+        } else {
+            $loginType = 'no_telepon';
+        }
 
         $credentials = [
-            $loginType => $this->input('login'),
+            $loginType => $login,
             'password' => $this->input('password')
         ];
 
