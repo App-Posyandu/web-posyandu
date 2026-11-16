@@ -215,6 +215,17 @@
             display: inline-block;
         }
 
+        .username {
+            font-weight: 700;
+            color: #4338ca;
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            background: #e0e7ff;
+            padding: 4px 6px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
         .warning-box {
             background: #fef3c7;
             border-left: 4px solid #f59e0b;
@@ -340,6 +351,11 @@
         <div class="info-grid">
             <div class="info-label">Nama Posyandu:</div>
             <div class="info-value">{{ $posyanduName }}</div>
+
+            @if(isset($posyandu))
+            <div class="info-label">Wilayah:</div>
+            <div class="info-value">Desa {{ $posyandu->desa }}, Kec. {{ $posyandu->kecamatan }}, Kab. {{ $posyandu->kabupaten }}</div>
+            @endif
             
             <div class="info-label">Jumlah Kader:</div>
             <div class="info-value">{{ count($kaders) }} Akun (Auto-Generated)</div>
@@ -359,11 +375,12 @@
     <table>
         <thead>
             <tr>
-                <th style="width: 30px;">No</th>
-                <th style="width: 150px;">Bidang Kader</th>
-                <th style="width: 200px;">Email Login</th>
-                <th style="width: 140px;">Nomor Telepon</th>
-                <th>Password</th>
+                <th style="width: 25px;">No</th>
+                <th style="width: 120px;">Bidang Kader</th>
+                <th style="width: 150px;">Nama Kader</th>
+                <th style="width: 150px;">Username Login</th>
+                <th style="width: 110px;">Kontak (No HP / Email)</th>
+                <th style="width: 75px;">Password</th>
             </tr>
         </thead>
         <tbody>
@@ -371,8 +388,21 @@
                 <tr>
                     <td class="td-center td-bold">{{ $index + 1 }}</td>
                     <td class="td-bold">{{ $kader['bidang'] }}</td>
-                    <td>{{ $kader['email'] }}</td>
-                    <td>{{ $kader['phone'] ?? '-' }}</td>
+                    <td>{{ $kader['nama_lengkap'] }}</td>
+                    <td>
+                        <span class="username">{{ $kader['username'] ?? '-' }}</span>
+                    </td>
+                    <td>
+                        @if (!empty($kader['no_hp']))
+                            <div>{{ $kader['no_hp'] }}</div>
+                        @endif
+                        @if (!empty($kader['email']))
+                            <div style="color: #6b7280; font-size: 8px;">{{ $kader['email'] }}</div>
+                        @endif
+                        @if (empty($kader['no_hp']) && empty($kader['email']))
+                            -
+                        @endif
+                    </td>
                     <td>
                         <span class="password">{{ $kader['password'] }}</span>
                     </td>
@@ -386,14 +416,14 @@
         <h4>Catatan Penting</h4>
         <ul>
             <li>Semua akun kader sudah <strong>terverifikasi</strong> dan <strong>aktif</strong>, siap digunakan untuk login</li>
-            <li>Password default: <strong>password123</strong> (semua kader menggunakan password yang sama)</li>
-            <li>Kader dapat <strong>melengkapi data</strong> kader (NIK, tanggal lahir, dll) melalui sistem</li>
-            <li>Kader dapat login menggunakan <strong>email</strong> atau <strong>nomor telepon</strong> mereka</li>
-            <li>Operator Desa <strong>wajib</strong> meminta setiap kader untuk mengganti password setelah login pertama kali</li>
-            <li>Operator Desa dapat <strong>reset password</strong> kader jika diperlukan melalui menu manajemen user</li>
-            <li><strong>SIMPAN DOKUMEN INI DENGAN AMAN!</strong> Informasi credentials hanya ditampilkan sekali saat pembuatan posyandu</li>
+            <li>Password default: <strong>password123</strong> (semua kader menggunakan password awal yang sama)</li>
+            <li>Kader login menggunakan <strong>Username</strong> yang tercantum di atas (atau email/nomor telepon jika sudah didaftarkan)</li>
+            <li>Kader dapat <strong>melengkapi data profil</strong> (NIK, nomor telepon, tanggal lahir, dll) melalui sistem setelah login</li>
+            <li>Operator Desa <strong>wajib</strong> mengimbau setiap kader untuk segera mengganti password setelah login pertama kali demi keamanan</li>
+            <li>Operator Desa dapat melakukan <strong>reset password</strong> kader jika diperlukan melalui menu Manajemen User</li>
+            <li><strong>SIMPAN DOKUMEN INI DENGAN AMAN!</strong> Dokumen ini memuat data rahasia akun kader</li>
         </ul>
-        </div>
+    </div>
     </main>
 
     <footer>

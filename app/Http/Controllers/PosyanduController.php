@@ -341,7 +341,9 @@ class PosyanduController extends Controller
 
         return redirect()
             ->route('admin.posyandu.index')
-            ->with('success', 'Posyandu dan akun Kader berhasil dibuat dengan password default!');
+            ->with('success', 'Posyandu dan akun Kader berhasil dibuat dengan password default!')
+            ->with('created_posyandu_id', $posyandu->id)
+            ->with('created_posyandu_name', $posyandu->nama_posyandu);
     }
 
     private function createKadersForPosyandu(Posyandu $posyandu)
@@ -1293,7 +1295,7 @@ class PosyanduController extends Controller
             ->where('role', 'kader')
             ->with('bidang')
             ->orderBy('created_at')
-            ->get(['name', 'email', 'username', 'no_telepon', 'bidang_id'])
+            ->get(['name', 'email', 'username', 'no_telepon', 'bidang_id', 'default_password'])
             ->map(function ($user) {
                 return [
                     'nama_lengkap' => $user->name,
@@ -1318,6 +1320,7 @@ class PosyanduController extends Controller
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.posyandu.print_credentials', [
             'kaders' => $kaders,
             'posyanduName' => $posyanduName,
+            'posyandu' => $posyandu,
             'currentUser' => $currentUser,
             'printDate' => now()->format('d F Y H:i')
         ]);
