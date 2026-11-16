@@ -618,7 +618,7 @@
                         <div>
                             <div class="flex items-center justify-between mb-2">
                                 <span class="inline-block px-2 py-0.5 bg-green-500 text-white text-xs rounded font-medium">Kader (${kaders.length})</span>
-                                ${printUrl && kaders.length > 0 ? `
+                                ${printUrl ? `
                                     <a href="${printUrl}" target="_blank"
                                         class="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-md shadow-sm transition">
                                         <i class="bi bi-printer-fill"></i> Cetak PDF Kader
@@ -696,7 +696,7 @@
                 }
 
                 let printBanner = '';
-                if (printUrl && kaders && kaders.length > 0) {
+                if (printUrl) {
                     printBanner = `
                         <div class="mb-3 flex items-center justify-between p-2.5 bg-rose-50 border border-rose-200 rounded-lg text-left">
                             <div class="flex items-center gap-2 text-xs text-rose-800 font-medium">
@@ -720,7 +720,7 @@
                     showDenyButton: !!window.canSyncUsername,
                     denyButtonText: '<i class="bi bi-arrow-repeat"></i> Sinkronisasi',
                     denyButtonColor: '#4f46e5',
-                    footer: (printUrl && kaders && kaders.length > 0)
+                    footer: printUrl
                         ? `<a href="${printUrl}" target="_blank" class="text-sm text-rose-600 hover:text-rose-800 font-semibold inline-flex items-center gap-1.5"><i class="bi bi-printer-fill"></i> Cetak / Buka Lembar PDF Kader (${nama})</a>`
                         : undefined,
                     customClass: {
