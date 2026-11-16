@@ -10,6 +10,25 @@
                     @include('components.all-notifications')
                 </div>
 
+                {{-- Banner ketika posyandu baru selesai dibuat --}}
+                @if (session('created_posyandu_id'))
+                    <div class="mb-4 p-4 rounded-xl bg-gradient-to-r from-emerald-50 to-green-50 border-2 border-emerald-300 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-emerald-500 text-white flex items-center justify-center flex-shrink-0">
+                                <i class="bi bi-check2-circle text-2xl"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-900">Posyandu {{ session('created_posyandu_name') }} Berhasil Dibuat!</h4>
+                                <p class="text-xs text-gray-600">6 akun kader otomatis telah dibuat dengan password default (<code>password123</code>). Anda dapat langsung mencetak lembar credentials (PDF) kader sekarang.</p>
+                            </div>
+                        </div>
+                        <a href="{{ route('admin.posyandu.print-credentials', session('created_posyandu_id')) }}" target="_blank"
+                            class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow transition whitespace-nowrap">
+                            <i class="bi bi-printer-fill"></i> Cetak PDF Kader
+                        </a>
+                    </div>
+                @endif
+
                 {{-- Pemberitahuan sinkronisasi untuk operator-desa --}}
                 @if (auth()->user()->role === 'operator-desa' && $syncHasDirective)
                     @if ($syncDone)
@@ -226,6 +245,7 @@
                                                 $posyanduData = [
                                                     'nama' => $posyandu->nama_posyandu,
                                                     'sync_url' => route('admin.posyandu.sync-usernames', $posyandu),
+                                                    'print_url' => route('admin.posyandu.print-credentials', $posyandu),
                                                     'kabupaten' => $posyandu->kabupaten,
                                                     'kecamatan' => $posyandu->kecamatan,
                                                     'desa' => $posyandu->desa,
@@ -263,10 +283,15 @@
                                                 class="px-3 py-2 bg-green-500 text-white text-xs font-semibold rounded hover:bg-green-600 transition inline-flex items-center gap-1">
                                                 <i class="bi bi-eye"></i> Lihat
                                             </button>
-                                                @if (in_array(auth()->user()->role, ['admin', 'operator-desa']))
+                                            @if (in_array(auth()->user()->role, ['admin', 'operator-desa']))
                                                 <a href="{{ route('admin.posyandu.edit', $posyandu) }}"
                                                     class="px-3 py-2 bg-blue-500 text-white text-xs font-semibold rounded hover:bg-blue-600 transition inline-flex items-center gap-1">
                                                     <i class="bi bi-pencil"></i> Edit
+                                                </a>
+                                                <a href="{{ route('admin.posyandu.print-credentials', $posyandu) }}" target="_blank"
+                                                    class="px-3 py-2 bg-rose-500 text-white text-xs font-semibold rounded hover:bg-rose-600 transition inline-flex items-center gap-1"
+                                                    title="Cetak PDF Credentials Kader">
+                                                    <i class="bi bi-printer"></i> Cetak PDF
                                                 </a>
                                             @endif
                                         </div>
@@ -326,6 +351,8 @@
                                     $kaders = $posyandu->users->where('role', 'kader')->values();
                                     $posyanduData = [
                                         'nama' => $posyandu->nama_posyandu,
+                                        'sync_url' => route('admin.posyandu.sync-usernames', $posyandu),
+                                        'print_url' => route('admin.posyandu.print-credentials', $posyandu),
                                         'kabupaten' => $posyandu->kabupaten,
                                         'kecamatan' => $posyandu->kecamatan,
                                         'desa' => $posyandu->desa,
@@ -350,6 +377,7 @@
                                                 fn($k) => [
                                                     'name' => $k->name,
                                                     'email' => $k->email,
+                                                    'username' => $k->username,
                                                     'bidang' => $k->bidang->nama_bidang ?? '-',
                                                     'password' => $k->default_password ?? 'password123',
                                                 ],
@@ -393,6 +421,10 @@
                                     <a href="{{ route('admin.posyandu.edit', $posyandu) }}"
                                         class="w-full sm:w-auto px-3 py-2 bg-blue-500 text-white rounded-md text-sm font-medium text-center hover:bg-blue-600 transition">
                                         <i class="bi bi-pencil mr-1"></i> Edit
+                                    </a>
+                                    <a href="{{ route('admin.posyandu.print-credentials', $posyandu) }}" target="_blank"
+                                        class="w-full sm:w-auto px-3 py-2 bg-rose-500 text-white rounded-md text-sm font-medium text-center hover:bg-rose-600 transition">
+                                        <i class="bi bi-printer mr-1"></i> Cetak PDF
                                     </a>
                                 @endif
                             </div>
@@ -491,6 +523,7 @@
                 const {
                     nama,
                     sync_url: syncUrl,
+                    print_url: printUrl,
                     kabupaten,
                     kecamatan,
                     desa,
@@ -583,7 +616,15 @@
 
                         <!-- Kader -->
                         <div>
-                            <span class="inline-block px-2 py-0.5 bg-green-500 text-white text-xs rounded font-medium mb-2">Kader (${kaders.length})</span>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="inline-block px-2 py-0.5 bg-green-500 text-white text-xs rounded font-medium">Kader (${kaders.length})</span>
+                                ${printUrl && kaders.length > 0 ? `
+                                    <a href="${printUrl}" target="_blank"
+                                        class="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-md shadow-sm transition">
+                                        <i class="bi bi-printer-fill"></i> Cetak PDF Kader
+                                    </a>
+                                ` : ''}
+                            </div>
                             ${kaders.length > 0 ? `
                                         <div class="ml-2 grid grid-cols-2 gap-2">
                                             ${kaders.map((k, idx) => `
@@ -654,15 +695,34 @@
                     syncNote = `<div style="margin-bottom:10px;padding:8px 12px;border-radius:8px;background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46;font-size:13px;text-align:left;"><b><i class="bi bi-check-circle-fill"></i> Data sudah terupdate ke versi terakhir.</b></div>`;
                 }
 
+                let printBanner = '';
+                if (printUrl && kaders && kaders.length > 0) {
+                    printBanner = `
+                        <div class="mb-3 flex items-center justify-between p-2.5 bg-rose-50 border border-rose-200 rounded-lg text-left">
+                            <div class="flex items-center gap-2 text-xs text-rose-800 font-medium">
+                                <i class="bi bi-file-earmark-pdf-text-fill text-rose-600 text-base"></i>
+                                <span>Dokumen Akun: Cetak daftar kredensial kader posyandu ini</span>
+                            </div>
+                            <a href="${printUrl}" target="_blank"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-md shadow-sm transition whitespace-nowrap">
+                                <i class="bi bi-printer-fill"></i> Cetak PDF Kader
+                            </a>
+                        </div>
+                    `;
+                }
+
                 Swal.fire({
                     title: `<span class="text-xl font-bold text-gray-800">${nama}</span>`,
-                    html: syncNote + contentHtml,
+                    html: syncNote + printBanner + contentHtml,
                     width: '700px',
                     confirmButtonText: 'Tutup',
                     confirmButtonColor: '#ec4899',
                     showDenyButton: !!window.canSyncUsername,
                     denyButtonText: '<i class="bi bi-arrow-repeat"></i> Sinkronisasi',
                     denyButtonColor: '#4f46e5',
+                    footer: (printUrl && kaders && kaders.length > 0)
+                        ? `<a href="${printUrl}" target="_blank" class="text-sm text-rose-600 hover:text-rose-800 font-semibold inline-flex items-center gap-1.5"><i class="bi bi-printer-fill"></i> Cetak / Buka Lembar PDF Kader (${nama})</a>`
+                        : undefined,
                     customClass: {
                         popup: 'rounded-2xl shadow-xl',
                         title: 'border-b pb-4'
