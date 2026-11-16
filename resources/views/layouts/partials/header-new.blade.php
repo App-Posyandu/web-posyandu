@@ -80,6 +80,15 @@
                             </x-dropdown-link>
                         @endif
 
+                        @if (in_array(auth()->user()->role, ['admin', 'admin-kabupaten']))
+                            <div class="border-t border-gray-100 my-1"></div>
+                            <x-dropdown-link :href="route('admin.sync-settings.edit')"
+                                class="{{ request()->routeIs('admin.sync-settings.*') ? 'bg-pink-50 text-pink-600' : '' }}">
+                                <i class="bi bi-arrow-repeat mr-2"></i>
+                                {{ __('Pengaturan Sinkronisasi') }}
+                            </x-dropdown-link>
+                        @endif
+
                         @if (auth()->user()->role === 'admin')
                             <div class="border-t border-gray-100 my-1"></div>
                             <x-dropdown-link :href="route('admin.database.index')"
@@ -197,6 +206,14 @@
                     </a>
                 @endif
                 
+                @if (in_array(auth()->user()->role, ['admin', 'admin-kabupaten']))
+                    <div class="border-t border-gray-200 my-2"></div>
+                    <a href="{{ route('admin.sync-settings.edit') }}"
+                        class="{{ request()->routeIs('admin.sync-settings.*') ? 'border-pink-500 bg-pink-50 text-pink-600' : 'border-transparent text-gray-600' }} block pl-3 pr-4 py-2 border-l-4 text-base font-medium hover:text-gray-800 hover:bg-gray-50 hover:border-pink-500 transition duration-150 ease-in-out">
+                        <i class="bi bi-arrow-repeat mr-2"></i> Pengaturan Sinkronisasi
+                    </a>
+                @endif
+
                 @if (auth()->user()->role === 'admin')
                     <div class="border-t border-gray-200 my-2"></div>
                     <a href="{{ route('admin.database.index') }}"

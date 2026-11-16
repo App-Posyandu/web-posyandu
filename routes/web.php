@@ -339,6 +339,10 @@ Route::middleware('auth')->group(function () {
     Route::middleware(['role:kabid,admin-kecamatan,ketua-posyandu,operator-desa,admin-kabupaten,admin,ketua-timpembina-posyandu,kades,bu-kades'])->prefix('admin')->name('admin.')->group(function () {
             Route::middleware('role:admin,admin-kabupaten,ketua-timpembina-posyandu,admin-kecamatan,operator-desa')->group(function () {
             Route::get('/posyandu/{posyandu}/print-credentials', [PosyanduController::class, 'printKaderCredentials'])->name('posyandu.print-credentials');
+            // Sinkronisasi username kader milik posyandu ini — khusus admin & operator-desa.
+            Route::post('/posyandu/{posyandu}/sync-usernames', [PosyanduController::class, 'syncUsernames'])
+                ->middleware('role:admin,operator-desa')
+                ->name('posyandu.sync-usernames');
             Route::resource('posyandu', PosyanduController::class);
             Route::post('/admin/posyandu/import', [UserController::class, 'importPosyandu'])->name('posyandu.import');
             Route::get('export-posyandu-all', [PosyanduController::class, 'exportAllPosyandu'])->name('posyandu.export.all');
@@ -399,6 +403,13 @@ Route::middleware('auth')->group(function () {
     // ========================================
     // ADMIN ROUTES - ADMIN KABUPATEN (KABID MANAGEMENT)
     // ========================================
+
+    // Setting sinkronisasi untuk operator-desa (aktivasi + pesan broadcast).
+    // admin-kabupaten: mengatur kabupatennya sendiri. admin (super): memilih kabupaten mana pun.
+    Route::middleware(['auth', 'role:admin,admin-kabupaten'])->group(function () {
+        Route::get('/admin/sync-settings', [\App\Http\Controllers\SyncDirectiveController::class, 'edit'])->name('admin.sync-settings.edit');
+        Route::put('/admin/sync-settings', [\App\Http\Controllers\SyncDirectiveController::class, 'update'])->name('admin.sync-settings.update');
+    });
 
     Route::middleware(['auth', 'role:admin-kabupaten'])->group(function () {
         Route::patch('/users/{user}/reset-password-kabid', [UserController::class, 'resetPasswordKabid']);
