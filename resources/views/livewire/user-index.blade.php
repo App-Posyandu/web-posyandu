@@ -119,7 +119,7 @@
                         <i class="bi bi-plus-circle-fill mr-2"></i>Tambah User
                     </a>
                 @endif
-                
+
                 <div class="w-full sm:w-auto min-w-[150px]">
                     <select wire:model.live="role" class="w-full border-gray-300 rounded-md shadow-sm text-sm focus:ring-pink-500 focus:border-pink-500 py-2" style="height: 38px;">
                         <option value="">Semua Role</option>

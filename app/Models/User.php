@@ -50,12 +50,14 @@ class User extends Authenticatable
         'deactivated_at',
         'deactivated_by',
         'deactivation_reason',
+        'sync_done_at',
     ];
 
     protected $casts = [
         'tanggal_lahir' => 'date',
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'sync_done_at' => 'datetime',
     ];
 
     public function validatePosyanduRw()

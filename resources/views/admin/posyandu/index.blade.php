@@ -10,6 +10,35 @@
                     @include('components.all-notifications')
                 </div>
 
+                {{-- Pemberitahuan sinkronisasi untuk operator-desa --}}
+                @if (auth()->user()->role === 'operator-desa' && $syncHasDirective)
+                    @if ($syncDone)
+                        <div class="mb-4 p-4 rounded-lg bg-green-50 border border-green-200 text-green-800 flex items-start gap-3">
+                            <i class="bi bi-check-circle-fill text-xl"></i>
+                            <div>
+                                <p class="font-semibold">Data sudah terupdate ke versi terakhir</p>
+                                <p class="text-sm">Username kader Anda sudah tersinkronisasi. Tombol sinkronisasi dinonaktifkan sampai ada pembaruan berikutnya.</p>
+                            </div>
+                        </div>
+                    @else
+                        <div class="mb-4 p-4 rounded-lg bg-amber-50 border border-amber-300 text-amber-900 flex items-start gap-3">
+                            <i class="bi bi-megaphone-fill text-xl"></i>
+                            <div>
+                                <p class="font-semibold">Pemberitahuan: Permintaan Sinkronisasi</p>
+                                <p class="text-sm">{{ $syncMessage ?: 'Mohon lakukan sinkronisasi data kader agar username mengikuti format terbaru.' }}</p>
+                                <p class="text-xs mt-1">Buka <strong>detail posyandu</strong> Anda (tombol "Lihat"), lalu klik tombol <strong>Sinkronisasi</strong>.</p>
+                            </div>
+                        </div>
+                    @endif
+                @endif
+
+                {{-- Flag gating tombol Sinkronisasi di modal detail posyandu --}}
+                <script>
+                    window.canSyncUsername = @json($syncEnabled);
+                    window.syncDone = @json($syncDone);
+                    window.csrfToken = '{{ csrf_token() }}';
+                </script>
+
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                     <!-- Kiri: Judul & Info (50%) -->
                     <div class="w-full md:w-1/2 flex flex-col md:flex-row items-start md:items-center gap-4">
@@ -196,6 +225,7 @@
                                                 $kaders = $posyandu->users->where('role', 'kader')->values();
                                                 $posyanduData = [
                                                     'nama' => $posyandu->nama_posyandu,
+                                                    'sync_url' => route('admin.posyandu.sync-usernames', $posyandu),
                                                     'kabupaten' => $posyandu->kabupaten,
                                                     'kecamatan' => $posyandu->kecamatan,
                                                     'desa' => $posyandu->desa,
@@ -220,6 +250,7 @@
                                                             fn($k) => [
                                                                 'name' => $k->name,
                                                                 'email' => $k->email,
+                                                                'username' => $k->username,
                                                                 'bidang' => $k->bidang->nama_bidang ?? '-',
                                                                 'password' => $k->default_password ?? 'password123',
                                                             ],
@@ -459,6 +490,7 @@
             function showDetailPosyandu(data) {
                 const {
                     nama,
+                    sync_url: syncUrl,
                     kabupaten,
                     kecamatan,
                     desa,
@@ -558,7 +590,14 @@
                                         <div class="text-sm p-2 bg-white rounded border">
                                             <p class="text-[10px] font-bold text-indigo-600 uppercase tracking-wide mb-0.5">Kader ${k.bidang}</p>
                                             <p class="font-medium text-gray-800">${k.name}</p>
-                                            <div class="flex items-center gap-2 mt-1 mb-1 p-1 bg-gray-50 rounded border border-gray-200 w-full">
+                                            <div class="flex items-center gap-2 mt-1 mb-1 p-1 bg-indigo-50 rounded border border-indigo-200 w-full">
+                                                <div class="flex-1 min-w-0 overflow-hidden">
+                                                    <span class="text-[10px] text-indigo-700 font-semibold block">Username:</span>
+                                                    <code class="text-xs text-indigo-800 font-bold truncate block">${k.username || '(belum ada — klik Sinkronisasi)'}</code>
+                                                </div>
+                                                ${k.username ? `<button type="button" onclick="copyText('${k.username}', 'Username')" class="flex-shrink-0 px-1.5 py-1 bg-indigo-500 text-white text-[10px] rounded hover:bg-indigo-600 transition"><i class="bi bi-clipboard"></i></button>` : ''}
+                                            </div>
+                                            <div class="flex items-center gap-2 mb-1 p-1 bg-gray-50 rounded border border-gray-200 w-full">
                                                 <div class="flex-1 min-w-0 overflow-hidden">
                                                     <span class="text-xs text-gray-700 font-medium hidden">Email:</span>
                                                     <code class="text-xs text-gray-800 truncate block">${k.email || '-'}</code>
@@ -610,17 +649,55 @@
 
                 contentHtml += `</div></div></div>`;
 
+                let syncNote = '';
+                if (window.syncDone) {
+                    syncNote = `<div style="margin-bottom:10px;padding:8px 12px;border-radius:8px;background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46;font-size:13px;text-align:left;"><b><i class="bi bi-check-circle-fill"></i> Data sudah terupdate ke versi terakhir.</b></div>`;
+                }
+
                 Swal.fire({
                     title: `<span class="text-xl font-bold text-gray-800">${nama}</span>`,
-                    html: contentHtml,
+                    html: syncNote + contentHtml,
                     width: '700px',
                     confirmButtonText: 'Tutup',
                     confirmButtonColor: '#ec4899',
+                    showDenyButton: !!window.canSyncUsername,
+                    denyButtonText: '<i class="bi bi-arrow-repeat"></i> Sinkronisasi',
+                    denyButtonColor: '#4f46e5',
                     customClass: {
                         popup: 'rounded-2xl shadow-xl',
                         title: 'border-b pb-4'
                     },
                     showCloseButton: true
+                }).then((result) => {
+                    if (result.isDenied) {
+                        confirmSyncUsername(syncUrl, nama);
+                    }
+                });
+            }
+
+            function confirmSyncUsername(syncUrl, namaPosyandu) {
+                Swal.fire({
+                    title: 'Sinkronisasi Username Kader?',
+                    html: `Username kader <b>Posyandu ${namaPosyandu}</b> akan <b>ditulis ulang</b> mengikuti format standar:<br><code>kader_[BIDANG]_[KODEWILAYAH]_NNN</code><br><br>Hanya kader posyandu ini yang terpengaruh. Lanjutkan?`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#4f46e5',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'Ya, Sinkronkan',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = syncUrl;
+                        const token = document.createElement('input');
+                        token.type = 'hidden';
+                        token.name = '_token';
+                        token.value = window.csrfToken;
+                        form.appendChild(token);
+                        document.body.appendChild(form);
+                        form.submit();
+                    }
                 });
             }
         </script>

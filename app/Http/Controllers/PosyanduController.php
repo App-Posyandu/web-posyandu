@@ -134,7 +134,35 @@ class PosyanduController extends Controller
         $perPage = $filters['perPage'] ?? 10;
         $posyandus = $query->paginate($perPage)->onEachSide(1)->withQueryString();
 
-        return view('admin.posyandu.index', compact('posyandus'));
+        // Status gating tombol Sinkronisasi.
+        // admin (super) selalu boleh; operator-desa tergantung directive dari admin-kabupaten.
+        $user = Auth::user();
+        $syncEnabled = false;   // tombol aktif (boleh klik)
+        $syncDone = false;      // sudah sinkron untuk versi terbaru
+        $syncMessage = null;    // pesan broadcast
+        $syncHasDirective = false;
+
+        if ($user->role === 'admin') {
+            $syncEnabled = true;
+        } elseif ($user->role === 'operator-desa') {
+            $directive = \App\Models\SyncDirective::where('kabupaten', trim((string) $user->kabupaten))
+                ->where('is_active', true)
+                ->first();
+            if ($directive) {
+                $syncHasDirective = true;
+                $syncMessage = $directive->message;
+                $syncDone = $directive->isDoneBy($user);
+                $syncEnabled = !$syncDone;
+            }
+        }
+
+        return view('admin.posyandu.index', compact(
+            'posyandus',
+            'syncEnabled',
+            'syncDone',
+            'syncMessage',
+            'syncHasDirective'
+        ));
     }
 
     public function create()
@@ -240,6 +268,11 @@ class PosyanduController extends Controller
         $kecamatanName = explode('_', $validated['kecamatan'])[1] ?? $validated['kecamatan'];
         $desaName = explode('_', $validated['desa'])[1] ?? $validated['desa'];
 
+        // Simpan kode wilayah resmi kabupaten/kota (awalan nilai form "{kode}_{nama}"),
+        // dinormalisasi ke angka saja (mis. "32.77" -> "3277").
+        $kodeKabupaten = preg_replace('/\D/', '', explode('_', $validated['kabupaten'])[0] ?? '');
+        $kodeKabupaten = $kodeKabupaten !== '' ? $kodeKabupaten : null;
+
         if (!empty($validated['rt_mapping'])) {
             $totalRt = 0;
             foreach ($validated['rt_mapping'] as $rw => $rtList) {
@@ -257,6 +290,7 @@ class PosyanduController extends Controller
             $posyandu = Posyandu::create([
                 'nama_posyandu' => $validated['nama_posyandu'],
                 'kabupaten' => $kabupatenName,
+                'kode_kabupaten' => $kodeKabupaten,
                 'kecamatan' => $kecamatanName,
                 'desa' => $desaName,
                 'rw_list' => $validated['rw_list'] ?? [],
@@ -326,18 +360,13 @@ class PosyanduController extends Controller
         $createdKaders = [];
         $defaultPassword = 'password123';
 
-        // Kode wilayah BPS (4 digit, 2 digit awal = kode provinsi). Mis. Kebumen = 3305.
-        $kodeWilayah = $posyandu->kabupaten_id
-            ? \App\Models\Kabupaten::whereKey($posyandu->kabupaten_id)->value('kode')
-            : null;
-        if (empty($kodeWilayah)) {
-            $kodeWilayah = '0000';
-        }
+        // Kode wilayah resmi kabupaten/kota posyandu (otomatis mengikuti data posyandu).
+        $kodeWilayah = $this->resolveKodeWilayah($posyandu);
 
         foreach ($bidangs as $index => $bidang) {
             try {
                 // Kode bidang 2 huruf (PR, SO, PE, PU, KE, TR).
-                $bidangCode = $this->kodeBidang($bidang);
+                $bidangCode = $bidang->kode;
 
                 // Username: kader_[KODEBIDANG]_[KODEWILAYAH]_[NNN], nomor urut per kabupaten + bidang.
                 $seq = User::where('role', 'kader')
@@ -408,28 +437,190 @@ class PosyanduController extends Controller
     }
 
     /**
-     * Kode bidang 2 huruf untuk username kader.
+     * Sinkronisasi (overwrite) username kader MILIK satu posyandu ke format standar:
+     * kader_[KODEBIDANG]_[KODEWILAYAH]_[NNN]
+     *
+     * Hanya kader di posyandu ini yang diubah. Nomor NNN mengisi slot kosong pada
+     * deret (kabupaten + bidang) tanpa menimpa username kader posyandu lain.
      */
-    private function kodeBidang($bidang): string
+    public function syncUsernames(Posyandu $posyandu)
     {
-        $map = [
-            'perumahan-rakyat' => 'PR',
-            'sosial'           => 'SO',
-            'pendidikan'       => 'PE',
-            'pekerjaan-umum'   => 'PU',
-            'kesehatan'        => 'KE',
-            'trantibumlinmas'  => 'TR',
-        ];
+        $user = Auth::user();
+        $this->authorizeAccessToPosyandu($user, $posyandu);
 
-        $slug = $bidang->slug ?? Str::slug(str_ireplace('Bidang', '', $bidang->nama_bidang));
+        // Operator-desa hanya boleh sinkron jika diaktifkan admin-kabupaten & belum dilakukan.
+        $directive = null;
+        if ($user->role === 'operator-desa') {
+            $directive = \App\Models\SyncDirective::where('kabupaten', trim((string) $user->kabupaten))
+                ->where('is_active', true)
+                ->first();
 
-        if (isset($map[$slug])) {
-            return $map[$slug];
+            if (!$directive) {
+                return back()->with('error', 'Sinkronisasi belum diaktifkan oleh Admin Kabupaten.');
+            }
+
+            if ($directive->isDoneBy($user)) {
+                return back()->with('error', 'Data Anda sudah terupdate ke versi terakhir.');
+            }
         }
 
-        // Fallback: 2 huruf pertama dari slug (huruf saja), uppercase.
-        $letters = preg_replace('/[^a-zA-Z]/', '', $slug);
-        return strtoupper(substr($letters, 0, 2)) ?: 'XX';
+        $kaders = User::where('role', 'kader')
+            ->where('posyandu_id', $posyandu->id)
+            ->with('bidang')
+            ->orderBy('bidang_id')
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get();
+
+        if ($kaders->isEmpty()) {
+            return back()->with('error', 'Posyandu ini belum memiliki kader untuk disinkronkan.');
+        }
+
+        $kodeWilayah = $this->resolveKodeWilayah($posyandu);
+
+        // Backfill: simpan kode resmi ke posyandu bila belum tersimpan.
+        if (empty($posyandu->kode_kabupaten) && $kodeWilayah !== '0000') {
+            $posyandu->forceFill(['kode_kabupaten' => $kodeWilayah])->save();
+        }
+
+        $updated = 0;
+        $unchanged = 0;
+        $skipped = 0;
+        $actorId = Auth::id();
+
+        \Illuminate\Support\Facades\DB::transaction(function () use (
+            $kaders, $kodeWilayah, $actorId,
+            &$updated, &$unchanged, &$skipped
+        ) {
+            $original = $kaders->pluck('username', 'id');
+
+            // Bebaskan username kader posyandu ini dulu agar nomor lamanya bisa dipakai ulang.
+            User::whereIn('id', $kaders->pluck('id')->all())->update(['username' => null]);
+
+            foreach ($kaders as $kader) {
+                $bidang = $kader->bidang;
+                if (!$bidang) {
+                    $skipped++;
+                    continue;
+                }
+
+                $prefix = sprintf('kader_%s_%s_', $bidang->kode, $kodeWilayah);
+
+                // Cari nomor terkecil yang belum dipakai kader mana pun (lintas posyandu).
+                $seq = 1;
+                $username = $prefix . sprintf('%03d', $seq);
+                while (User::where('username', $username)->exists()) {
+                    $seq++;
+                    $username = $prefix . sprintf('%03d', $seq);
+                }
+
+                $old = $original->get($kader->id);
+                $kader->username = $username;
+                $kader->save();
+
+                if ($old === $username) {
+                    $unchanged++;
+                    continue;
+                }
+
+                $updated++;
+
+                UserHistory::create([
+                    'user_id'     => $kader->id,
+                    'action_by'   => $actorId,
+                    'action_type' => 'updated',
+                    'description' => "Sinkronisasi username kader (Posyandu {$kader->posyandu_id})",
+                    'old_data'    => ['username' => $old],
+                    'new_data'    => ['username' => $username],
+                ]);
+            }
+        });
+
+        // Tandai operator-desa sudah menyelesaikan sinkronisasi untuk versi directive ini.
+        if ($user->role === 'operator-desa' && $directive) {
+            $user->forceFill(['sync_done_at' => now()])->save();
+        }
+
+        $msg = "Sinkronisasi username kader Posyandu {$posyandu->nama_posyandu} selesai: {$updated} diperbarui, {$unchanged} sudah sesuai.";
+        if ($skipped > 0) {
+            $msg .= " {$skipped} dilewati (bidang tidak diketahui).";
+        }
+
+        return back()->with('success', $msg);
+    }
+
+    /**
+     * Kode wilayah resmi (format angka seperti awalan NIK) kabupaten/kota posyandu.
+     * Prioritas: kolom kode_kabupaten -> kabupaten_id -> nama di tabel kabupatens -> peta API wilayah.id.
+     */
+    private function resolveKodeWilayah(Posyandu $posyandu): string
+    {
+        if (!empty($posyandu->kode_kabupaten)) {
+            return preg_replace('/\D/', '', $posyandu->kode_kabupaten) ?: '0000';
+        }
+
+        if ($posyandu->kabupaten_id) {
+            $kode = \App\Models\Kabupaten::whereKey($posyandu->kabupaten_id)->value('kode');
+            if (!empty($kode)) {
+                return preg_replace('/\D/', '', $kode);
+            }
+        }
+
+        $nama = trim((string) $posyandu->kabupaten);
+        if ($nama !== '') {
+            $kode = \App\Models\Kabupaten::where('nama_kabupaten', $nama)->value('kode');
+            if (!empty($kode)) {
+                return preg_replace('/\D/', '', $kode);
+            }
+
+            $map = $this->wilayahKodeMap();
+            $norm = $this->normalizeWilayahName($nama);
+            foreach ([$norm, 'kabupaten ' . $norm, 'kota ' . $norm] as $cand) {
+                if (isset($map[$cand])) {
+                    return $map[$cand];
+                }
+            }
+        }
+
+        return '0000';
+    }
+
+    /**
+     * Peta nama kabupaten/kota (lowercase) => kode resmi (angka) dari API wilayah.id.
+     * Di-cache agar tidak memanggil API berulang kali.
+     */
+    private function wilayahKodeMap(): array
+    {
+        return Cache::rememberForever('wilayah_kabupaten_kode_map_v1', function () {
+            $base = rtrim(env('API_WILAYAH_URL') ?: 'https://wilayah.id/api/', '/') . '/';
+            $map = [];
+
+            try {
+                $provinces = Http::timeout(20)->get($base . 'provinces.json')->json('data') ?? [];
+                foreach ($provinces as $prov) {
+                    $pcode = $prov['code'] ?? null;
+                    if (!$pcode) {
+                        continue;
+                    }
+                    $regencies = Http::timeout(20)->get($base . "regencies/{$pcode}.json")->json('data') ?? [];
+                    foreach ($regencies as $reg) {
+                        if (!isset($reg['code'], $reg['name'])) {
+                            continue;
+                        }
+                        $map[$this->normalizeWilayahName($reg['name'])] = preg_replace('/\D/', '', $reg['code']);
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Gagal memuat peta kode wilayah dari API', ['error' => $e->getMessage()]);
+            }
+
+            return $map;
+        });
+    }
+
+    private function normalizeWilayahName(string $name): string
+    {
+        return preg_replace('/\s+/', ' ', mb_strtolower(trim($name)));
     }
 
     public function editRwRt(Posyandu $posyandu)

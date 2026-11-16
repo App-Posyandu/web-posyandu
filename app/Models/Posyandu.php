@@ -18,6 +18,7 @@ class Posyandu extends Model
     protected $fillable = [
         'nama_posyandu',
         'kabupaten',
+        'kode_kabupaten',
         'desa',
         'kecamatan',
         'kabupaten_id',
